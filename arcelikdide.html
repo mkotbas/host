@@ -5,139 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arçelik Pop Sistemi</title>
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-
-        .login-box {
-            width: 400px;
-            padding: 20px;
-            border-radius: 8px;
-            background-color: white;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
         .header {
-            font-size: 24px;
+            font-size: 28px; /* Daha büyük yazı boyutu */
             font-weight: bold;
-            color: #fff;
-            padding: 15px;
-            background-color: #dc143c;
-            border-radius: 8px 8px 0 0;
+            color: #fff; /* Beyaz renk */
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 25px;
+            background-color: #dc143c; /* Kırmızı arka plan */
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Daha belirgin gölge */
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin: -20px -20px 20px -20px;
+            letter-spacing: 1.5px; /* Daha geniş harf aralığı */
+            font-family: Arial, sans-serif; /* Daha modern bir font */
+            border: 2px solid #b30000; /* Sınırlayıcı koyu kırmızı çerçeve */
         }
-
-        .password-container {
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 3px;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .checkbox {
+            margin-right: 5px;
+        }
+        .red {
+            color: red;
+        }
+        .blue {
+            color: blue;
+        }
+        .selected-codes {
             margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-
-        .password-input {
-            padding: 10px;
-            width: calc(100% - 22px);
-            font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .password-input:focus {
-            border-color: #4CAF50;
-        }
-
-        .password-button {
+        .copy-button, .clear-button {
             margin-top: 10px;
-            padding: 8px 15px;
+            padding: 5px 10px;
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
+            border-radius: 4px;
         }
-
-        .password-button:hover {
-            background-color: #45a049;
-        }
-
-        .error-message {
-            color: red;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        .checkbox-label {
-            display: block;
-            margin: 5px 0;
+        .clear-button {
+            background-color: #f44336;
         }
     </style>
 </head>
 <body>
 
-<div class="login-box">
-    <h2 class="header">Arçelik Pop Sistemi</h2>
-    <div class="password-container" id="passwordContainer">
-        <input type="password" class="password-input" id="passwordInput" placeholder="Parola girin...">
-        <button class="password-button" onclick="checkPassword()">Giriş Yap</button>
-        <div class="error-message" id="errorMessage"></div>
-    </div>
+<h2 class="header" id="header">Arçelik Pop Sistemi</h2>
+<div class="container" id="popCodesContainer" style="display: none;">
+    <!-- Pop Kodları buraya JavaScript ile eklenecek -->
 </div>
 
-<div class="container" id="popCodesContainer" style="display: none;"></div>
 <div class="selected-codes" id="selectedCodes" style="display: none;"></div>
 <button class="copy-button" id="copyButton" style="display: none;" onclick="copySelectedCodes()">Tümünü Kopyala</button>
 <button class="clear-button" id="clearButton" style="display: none;" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
 
 <script>
-    let validPasswords = ["mmm", "fff"];
-    
+    const correctPasswords = ["arcmlh", "arcfrt"];
     const popCodes = [
-        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100008", "100009", "100010",
-        "100011", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
-        "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030",
-        "100031", "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100040", "100047",
-        "100041", "100042", "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051",
-        "100052", "100053", "100054", "100055", "100056", "100060"
+        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100008", "100009", "100010", "100011",
+        "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020", "100021", "100022",
+        "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031", "100032", "100033",
+        "100034", "100035", "100036", "100037", "100038", "100040", "100047", "100041", "100042", "100043", "100044",
+        "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054", "100055", "100056",
+        "100060"
     ];
+    
     const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
     const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
-    
     const popCodesContainer = document.getElementById('popCodesContainer');
     const selectedCodesContainer = document.getElementById('selectedCodes');
-    const errorMessage = document.getElementById('errorMessage');
+    const header = document.getElementById('header');
+    const copyButton = document.getElementById('copyButton');
+    const clearButton = document.getElementById('clearButton');
 
-    function checkPassword() {
-        const passwordInput = document.getElementById('passwordInput').value;
-        if (validPasswords.includes(passwordInput)) {
-            popCodesContainer.style.display = 'block';
-            selectedCodesContainer.style.display = 'block';
-            document.getElementById('copyButton').style.display = 'inline-block';
-            document.getElementById('clearButton').style.display = 'inline-block';
-            document.getElementById('passwordContainer').style.display = 'none';
+    function checkAccess() {
+        const accessGranted = sessionStorage.getItem('accessGranted');
+        const accessTime = sessionStorage.getItem('accessTime');
+
+        if (accessGranted === "true" && accessTime) {
+            const currentTime = new Date().getTime();
+            if (currentTime - accessTime < 10 * 60 * 1000) { // 10 dakika
+                loadContent();
+                return;
+            } else {
+                sessionStorage.clear(); // 10 dakika dolduysa çerezleri temizle
+            }
+        }
+
+        const password = prompt("Parola girin:");
+        if (correctPasswords.includes(password)) {
+            sessionStorage.setItem('accessGranted', 'true');
+            sessionStorage.setItem('accessTime', new Date().getTime());
             loadContent();
         } else {
-            errorMessage.innerText = "Yanlış parola. Lütfen tekrar deneyin.";
-            // Çerezleri temizle ve sayfayı yeniden yükle
-            document.cookie.split(";").forEach((c) => {
-                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-            });
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+            header.innerText = "Erişim Reddedildi";
+            popCodesContainer.style.display = 'none';
+            selectedCodesContainer.style.display = 'none';
+            copyButton.style.display = 'none';
+            clearButton.style.display = 'none';
         }
     }
 
     function loadContent() {
-        popCodesContainer.innerHTML = ""; // Mevcut içeriği temizle
+        popCodesContainer.style.display = 'grid';
+        selectedCodesContainer.style.display = 'block';
+        copyButton.style.display = 'inline-block';
+        clearButton.style.display = 'inline-block';
+        header.innerText = "Arçelik Pop Kodları";
+
+        // Kodları oluştur ve ekle
         popCodes.forEach(code => {
             const label = document.createElement('label');
             label.classList.add('checkbox-label');
@@ -156,6 +149,7 @@
         });
     }
 
+    // Seçilen kodları güncelle
     function updateSelectedCodes() {
         const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
         selectedCodesContainer.innerHTML = selectedCodes.length > 0 
@@ -163,6 +157,7 @@
             : "";
     }
 
+    // Seçilen kodları kopyala
     function copySelectedCodes() {
         const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
         const textToCopy = selectedCodes.join(", ");
@@ -176,10 +171,15 @@
         }
     }
 
+    // Seçilen kodları temizle
     function clearSelectedCodes() {
         document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
         updateSelectedCodes();
     }
+
+    // Sayfa yüklendiğinde erişimi kontrol et
+    window.onload = checkAccess;
+
 </script>
 
 </body>
