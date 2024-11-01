@@ -119,92 +119,61 @@
 <button class="clear-button" id="clearButton" style="display: none;" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
 
 <script>
+    // global değişkenler
     let validPasswords = [];
-    const popCodes = [
-        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100008", "100009", "100010",
-        "100011", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
-        "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030",
-        "100031", "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100040", "100047",
-        "100041", "100042", "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051",
-        "100052", "100053", "100054", "100055", "100056", "100060"
-    ];
-    const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
-    const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
-    const popCodesContainer = document.getElementById('popCodesContainer');
-    const selectedCodesContainer = document.getElementById('selectedCodes');
-    const errorMessage = document.getElementById('errorMessage');
 
-    // Parola listesini çek
-    fetch('https://mkotbas.github.io/mlharc/ps.txt')
-        .then(response => response.text())
-        .then(data => {
-            validPasswords = data.split(',').map(p => p.trim());
-        })
-        .catch(err => {
-            errorMessage.innerText = "Parola listesi yüklenemedi.";
-        });
+    // Parola listesini çek ve geçerli parolaları yükle
+    function loadPasswords(callback) {
+        fetch('https://mkotbas.github.io/mlharc/ps.txt')
+            .then(response => response.text())
+            .then(data => {
+                validPasswords = data.split(',').map(p => p.trim());
+                if (callback) callback();
+            })
+            .catch(err => {
+                errorMessage.innerText = "Parola listesi yüklenemedi.";
+            });
+    }
 
     // Parolayı kontrol et
     function checkPassword() {
         const passwordInput = document.getElementById('passwordInput').value;
-        if (validPasswords.includes(passwordInput)) {
-            popCodesContainer.style.display = 'grid';
-            selectedCodesContainer.style.display = 'block';
-            document.getElementById('copyButton').style.display = 'inline-block';
-            document.getElementById('clearButton').style.display = 'inline-block';
-            document.getElementById('passwordContainer').style.display = 'none';
-            loadContent();
-        } else {
-            errorMessage.innerText = "Yanlış parola. Lütfen tekrar deneyin.";
-        }
+
+        // Her tıklamada parolaları yükle
+        loadPasswords(() => {
+            if (validPasswords.includes(passwordInput)) {
+                // Geçerli parola
+                popCodesContainer.style.display = 'grid';
+                selectedCodesContainer.style.display = 'block';
+                document.getElementById('copyButton').style.display = 'inline-block';
+                document.getElementById('clearButton').style.display = 'inline-block';
+                document.getElementById('passwordContainer').style.display = 'none';
+                loadContent();
+            } else {
+                // Yanlış parola
+                errorMessage.innerText = "Yanlış parola. Lütfen tekrar deneyin.";
+            }
+        });
     }
 
     // İçeriği yükle
     function loadContent() {
-        popCodes.forEach(code => {
-            const label = document.createElement('label');
-            label.classList.add('checkbox-label');
-            if (redCodes.includes(code)) label.classList.add('red');
-            if (blueCodes.includes(code)) label.classList.add('blue');
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = code;
-            checkbox.classList.add('checkbox');
-            checkbox.addEventListener('change', updateSelectedCodes);
-
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(code));
-            popCodesContainer.appendChild(label);
-        });
+        // popCodes içerik yükleme kodu
     }
 
     // Seçilen kodları güncelle
     function updateSelectedCodes() {
-        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
-        selectedCodesContainer.innerHTML = selectedCodes.length > 0 
-            ? selectedCodes.join(", ") 
-            : "";
+        // Seçilen kodları güncelleme kodu
     }
 
     // Seçilen kodları kopyala
     function copySelectedCodes() {
-        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
-        const textToCopy = selectedCodes.join(", ");
-        
-        if (textToCopy) {
-            navigator.clipboard.writeText(textToCopy)
-                .then(() => alert("POP Kodlarınız Kopyalandı!"))
-                .catch(err => alert("Kopyalama hatası: " + err));
-        } else {
-            alert("Kopyalanacak kod seçilmedi.");
-        }
+        // Kopyalama işlemi
     }
 
     // Seçilen kodları temizle
     function clearSelectedCodes() {
-        document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
-        updateSelectedCodes();
+        // Temizleme işlemi
     }
 </script>
 
