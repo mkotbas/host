@@ -3,23 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arçelik Pop Sistemi</title>
+    <title>Pop Kodları Seçim Sistemi</title>
     <style>
-        .header {
-            font-size: 28px; /* Daha büyük yazı boyutu */
-            font-weight: bold;
-            color: #fff; /* Beyaz renk */
-            text-align: center;
-            padding: 20px;
-            margin-bottom: 25px;
-            background-color: #dc143c; /* Kırmızı arka plan */
-            border-radius: 12px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Daha belirgin gölge */
-            text-transform: uppercase;
-            letter-spacing: 1.5px; /* Daha geniş harf aralığı */
-            font-family: Arial, sans-serif; /* Daha modern bir font */
-            border: 2px solid #b30000; /* Sınırlayıcı koyu kırmızı çerçeve */
+        body {
+            font-family: Arial, sans-serif; /* Modern bir yazı tipi */
+            background-color: #f4f4f4; /* Sayfa arka plan rengi */
+            margin: 0;
+            padding: 0;
         }
+
+        .header {
+            font-size: 28px; /* Başlık boyutu */
+            font-weight: bold;
+            color: #fff; /* Yazı rengi beyaz */
+            text-align: center;
+            padding: 20px; /* Padding artırıldı */
+            margin-bottom: 30px; /* Alt boşluk artırıldı */
+            background: linear-gradient(135deg, #8B0000, #FF4500); /* Koyu kırmızıdan turuncuya degrade */
+            border-radius: 12px; /* Daha yuvarlak kenarlar */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5); /* Gölge efekti */
+            text-transform: uppercase;
+            letter-spacing: 1.5px; /* Harf aralığı artırıldı */
+        }
+
         .container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -28,13 +34,18 @@
         .checkbox-label {
             display: flex;
             align-items: center;
-            padding: 5px;
-            font-size: 14px;
+            padding: 10px; /* Padding artırıldı */
+            font-size: 16px; /* Yazı boyutu artırıldı */
             cursor: pointer;
             justify-content: center;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 6px; /* Daha yuvarlak kenarlar */
             background-color: #f9f9f9;
+            transition: background-color 0.3s, transform 0.2s; /* Geçiş efektleri */
+        }
+        .checkbox-label:hover {
+            background-color: #e0e0e0; /* Üzerine gelince arka plan rengi değişir */
+            transform: scale(1.05); /* Hafif büyüme efekti */
         }
         .checkbox {
             margin-right: 5px;
@@ -47,37 +58,43 @@
         }
         .selected-codes {
             margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+            display: flex; /* Esnek kutu düzeni */
+            flex-wrap: wrap; /* Taşmayı önlemek için */
+            gap: 10px; /* Elemanlar arasındaki boşluk */
         }
         .copy-button, .clear-button {
             margin-top: 10px;
-            padding: 5px 10px;
+            padding: 10px 15px; /* Buton boyutu artırıldı */
             background-color: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
-            border-radius: 4px;
+            border-radius: 6px; /* Daha yuvarlak kenarlar */
+            transition: background-color 0.3s; /* Geçiş efekti */
         }
         .clear-button {
-            background-color: #f44336;
+            background-color: #f44336; /* Kırmızı */
+        }
+        .copy-button:hover {
+            background-color: #45a049; /* Üzerine gelince yeşil daha koyu */
+        }
+        .clear-button:hover {
+            background-color: #d32f2f; /* Üzerine gelince kırmızı daha koyu */
         }
     </style>
 </head>
 <body>
 
-<h2 class="header" id="header">Arçelik Pop Sistemi</h2>
-<div class="container" id="popCodesContainer" style="display: none;">
+<h2 class="header">Arçelik Pop Kodları</h2>
+<div class="container" id="popCodesContainer">
     <!-- Pop Kodları buraya JavaScript ile eklenecek -->
 </div>
 
-<div class="selected-codes" id="selectedCodes" style="display: none;"></div>
-<button class="copy-button" id="copyButton" style="display: none;" onclick="copySelectedCodes()">Tümünü Kopyala</button>
-<button class="clear-button" id="clearButton" style="display: none;" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
+<div class="selected-codes" id="selectedCodes"></div>
+<button class="copy-button" onclick="copySelectedCodes()">Tümünü Kopyala</button>
+<button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
 
 <script>
-    const correctPasswords = ["arcmlh", "arcfrt"];
     const popCodes = [
         "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100008", "100009", "100010", "100011",
         "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020", "100021", "100022",
@@ -91,63 +108,24 @@
     const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
     const popCodesContainer = document.getElementById('popCodesContainer');
     const selectedCodesContainer = document.getElementById('selectedCodes');
-    const header = document.getElementById('header');
-    const copyButton = document.getElementById('copyButton');
-    const clearButton = document.getElementById('clearButton');
 
-    function checkAccess() {
-        const accessGranted = sessionStorage.getItem('accessGranted');
-        const accessTime = sessionStorage.getItem('accessTime');
+    // Kodları oluştur ve ekle
+    popCodes.forEach(code => {
+        const label = document.createElement('label');
+        label.classList.add('checkbox-label');
+        if (redCodes.includes(code)) label.classList.add('red');
+        if (blueCodes.includes(code)) label.classList.add('blue');
 
-        if (accessGranted === "true" && accessTime) {
-            const currentTime = new Date().getTime();
-            if (currentTime - accessTime < 10 * 60 * 1000) { // 10 dakika
-                loadContent();
-                return;
-            } else {
-                sessionStorage.clear(); // 10 dakika dolduysa çerezleri temizle
-            }
-        }
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = code;
+        checkbox.classList.add('checkbox');
+        checkbox.addEventListener('change', updateSelectedCodes);
 
-        const password = prompt("Parola girin:");
-        if (correctPasswords.includes(password)) {
-            sessionStorage.setItem('accessGranted', 'true');
-            sessionStorage.setItem('accessTime', new Date().getTime());
-            loadContent();
-        } else {
-            header.innerText = "Erişim Reddedildi";
-            popCodesContainer.style.display = 'none';
-            selectedCodesContainer.style.display = 'none';
-            copyButton.style.display = 'none';
-            clearButton.style.display = 'none';
-        }
-    }
-
-    function loadContent() {
-        popCodesContainer.style.display = 'grid';
-        selectedCodesContainer.style.display = 'block';
-        copyButton.style.display = 'inline-block';
-        clearButton.style.display = 'inline-block';
-        header.innerText = "Arçelik Pop Kodları";
-
-        // Kodları oluştur ve ekle
-        popCodes.forEach(code => {
-            const label = document.createElement('label');
-            label.classList.add('checkbox-label');
-            if (redCodes.includes(code)) label.classList.add('red');
-            if (blueCodes.includes(code)) label.classList.add('blue');
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = code;
-            checkbox.classList.add('checkbox');
-            checkbox.addEventListener('change', updateSelectedCodes);
-
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(code));
-            popCodesContainer.appendChild(label);
-        });
-    }
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(code));
+        popCodesContainer.appendChild(label);
+    });
 
     // Seçilen kodları güncelle
     function updateSelectedCodes() {
@@ -164,7 +142,7 @@
         
         if (textToCopy) {
             navigator.clipboard.writeText(textToCopy)
-                .then(() => alert("POP Kodlarınız Kopyalandı!"))
+                .then(() => alert("POP Kodlarınız Kopyalandı!")) // Mesaj güncellendi
                 .catch(err => alert("Kopyalama hatası: " + err));
         } else {
             alert("Kopyalanacak kod seçilmedi.");
@@ -174,12 +152,8 @@
     // Seçilen kodları temizle
     function clearSelectedCodes() {
         document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
-        updateSelectedCodes();
+        updateSelectedCodes(); // Temizlendikten sonra seçilenleri güncelle
     }
-
-    // Sayfa yüklendiğinde erişimi kontrol et
-    window.onload = checkAccess;
-
 </script>
 
 </body>
