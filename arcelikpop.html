@@ -56,6 +56,12 @@
         .blue {
             color: blue;
         }
+        .selected-codes {
+            margin-top: 20px;
+            display: flex; /* Esnek kutu düzeni */
+            flex-wrap: wrap; /* Taşmayı önlemek için */
+            gap: 10px; /* Elemanlar arasındaki boşluk */
+        }
         .button-container {
             display: flex;
             justify-content: center; /* Butonları yatay olarak ortala */
@@ -83,6 +89,7 @@
         <!-- Pop Kodları buraya JavaScript ile eklenecek -->
     </div>
 
+    <div class="selected-codes" id="selectedCodes"></div>
     <div class="button-container">
         <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
         <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
@@ -102,6 +109,7 @@
     const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
     const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
     const popCodesContainer = document.getElementById('popCodesContainer');
+    const selectedCodesContainer = document.getElementById('selectedCodes');
 
     // Kodları oluştur ve ekle
     popCodes.forEach(code => {
@@ -114,12 +122,20 @@
         checkbox.type = 'checkbox';
         checkbox.value = code;
         checkbox.classList.add('checkbox');
-        checkbox.addEventListener('change', updateSelectedCodes); // Bu satırı kaldırabilirsiniz
+        checkbox.addEventListener('change', updateSelectedCodes);
 
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(code));
         popCodesContainer.appendChild(label);
     });
+
+    // Seçilen kodları güncelle
+    function updateSelectedCodes() {
+        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+        selectedCodesContainer.innerHTML = selectedCodes.length > 0 
+            ? selectedCodes.join(", ") 
+            : "";
+    }
 
     // Seçilen kodları kopyala
     function copySelectedCodes() {
@@ -138,7 +154,7 @@
     // Seçilen kodları temizle
     function clearSelectedCodes() {
         document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
-        // Seçilen kodları güncellemek için bu fonksiyonu kaldırabilirsiniz
+        updateSelectedCodes(); // Temizlendikten sonra seçilenleri güncelle
     }
 </script>
 
