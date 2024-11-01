@@ -77,6 +77,40 @@
 <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
 
 <script>
+    // Parola doğrulama
+    const validPasswords = ["arcmlh", "arcfırat"]; // Geçerli parolalar
+    const passwordKey = "passwordVerified"; // Yerel depolama anahtarı
+    const passwordExpiryKey = "passwordExpiry"; // Parola süresi için anahtar
+
+    // Kullanıcının parolayı doğrulaması
+    function promptForPassword() {
+        const now = new Date();
+        const expiry = localStorage.getItem(passwordExpiryKey);
+        
+        if (expiry && now < new Date(expiry)) {
+            // Eğer parolanın süresi dolmadıysa, kullanıcıdan tekrar istemiyoruz
+            return true;
+        }
+
+        let password = prompt("Lütfen parolanızı girin:");
+
+        if (validPasswords.includes(password)) {
+            localStorage.setItem(passwordKey, true); // Parolayı doğrula
+            const tenMinutesFromNow = new Date(now.getTime() + 10 * 60 * 1000);
+            localStorage.setItem(passwordExpiryKey, tenMinutesFromNow); // 10 dakika süre
+            return true;
+        } else {
+            alert("Yanlış parola, lütfen tekrar deneyin.");
+            return false;
+        }
+    }
+
+    // Sayfa yüklendiğinde parola kontrolü
+    if (!localStorage.getItem(passwordKey) || !promptForPassword()) {
+        // Eğer parolayı doğrulamadıysak, sayfa içeriğini gizle
+        document.body.innerHTML = "<h2 class='header'>Erişim Reddedildi</h2>";
+    }
+
     const popCodes = [
         "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100008", "100009", "100010", "100011",
         "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020", "100021", "100022",
