@@ -158,10 +158,11 @@
             loadContent();
         } else {
             errorMessage.innerText = "Yanlış parola. Lütfen tekrar deneyin.";
-            sessionStorage.clear(); // Yanlış parola girildiğinde çerezleri sil
+            // 5 dakika sonra çerezleri sil
             setTimeout(() => {
+                sessionStorage.clear(); // Çerezleri sil
                 location.reload(); // Sayfayı yenile
-            }, 2000); // 2 saniye sonra sayfayı yenile
+            }, 300000); // 5 dakika (300000 ms)
         }
     }
 
