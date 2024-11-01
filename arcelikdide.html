@@ -69,63 +69,63 @@
 <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
 
 <script>
-    frqvw#srsFrghv#@#^
-########%433334%/#%433335%/#%433336%/#%433337%/#%433338%/#%433339%/#%43333:%/#%433393%/#%43333;%/#%43333<%/#%433343%/
-########%433344%/#%433393%/#%433345%/#%433346%/#%433347%/#%433348%/#%433349%/#%43334:%/#%43334%/#%43334<%/#%433353%/
-########%433354%/#%433355%/#%433356%/#%433357%/#%433358%/#%433359%/#%43335:%/#%43335;%/#%43335<%/#%433363%/#%433364%/
-########%433365%/#%433366%/#%433367%/#%433368%/#%433369%/#%43336:%/#%43336;%/#%43337:%/#%433373%/#%433374%/#%433375%/
-########%433376%/#%433377%/#%433378%/#%433379%/#%43337;%/#%43337<%/#%433383%/#%433384%/#%433385%/#%433386%/#%433387%/
-########%433388%/#%433389%
-####`>
-####
-####frqvw#uhgFrghv#@#^%43334<%/#%433353%/#%43337;%/#%43337<%/#%433383%/#%433384%`>
-####frqvw#srsFrghvFrqwdlqhu#@#grfxphqw1jhwHohphqwE|Lg+*srsFrghvFrqwdlqhu*,>
-####frqvw#vhohfwhgFrghvFrqwdlqhu#@#grfxphqw1jhwHohphqwE|Lg+*vhohfwhgFrghv*,>
+    const popCodes = [
+        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
+        "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "10001", "100019", "100020",
+        "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
+        "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
+        "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
+        "100055", "100056"
+    ];
+    
+    const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
+    const popCodesContainer = document.getElementById('popCodesContainer');
+    const selectedCodesContainer = document.getElementById('selectedCodes');
 
-####22#NrgoduĴ#roxŢwxu#yh#hnoh
-####srsFrghv1iruHdfk+frgh#@A#~
-########frqvw#odeho#@#grfxphqw1fuhdwhHohphqw+*odeho*,>
-########odeho1fodvvOlvw1dgg+*fkhfner{0odeho*,>
-########li#+uhgFrghv1lqfoxghv+frgh,,#odeho1fodvvOlvw1dgg+*uhg*,>
+    // Kodları oluştur ve ekle
+    popCodes.forEach(code => {
+        const label = document.createElement('label');
+        label.classList.add('checkbox-label');
+        if (redCodes.includes(code)) label.classList.add('red');
 
-########frqvw#fkhfner{#@#grfxphqw1fuhdwhHohphqw+*lqsxw*,>
-########fkhfner{1w|sh#@#*fkhfner{*>
-########fkhfner{1ydoxh#@#frgh>
-########fkhfner{1fodvvOlvw1dgg+*fkhfner{*,>
-########fkhfner{1dggHyhqwOlvwhqhu+*fkdqjh*/#xsgdwhVhohfwhgFrghv,>
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = code;
+        checkbox.classList.add('checkbox');
+        checkbox.addEventListener('change', updateSelectedCodes);
 
-########odeho1dsshqgFklog+fkhfner{,>
-########odeho1dsshqgFklog+grfxphqw1fuhdwhWh{wQrgh+frgh,,>
-########srsFrghvFrqwdlqhu1dsshqgFklog+odeho,>
-####,>
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(code));
+        popCodesContainer.appendChild(label);
+    });
 
-####22#Vhêlohq#nrgoduĴ#jÿqfhooh
-####ixqfwlrq#xsgdwhVhohfwhgFrghv+,#~
-########frqvw#vhohfwhgFrghv#@#Duud|1iurp+grfxphqw1txhu|VhohfwruDoo+*1fkhfner{=fkhfnhg*,,1pds+fe#@A#fe1ydoxh,>
-########vhohfwhgFrghvFrqwdlqhu1lqqhuKWPO#@#vhohfwhgFrghv1ohqjwk#A#3#
-############B#%Vhêlohq#Nrgodu=#%#.#vhohfwhgFrghv1mrlq+%/#%,#
-############=#%%>
-####
+    // Seçilen kodları güncelle
+    function updateSelectedCodes() {
+        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+        selectedCodesContainer.innerHTML = selectedCodes.length > 0 
+            ? "Seçilen Kodlar: " + selectedCodes.join(", ") 
+            : "";
+    }
 
-####22#Vhêlohq#nrgoduĴ#nrs|dod
-####ixqfwlrq#frs|VhohfwhgFrghv+,#~
-########frqvw#vhohfwhgFrghv#@#Duud|1iurp+grfxphqw1txhu|VhohfwruDoo+*1fkhfner{=fkhfnhg*,,1pds+fe#@A#fe1ydoxh,>
-########frqvw#wh{wWrFrs|#@#vhohfwhgFrghv1mrlq+%/#%,>
-########
-########li#+wh{wWrFrs|,#~
-############qdyljdwru1folserdug1zulwhWh{w+wh{wWrFrs|,
-################1wkhq++,#@A#dohuw+%SRS#NrgoduĴqĴ}#Nrs|dodqgĴ$%,,#22#Phvdm#jÿqfhoohqgl
-################1fdwfk+huu#@A#dohuw+%Nrs|dodpd#kdwdvĴ=#%#.#huu,,>
-#########hovh#~
-############dohuw+%Nrs|dodqdfdn#nrg#vhêlophgl1%,>
-########
-####
+    // Seçilen kodları kopyala
+    function copySelectedCodes() {
+        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+        const textToCopy = selectedCodes.join(", ");
+        
+        if (textToCopy) {
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => alert("POP Kodlarınız Kopyalandı!")) // Mesaj güncellendi
+                .catch(err => alert("Kopyalama hatası: " + err));
+        } else {
+            alert("Kopyalanacak kod seçilmedi.");
+        }
+    }
 
-####22#Vhêlohq#nrgoduĴ#whpl}oh
-####ixqfwlrq#fohduVhohfwhgFrghv+,#~
-########grfxphqw1txhu|VhohfwruDoo+*1fkhfner{=fkhfnhg*,1iruHdfk+fe#@A#fe1fkhfnhg#@#idovh,>
-########xsgdwhVhohfwhgFrghv+,>#22#Whpl}ohqglnwhq#vrqud#vhêlohqohul#jÿqfhooh
-####
+    // Seçilen kodları temizle
+    function clearSelectedCodes() {
+        document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
+        updateSelectedCodes(); // Temizlendikten sonra seçilenleri güncelle
+    }
 </script>
 
 </body>
