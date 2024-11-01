@@ -11,7 +11,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0; /* Arka plan rengi */
+            background-color: #f0f0f0;
         }
 
         .login-box {
@@ -32,7 +32,7 @@
             border-radius: 8px 8px 0 0;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            margin: -20px -20px 20px -20px; /* Kutunun dışına taşmasını sağlar */
+            margin: -20px -20px 20px -20px;
         }
 
         .password-container {
@@ -74,6 +74,11 @@
             font-size: 14px;
             margin-top: 10px;
         }
+
+        .checkbox-label {
+            display: block;
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -93,9 +98,7 @@
 <button class="clear-button" id="clearButton" style="display: none;" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
 
 <script>
-    let validPasswords = [
-        "mmm", "fff" // Buraya eklemek istediğiniz parolaları yazabilirsiniz
-    ];
+    let validPasswords = ["mmm", "fff"];
     
     const popCodes = [
         "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100008", "100009", "100010",
@@ -107,15 +110,15 @@
     ];
     const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
     const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
+    
     const popCodesContainer = document.getElementById('popCodesContainer');
     const selectedCodesContainer = document.getElementById('selectedCodes');
     const errorMessage = document.getElementById('errorMessage');
 
-    // Parolayı kontrol et
     function checkPassword() {
         const passwordInput = document.getElementById('passwordInput').value;
         if (validPasswords.includes(passwordInput)) {
-            popCodesContainer.style.display = 'grid';
+            popCodesContainer.style.display = 'block';
             selectedCodesContainer.style.display = 'block';
             document.getElementById('copyButton').style.display = 'inline-block';
             document.getElementById('clearButton').style.display = 'inline-block';
@@ -123,19 +126,18 @@
             loadContent();
         } else {
             errorMessage.innerText = "Yanlış parola. Lütfen tekrar deneyin.";
-            // Tüm çerezleri ve ön belleği temizle
+            // Çerezleri temizle ve sayfayı yeniden yükle
             document.cookie.split(";").forEach((c) => {
                 document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
             });
-            // Sayfayı yeniden yükle
             setTimeout(() => {
                 location.reload();
-            }, 1000); // 1 saniye beklemeden sonra sayfayı yeniden yükle
+            }, 1000);
         }
     }
 
-    // İçeriği yükle
     function loadContent() {
+        popCodesContainer.innerHTML = ""; // Mevcut içeriği temizle
         popCodes.forEach(code => {
             const label = document.createElement('label');
             label.classList.add('checkbox-label');
@@ -154,7 +156,6 @@
         });
     }
 
-    // Seçilen kodları güncelle
     function updateSelectedCodes() {
         const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
         selectedCodesContainer.innerHTML = selectedCodes.length > 0 
@@ -162,7 +163,6 @@
             : "";
     }
 
-    // Seçilen kodları kopyala
     function copySelectedCodes() {
         const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
         const textToCopy = selectedCodes.join(", ");
@@ -176,7 +176,6 @@
         }
     }
 
-    // Seçilen kodları temizle
     function clearSelectedCodes() {
         document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
         updateSelectedCodes();
