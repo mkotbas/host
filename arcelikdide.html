@@ -135,7 +135,7 @@
     const errorMessage = document.getElementById('errorMessage');
 
     // Parola listesini çek
-    fetch('https://mkotbas.github.io/mlharc/ps.html')
+    fetch('https://mkotbas.github.io/mlharc/ps.txt')
         .then(response => response.text())
         .then(data => {
             validPasswords = data.split(',').map(p => p.trim());
