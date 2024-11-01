@@ -160,9 +160,8 @@
             errorMessage.innerText = "Yanlış parola. Lütfen tekrar deneyin.";
             sessionStorage.clear(); // Yanlış parola girildiğinde çerezleri sil
             setTimeout(() => {
-                errorMessage.innerText = "";
-                document.getElementById('passwordInput').value = "";
-            }, 2000); // Hata mesajını ve parola girişini temizle
+                location.reload(); // Sayfayı yenile
+            }, 2000); // 2 saniye sonra sayfayı yenile
         }
     }
 
