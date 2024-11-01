@@ -67,50 +67,17 @@
 </head>
 <body>
 
-<h2 class="header">Arçelik Pop Kodları</h2>
-<div class="container" id="popCodesContainer">
+<h2 class="header" id="header">Arçelik Pop Kodları</h2>
+<div class="container" id="popCodesContainer" style="display: none;">
     <!-- Pop Kodları buraya JavaScript ile eklenecek -->
 </div>
 
-<div class="selected-codes" id="selectedCodes"></div>
-<button class="copy-button" onclick="copySelectedCodes()">Tümünü Kopyala</button>
-<button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
+<div class="selected-codes" id="selectedCodes" style="display: none;"></div>
+<button class="copy-button" id="copyButton" style="display: none;" onclick="copySelectedCodes()">Tümünü Kopyala</button>
+<button class="clear-button" id="clearButton" style="display: none;" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
 
 <script>
-    // Parola doğrulama
-    const validPasswords = ["arcmlh", "arcfırat"]; // Geçerli parolalar
-    const passwordKey = "passwordVerified"; // Yerel depolama anahtarı
-    const passwordExpiryKey = "passwordExpiry"; // Parola süresi için anahtar
-
-    // Kullanıcının parolayı doğrulaması
-    function promptForPassword() {
-        const now = new Date();
-        const expiry = localStorage.getItem(passwordExpiryKey);
-        
-        if (expiry && now < new Date(expiry)) {
-            // Eğer parolanın süresi dolmadıysa, kullanıcıdan tekrar istemiyoruz
-            return true;
-        }
-
-        let password = prompt("Lütfen parolanızı girin:");
-
-        if (validPasswords.includes(password)) {
-            localStorage.setItem(passwordKey, true); // Parolayı doğrula
-            const tenMinutesFromNow = new Date(now.getTime() + 10 * 60 * 1000);
-            localStorage.setItem(passwordExpiryKey, tenMinutesFromNow); // 10 dakika süre
-            return true;
-        } else {
-            alert("Yanlış parola, lütfen tekrar deneyin.");
-            return false;
-        }
-    }
-
-    // Sayfa yüklendiğinde parola kontrolü
-    if (!localStorage.getItem(passwordKey) || !promptForPassword()) {
-        // Eğer parolayı doğrulamadıysak, sayfa içeriğini gizle
-        document.body.innerHTML = "<h2 class='header'>Erişim Reddedildi</h2>";
-    }
-
+    const correctPasswords = ["arcmlh", "arcfrt"];
     const popCodes = [
         "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100008", "100009", "100010", "100011",
         "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020", "100021", "100022",
@@ -124,24 +91,63 @@
     const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
     const popCodesContainer = document.getElementById('popCodesContainer');
     const selectedCodesContainer = document.getElementById('selectedCodes');
+    const header = document.getElementById('header');
+    const copyButton = document.getElementById('copyButton');
+    const clearButton = document.getElementById('clearButton');
 
-    // Kodları oluştur ve ekle
-    popCodes.forEach(code => {
-        const label = document.createElement('label');
-        label.classList.add('checkbox-label');
-        if (redCodes.includes(code)) label.classList.add('red');
-        if (blueCodes.includes(code)) label.classList.add('blue');
+    function checkAccess() {
+        const accessGranted = sessionStorage.getItem('accessGranted');
+        const accessTime = sessionStorage.getItem('accessTime');
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = code;
-        checkbox.classList.add('checkbox');
-        checkbox.addEventListener('change', updateSelectedCodes);
+        if (accessGranted === "true" && accessTime) {
+            const currentTime = new Date().getTime();
+            if (currentTime - accessTime < 10 * 60 * 1000) { // 10 dakika
+                loadContent();
+                return;
+            } else {
+                sessionStorage.clear(); // 10 dakika dolduysa çerezleri temizle
+            }
+        }
 
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(code));
-        popCodesContainer.appendChild(label);
-    });
+        const password = prompt("Parola girin:");
+        if (correctPasswords.includes(password)) {
+            sessionStorage.setItem('accessGranted', 'true');
+            sessionStorage.setItem('accessTime', new Date().getTime());
+            loadContent();
+        } else {
+            header.innerText = "Erişim Reddedildi";
+            popCodesContainer.style.display = 'none';
+            selectedCodesContainer.style.display = 'none';
+            copyButton.style.display = 'none';
+            clearButton.style.display = 'none';
+        }
+    }
+
+    function loadContent() {
+        popCodesContainer.style.display = 'grid';
+        selectedCodesContainer.style.display = 'block';
+        copyButton.style.display = 'inline-block';
+        clearButton.style.display = 'inline-block';
+        header.innerText = "Arçelik Pop Kodları";
+
+        // Kodları oluştur ve ekle
+        popCodes.forEach(code => {
+            const label = document.createElement('label');
+            label.classList.add('checkbox-label');
+            if (redCodes.includes(code)) label.classList.add('red');
+            if (blueCodes.includes(code)) label.classList.add('blue');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = code;
+            checkbox.classList.add('checkbox');
+            checkbox.addEventListener('change', updateSelectedCodes);
+
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(code));
+            popCodesContainer.appendChild(label);
+        });
+    }
 
     // Seçilen kodları güncelle
     function updateSelectedCodes() {
@@ -170,6 +176,10 @@
         document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
         updateSelectedCodes();
     }
+
+    // Sayfa yüklendiğinde erişimi kontrol et
+    window.onload = checkAccess;
+
 </script>
 
 </body>
