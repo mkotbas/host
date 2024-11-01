@@ -43,7 +43,7 @@
         .selected-codes {
             margin-top: 20px;
         }
-        .copy-button {
+        .copy-button, .clear-button {
             margin-top: 10px;
             padding: 5px 10px;
             background-color: #4CAF50;
@@ -51,6 +51,9 @@
             border: none;
             cursor: pointer;
             border-radius: 4px;
+        }
+        .clear-button {
+            background-color: #f44336; /* Kırmızı */
         }
     </style>
 </head>
@@ -63,6 +66,7 @@
 
 <div class="selected-codes" id="selectedCodes"></div>
 <button class="copy-button" onclick="copySelectedCodes()">Tümünü Kopyala</button>
+<button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button> <!-- Yeni buton -->
 
 <script>
     const popCodes = [
@@ -109,22 +113,18 @@
         const textToCopy = selectedCodes.join(", ");
         
         if (textToCopy) {
-            // Geçici bir textarea elementi oluştur
-            const tempTextArea = document.createElement("textarea");
-            tempTextArea.value = textToCopy;
-            document.body.appendChild(tempTextArea);
-
-            // Metni seç ve kopyala
-            tempTextArea.select();
-            tempTextArea.setSelectionRange(0, 99999); // Mobil cihaz uyumu için
-            document.execCommand("copy");
-
-            // Geçici elementi kaldır
-            document.body.removeChild(tempTextArea);
-            alert("Seçilen kodlar kopyalandı!");
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => alert("Seçilen kodlar kopyalandı!"))
+                .catch(err => alert("Kopyalama hatası: " + err));
         } else {
             alert("Kopyalanacak kod seçilmedi.");
         }
+    }
+
+    // Seçilen kodları temizle
+    function clearSelectedCodes() {
+        document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
+        updateSelectedCodes(); // Temizlendikten sonra seçilenleri güncelle
     }
 </script>
 
