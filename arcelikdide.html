@@ -63,11 +63,28 @@
         .clear-button {
             background-color: #f44336;
         }
+        .noscript-warning {
+            color: red;
+            font-size: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
     </style>
+    <noscript>
+        <style>
+            #mainContent {
+                display: none;
+            }
+            .noscript-warning {
+                display: block;
+            }
+        </style>
+    </noscript>
 </head>
 <body>
 
-<h2 class="header" id="header">Arçelik Pop Kodları</h2>
+<h2 class="header" id="header">Arçelik Pop Sistemi</h2>
+<div class="noscript-warning">JavaScript tarayıcınızda devre dışı bırakılmış. Bu sayfa düzgün çalışmayacaktır.</div>
 <div class="container" id="popCodesContainer" style="display: none;">
     <!-- Pop Kodları buraya JavaScript ile eklenecek -->
 </div>
