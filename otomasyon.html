@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pop Kodları Seçim Sistemi</title>
+    <style>
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 3px;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .checkbox {
+            margin-right: 5px;
+        }
+        .red {
+            color: red;
+        }
+        .selected-codes {
+            margin-top: 20px;
+        }
+        .copy-button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<h2 class="header">Pop Kodları</h2>
+<div class="container" id="popCodesContainer">
+    <!-- Pop Kodları buraya JavaScript ile eklenecek -->
+</div>
+
+<div class="selected-codes" id="selectedCodes"></div>
+<button class="copy-button" onclick="copySelectedCodes()">Tümünü Kopyala</button>
+
+<script>
+    const popCodes = [
+        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
+        "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "10001", "100019", "100020",
+        "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
+        "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
+        "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
+        "100055", "100056"
+    ];
+    
+    const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
+    const popCodesContainer = document.getElementById('popCodesContainer');
+    const selectedCodesContainer = document.getElementById('selectedCodes');
+
+    // Kodları oluştur ve ekle
+    popCodes.forEach(code => {
+        const label = document.createElement('label');
+        label.classList.add('checkbox-label');
+        if (redCodes.includes(code)) label.classList.add('red');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = code;
+        checkbox.classList.add('checkbox');
+        checkbox.addEventListener('change', updateSelectedCodes);
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(code));
+        popCodesContainer.appendChild(label);
+    });
+
+    // Seçilen kodları güncelle
+    function updateSelectedCodes() {
+        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+        selectedCodesContainer.innerHTML = selectedCodes.length > 0 
+            ? "Seçilen Kodlar: " + selectedCodes.join(", ") 
+            : "";
+    }
+
+    // Seçilen kodları kopyala
+    function copySelectedCodes() {
+        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+        const textToCopy = selectedCodes.join(", ");
+        
+        if (textToCopy) {
+            // Geçici bir textarea elementi oluştur
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = textToCopy;
+            document.body.appendChild(tempTextArea);
+
+            // Metni seç ve kopyala
+            tempTextArea.select();
+            tempTextArea.setSelectionRange(0, 99999); // Mobil cihaz uyumu için
+            document.execCommand("copy");
+
+            // Geçici elementi kaldır
+            document.body.removeChild(tempTextArea);
+            alert("Seçilen kodlar kopyalandı!");
+        } else {
+            alert("Kopyalanacak kod seçilmedi.");
+        }
+    }
+</script>
+
+</body>
+</html>
