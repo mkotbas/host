@@ -9,16 +9,7 @@
             font-family: Arial, sans-serif; /* Modern bir yazı tipi */
             background-color: #f4f4f4; /* Sayfa arka plan rengi */
             margin: 0;
-            padding: 0 5px; /* Sağdan ve soldan 5px boşluk */
-        }
-
-        .container {
-            max-width: 800px; /* Maksimum genişlik */
-            margin: 20px auto; /* Ortala ve üstten boşluk */
-            padding: 20px; /* İçerik için dolgu */
-            background-color: #ffffff; /* Arka plan rengi */
-            border-radius: 12px; /* Kenar yuvarlama */
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Gölge efekti */
+            padding: 0;
         }
 
         .header {
@@ -35,7 +26,7 @@
             letter-spacing: 1.5px; /* Harf aralığı artırıldı */
         }
 
-        .popCodes {
+        .container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
             gap: 3px;
@@ -94,16 +85,14 @@
 </head>
 <body>
 
-<div class="container">
-    <h2 class="header">Arçelik Pop Kodları</h2>
-    <div class="popCodes" id="popCodesContainer">
-        <!-- Pop Kodları buraya JavaScript ile eklenecek -->
-    </div>
-
-    <div class="selected-codes" id="selectedCodes"></div>
-    <button class="copy-button" onclick="copySelectedCodes()">Tümünü Kopyala</button>
-    <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
+<h2 class="header">Arçelik Pop Kodları</h2>
+<div class="container" id="popCodesContainer">
+    <!-- Pop Kodları buraya JavaScript ile eklenecek -->
 </div>
+
+<div class="selected-codes" id="selectedCodes"></div>
+<button class="copy-button" onclick="copySelectedCodes()">Tümünü Kopyala</button>
+<button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
 
 <script>
     const popCodes = [
