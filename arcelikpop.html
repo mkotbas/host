@@ -5,16 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pop Kodları Seçim Sistemi</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4; /* Arka plan rengi */
+            margin: 0;
+            padding: 20px;
+        }
+        .frame {
+            border: 2px solid #8b0000; /* Çerçeve rengi */
+            border-radius: 10px; /* Köşe yuvarlama */
+            padding: 20px; /* İçerik ile çerçeve arasındaki boşluk */
+            background-color: white; /* Çerçevenin arka plan rengi */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Gölgeli efekt */
+        }
         .header {
             font-size: 24px;
             font-weight: bold;
             color: #fff; /* Yazı rengini beyaz yaparak kontrastı artırdık */
             text-align: center;
             padding: 15px;
-            margin-bottom: 20px;
+            margin: 5px 0 20px; /* Üst boşluğu 5px, alt boşluğu 20px */
             background: linear-gradient(to right, #ff5c5c, #8b0000); /* Kırmızıdan koyu kırmızıya gradyan */
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Başlık çevresine gölge */
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -49,8 +62,13 @@
             flex-wrap: wrap; /* Taşmayı önlemek için */
             gap: 10px; /* Elemanlar arasındaki boşluk */
         }
+        .button-container {
+            display: flex;
+            justify-content: center; /* Butonları yatay olarak ortala */
+            margin-top: 20px; /* Butonlar ile üstteki öğeler arasındaki boşluk */
+        }
         .copy-button, .clear-button {
-            margin-top: 10px;
+            margin: 0 5px; /* Butonlar arasındaki boşluk */
             padding: 5px 10px;
             background-color: #4CAF50;
             color: white;
@@ -65,14 +83,18 @@
 </head>
 <body>
 
-<h2 class="header">Arçelik Pop Kodları</h2>
-<div class="container" id="popCodesContainer">
-    <!-- Pop Kodları buraya JavaScript ile eklenecek -->
-</div>
+<div class="frame">
+    <h2 class="header">Arçelik Pop Kodları</h2>
+    <div class="container" id="popCodesContainer">
+        <!-- Pop Kodları buraya JavaScript ile eklenecek -->
+    </div>
 
-<div class="selected-codes" id="selectedCodes"></div>
-<button class="copy-button" onclick="copySelectedCodes()">Tümünü Kopyala</button>
-<button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
+    <div class="selected-codes" id="selectedCodes"></div>
+    <div class="button-container">
+        <button class="copy-button" onclick="copySelectedCodes()">Tümünü Kopyala</button>
+        <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
+    </div>
+</div>
 
 <script>
     const popCodes = [
