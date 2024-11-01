@@ -152,8 +152,20 @@
             } else {
                 // Yanlış parola
                 errorMessage.innerText = "Yanlış parola. Lütfen tekrar deneyin.";
+                clearCookiesAndReload();
             }
         });
+    }
+
+    // Çerezleri temizle ve sayfayı yeniden yükle
+    function clearCookiesAndReload() {
+        // Çerezleri temizle
+        document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        
+        // Sayfayı yeniden yükle
+        window.location.reload();
     }
 
     // İçeriği yükle
