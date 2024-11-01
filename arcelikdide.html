@@ -5,27 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pop Kodları Seçim Sistemi</title>
     <style>
-        body {
-            font-family: Arial, sans-serif; /* Modern bir yazı tipi */
-            background-color: #f4f4f4; /* Sayfa arka plan rengi */
-            margin: 0;
-            padding: 0;
-        }
-
         .header {
-            font-size: 28px; /* Başlık boyutu */
+            font-size: 24px;
             font-weight: bold;
-            color: #fff; /* Yazı rengi beyaz */
+            color: #fff; /* Yazı rengini beyaz yaparak kontrastı artırdık */
             text-align: center;
-            padding: 20px; /* Padding artırıldı */
-            margin-bottom: 30px; /* Alt boşluk artırıldı */
-            background: linear-gradient(135deg, #8B0000, #FF4500); /* Koyu kırmızıdan turuncuya degrade */
-            border-radius: 12px; /* Daha yuvarlak kenarlar */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5); /* Gölge efekti */
+            padding: 15px;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, #ff5c5c, #8b0000); /* Kırmızıdan koyu kırmızıya gradyan */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             text-transform: uppercase;
-            letter-spacing: 1.5px; /* Harf aralığı artırıldı */
+            letter-spacing: 1px;
         }
-
         .container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -34,18 +26,13 @@
         .checkbox-label {
             display: flex;
             align-items: center;
-            padding: 10px; /* Padding artırıldı */
-            font-size: 16px; /* Yazı boyutu artırıldı */
+            padding: 5px;
+            font-size: 14px;
             cursor: pointer;
             justify-content: center;
             border: 1px solid #ddd;
-            border-radius: 6px; /* Daha yuvarlak kenarlar */
+            border-radius: 4px;
             background-color: #f9f9f9;
-            transition: background-color 0.3s, transform 0.2s; /* Geçiş efektleri */
-        }
-        .checkbox-label:hover {
-            background-color: #e0e0e0; /* Üzerine gelince arka plan rengi değişir */
-            transform: scale(1.05); /* Hafif büyüme efekti */
         }
         .checkbox {
             margin-right: 5px;
@@ -64,22 +51,15 @@
         }
         .copy-button, .clear-button {
             margin-top: 10px;
-            padding: 10px 15px; /* Buton boyutu artırıldı */
+            padding: 5px 10px;
             background-color: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
-            border-radius: 6px; /* Daha yuvarlak kenarlar */
-            transition: background-color 0.3s; /* Geçiş efekti */
+            border-radius: 4px;
         }
         .clear-button {
             background-color: #f44336; /* Kırmızı */
-        }
-        .copy-button:hover {
-            background-color: #45a049; /* Üzerine gelince yeşil daha koyu */
-        }
-        .clear-button:hover {
-            background-color: #d32f2f; /* Üzerine gelince kırmızı daha koyu */
         }
     </style>
 </head>
