@@ -17,7 +17,6 @@
             padding: 15px;
             background-color: white;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            display: none; /* İçeriği başta gizle */
         }
         .header {
             font-size: 24px;
@@ -32,72 +31,87 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        /* Diğer stiller aynı kalacak */
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 3px;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .checkbox {
+            margin-right: 5px;
+        }
+        .red {
+            color: red;
+        }
+        .blue {
+            color: blue;
+        }
+        .button-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .copy-button, .clear-button, .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+            text-align: center;
+        }
+        .clear-button {
+            background-color: #f44336;
+        }
+        .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button {
+            background-color: #008CBA;
+        }
+        /* Yeni eklenen footer stili */
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #333;
+            margin-top: 15px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 
-<div class="frame" id="protectedContent">
+<div class="frame">
     <h2 class="header">Arçelik Pop Kodları</h2>
     <div class="container" id="popCodesContainer">
         <!-- Pop Kodları buraya JavaScript ile eklenecek -->
     </div>
+
     <div class="button-container">
         <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
         <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
-        <!-- Diğer butonlar aynı -->
+
+        <button class="select-giris-button" onclick="selectGirisCodes()">Giriş</button>
+        <button class="select-specific-button" onclick="selectBeyazEsyaCodes()">Beyaz Eşya</button>
+        <button class="select-kea-button" onclick="selectKeaCodes()">KEA</button>
+        <button class="select-ankastre-button" onclick="selectAnkastreCodes()">Ankastre</button>
+        <button class="select-tv-button" onclick="selectTvCodes()">TV</button>
     </div>
+
+    <!-- Yeni eklenen metin -->
     <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
 </div>
 
 <script>
-    function setCookie(name, value, minutes) {
-        const date = new Date();
-        date.setTime(date.getTime() + (minutes * 60 * 1000));
-        document.cookie = `${name}=${value};expires=${date.toUTCString()};path=/`;
-    }
-    
-    function getCookie(name) {
-        const nameEQ = name + "=";
-        const ca = document.cookie.split(';');
-        for(let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) === ' ') c = c.substring(1);
-            if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-        }
-        return null;
-    }
-    
-    function deleteCookies() {
-        document.cookie.split(";").forEach(cookie => {
-            document.cookie = cookie.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date(0).toUTCString() + ";path=/");
-        });
-    }
-
-    async function checkPassword() {
-        const savedPassword = getCookie("authenticated");
-        if (savedPassword) {
-            document.getElementById("protectedContent").style.display = "block"; // Parola doğruysa içeriği göster
-            return;
-        }
-
-        const response = await fetch("https://mkotbas.github.io/mlharc/mp4827.html");
-        const text = await response.text();
-        const validPasswords = [...text.matchAll(/"([^"]+)"/g)].map(match => match[1]);
-
-        const enteredPassword = prompt("Parola giriniz:");
-        if (validPasswords.includes(enteredPassword)) {
-            setCookie("authenticated", true, 10);
-            document.getElementById("protectedContent").style.display = "block"; // Parola doğruysa içeriği göster
-        } else {
-            alert("Yanlış parola! Tekrar deneyin.");
-            deleteCookies();
-            location.reload();
-        }
-    }
-
-    checkPassword();
-
     const popCodes = [
         "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
         "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
