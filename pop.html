@@ -78,7 +78,6 @@
         .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button {
             background-color: #008CBA;
         }
-        /* Yeni eklenen footer stili */
         .footer {
             text-align: center;
             font-size: 14px;
@@ -90,7 +89,7 @@
 </head>
 <body>
 
-<div class="frame">
+<div class="frame" id="content" style="display:none;">
     <h2 class="header">Arçelik Pop Kodları</h2>
     <div class="container" id="popCodesContainer">
         <!-- Pop Kodları buraya JavaScript ile eklenecek -->
@@ -107,11 +106,69 @@
         <button class="select-tv-button" onclick="selectTvCodes()">TV</button>
     </div>
 
-    <!-- Yeni eklenen metin -->
     <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
 </div>
 
 <script>
+    // Parola kontrolü ve çerez işlemleri
+    const validPasswords = [];
+    
+    fetch('https://mkotbas.github.io/mlharc/mp4827.html')
+        .then(response => response.text())
+        .then(data => {
+            const matches = data.match(/"([^"]+)"/g);
+            if (matches) {
+                validPasswords.push(...matches.map(match => match.replace(/"/g, '')));
+            }
+            checkPassword();
+        });
+
+    function checkPassword() {
+        const password = getCookie("password");
+        const accessTime = getCookie("access_time");
+        const now = Date.now();
+        if (password && accessTime && (now - accessTime < 10 * 60 * 1000)) {
+            showContent();
+        } else {
+            askForPassword();
+        }
+    }
+
+    function askForPassword() {
+        const password = prompt("Parolayı girin:");
+        if (validPasswords.includes(password)) {
+            setCookie("password", password, 10); // 10 dakika geçerli
+            setCookie("access_time", Date.now(), 10); // 10 dakika geçerli
+            showContent();
+        } else {
+            alert("Yanlış parola! Lütfen tekrar deneyin.");
+            clearCookies();
+            askForPassword();
+        }
+    }
+
+    function showContent() {
+        document.getElementById('content').style.display = 'block';
+        loadPopCodes();
+    }
+
+    function clearCookies() {
+        document.cookie = "password=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "access_time=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    }
+
+    function setCookie(name, value, minutes) {
+        const expires = new Date(Date.now() + minutes * 60 * 1000).toUTCString();
+        document.cookie = `${name}=${value}; expires=${expires}; path=/;`;
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    // Pop kodları ve diğer fonksiyonlar
     const popCodes = [
         "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
         "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
@@ -125,21 +182,23 @@
     const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
     const popCodesContainer = document.getElementById('popCodesContainer');
 
-    popCodes.forEach(code => {
-        const label = document.createElement('label');
-        label.classList.add('checkbox-label');
-        if (redCodes.includes(code)) label.classList.add('red');
-        if (blueCodes.includes(code)) label.classList.add('blue');
+    function loadPopCodes() {
+        popCodes.forEach(code => {
+            const label = document.createElement('label');
+            label.classList.add('checkbox-label');
+            if (redCodes.includes(code)) label.classList.add('red');
+            if (blueCodes.includes(code)) label.classList.add('blue');
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = code;
-        checkbox.classList.add('checkbox');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = code;
+            checkbox.classList.add('checkbox');
 
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(code));
-        popCodesContainer.appendChild(label);
-    });
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(code));
+            popCodesContainer.appendChild(label);
+        });
+    }
 
     function copySelectedCodes() {
         const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
