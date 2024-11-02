@@ -112,7 +112,7 @@
 <script>
     // Parola kontrolü ve çerez işlemleri
     const validPasswords = [];
-    
+
     fetch('https://mkotbas.github.io/mlharc/mp4827.html')
         .then(response => response.text())
         .then(data => {
@@ -127,13 +127,17 @@
         const password = getCookie("password");
         const accessTime = getCookie("access_time");
         const now = Date.now();
+        
+        // Kullanıcının parola süresini kontrol et
         if (password && accessTime && (now - accessTime < 10 * 60 * 1000)) {
             showContent();
+            // Süre dolduğunda çerezleri temizle ve sayfayı yenile
             setTimeout(() => {
                 clearCookies();
-                location.reload(); // Sayfa yenileme
-            }, 10 * 60 * 1000); // 10 dakika sonra sayfa yenilenecek
+                location.reload();
+            }, 10 * 60 * 1000);
         } else {
+            // Parola sor
             askForPassword();
         }
     }
@@ -144,10 +148,11 @@
             setCookie("password", password, 10); // 10 dakika geçerli
             setCookie("access_time", Date.now(), 10); // 10 dakika geçerli
             showContent();
+            // Süre dolduğunda çerezleri temizle ve sayfayı yenile
             setTimeout(() => {
                 clearCookies();
-                location.reload(); // Sayfa yenileme
-            }, 10 * 60 * 1000); // 10 dakika sonra sayfa yenilenecek
+                location.reload();
+            }, 10 * 60 * 1000);
         } else {
             alert("Yanlış parola! Lütfen tekrar deneyin.");
             clearCookies();
