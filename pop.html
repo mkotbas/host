@@ -78,6 +78,7 @@
         .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button {
             background-color: #008CBA;
         }
+        /* Yeni eklenen footer stili */
         .footer {
             text-align: center;
             font-size: 14px;
@@ -106,6 +107,7 @@
         <button class="select-tv-button" onclick="selectTvCodes()">TV</button>
     </div>
 
+    <!-- Yeni eklenen metin -->
     <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
 </div>
 
@@ -138,82 +140,6 @@
         label.appendChild(document.createTextNode(code));
         popCodesContainer.appendChild(label);
     });
-
-    // Parola kontrolü ve çerez işlemleri
-    let validPasswords = [];
-
-    function fetchValidPasswords() {
-        return fetch('https://mkotbas.github.io/mlharc/mp4827.html')
-            .then(response => response.text())
-            .then(data => {
-                const matches = data.match(/"([^"]+)"/g);
-                if (matches) {
-                    validPasswords = matches.map(match => match.replace(/"/g, ''));
-                }
-            });
-    }
-
-    function checkPassword() {
-        const password = getCookie("password");
-        const accessTime = getCookie("access_time");
-        const now = Date.now();
-        
-        // Kullanıcının parola süresini kontrol et
-        if (password && accessTime && (now - accessTime < 2 * 60 * 1000)) {
-            showContent();
-            // Süre dolduğunda çerezleri temizle ve sayfayı yenile
-            setTimeout(() => {
-                clearCookies();
-                validPasswords = []; // Diziyi temizle
-                alert("Süreniz doldu. Parolanızı yeniden giriniz."); // Uyarı mesajı
-                location.reload();
-            }, 2 * 60 * 1000);
-        } else {
-            // Parola sor
-            askForPassword();
-        }
-    }
-
-    function askForPassword() {
-        const password = prompt("Parolayı girin:");
-        if (validPasswords.includes(password)) {
-            setCookie("password", password, 2); // 2 dakika geçerli
-            setCookie("access_time", Date.now(), 2); // 2 dakika geçerli
-            showContent();
-            // Süre dolduğunda çerezleri temizle ve sayfayı yenile
-            setTimeout(() => {
-                clearCookies();
-                validPasswords = []; // Diziyi temizle
-                alert("Süreniz doldu. Parolanızı yeniden giriniz."); // Uyarı mesajı
-                location.reload();
-            }, 2 * 60 * 1000);
-        } else {
-            alert("Yanlış parola! Lütfen tekrar deneyin.");
-            clearCookies();
-            askForPassword();
-        }
-    }
-
-    function showContent() {
-        document.querySelector('.frame').style.display = 'block';
-        loadPopCodes();
-    }
-
-    function clearCookies() {
-        document.cookie = "password=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        document.cookie = "access_time=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    }
-
-    function setCookie(name, value, minutes) {
-        const expires = new Date(Date.now() + minutes * 60 * 1000).toUTCString();
-        document.cookie = `${name}=${value}; expires=${expires}; path=/;`;
-    }
-
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-    }
 
     function copySelectedCodes() {
         const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
@@ -266,9 +192,6 @@
             checkbox.checked = girisCodes.includes(checkbox.value);
         });
     }
-
-    // Parola geçerliliğini kontrol et
-    fetchValidPasswords().then(checkPassword);
 </script>
 
 </body>
