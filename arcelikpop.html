@@ -62,7 +62,7 @@
             gap: 10px;
             margin-top: 20px;
         }
-        .copy-button, .clear-button, .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button {
+        .copy-button, .clear-button, .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button {
             padding: 10px;
             background-color: #4CAF50;
             color: white;
@@ -75,7 +75,7 @@
         .clear-button {
             background-color: #f44336;
         }
-        .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button {
+        .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button {
             background-color: #008CBA;
         }
     </style>
@@ -95,6 +95,7 @@
         <button class="select-kea-button" onclick="selectKeaCodes()">KEA</button>
         <button class="select-ankastre-button" onclick="selectAnkastreCodes()">Ankastre</button>
         <button class="select-tv-button" onclick="selectTvCodes()">TV</button>
+        <button class="select-giris-button" onclick="selectGirisCodes()">Giriş</button>
     </div>
 </div>
 
@@ -183,6 +184,16 @@
         const tvCodes = ["100047", "100040", "100041", "100042", "100043", "100044", "100045", "100046"];
         document.querySelectorAll('.checkbox').forEach(checkbox => {
             if (tvCodes.includes(checkbox.value)) {
+                checkbox.checked = true;
+            }
+        });
+    }
+
+    // Giriş kodlarını seç
+    function selectGirisCodes() {
+        const girisCodes = ["100001", "100002", "100003"];
+        document.querySelectorAll('.checkbox').forEach(checkbox => {
+            if (girisCodes.includes(checkbox.value)) {
                 checkbox.checked = true;
             }
         });
