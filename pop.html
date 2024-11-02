@@ -62,7 +62,7 @@
             gap: 10px;
             margin-top: 20px;
         }
-        .copy-button, .clear-button, .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button, .plus-button {
+        .copy-button, .clear-button, .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button, .select-aritma-button {
             padding: 10px;
             background-color: #4CAF50;
             color: white;
@@ -75,7 +75,7 @@
         .clear-button {
             background-color: #f44336;
         }
-        .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button, .plus-button {
+        .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button, .select-aritma-button {
             background-color: #008CBA;
         }
         /* Yeni eklenen footer stili */
@@ -105,8 +105,7 @@
         <button class="select-kea-button" onclick="selectKeaCodes()">KEA</button>
         <button class="select-ankastre-button" onclick="selectAnkastreCodes()">Ankastre</button>
         <button class="select-tv-button" onclick="selectTvCodes()">TV</button>
-        <!-- Yeni buton eklendi -->
-        <button class="plus-button" onclick="selectRedCodes()">Plus</button>
+        <button class="select-aritma-button" onclick="selectAritmaCodes()">Arıtma</button>
     </div>
 
     <!-- Yeni eklenen metin -->
@@ -176,9 +175,9 @@
         toggleSelection(girisCodes);
     }
 
-    function selectRedCodes() {
-        const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
-        toggleSelection(redCodes);
+    function selectAritmaCodes() {
+        const aritmaCodes = ["100048", "100049", "100050", "100051", "100052", "100053", "100054", "100055", "100056"];
+        toggleSelection(aritmaCodes);
     }
 
     function copySelectedCodes() {
