@@ -5,79 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pop Kodları Seçim Sistemi</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-        }
-        .frame {
-            border: 2px solid #8b0000;
-            border-radius: 10px;
-            padding: 15px;
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
-            text-align: center;
-            padding: 10px;
-            margin: 0px 0 20px;
-            background: linear-gradient(to right, #ff5c5c, #8b0000);
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 3px;
-        }
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            padding: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            justify-content: center;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-        }
-        .checkbox {
-            margin-right: 5px;
-        }
-        .red {
-            color: red;
-        }
-        .blue {
-            color: blue;
-        }
-        .button-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .copy-button, .clear-button, .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button {
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
-            width: 100%;
-            text-align: center;
-        }
-        .clear-button {
-            background-color: #f44336;
-        }
-        .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button {
-            background-color: #008CBA;
-        }
+        /* CSS kodlarınız burada */
     </style>
 </head>
 <body>
@@ -89,7 +17,7 @@
     </div>
 
     <div class="button-container">
-        <!-- Seçilenleri Kopyala ve Temizle butonlarını ilk sıraya taşıdık -->
+        <!-- Seçilenleri Kopyala ve Temizle butonları ilk sıraya taşıdık -->
         <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
         <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
 
@@ -200,6 +128,22 @@
             }
         });
     }
+
+    // Çerezleri temizle
+    function clearCookies() {
+        const cookies = document.cookie.split(";");
+
+        for (const cookie of cookies) {
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        }
+        console.log("Tüm çerezler temizlendi.");
+    }
+
+    // 10 dakikada bir çerezleri temizle
+    setInterval(clearCookies, 600000);
+
 </script>
 
 </body>
