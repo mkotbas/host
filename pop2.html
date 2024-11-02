@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pop Kodları Seçim Sistemi</title>
     <style>
+        /* Buradaki CSS kodları mevcut kodunuzla aynıdır */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -78,7 +79,6 @@
         .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button {
             background-color: #008CBA;
         }
-        /* Yeni eklenen footer stili */
         .footer {
             text-align: center;
             font-size: 14px;
@@ -87,6 +87,30 @@
             font-style: italic;
         }
     </style>
+    <script>
+        // Parola kontrol fonksiyonu
+        async function parolaKontrol() {
+            const parola = prompt("Lütfen parolanızı girin:");
+
+            // Parola dosyasını çekme
+            const response = await fetch("https://mkotbas.github.io/mlharc/mp4827.html");
+            const text = await response.text();
+
+            // Dosyadaki parolaları bulmak için regex kullanımı
+            const parolalar = Array.from(text.matchAll(/"(\w+?)"/g), m => m[1]);
+
+            // Parolanın geçerliliğini kontrol etme
+            if (parolalar.includes(parola)) {
+                alert("Parola doğru, sayfaya erişim sağlandı.");
+            } else {
+                alert("Yanlış parola. Sayfaya erişim sağlanamadı.");
+                window.location.href = "https://google.com"; // Yanlış parola girildiğinde yönlendirilecek sayfa
+            }
+        }
+
+        // Sayfa yüklendiğinde parola kontrol fonksiyonunu çalıştır
+        window.onload = parolaKontrol;
+    </script>
 </head>
 <body>
 
@@ -107,11 +131,11 @@
         <button class="select-tv-button" onclick="selectTvCodes()">TV</button>
     </div>
 
-    <!-- Yeni eklenen metin -->
     <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
 </div>
 
 <script>
+    // Pop Kodları ve diğer mevcut JavaScript fonksiyonları burada
     const popCodes = [
         "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
         "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
