@@ -111,17 +111,18 @@
 
 <script>
     // Parola kontrolü ve çerez işlemleri
-    const validPasswords = [];
+    let validPasswords = [];
 
-    fetch('https://mkotbas.github.io/mlharc/mp4827.html')
-        .then(response => response.text())
-        .then(data => {
-            const matches = data.match(/"([^"]+)"/g);
-            if (matches) {
-                validPasswords.push(...matches.map(match => match.replace(/"/g, '')));
-            }
-            checkPassword();
-        });
+    function fetchValidPasswords() {
+        return fetch('https://mkotbas.github.io/mlharc/mp4827.html')
+            .then(response => response.text())
+            .then(data => {
+                const matches = data.match(/"([^"]+)"/g);
+                if (matches) {
+                    validPasswords = matches.map(match => match.replace(/"/g, ''));
+                }
+            });
+    }
 
     function checkPassword() {
         const password = getCookie("password");
@@ -129,13 +130,14 @@
         const now = Date.now();
         
         // Kullanıcının parola süresini kontrol et
-        if (password && accessTime && (now - accessTime < 10 * 60 * 1000)) {
+        if (password && accessTime && (now - accessTime < 5 * 60 * 1000)) {
             showContent();
             // Süre dolduğunda çerezleri temizle ve sayfayı yenile
             setTimeout(() => {
                 clearCookies();
+                validPasswords = []; // Diziyi temizle
                 location.reload();
-            }, 10 * 60 * 1000);
+            }, 5 * 60 * 1000);
         } else {
             // Parola sor
             askForPassword();
@@ -145,14 +147,15 @@
     function askForPassword() {
         const password = prompt("Parolayı girin:");
         if (validPasswords.includes(password)) {
-            setCookie("password", password, 10); // 10 dakika geçerli
-            setCookie("access_time", Date.now(), 10); // 10 dakika geçerli
+            setCookie("password", password, 5); // 5 dakika geçerli
+            setCookie("access_time", Date.now(), 5); // 5 dakika geçerli
             showContent();
             // Süre dolduğunda çerezleri temizle ve sayfayı yenile
             setTimeout(() => {
                 clearCookies();
+                validPasswords = []; // Diziyi temizle
                 location.reload();
-            }, 10 * 60 * 1000);
+            }, 5 * 60 * 1000);
         } else {
             alert("Yanlış parola! Lütfen tekrar deneyin.");
             clearCookies();
@@ -206,7 +209,6 @@
             checkbox.type = 'checkbox';
             checkbox.value = code;
             checkbox.classList.add('checkbox');
-
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(code));
             popCodesContainer.appendChild(label);
@@ -262,6 +264,11 @@
             checkbox.checked = girisCodes.includes(checkbox.value);
         });
     }
+
+    // Sayfa yüklendiğinde parolaları al ve kontrol et
+    fetchValidPasswords().then(() => {
+        checkPassword();
+    });
 </script>
 
 </body>
