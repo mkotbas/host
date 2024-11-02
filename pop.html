@@ -89,7 +89,7 @@
 </head>
 <body>
 
-<div class="frame" id="content" style="display:none;">
+<div class="frame">
     <h2 class="header">Arçelik Pop Kodları</h2>
     <div class="container" id="popCodesContainer">
         <!-- Pop Kodları buraya JavaScript ile eklenecek -->
@@ -110,6 +110,35 @@
 </div>
 
 <script>
+    const popCodes = [
+        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
+        "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
+        "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
+        "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
+        "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
+        "100055", "100056", "100061", "100062", "100063"
+    ];
+
+    const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
+    const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
+    const popCodesContainer = document.getElementById('popCodesContainer');
+
+    popCodes.forEach(code => {
+        const label = document.createElement('label');
+        label.classList.add('checkbox-label');
+        if (redCodes.includes(code)) label.classList.add('red');
+        if (blueCodes.includes(code)) label.classList.add('blue');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = code;
+        checkbox.classList.add('checkbox');
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(code));
+        popCodesContainer.appendChild(label);
+    });
+
     // Parola kontrolü ve çerez işlemleri
     let validPasswords = [];
 
@@ -130,7 +159,7 @@
         const now = Date.now();
         
         // Kullanıcının parola süresini kontrol et
-        if (password && accessTime && (now - accessTime < 5 * 60 * 1000)) {
+        if (password && accessTime && (now - accessTime < 2 * 60 * 1000)) {
             showContent();
             // Süre dolduğunda çerezleri temizle ve sayfayı yenile
             setTimeout(() => {
@@ -138,7 +167,7 @@
                 validPasswords = []; // Diziyi temizle
                 alert("Süreniz doldu. Parolanızı yeniden giriniz."); // Uyarı mesajı
                 location.reload();
-            }, 5 * 60 * 1000);
+            }, 2 * 60 * 1000);
         } else {
             // Parola sor
             askForPassword();
@@ -148,8 +177,8 @@
     function askForPassword() {
         const password = prompt("Parolayı girin:");
         if (validPasswords.includes(password)) {
-            setCookie("password", password, 5); // 5 dakika geçerli
-            setCookie("access_time", Date.now(), 5); // 5 dakika geçerli
+            setCookie("password", password, 2); // 2 dakika geçerli
+            setCookie("access_time", Date.now(), 2); // 2 dakika geçerli
             showContent();
             // Süre dolduğunda çerezleri temizle ve sayfayı yenile
             setTimeout(() => {
@@ -157,7 +186,7 @@
                 validPasswords = []; // Diziyi temizle
                 alert("Süreniz doldu. Parolanızı yeniden giriniz."); // Uyarı mesajı
                 location.reload();
-            }, 5 * 60 * 1000);
+            }, 2 * 60 * 1000);
         } else {
             alert("Yanlış parola! Lütfen tekrar deneyin.");
             clearCookies();
@@ -166,7 +195,7 @@
     }
 
     function showContent() {
-        document.getElementById('content').style.display = 'block';
+        document.querySelector('.frame').style.display = 'block';
         loadPopCodes();
     }
 
@@ -186,40 +215,14 @@
         if (parts.length === 2) return parts.pop().split(';').shift();
     }
 
-    // Pop kodları ve diğer fonksiyonlar
-    const popCodes = [
-        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
-        "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
-        "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
-        "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
-        "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
-        "100055", "100056", "100061", "100062", "100063"
-    ];
-
-    const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
-    const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
-    const popCodesContainer = document.getElementById('popCodesContainer');
-
-    function loadPopCodes() {
-        popCodes.forEach(code => {
-            const label = document.createElement('label');
-            label.classList.add('checkbox-label');
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'checkbox';
-            checkbox.value = code;
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(code));
-            popCodesContainer.appendChild(label);
-        });
-    }
-
     function copySelectedCodes() {
-        const selectedCodes = [...document.querySelectorAll('.checkbox:checked')].map(cb => cb.value);
-        if (selectedCodes.length > 0) {
-            navigator.clipboard.writeText(selectedCodes.join(', '))
-                .then(() => alert("Seçilen kodlar kopyalandı!"))
-                .catch(err => alert("Kopyalama başarısız oldu: " + err));
+        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+        const textToCopy = selectedCodes.join(", ");
+        
+        if (textToCopy) {
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => alert("POP Kodlarınız Kopyalandı!"))
+                .catch(err => alert("Kopyalama hatası: " + err));
         } else {
             alert("Kopyalanacak kod seçilmedi.");
         }
@@ -264,10 +267,8 @@
         });
     }
 
-    // Sayfa yüklendiğinde parolaları al ve kontrol et
-    fetchValidPasswords().then(() => {
-        checkPassword();
-    });
+    // Parola geçerliliğini kontrol et
+    fetchValidPasswords().then(checkPassword);
 </script>
 
 </body>
