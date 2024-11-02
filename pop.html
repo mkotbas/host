@@ -129,6 +129,10 @@
         const now = Date.now();
         if (password && accessTime && (now - accessTime < 10 * 60 * 1000)) {
             showContent();
+            setTimeout(() => {
+                clearCookies();
+                location.reload(); // Sayfa yenileme
+            }, 10 * 60 * 1000); // 10 dakika sonra sayfa yenilenecek
         } else {
             askForPassword();
         }
@@ -140,6 +144,10 @@
             setCookie("password", password, 10); // 10 dakika geçerli
             setCookie("access_time", Date.now(), 10); // 10 dakika geçerli
             showContent();
+            setTimeout(() => {
+                clearCookies();
+                location.reload(); // Sayfa yenileme
+            }, 10 * 60 * 1000); // 10 dakika sonra sayfa yenilenecek
         } else {
             alert("Yanlış parola! Lütfen tekrar deneyin.");
             clearCookies();
@@ -201,13 +209,11 @@
     }
 
     function copySelectedCodes() {
-        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
-        const textToCopy = selectedCodes.join(", ");
-        
-        if (textToCopy) {
-            navigator.clipboard.writeText(textToCopy)
-                .then(() => alert("POP Kodlarınız Kopyalandı!"))
-                .catch(err => alert("Kopyalama hatası: " + err));
+        const selectedCodes = [...document.querySelectorAll('.checkbox:checked')].map(cb => cb.value);
+        if (selectedCodes.length > 0) {
+            navigator.clipboard.writeText(selectedCodes.join(', '))
+                .then(() => alert("Seçilen kodlar kopyalandı!"))
+                .catch(err => alert("Kopyalama başarısız oldu: " + err));
         } else {
             alert("Kopyalanacak kod seçilmedi.");
         }
