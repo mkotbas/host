@@ -136,6 +136,7 @@
             setTimeout(() => {
                 clearCookies();
                 validPasswords = []; // Diziyi temizle
+                alert("Süreniz doldu. Parolanızı yeniden giriniz."); // Uyarı mesajı
                 location.reload();
             }, 5 * 60 * 1000);
         } else {
@@ -154,6 +155,7 @@
             setTimeout(() => {
                 clearCookies();
                 validPasswords = []; // Diziyi temizle
+                alert("Süreniz doldu. Parolanızı yeniden giriniz."); // Uyarı mesajı
                 location.reload();
             }, 5 * 60 * 1000);
         } else {
@@ -202,13 +204,10 @@
         popCodes.forEach(code => {
             const label = document.createElement('label');
             label.classList.add('checkbox-label');
-            if (redCodes.includes(code)) label.classList.add('red');
-            if (blueCodes.includes(code)) label.classList.add('blue');
-
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
+            checkbox.className = 'checkbox';
             checkbox.value = code;
-            checkbox.classList.add('checkbox');
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(code));
             popCodesContainer.appendChild(label);
