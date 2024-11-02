@@ -60,6 +60,7 @@
             border-collapse: collapse;
             font-size: 14px;
             margin-bottom: 30px;
+            table-layout: fixed; /* Tablonun sabit boyutlandırma */
         }
         th, td {
             border: 1px solid #ddd;
@@ -95,6 +96,32 @@
             color: #333;
             margin-top: 15px;
             font-style: italic;
+        }
+        
+        /* Paket İçi ve Total sütunları ortala */
+        th:nth-child(2),
+        th:nth-child(4),
+        td:nth-child(2),
+        td:nth-child(4) {
+            text-align: center;
+        }
+
+        /* Tabloların başlık ve hücre genişlikleri */
+        th:nth-child(1),
+        td:nth-child(1) {
+            width: 50%; /* Pleksi sütunu genişliği */
+        }
+        th:nth-child(2),
+        td:nth-child(2) {
+            width: 20%; /* Paket İçi sütunu genişliği */
+        }
+        th:nth-child(3),
+        td:nth-child(3) {
+            width: 20%; /* Adet sütunu genişliği */
+        }
+        th:nth-child(4),
+        td:nth-child(4) {
+            width: 20%; /* Total sütunu genişliği */
         }
     </style>
 </head>
