@@ -141,6 +141,39 @@
         popCodesContainer.appendChild(label);
     });
 
+    function toggleSelection(codes) {
+        document.querySelectorAll('.checkbox').forEach(checkbox => {
+            if (codes.includes(checkbox.value)) {
+                checkbox.checked = !checkbox.checked;
+            }
+        });
+    }
+
+    function selectBeyazEsyaCodes() {
+        const beyazEsyaCodes = ["100004", "100005", "100006", "100007", "100008", "100009", "100010", "100011", "100060", "100012", "100013", "100014"];
+        toggleSelection(beyazEsyaCodes);
+    }
+
+    function selectKeaCodes() {
+        const keaCodes = ["100015", "100016", "100017", "100018", "100019", "100020", "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031", "100032", "100033", "100034"];
+        toggleSelection(keaCodes);
+    }
+
+    function selectAnkastreCodes() {
+        const ankastreCodes = ["100035", "100036", "100037", "100038"];
+        toggleSelection(ankastreCodes);
+    }
+
+    function selectTvCodes() {
+        const tvCodes = ["100047", "100040", "100041", "100042", "100043", "100044", "100045", "100046"];
+        toggleSelection(tvCodes);
+    }
+
+    function selectGirisCodes() {
+        const girisCodes = ["100001", "100002", "100003", "100061", "100062", "100063"];
+        toggleSelection(girisCodes);
+    }
+
     function copySelectedCodes() {
         const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
         const textToCopy = selectedCodes.join(", ");
@@ -156,41 +189,6 @@
 
     function clearSelectedCodes() {
         document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
-    }
-
-    function selectBeyazEsyaCodes() {
-        const beyazEsyaCodes = ["100004", "100005", "100006", "100007", "100008", "100009", "100010", "100011", "100060", "100012", "100013", "100014"];
-        document.querySelectorAll('.checkbox').forEach(checkbox => {
-            checkbox.checked = beyazEsyaCodes.includes(checkbox.value);
-        });
-    }
-
-    function selectKeaCodes() {
-        const keaCodes = ["100015", "100016", "100017", "100018", "100019", "100020", "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031", "100032", "100033", "100034"];
-        document.querySelectorAll('.checkbox').forEach(checkbox => {
-            checkbox.checked = keaCodes.includes(checkbox.value);
-        });
-    }
-
-    function selectAnkastreCodes() {
-        const ankastreCodes = ["100035", "100036", "100037", "100038"];
-        document.querySelectorAll('.checkbox').forEach(checkbox => {
-            checkbox.checked = ankastreCodes.includes(checkbox.value);
-        });
-    }
-
-    function selectTvCodes() {
-        const tvCodes = ["100047", "100040", "100041", "100042", "100043", "100044", "100045", "100046"];
-        document.querySelectorAll('.checkbox').forEach(checkbox => {
-            checkbox.checked = tvCodes.includes(checkbox.value);
-        });
-    }
-
-    function selectGirisCodes() {
-        const girisCodes = ["100001", "100002", "100003", "100061", "100062", "100063"];
-        document.querySelectorAll('.checkbox').forEach(checkbox => {
-            checkbox.checked = girisCodes.includes(checkbox.value);
-        });
     }
 </script>
 
