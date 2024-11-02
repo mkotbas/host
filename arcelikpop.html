@@ -89,13 +89,15 @@
     </div>
 
     <div class="button-container">
-        <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
-        <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
         <button class="select-giris-button" onclick="selectGirisCodes()">Giriş</button>
         <button class="select-specific-button" onclick="selectBeyazEsyaCodes()">Beyaz Eşya</button>
         <button class="select-kea-button" onclick="selectKeaCodes()">KEA</button>
         <button class="select-ankastre-button" onclick="selectAnkastreCodes()">Ankastre</button>
         <button class="select-tv-button" onclick="selectTvCodes()">TV</button>
+        
+        <!-- Seçilenleri Kopyala ve Temizle butonlarını TV butonunun sağına ekledik -->
+        <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
+        <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
     </div>
 </div>
 
@@ -181,7 +183,7 @@
 
     // TV kodlarını seç
     function selectTvCodes() {
-        const tvCodes = ["100047", "100040", "100041", "100042", "100043", "100044", "100045", "100046"];
+        const tvCodes = ["100001", "100002", "100003"];
         document.querySelectorAll('.checkbox').forEach(checkbox => {
             if (tvCodes.includes(checkbox.value)) {
                 checkbox.checked = true;
@@ -191,7 +193,7 @@
 
     // Giriş kodlarını seç
     function selectGirisCodes() {
-        const girisCodes = ["100001", "100002", "100003"];
+        const girisCodes = ["100040", "100041", "100042", "100043", "100044", "100045", "100046", "100047", "100048", "100049", "100050", "100051", "100052", "100053", "100054", "100055", "100056"];
         document.querySelectorAll('.checkbox').forEach(checkbox => {
             if (girisCodes.includes(checkbox.value)) {
                 checkbox.checked = true;
