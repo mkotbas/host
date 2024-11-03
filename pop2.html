@@ -89,7 +89,7 @@
 </head>
 <body>
 
-<div class="frame">
+<div class="frame" style="display: none;"> <!-- Başlangıçta gizli -->
     <h2 class="header">Arçelik Pop Kodları</h2>
     <div class="container" id="popCodesContainer">
         <!-- Pop Kodları buraya JavaScript ile eklenecek -->
@@ -98,7 +98,6 @@
     <div class="button-container">
         <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
         <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
-
         <button class="select-giris-button" onclick="selectGirisCodes()">Giriş</button>
         <button class="select-specific-button" onclick="selectBeyazEsyaCodes()">Beyaz Eşya</button>
         <button class="select-kea-button" onclick="selectKeaCodes()">KEA</button>
@@ -111,83 +110,34 @@
 </div>
 
 <script>
-    const passwordURL = 'https://mkotbas.github.io/mlharc/mp4827.html';
-    let passwords = [];
+    const popCodes = [
+        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
+        "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
+        "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
+        "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
+        "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
+        "100055", "100056", "100061", "100062", "100063"
+    ];
+
+    const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
+    const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
     const popCodesContainer = document.getElementById('popCodesContainer');
 
-    // Melih Güvenlik Sistemi kaldırma
-    const REMOVE_SECURITY_SYSTEM = false; // Sistemi kaldırmak için true yap
+    popCodes.forEach(code => {
+        const label = document.createElement('label');
+        label.classList.add('checkbox-label');
+        if (redCodes.includes(code)) label.classList.add('red');
+        if (blueCodes.includes(code)) label.classList.add('blue');
 
-    if (REMOVE_SECURITY_SYSTEM) {
-        console.log("Melih Güvenlik Sistemi kaldırıldı.");
-    } else {
-        fetch(passwordURL)
-            .then(response => {
-                if (!response.ok) throw new Error('Ağ hatası');
-                return response.text();
-            })
-            .then(data => {
-                passwords = data.split(','); // Parolaları virgülle ayır
-                checkAccess();
-            })
-            .catch(error => {
-                alert('Parolalar alınamadı. Sayfa yenilenecek.');
-                location.reload();
-            });
-    }
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = code;
+        checkbox.classList.add('checkbox');
 
-    function checkAccess() {
-        const storedTime = localStorage.getItem('accessTime');
-        const currentTime = Date.now();
-        const tenMinutes = 10 * 60 * 1000;
-
-        if (storedTime && (currentTime - storedTime < tenMinutes)) {
-            initializePopCodes();
-            return;
-        }
-
-        const enteredPassword = prompt('Parolanızı girin:');
-        if (passwords.includes(enteredPassword)) {
-            localStorage.setItem('accessTime', currentTime);
-            initializePopCodes();
-        } else {
-            alert('Yanlış parola! Sayfa yenilenecek.');
-            localStorage.clear();
-            location.reload();
-        }
-    }
-
-    function initializePopCodes() {
-        const popCodes = [
-            "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
-            "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
-            "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
-            "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
-            "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
-            "100055", "100056", "100061", "100062", "100063"
-        ];
-
-        const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
-        const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
-
-        popCodes.forEach(code => {
-            const label = document.createElement('label');
-            label.classList.add('checkbox-label');
-            if (redCodes.includes(code)) label.classList.add('red');
-            if (blueCodes.includes(code)) label.classList.add('blue');
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = code;
-            checkbox.classList.add('checkbox');
-
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(code));
-            popCodesContainer.appendChild(label);
-        });
-
-        document.body.style.display = 'block'; // İçeriği göster
-    }
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(code));
+        popCodesContainer.appendChild(label);
+    });
 
     function toggleSelection(codes) {
         document.querySelectorAll('.checkbox').forEach(checkbox => {
@@ -244,9 +194,59 @@
         document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
     }
 
-    // Ek güvenlik önlemleri
-    document.addEventListener('contextmenu', event => event.preventDefault());
-    document.addEventListener('selectstart', event => event.preventDefault());
+    // Melih Güvenlik Sistemi
+    const url = 'https://mkotbas.github.io/mlharc/mp4827.html';
+    let passwordList = [];
+    const passwordValidityDuration = 10 * 60 * 1000; // 10 dakika
+
+    async function fetchPasswords() {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Ağ hatası');
+            const text = await response.text();
+            passwordList = text.split(','); // Virgülle ayrılmış parolalar
+        } catch (error) {
+            alert('Parola listesi alınırken bir hata oluştu: ' + error.message);
+            location.reload();
+        }
+    }
+
+    function promptForPassword() {
+        const now = Date.now();
+        const storedTime = localStorage.getItem('timestamp');
+
+        // Geçerlilik süresini kontrol et
+        if (storedTime && (now - storedTime < passwordValidityDuration)) {
+            document.querySelector('.frame').style.display = 'block';
+            return;
+        }
+
+        const userPassword = prompt('Parolanızı girin:');
+        if (passwordList.includes(userPassword)) {
+            localStorage.setItem('passwordValid', 'true');
+            localStorage.setItem('timestamp', now);
+            document.querySelector('.frame').style.display = 'block';
+        } else {
+            alert('Yanlış parola. Lütfen tekrar deneyin.');
+            localStorage.removeItem('passwordValid');
+            localStorage.removeItem('timestamp');
+            location.reload(); // Sayfayı yenile
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await fetchPasswords();
+        promptForPassword();
+
+        // Ek güvenlikler
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); // Sağ tıklama engellendi
+        });
+        document.addEventListener('selectstart', (e) => {
+            e.preventDefault(); // Seçme özelliği engellendi
+        });
+    });
+    // Melih Güvenlik Sistemi Sonu
 </script>
 
 </body>
