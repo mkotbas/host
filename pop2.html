@@ -86,144 +86,153 @@
             font-style: italic;
         }
     </style>
-    <script>
-        async function checkPassword() {
-            try {
-                const response = await fetch("https://mkotbas.github.io/mlharc/mp4827.html");
-                const passwordData = await response.text();
-                const validPasswords = passwordData.split(",");
-
-                let userPassword = prompt("Lütfen parolanızı girin:");
-
-                if (!validPasswords.includes(userPassword)) {
-                    alert("Yanlış parola! Sayfaya erişim engellendi.");
-                    document.body.innerHTML = "<h2>Erişim engellendi.</h2>";
-                    return false;
-                }
-                return true;
-            } catch (error) {
-                console.error("Parola verisi alınamadı:", error);
-                document.body.innerHTML = "<h2>Parola doğrulama yapılamadı. Lütfen daha sonra tekrar deneyin.</h2>";
-                return false;
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", async function() {
-            const accessGranted = await checkPassword();
-            if (!accessGranted) return;
-
-            const popCodes = [
-                "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
-                "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
-                "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
-                "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
-                "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
-                "100055", "100056", "100061", "100062", "100063"
-            ];
-
-            const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
-            const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
-            const popCodesContainer = document.getElementById('popCodesContainer');
-
-            popCodes.forEach(code => {
-                const label = document.createElement('label');
-                label.classList.add('checkbox-label');
-                if (redCodes.includes(code)) label.classList.add('red');
-                if (blueCodes.includes(code)) label.classList.add('blue');
-
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.value = code;
-                checkbox.classList.add('checkbox');
-
-                label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(code));
-                popCodesContainer.appendChild(label);
-            });
-
-            function toggleSelection(codes) {
-                document.querySelectorAll('.checkbox').forEach(checkbox => {
-                    if (codes.includes(checkbox.value)) {
-                        checkbox.checked = !checkbox.checked;
-                    }
-                });
-            }
-
-            document.querySelector(".copy-button").addEventListener("click", copySelectedCodes);
-            document.querySelector(".clear-button").addEventListener("click", clearSelectedCodes);
-            document.querySelector(".select-specific-button").addEventListener("click", selectBeyazEsyaCodes);
-            document.querySelector(".select-kea-button").addEventListener("click", selectKeaCodes);
-            document.querySelector(".select-ankastre-button").addEventListener("click", selectAnkastreCodes);
-            document.querySelector(".select-tv-button").addEventListener("click", selectTvCodes);
-            document.querySelector(".select-giris-button").addEventListener("click", selectGirisCodes);
-            document.querySelector(".select-aritma-button").addEventListener("click", selectAritmaCodes);
-
-            function selectBeyazEsyaCodes() {
-                const beyazEsyaCodes = ["100004", "100005", "100006", "100007", "100008", "100009", "100010", "100011", "100060", "100012", "100013", "100014"];
-                toggleSelection(beyazEsyaCodes);
-            }
-
-            function selectKeaCodes() {
-                const keaCodes = ["100015", "100016", "100017", "100018", "100019", "100020", "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031", "100032", "100033", "100034"];
-                toggleSelection(keaCodes);
-            }
-
-            function selectAnkastreCodes() {
-                const ankastreCodes = ["100035", "100036", "100037", "100038"];
-                toggleSelection(ankastreCodes);
-            }
-
-            function selectTvCodes() {
-                const tvCodes = ["100047", "100040", "100041", "100042", "100043", "100044", "100045", "100046"];
-                toggleSelection(tvCodes);
-            }
-
-            function selectGirisCodes() {
-                const girisCodes = ["100001", "100002", "100003", "100061", "100062", "100063"];
-                toggleSelection(girisCodes);
-            }
-
-            function selectAritmaCodes() {
-                const aritmaCodes = ["100048", "100049", "100050", "100051", "100052", "100053", "100054", "100055", "100056"];
-                toggleSelection(aritmaCodes);
-            }
-
-            function copySelectedCodes() {
-                const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
-                const textToCopy = selectedCodes.join(", ");
-                
-                if (textToCopy) {
-                    navigator.clipboard.writeText(textToCopy)
-                        .then(() => alert("POP Kodlarınız Kopyalandı!"))
-                        .catch(err => console.error("Kopyalama hatası:", err));
-                } else {
-                    alert("Seçili pop kodu yok!");
-                }
-            }
-
-            function clearSelectedCodes() {
-                document.querySelectorAll('.checkbox').forEach(cb => cb.checked = false);
-            }
-        });
-    </script>
 </head>
 <body>
-    <div class="frame">
-        <h2 class="header">Arçelik Pop Kodları</h2>
-        <div class="container" id="popCodesContainer">
-            <!-- Pop Kodları buraya JavaScript ile eklenecek -->
-        </div>
-        <div class="button-container">
-            <button class="copy-button">Seçilenleri Kopyala</button>
-            <button class="clear-button">Seçilenleri Temizle</button>
-            <button class="select-specific-button">Beyaz Eşya Seç</button>
-            <button class="select-kea-button">KEA Seç</button>
-            <button class="select-ankastre-button">Ankastre Seç</button>
-            <button class="select-tv-button">TV Seç</button>
-            <button class="select-giris-button">Giriş Seç</button>
-            <button class="select-aritma-button">Arıtma Seç</button>
-        </div>
-        <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
+
+<div class="frame" id="content" style="display: none;">
+    <h2 class="header">Arçelik Pop Kodları</h2>
+    <div class="container" id="popCodesContainer">
+        <!-- Pop Kodları buraya JavaScript ile eklenecek -->
     </div>
+
+    <div class="button-container">
+        <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
+        <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
+        <button class="select-giris-button" onclick="selectGirisCodes()">Giriş</button>
+        <button class="select-specific-button" onclick="selectBeyazEsyaCodes()">Beyaz Eşya</button>
+        <button class="select-kea-button" onclick="selectKeaCodes()">KEA</button>
+        <button class="select-ankastre-button" onclick="selectAnkastreCodes()">Ankastre</button>
+        <button class="select-tv-button" onclick="selectTvCodes()">TV</button>
+        <button class="select-aritma-button" onclick="selectAritmaCodes()">Arıtma</button>
+    </div>
+
+    <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
+</div>
+
+<script>
+    const popCodes = [
+        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
+        "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
+        "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
+        "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
+        "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
+        "100055", "100056", "100061", "100062", "100063"
+    ];
+
+    const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
+    const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
+    const popCodesContainer = document.getElementById('popCodesContainer');
+
+    function fetchPasswordList() {
+        return fetch("https://mkotbas.github.io/mlharc/mp4827.html")
+            .then(response => response.text())
+            .then(data => data.split(',').map(password => password.trim()));
+    }
+
+    function promptForPassword() {
+        const storedTime = localStorage.getItem('passwordTime');
+        const currentTime = Date.now();
+
+        // Check if user has recently entered the password
+        if (storedTime && currentTime - storedTime < 300000) { // 5 minutes in milliseconds
+            showContent();
+            return;
+        }
+
+        const passwordListPromise = fetchPasswordList();
+        passwordListPromise.then(passwordList => {
+            const userPassword = prompt("Parolanızı girin:");
+            if (passwordList.includes(userPassword)) {
+                localStorage.setItem('passwordTime', currentTime);
+                showContent();
+            } else {
+                alert("Yanlış parola! Sayfa yenileniyor...");
+                location.reload();
+            }
+        }).catch(() => {
+            alert("Parola listesi alınırken bir hata oluştu. Sayfa yenileniyor...");
+            location.reload();
+        });
+    }
+
+    function showContent() {
+        document.getElementById('content').style.display = 'block';
+        popCodes.forEach(code => {
+            const label = document.createElement('label');
+            label.classList.add('checkbox-label');
+            if (redCodes.includes(code)) label.classList.add('red');
+            if (blueCodes.includes(code)) label.classList.add('blue');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = code;
+            checkbox.classList.add('checkbox');
+
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(code));
+            popCodesContainer.appendChild(label);
+        });
+    }
+
+    function toggleSelection(codes) {
+        document.querySelectorAll('.checkbox').forEach(checkbox => {
+            if (codes.includes(checkbox.value)) {
+                checkbox.checked = !checkbox.checked;
+            }
+        });
+    }
+
+    function selectBeyazEsyaCodes() {
+        const beyazEsyaCodes = ["100004", "100005", "100006", "100007", "100008", "100009", "100010", "100011", "100060", "100012", "100013", "100014"];
+        toggleSelection(beyazEsyaCodes);
+    }
+
+    function selectKeaCodes() {
+        const keaCodes = ["100015", "100016", "100017", "100018", "100019", "100020", "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031", "100032", "100033", "100034"];
+        toggleSelection(keaCodes);
+    }
+
+    function selectAnkastreCodes() {
+        const ankastreCodes = ["100035", "100036", "100037", "100038"];
+        toggleSelection(ankastreCodes);
+    }
+
+    function selectTvCodes() {
+        const tvCodes = ["100047", "100040", "100041", "100042", "100043", "100044", "100045", "100046"];
+        toggleSelection(tvCodes);
+    }
+
+    function selectGirisCodes() {
+        const girisCodes = ["100001", "100002", "100003", "100061", "100062", "100063"];
+        toggleSelection(girisCodes);
+    }
+
+    function selectAritmaCodes() {
+        const aritmaCodes = ["100048", "100049", "100050", "100051", "100052", "100053", "100054", "100055", "100056"];
+        toggleSelection(aritmaCodes);
+    }
+
+    function copySelectedCodes() {
+        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+        const textToCopy = selectedCodes.join(", ");
+        
+        if (textToCopy) {
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => alert("POP Kodlarınız Kopyalandı!"))
+                .catch(err => alert("Kopyalama hatası: " + err));
+        } else {
+            alert("Kopyalanacak kod seçilmedi.");
+        }
+    }
+
+    function clearSelectedCodes() {
+        document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
+    }
+
+    // Parola kontrolünü başlat
+    promptForPassword();
+</script>
+
 </body>
 </html>
+
