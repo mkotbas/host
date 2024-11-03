@@ -10,7 +10,6 @@
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
-            display: none; /* Başlangıçta içerik gizli */
         }
         .frame {
             border: 2px solid #8b0000;
@@ -113,68 +112,64 @@
 
 <script>
     const passwordURL = 'https://mkotbas.github.io/mlharc/mp4827.html';
-    const passwordExpiration = 10 * 60 * 1000; // 10 dakika
-    const securitySystemEnabled = true; // Sistemi kaldırmak için bu değeri false yapabilirsiniz
+    let passwords = [];
+    const popCodesContainer = document.getElementById('popCodesContainer');
 
-    // Sayfa yüklendiğinde güvenlik kontrolü
-    document.addEventListener("DOMContentLoaded", function() {
-        if (securitySystemEnabled) {
-            checkPassword();
-        } else {
-            showContent(); // Güvenlik sistemi devre dışıysa içeriği göster
-        }
-    });
+    // Melih Güvenlik Sistemi kaldırma
+    const REMOVE_SECURITY_SYSTEM = false; // Sistemi kaldırmak için true yap
 
-    function checkPassword() {
-        const storedTime = localStorage.getItem('passwordTime');
-        if (storedTime && (Date.now() - storedTime < passwordExpiration)) {
-            showContent();
-        } else {
-            promptForPassword();
-        }
-    }
-
-    function promptForPassword() {
+    if (REMOVE_SECURITY_SYSTEM) {
+        console.log("Melih Güvenlik Sistemi kaldırıldı.");
+    } else {
         fetch(passwordURL)
-            .then(response => response.text())
-            .then(data => {
-                const passwords = data.split(',');
-                const userInput = prompt("Parolanızı girin:");
-
-                if (passwords.includes(userInput)) {
-                    localStorage.setItem('passwordTime', Date.now());
-                    showContent();
-                } else {
-                    alert("Yanlış parola! Sayfa yenileniyor.");
-                    document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                    location.reload();
-                }
+            .then(response => {
+                if (!response.ok) throw new Error('Ağ hatası');
+                return response.text();
             })
-            .catch(() => {
-                alert("Parola listesi alınırken hata oluştu. Sayfa yenileniyor.");
+            .then(data => {
+                passwords = data.split(','); // Parolaları virgülle ayır
+                checkAccess();
+            })
+            .catch(error => {
+                alert('Parolalar alınamadı. Sayfa yenilenecek.');
                 location.reload();
             });
     }
 
-    function showContent() {
-        document.body.style.display = 'block'; // İçeriği göster
-        populatePopCodes();
+    function checkAccess() {
+        const storedTime = localStorage.getItem('accessTime');
+        const currentTime = Date.now();
+        const tenMinutes = 10 * 60 * 1000;
+
+        if (storedTime && (currentTime - storedTime < tenMinutes)) {
+            initializePopCodes();
+            return;
+        }
+
+        const enteredPassword = prompt('Parolanızı girin:');
+        if (passwords.includes(enteredPassword)) {
+            localStorage.setItem('accessTime', currentTime);
+            initializePopCodes();
+        } else {
+            alert('Yanlış parola! Sayfa yenilenecek.');
+            localStorage.clear();
+            location.reload();
+        }
     }
 
-    const popCodes = [
-        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
-        "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
-        "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
-        "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
-        "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
-        "100055", "100056", "100061", "100062", "100063"
-    ];
+    function initializePopCodes() {
+        const popCodes = [
+            "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
+            "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
+            "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
+            "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
+            "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
+            "100055", "100056", "100061", "100062", "100063"
+        ];
 
-    const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
-    const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
-    const popCodesContainer = document.getElementById('popCodesContainer');
+        const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
+        const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
 
-    function populatePopCodes() {
         popCodes.forEach(code => {
             const label = document.createElement('label');
             label.classList.add('checkbox-label');
@@ -190,6 +185,8 @@
             label.appendChild(document.createTextNode(code));
             popCodesContainer.appendChild(label);
         });
+
+        document.body.style.display = 'block'; // İçeriği göster
     }
 
     function toggleSelection(codes) {
@@ -248,8 +245,8 @@
     }
 
     // Ek güvenlik önlemleri
-    document.addEventListener('contextmenu', (event) => event.preventDefault());
-    document.addEventListener('selectstart', (event) => event.preventDefault());
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('selectstart', event => event.preventDefault());
 </script>
 
 </body>
