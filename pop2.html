@@ -84,4 +84,52 @@
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
-        // Paro
+        // Parolayı URL'den al ve kontrol et
+        async function checkPassword(password) {
+            try {
+                const response = await fetch(PASSWORD_URL);
+                if (!response.ok) {
+                    throw new Error("Fetch hatası: " + response.status);
+                }
+                const text = await response.text();
+                const validPasswords = text.split(',').map(p => p.trim());
+                console.log("Geçerli parolalar:", validPasswords); // Debug
+                return validPasswords.includes(password);
+            } catch (error) {
+                alert("Parola doğrulaması sırasında bir hata oluştu. Lütfen internet bağlantınızı kontrol edin.");
+                console.error("Fetch hatası:", error); // Debug
+                return false;
+            }
+        }
+
+        // Parola kontrol ve doğrulama
+        submitButton.addEventListener('click', async () => {
+            const password = passwordInput.value;
+            console.log("Girilen parola:", password); // Debug
+            if (await checkPassword(password)) {
+                document.cookie = "access_granted=true; max-age=300"; // 5 dakika geçerli çerez
+                passwordScreen.style.display = 'none';
+                frame.style.display = 'block';
+                console.log("Parola doğru, içerik gösterildi."); // Debug
+            } else {
+                alert("Yanlış parola. Çerezler siliniyor...");
+                document.cookie = "access_granted=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+                location.reload();
+            }
+        });
+
+        // Sayfa yüklendiğinde çerez kontrolü yap
+        window.onload = () => {
+            if (getCookie("access_granted")) {
+                passwordScreen.style.display = 'none';
+                frame.style.display = 'block';
+                console.log("Çerez bulundu, içerik gösterildi."); // Debug
+            } else {
+                passwordScreen.style.display = 'flex';
+                frame.style.display = 'none';
+                console.log("Çerez yok, parola ekranı gösterildi."); // Debug
+            }
+        };
+    </script>
+</body>
+</html>
