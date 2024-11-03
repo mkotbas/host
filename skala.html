@@ -166,7 +166,7 @@
 </div>
 
 <script>
-    const fiyatEtiketiPleksileri = {
+    const fiyatetiketivemalzemeler = {
         "ASKILI ÇM-KM FİYAT ETİKETLİK": 10,
         "PLEKSİ A5 AYAKLI": 10,
         "PLEKSI A5 MIKNATISLI": 20,
@@ -204,7 +204,7 @@
         enerjiTableBody.innerHTML = '';
 
         // Fiyat Etiketi Hesaplama
-        for (const [malzeme, paketSayi] of Object.entries(fiyatEtiketiPleksileri)) {
+        for (const [malzeme, paketSayi] of Object.entries(fiyatetiketivemalzemeler)) {
             const row = fiyatTableBody.insertRow();
             row.insertCell(0).innerText = malzeme;
             row.insertCell(1).innerText = paketSayi;
