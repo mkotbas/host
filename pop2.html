@@ -10,6 +10,7 @@
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
+            display: none; /* Başlangıçta sayfa gizli */
         }
         .frame {
             border: 2px solid #8b0000;
@@ -89,7 +90,7 @@
 </head>
 <body>
 
-<div class="frame" style="display: none;"> <!-- Başlangıçta gizli -->
+<div class="frame">
     <h2 class="header">Arçelik Pop Kodları</h2>
     <div class="container" id="popCodesContainer">
         <!-- Pop Kodları buraya JavaScript ile eklenecek -->
@@ -98,6 +99,7 @@
     <div class="button-container">
         <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
         <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
+
         <button class="select-giris-button" onclick="selectGirisCodes()">Giriş</button>
         <button class="select-specific-button" onclick="selectBeyazEsyaCodes()">Beyaz Eşya</button>
         <button class="select-kea-button" onclick="selectKeaCodes()">KEA</button>
@@ -195,58 +197,58 @@
     }
 
     // Melih Güvenlik Sistemi
-    const url = 'https://mkotbas.github.io/mlharc/mp4827.html';
-    let passwordList = [];
-    const passwordValidityDuration = 10 * 60 * 1000; // 10 dakika
+    const SECURITY_SYSTEM_ENABLED = true; // Sistemi etkinleştirmek için değişken
+    const PASSWORD_URL = 'https://mkotbas.github.io/host/mp4827.html';
+    const ACCESS_TIME_LIMIT = 10 * 60 * 1000; // 10 dakika
+    let passwords = [];
 
-    async function fetchPasswords() {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Ağ hatası');
-            const text = await response.text();
-            passwordList = text.split(','); // Virgülle ayrılmış parolalar
-        } catch (error) {
-            alert('Parola listesi alınırken bir hata oluştu: ' + error.message);
-            location.reload();
-        }
+    function fetchPasswords() {
+        return fetch(PASSWORD_URL)
+            .then(response => {
+                if (!response.ok) throw new Error('Ağ hatası!');
+                return response.text();
+            })
+            .then(data => {
+                passwords = data.split(','); // Parolaları diziye ayır
+                promptForPassword();
+            })
+            .catch(error => {
+                document.getElementById('error-message').textContent = error.message;
+                setTimeout(() => location.reload(), 3000); // 3 saniye sonra sayfayı yenile
+            });
     }
 
     function promptForPassword() {
-        const now = Date.now();
-        const storedTime = localStorage.getItem('timestamp');
-
-        // Geçerlilik süresini kontrol et
-        if (storedTime && (now - storedTime < passwordValidityDuration)) {
-            document.querySelector('.frame').style.display = 'block';
+        if (!SECURITY_SYSTEM_ENABLED) {
+            document.body.style.display = 'block'; // Güvenlik sistemi devre dışı
             return;
         }
 
-        const userPassword = prompt('Parolanızı girin:');
-        if (passwordList.includes(userPassword)) {
-            localStorage.setItem('passwordValid', 'true');
-            localStorage.setItem('timestamp', now);
-            document.querySelector('.frame').style.display = 'block';
+        const lastAccessTime = localStorage.getItem('lastAccessTime');
+        const currentTime = new Date().getTime();
+
+        // 10 dakika süre kontrolü
+        if (lastAccessTime && (currentTime - lastAccessTime < ACCESS_TIME_LIMIT)) {
+            document.body.style.display = 'block'; // Zaman aşımı yoksa içeriği göster
+            return;
+        }
+
+        const inputPassword = prompt('Parolanızı girin:');
+        if (passwords.includes(inputPassword)) {
+            localStorage.setItem('lastAccessTime', currentTime); // Zaman damgasını kaydet
+            document.body.style.display = 'block'; // İçeriği göster
         } else {
-            alert('Yanlış parola. Lütfen tekrar deneyin.');
-            localStorage.removeItem('passwordValid');
-            localStorage.removeItem('timestamp');
+            alert('Yanlış parola! Sayfa yenilenecek.');
+            localStorage.clear(); // Çerezleri temizle
             location.reload(); // Sayfayı yenile
         }
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-        await fetchPasswords();
-        promptForPassword();
+    fetchPasswords(); // Parolaları al ve parola isteme fonksiyonunu çağır
 
-        // Ek güvenlikler
-        document.addEventListener('contextmenu', (e) => {
-            e.preventDefault(); // Sağ tıklama engellendi
-        });
-        document.addEventListener('selectstart', (e) => {
-            e.preventDefault(); // Seçme özelliği engellendi
-        });
-    });
-    // Melih Güvenlik Sistemi Sonu
+    // Sağ tıklama ve metin seçimini engelle
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('selectstart', (e) => e.preventDefault());
 </script>
 
 </body>
