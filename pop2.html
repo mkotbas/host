@@ -18,13 +18,8 @@
             padding: 15px;
             background-color: white;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Bilgisayar ekranları için daraltma */
-        @media screen and (min-width: 1024px) {
-            .frame {
-                width: 60%;
-            }
+            width: 100%;
+            max-width: 800px; /* Maksimum genişlik */
         }
 
         .header {
@@ -44,7 +39,7 @@
             margin-top: 20px;
         }
         h2 {
-            font-size: 14px;
+            font-size: 16px; /* Başlık font boyutunu artırdık */
             font-weight: bold;
             color: #fff;
             background: linear-gradient(to right, #555, #ccc);
@@ -60,7 +55,7 @@
             border-collapse: collapse;
             font-size: 14px;
             margin-bottom: 30px;
-            table-layout: fixed; /* Tablonun sabit boyutlandırma */
+            table-layout: fixed;
         }
         th, td {
             border: 1px solid #ddd;
@@ -89,6 +84,7 @@
             border-radius: 4px;
             border: 1px solid #ccc;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            max-width: 100%; /* Genişliği sınırladık */
         }
         .footer {
             text-align: center;
@@ -98,7 +94,6 @@
             font-style: italic;
         }
         
-        /* Paket İçi ve Total sütunları ortala */
         th:nth-child(2),
         th:nth-child(4),
         td:nth-child(2),
@@ -109,25 +104,43 @@
         /* Tabloların başlık ve hücre genişlikleri */
         th:nth-child(1),
         td:nth-child(1) {
-            width: 50%; /* Pleksi sütunu genişliği */
+            width: 50%;
         }
         th:nth-child(2),
         td:nth-child(2) {
-            width: 20%; /* Paket İçi sütunu genişliği */
+            width: 20%;
         }
         th:nth-child(3),
         td:nth-child(3) {
-            width: 20%; /* Adet sütunu genişliği */
+            width: 20%;
         }
         th:nth-child(4),
         td:nth-child(4) {
-            width: 20%; /* Total sütunu genişliği */
+            width: 20%;
+        }
+
+        /* Mobil uyumlu stil ayarları */
+        @media screen and (max-width: 768px) {
+            h2 {
+                font-size: 14px; /* Başlık font boyutunu küçültüyoruz */
+            }
+            input[type="number"] {
+                width: 100%; /* Genişliği tam yapıyoruz */
+                max-width: none; /* Maksimum genişlik sınırını kaldırıyoruz */
+            }
+            th, td {
+                padding: 8px; /* Hücrelerin içeriğini sıkıştırıyoruz */
+                font-size: 12px; /* Font boyutunu küçültüyoruz */
+            }
+            .frame {
+                padding: 10px; /* Kenar boşluğunu küçültüyoruz */
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="frame" id="mainContent" style="display: none;">
+<div class="frame">
     <h1 class="header">Arçelik Skala Malzemeleri</h1>
 
     <div class="table-container">
@@ -188,62 +201,6 @@
         "ENERJİ ETİKETİ STANDI": 10,
     };
 
-    let validPasswords = [];
-    const url = 'https://mkotbas.github.io/mlharc/mp4827.html';
-
-    // Kullanıcıdan parola isteme
-    function requestPassword() {
-        const password = prompt('Parola giriniz:');
-        if (password) {
-            validatePassword(password);
-        } else {
-            alert('Parola girilmedi. Sayfa yenileniyor.');
-            location.reload();
-        }
-    }
-
-    // Parola doğrulama
-    function validatePassword(password) {
-        if (validPasswords.includes(password)) {
-            localStorage.setItem('accessTime', Date.now());
-            loadContent(); // Parolası doğrulandıktan sonra içerikleri yükle
-        } else {
-            alert('Yanlış parola. Sayfa yenileniyor.');
-            localStorage.removeItem('accessTime'); // Çerezleri temizle
-            location.reload();
-        }
-    }
-
-    // Parola listesi yükleme
-    async function loadPasswordList() {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Ağ hatası');
-            const text = await response.text();
-            validPasswords = text.split(',').map(p => p.trim());
-            checkAccess();
-        } catch (error) {
-            alert('Parola listesi yüklenirken bir hata oluştu: ' + error.message);
-            location.reload();
-        }
-    }
-
-    // Erişim kontrolü
-    function checkAccess() {
-        const accessTime = localStorage.getItem('accessTime');
-        if (accessTime && (Date.now() - accessTime < 5 * 60 * 1000)) {
-            loadContent();
-        } else {
-            requestPassword();
-        }
-    }
-
-    // İçeriği yükleme
-    function loadContent() {
-        document.getElementById('mainContent').style.display = 'block';
-        hesapla(); // Sayfa yüklendiğinde hesaplamayı yap
-    }
-
     function hesapla() {
         const fiyatTableBody = document.getElementById("fiyatTable").getElementsByTagName('tbody')[0];
         const enerjiTableBody = document.getElementById("enerjiTable").getElementsByTagName('tbody')[0];
@@ -276,6 +233,7 @@
                     adetInput.dataset.total = parseInt(adetInput.dataset.total) + adetValue; // Update total
                     guncellePaketSayisi(adetInput.dataset.total, paketSayi, row.cells[3]);
                     adetInput.value = ''; // Clear input for new entry
+                    event.preventDefault(); // Prevent
                     event.preventDefault(); // Prevent form submission
                 }
             });
@@ -325,8 +283,8 @@
         paketGerekliCell.innerText = paketGerekli;
     }
 
-    // Sayfa yüklendiğinde parola listesi yükle
-    window.onload = loadPasswordList;
+    // Sayfa yüklendiğinde varsayılan hesaplamayı yap
+    window.onload = hesapla;
 </script>
 
 </body>
