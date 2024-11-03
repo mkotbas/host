@@ -116,9 +116,14 @@
     const passwordExpiration = 10 * 60 * 1000; // 10 dakika
     const securitySystemEnabled = true; // Sistemi kaldırmak için bu değeri false yapabilirsiniz
 
-    if (securitySystemEnabled) {
-        checkPassword();
-    }
+    // Sayfa yüklendiğinde güvenlik kontrolü
+    document.addEventListener("DOMContentLoaded", function() {
+        if (securitySystemEnabled) {
+            checkPassword();
+        } else {
+            showContent(); // Güvenlik sistemi devre dışıysa içeriği göster
+        }
+    });
 
     function checkPassword() {
         const storedTime = localStorage.getItem('passwordTime');
