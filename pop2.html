@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Parola Giriş Ekranı</title>
     <style>
-        /* Ekran stilini burada ayarlayabilirsiniz */
+        /* Parola ekranı stil ayarları */
         #passwordScreen {
-            display: none; /* İlk başta gizli olacak */
+            display: none;
             text-align: center;
             margin-top: 50px;
         }
@@ -29,7 +29,7 @@
     <script>
         const passwordUrl = "https://mkotbas.github.io/mlharc/mp4827.html";
         const authCookieName = "authenticated";
-        const authTimeout = 5 * 60 * 1000; // 5 dakika
+        const authTimeout = 5 * 60 * 1000; // 5 dakika (milisaniye cinsinden)
 
         // Sayfa yüklendiğinde çerez kontrol edilir
         window.onload = function () {
@@ -67,7 +67,7 @@
                 } else {
                     clearCookies();
                     document.getElementById("error").innerText = "Yanlış parola. Lütfen tekrar deneyin.";
-                    location.reload();
+                    setTimeout(() => location.reload(), 500); // 500 ms sonra sayfayı yeniler
                 }
             } catch (error) {
                 console.error("Parola doğrulama hatası:", error);
