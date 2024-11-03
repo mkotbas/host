@@ -10,6 +10,7 @@
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
+            display: none; /* Başlangıçta içerik gizli */
         }
         .frame {
             border: 2px solid #8b0000;
@@ -111,64 +112,48 @@
 </div>
 
 <script>
-    const PASSWORD_URL = "https://mkotbas.github.io/mlharc/mp4827.html";
-    let passwords = [];
-    const PASSWORD_TIMEOUT = 5 * 60 * 1000; // 5 dakika
+    const passwordURL = 'https://mkotbas.github.io/mlharc/mp4827.html';
+    const passwordExpiration = 10 * 60 * 1000; // 10 dakika
+    const securitySystemEnabled = true; // Sistemi kaldırmak için bu değeri false yapabilirsiniz
+
+    if (securitySystemEnabled) {
+        checkPassword();
+    }
 
     function checkPassword() {
-        const storedPassword = localStorage.getItem('validPassword');
-        const passwordTime = localStorage.getItem('passwordTime');
-
-        if (storedPassword && passwordTime) {
-            const now = new Date().getTime();
-            if (now - passwordTime < PASSWORD_TIMEOUT) {
-                showContent();
-                return;
-            } else {
-                localStorage.removeItem('validPassword');
-                localStorage.removeItem('passwordTime');
-            }
+        const storedTime = localStorage.getItem('passwordTime');
+        if (storedTime && (Date.now() - storedTime < passwordExpiration)) {
+            showContent();
+        } else {
+            promptForPassword();
         }
-
-        promptForPassword();
     }
 
     function promptForPassword() {
-        const userPassword = prompt("Parola giriniz:");
-        if (userPassword) {
-            if (passwords.includes(userPassword)) {
-                localStorage.setItem('validPassword', userPassword);
-                localStorage.setItem('passwordTime', new Date().getTime());
-                showContent();
-            } else {
-                alert("Yanlış parola!");
-                localStorage.clear();
+        fetch(passwordURL)
+            .then(response => response.text())
+            .then(data => {
+                const passwords = data.split(',');
+                const userInput = prompt("Parolanızı girin:");
+
+                if (passwords.includes(userInput)) {
+                    localStorage.setItem('passwordTime', Date.now());
+                    showContent();
+                } else {
+                    alert("Yanlış parola! Sayfa yenileniyor.");
+                    document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    location.reload();
+                }
+            })
+            .catch(() => {
+                alert("Parola listesi alınırken hata oluştu. Sayfa yenileniyor.");
                 location.reload();
-            }
-        } else {
-            alert("Parola girmediniz!");
-            location.reload();
-        }
+            });
     }
 
     function showContent() {
-        document.querySelector('.frame').style.display = 'block';
-    }
-
-    function fetchPasswords() {
-        fetch(PASSWORD_URL)
-            .then(response => {
-                if (!response.ok) throw new Error('Ağ hatası');
-                return response.text();
-            })
-            .then(data => {
-                passwords = data.split(',').map(p => p.trim());
-                checkPassword();
-            })
-            .catch(error => {
-                alert("Parolalar yüklenirken hata oluştu: " + error.message);
-                location.reload();
-            });
+        document.body.style.display = 'block'; // İçeriği göster
+        populatePopCodes();
     }
 
     const popCodes = [
@@ -184,21 +169,23 @@
     const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
     const popCodesContainer = document.getElementById('popCodesContainer');
 
-    popCodes.forEach(code => {
-        const label = document.createElement('label');
-        label.classList.add('checkbox-label');
-        if (redCodes.includes(code)) label.classList.add('red');
-        if (blueCodes.includes(code)) label.classList.add('blue');
+    function populatePopCodes() {
+        popCodes.forEach(code => {
+            const label = document.createElement('label');
+            label.classList.add('checkbox-label');
+            if (redCodes.includes(code)) label.classList.add('red');
+            if (blueCodes.includes(code)) label.classList.add('blue');
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = code;
-        checkbox.classList.add('checkbox');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = code;
+            checkbox.classList.add('checkbox');
 
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(code));
-        popCodesContainer.appendChild(label);
-    });
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(code));
+            popCodesContainer.appendChild(label);
+        });
+    }
 
     function toggleSelection(codes) {
         document.querySelectorAll('.checkbox').forEach(checkbox => {
@@ -255,8 +242,9 @@
         document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
     }
 
-    // Başlangıçta parola listesini çek
-    fetchPasswords();
+    // Ek güvenlik önlemleri
+    document.addEventListener('contextmenu', (event) => event.preventDefault());
+    document.addEventListener('selectstart', (event) => event.preventDefault());
 </script>
 
 </body>
