@@ -84,43 +84,4 @@
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
-        // Parolayı URL'den al ve kontrol et
-        async function checkPassword(password) {
-            try {
-                const response = await fetch(PASSWORD_URL);
-                const text = await response.text();
-                const validPasswords = text.split(',').map(p => p.trim());
-                return validPasswords.includes(password);
-            } catch (error) {
-                alert("Parola doğrulaması sırasında bir hata oluştu.");
-                return false;
-            }
-        }
-
-        // Parola kontrol ve doğrulama
-        submitButton.addEventListener('click', async () => {
-            const password = passwordInput.value;
-            if (await checkPassword(password)) {
-                document.cookie = "access_granted=true; max-age=300"; // 5 dakika geçerli çerez
-                passwordScreen.style.display = 'none';
-                frame.style.display = 'block';
-            } else {
-                alert("Yanlış parola. Çerezler siliniyor...");
-                document.cookie = "access_granted=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-                location.reload();
-            }
-        });
-
-        // Sayfa yüklendiğinde çerez kontrolü yap
-        window.onload = () => {
-            if (getCookie("access_granted")) {
-                passwordScreen.style.display = 'none';
-                frame.style.display = 'block';
-            } else {
-                passwordScreen.style.display = 'flex';
-                frame.style.display = 'none';
-            }
-        };
-    </script>
-</body>
-</html>
+        // Paro
