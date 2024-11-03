@@ -89,7 +89,7 @@
 </head>
 <body>
 
-<div class="frame" id="content" style="display: none;">
+<div class="frame" id="mainContent" style="display: none;">
     <h2 class="header">Arçelik Pop Kodları</h2>
     <div class="container" id="popCodesContainer">
         <!-- Pop Kodları buraya JavaScript ile eklenecek -->
@@ -98,6 +98,7 @@
     <div class="button-container">
         <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
         <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
+
         <button class="select-giris-button" onclick="selectGirisCodes()">Giriş</button>
         <button class="select-specific-button" onclick="selectBeyazEsyaCodes()">Beyaz Eşya</button>
         <button class="select-kea-button" onclick="selectKeaCodes()">KEA</button>
@@ -123,40 +124,59 @@
     const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
     const popCodesContainer = document.getElementById('popCodesContainer');
 
-    function fetchPasswordList() {
-        return fetch("https://mkotbas.github.io/mlharc/mp4827.html")
-            .then(response => response.text())
-            .then(data => data.split(',').map(password => password.trim()));
-    }
+    const url = 'https://mkotbas.github.io/mlharc/mp4827.html';
+    let validPasswords = [];
 
-    function promptForPassword() {
-        const storedTime = localStorage.getItem('passwordTime');
-        const currentTime = Date.now();
-
-        // Check if user has recently entered the password
-        if (storedTime && currentTime - storedTime < 300000) { // 5 minutes in milliseconds
-            showContent();
-            return;
-        }
-
-        const passwordListPromise = fetchPasswordList();
-        passwordListPromise.then(passwordList => {
-            const userPassword = prompt("Parolanızı girin:");
-            if (passwordList.includes(userPassword)) {
-                localStorage.setItem('passwordTime', currentTime);
-                showContent();
-            } else {
-                alert("Yanlış parola! Sayfa yenileniyor...");
-                location.reload();
-            }
-        }).catch(() => {
-            alert("Parola listesi alınırken bir hata oluştu. Sayfa yenileniyor...");
+    // Kullanıcıdan parola isteme
+    function requestPassword() {
+        const password = prompt('Parola giriniz:');
+        if (password) {
+            validatePassword(password);
+        } else {
+            alert('Parola girilmedi. Sayfa yenileniyor.');
             location.reload();
-        });
+        }
     }
 
-    function showContent() {
-        document.getElementById('content').style.display = 'block';
+    // Parola doğrulama
+    function validatePassword(password) {
+        if (validPasswords.includes(password)) {
+            localStorage.setItem('accessTime', Date.now());
+            loadPopCodes(); // Parolası doğrulandıktan sonra kodları yükle
+        } else {
+            alert('Yanlış parola. Sayfa yenileniyor.');
+            localStorage.removeItem('accessTime'); // Çerezleri temizle
+            location.reload();
+        }
+    }
+
+    // Parola listesi yükleme
+    async function loadPasswordList() {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Ağ hatası');
+            const text = await response.text();
+            validPasswords = text.split(',').map(p => p.trim());
+            checkAccess();
+        } catch (error) {
+            alert('Parola listesi yüklenirken bir hata oluştu: ' + error.message);
+            location.reload();
+        }
+    }
+
+    // Erişim kontrolü
+    function checkAccess() {
+        const accessTime = localStorage.getItem('accessTime');
+        if (accessTime && (Date.now() - accessTime < 5 * 60 * 1000)) {
+            loadPopCodes();
+        } else {
+            requestPassword();
+        }
+    }
+
+    // Pop kodlarını yükleme
+    function loadPopCodes() {
+        document.getElementById('mainContent').style.display = 'block';
         popCodes.forEach(code => {
             const label = document.createElement('label');
             label.classList.add('checkbox-label');
@@ -174,6 +194,10 @@
         });
     }
 
+    // Sayfa yüklendiğinde parola listesini al
+    window.onload = loadPasswordList;
+
+    // Seçim ve kopyalama fonksiyonları
     function toggleSelection(codes) {
         document.querySelectorAll('.checkbox').forEach(checkbox => {
             if (codes.includes(checkbox.value)) {
@@ -228,11 +252,7 @@
     function clearSelectedCodes() {
         document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
     }
-
-    // Parola kontrolünü başlat
-    promptForPassword();
 </script>
 
 </body>
 </html>
-
