@@ -3,133 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pop Kodları Seçim Sistemi</title>
+    <title>Parola Giriş Ekranı</title>
     <style>
-        /* Parola ekranı stili */
+        /* Ekran stilini burada ayarlayabilirsiniz */
         #passwordScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        #passwordForm {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
+            display: none; /* İlk başta gizli olacak */
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-        #passwordInput {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        #submitButton {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            margin-top: 50px;
         }
     </style>
 </head>
 <body>
     <div id="passwordScreen">
-        <div id="passwordForm">
-            <h2>Parola Girin</h2>
-            <input type="password" id="passwordInput" placeholder="Parolanızı girin">
-            <button id="submitButton">Giriş Yap</button>
-        </div>
+        <h2>Parola Giriniz</h2>
+        <input type="password" id="passwordInput" placeholder="Parola">
+        <button onclick="checkPassword()">Giriş Yap</button>
+        <p id="error" style="color: red;"></p>
     </div>
 
-    <div class="frame" style="display: none;">
-        <h2 class="header">Arçelik Pop Kodları</h2>
-        <div class="container" id="popCodesContainer">
-            <!-- Pop Kodları buraya JavaScript ile eklenecek -->
-        </div>
-
-        <div class="button-container">
-            <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
-            <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
-            <button class="select-giris-button" onclick="selectGirisCodes()">Giriş</button>
-            <button class="select-specific-button" onclick="selectBeyazEsyaCodes()">Beyaz Eşya</button>
-            <button class="select-kea-button" onclick="selectKeaCodes()">KEA</button>
-            <button class="select-ankastre-button" onclick="selectAnkastreCodes()">Ankastre</button>
-            <button class="select-tv-button" onclick="selectTvCodes()">TV</button>
-            <button class="select-aritma-button" onclick="selectAritmaCodes()">Arıtma</button>
-        </div>
-        <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
+    <div id="content" style="display: none;">
+        <h1>Sayfa İçeriği</h1>
+        <p>Bu içerik yalnızca parola doğru girildiğinde gösterilir.</p>
     </div>
 
     <script>
-        const passwordScreen = document.getElementById('passwordScreen');
-        const passwordInput = document.getElementById('passwordInput');
-        const submitButton = document.getElementById('submitButton');
-        const frame = document.querySelector('.frame');
-        const PASSWORD_URL = "https://mkotbas.github.io/mlharc/mp4827.html";
+        const passwordUrl = "https://mkotbas.github.io/mlharc/mp4827.html";
+        const authCookieName = "authenticated";
+        const authTimeout = 5 * 60 * 1000; // 5 dakika
 
-        // Çerezleri kontrol et
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-
-        // Parolayı URL'den al ve kontrol et
-        async function checkPassword(password) {
-            try {
-                const response = await fetch(PASSWORD_URL);
-                if (!response.ok) {
-                    throw new Error("Fetch hatası: " + response.status);
-                }
-                const text = await response.text();
-                const validPasswords = text.split(',').map(p => p.trim());
-                console.log("Geçerli parolalar:", validPasswords); // Debug
-                return validPasswords.includes(password);
-            } catch (error) {
-                alert("Parola doğrulaması sırasında bir hata oluştu. Lütfen internet bağlantınızı kontrol edin.");
-                console.error("Fetch hatası:", error); // Debug
-                return false;
-            }
-        }
-
-        // Parola kontrol ve doğrulama
-        submitButton.addEventListener('click', async () => {
-            const password = passwordInput.value;
-            console.log("Girilen parola:", password); // Debug
-            if (await checkPassword(password)) {
-                document.cookie = "access_granted=true; max-age=300"; // 5 dakika geçerli çerez
-                passwordScreen.style.display = 'none';
-                frame.style.display = 'block';
-                console.log("Parola doğru, içerik gösterildi."); // Debug
+        // Sayfa yüklendiğinde çerez kontrol edilir
+        window.onload = function () {
+            if (getCookie(authCookieName)) {
+                showContent();
             } else {
-                alert("Yanlış parola. Çerezler siliniyor...");
-                document.cookie = "access_granted=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-                location.reload();
-            }
-        });
-
-        // Sayfa yüklendiğinde çerez kontrolü yap
-        window.onload = () => {
-            if (getCookie("access_granted")) {
-                passwordScreen.style.display = 'none';
-                frame.style.display = 'block';
-                console.log("Çerez bulundu, içerik gösterildi."); // Debug
-            } else {
-                passwordScreen.style.display = 'flex';
-                frame.style.display = 'none';
-                console.log("Çerez yok, parola ekranı gösterildi."); // Debug
+                showPasswordScreen();
             }
         };
+
+        // Parola ekranını gösterir
+        function showPasswordScreen() {
+            document.getElementById("passwordScreen").style.display = "block";
+            document.getElementById("content").style.display = "none";
+        }
+
+        // Sayfa içeriğini gösterir
+        function showContent() {
+            document.getElementById("passwordScreen").style.display = "none";
+            document.getElementById("content").style.display = "block";
+        }
+
+        // Parolayı kontrol eder
+        async function checkPassword() {
+            const inputPassword = document.getElementById("passwordInput").value;
+
+            try {
+                const response = await fetch(passwordUrl);
+                const passwords = await response.text();
+
+                // Alınan parolalar içinde girilen parolanın olup olmadığını kontrol eder
+                if (passwords.includes(inputPassword)) {
+                    setCookie(authCookieName, "true", authTimeout);
+                    showContent();
+                } else {
+                    clearCookies();
+                    document.getElementById("error").innerText = "Yanlış parola. Lütfen tekrar deneyin.";
+                    location.reload();
+                }
+            } catch (error) {
+                console.error("Parola doğrulama hatası:", error);
+            }
+        }
+
+        // Çerez oluşturur
+        function setCookie(name, value, duration) {
+            const date = new Date();
+            date.setTime(date.getTime() + duration);
+            document.cookie = `${name}=${value}; expires=${date.toUTCString()}; path=/`;
+        }
+
+        // Çerezi alır
+        function getCookie(name) {
+            const cookies = document.cookie.split("; ");
+            for (let cookie of cookies) {
+                const [key, value] = cookie.split("=");
+                if (key === name) {
+                    return value;
+                }
+            }
+            return null;
+        }
+
+        // Çerezleri temizler
+        function clearCookies() {
+            document.cookie.split(";").forEach(function(cookie) {
+                const eqPos = cookie.indexOf("=");
+                const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+            });
+        }
     </script>
 </body>
 </html>
