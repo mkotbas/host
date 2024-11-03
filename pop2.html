@@ -3,21 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pop Kodları Seçim Sistemi</title>
+    <title>Skala Hazırlama Sistemi</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
         }
         .frame {
+            margin: 0 auto;
             border: 2px solid #8b0000;
             border-radius: 10px;
             padding: 15px;
             background-color: white;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
+        /* Bilgisayar ekranları için daraltma */
+        @media screen and (min-width: 1024px) {
+            .frame {
+                width: 60%;
+            }
+        }
+
         .header {
             font-size: 24px;
             font-weight: bold;
@@ -31,52 +40,55 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        .container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 3px;
-        }
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            padding: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            justify-content: center;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-        }
-        .checkbox {
-            margin-right: 5px;
-        }
-        .red {
-            color: red;
-        }
-        .blue {
-            color: blue;
-        }
-        .button-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
+        .table-container {
             margin-top: 20px;
         }
-        .copy-button, .clear-button, .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button, .select-aritma-button {
+        h2 {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(to right, #555, #ccc);
             padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        table {
             width: 100%;
-            text-align: center;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-bottom: 30px;
+            table-layout: fixed; /* Tablonun sabit boyutlandırma */
         }
-        .clear-button {
-            background-color: #f44336;
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            word-break: break-word;
         }
-        .select-specific-button, .select-kea-button, .select-ankastre-button, .select-tv-button, .select-giris-button, .select-aritma-button {
-            background-color: #008CBA;
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+            position: relative;
+        }
+        th:hover {
+            background-color: #e0e0e0;
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        label {
+            margin-right: 10px;
+        }
+        input[type="number"] {
+            width: 60px;
+            margin-left: 10px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         .footer {
             text-align: center;
@@ -85,47 +97,99 @@
             margin-top: 15px;
             font-style: italic;
         }
+        
+        /* Paket İçi ve Total sütunları ortala */
+        th:nth-child(2),
+        th:nth-child(4),
+        td:nth-child(2),
+        td:nth-child(4) {
+            text-align: center;
+        }
+
+        /* Tabloların başlık ve hücre genişlikleri */
+        th:nth-child(1),
+        td:nth-child(1) {
+            width: 50%; /* Pleksi sütunu genişliği */
+        }
+        th:nth-child(2),
+        td:nth-child(2) {
+            width: 20%; /* Paket İçi sütunu genişliği */
+        }
+        th:nth-child(3),
+        td:nth-child(3) {
+            width: 20%; /* Adet sütunu genişliği */
+        }
+        th:nth-child(4),
+        td:nth-child(4) {
+            width: 20%; /* Total sütunu genişliği */
+        }
     </style>
 </head>
 <body>
 
 <div class="frame" id="mainContent" style="display: none;">
-    <h2 class="header">Arçelik Pop Kodları</h2>
-    <div class="container" id="popCodesContainer">
-        <!-- Pop Kodları buraya JavaScript ile eklenecek -->
-    </div>
+    <h1 class="header">Arçelik Skala Malzemeleri</h1>
 
-    <div class="button-container">
-        <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
-        <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
+    <div class="table-container">
+        <h2>Fiyat Etiketi Pleksileri</h2>
+        <table id="fiyatTable">
+            <thead>
+                <tr>
+                    <th>Pleksi</th>
+                    <th>Paket İçi</th>
+                    <th>Adet</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Fiyat Etiketi Pleksileri verileri burada olacak -->
+            </tbody>
+        </table>
 
-        <button class="select-giris-button" onclick="selectGirisCodes()">Giriş</button>
-        <button class="select-specific-button" onclick="selectBeyazEsyaCodes()">Beyaz Eşya</button>
-        <button class="select-kea-button" onclick="selectKeaCodes()">KEA</button>
-        <button class="select-ankastre-button" onclick="selectAnkastreCodes()">Ankastre</button>
-        <button class="select-tv-button" onclick="selectTvCodes()">TV</button>
-        <button class="select-aritma-button" onclick="selectAritmaCodes()">Arıtma</button>
+        <h2>Enerji Etiketi Pleksileri</h2>
+        <table id="enerjiTable">
+            <thead>
+                <tr>
+                    <th>Pleksi</th>
+                    <th>Paket İçi</th>
+                    <th>Adet</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Enerji Etiketi Pleksileri verileri burada olacak -->
+            </tbody>
+        </table>
     </div>
 
     <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
 </div>
 
 <script>
-    const popCodes = [
-        "100001", "100002", "100003", "100004", "100005", "100006", "100007", "100060", "100008", "100009", "100010",
-        "100011", "100060", "100012", "100013", "100014", "100015", "100016", "100017", "100018", "100019", "100020",
-        "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031",
-        "100032", "100033", "100034", "100035", "100036", "100037", "100038", "100047", "100040", "100041", "100042",
-        "100043", "100044", "100045", "100046", "100048", "100049", "100050", "100051", "100052", "100053", "100054",
-        "100055", "100056", "100061", "100062", "100063"
-    ];
+    const fiyatEtiketiPleksileri = {
+        "ASKILI ÇM-KM FİYAT ETİKETLİK": 10,
+        "PLEKSİ A5 AYAKLI": 10,
+        "PLEKSI A5 MIKNATISLI": 20,
+        "PLEKSI A5 VANTUZLU": 10,
+        "ANKASTRE SET ETİKETLİK": 10,
+        "PLEKSI A6 AYAKLI": 10,
+        "PLEKSI YATAY VELCRO": 10,
+        "PLEKSI YATAY VANTUZLU": 10,
+        "KILÇIK-KEA ETİKETLİK": 500,
+        "PLEKSI KEA ETIKETLİK": 20,
+        "PLEKSİ A4 AYAKLI": 10,
+        "PLEKSI KEA ETIKETLİK": 20,
+    };
 
-    const redCodes = ["100019", "100020", "100048", "100049", "100050", "100051"];
-    const blueCodes = ["100052", "100053", "100054", "100055", "100056"];
-    const popCodesContainer = document.getElementById('popCodesContainer');
+    const enerjiEtiketiPleksileri = {
+        "PLEKSİ ENERJİ ETİKETİ VANTUZLU 85X170": 25,
+        "PLEKSİ ENERJİ ETİKETİ VANTUZLU 102X201": 10,
+        "MIKNATISLI ENERJİ ETİKET TUTUCU 102X021": 10,
+        "ENERJİ ETİKETİ STANDI": 10,
+    };
 
-    const url = 'https://mkotbas.github.io/mlharc/mp4827.html';
     let validPasswords = [];
+    const url = 'https://mkotbas.github.io/mlharc/mp4827.html';
 
     // Kullanıcıdan parola isteme
     function requestPassword() {
@@ -142,7 +206,7 @@
     function validatePassword(password) {
         if (validPasswords.includes(password)) {
             localStorage.setItem('accessTime', Date.now());
-            loadPopCodes(); // Parolası doğrulandıktan sonra kodları yükle
+            loadContent(); // Parolası doğrulandıktan sonra içerikleri yükle
         } else {
             alert('Yanlış parola. Sayfa yenileniyor.');
             localStorage.removeItem('accessTime'); // Çerezleri temizle
@@ -168,90 +232,101 @@
     function checkAccess() {
         const accessTime = localStorage.getItem('accessTime');
         if (accessTime && (Date.now() - accessTime < 5 * 60 * 1000)) {
-            loadPopCodes();
+            loadContent();
         } else {
             requestPassword();
         }
     }
 
-    // Pop kodlarını yükleme
-    function loadPopCodes() {
+    // İçeriği yükleme
+    function loadContent() {
         document.getElementById('mainContent').style.display = 'block';
-        popCodes.forEach(code => {
-            const label = document.createElement('label');
-            label.classList.add('checkbox-label');
-            if (redCodes.includes(code)) label.classList.add('red');
-            if (blueCodes.includes(code)) label.classList.add('blue');
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = code;
-            checkbox.classList.add('checkbox');
-
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(code));
-            popCodesContainer.appendChild(label);
-        });
+        hesapla(); // Sayfa yüklendiğinde hesaplamayı yap
     }
 
-    // Sayfa yüklendiğinde parola listesini al
-    window.onload = loadPasswordList;
+    function hesapla() {
+        const fiyatTableBody = document.getElementById("fiyatTable").getElementsByTagName('tbody')[0];
+        const enerjiTableBody = document.getElementById("enerjiTable").getElementsByTagName('tbody')[0];
 
-    // Seçim ve kopyalama fonksiyonları
-    function toggleSelection(codes) {
-        document.querySelectorAll('.checkbox').forEach(checkbox => {
-            if (codes.includes(checkbox.value)) {
-                checkbox.checked = !checkbox.checked;
-            }
-        });
-    }
+        // Temizle
+        fiyatTableBody.innerHTML = '';
+        enerjiTableBody.innerHTML = '';
 
-    function selectBeyazEsyaCodes() {
-        const beyazEsyaCodes = ["100004", "100005", "100006", "100007", "100008", "100009", "100010", "100011", "100060", "100012", "100013", "100014"];
-        toggleSelection(beyazEsyaCodes);
-    }
+        // Fiyat Etiketi Hesaplama
+        for (const [malzeme, paketSayi] of Object.entries(fiyatEtiketiPleksileri)) {
+            const row = fiyatTableBody.insertRow();
+            row.insertCell(0).innerText = malzeme;
+            row.insertCell(1).innerText = paketSayi;
 
-    function selectKeaCodes() {
-        const keaCodes = ["100015", "100016", "100017", "100018", "100019", "100020", "100021", "100022", "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", "100031", "100032", "100033", "100034"];
-        toggleSelection(keaCodes);
-    }
+            const adetInput = document.createElement('input');
+            adetInput.type = 'number';
+            adetInput.value = 0;
+            adetInput.dataset.total = 0; // Store the total for this material
 
-    function selectAnkastreCodes() {
-        const ankastreCodes = ["100035", "100036", "100037", "100038"];
-        toggleSelection(ankastreCodes);
-    }
+            // Clear '0' when focused
+            adetInput.addEventListener('focus', () => {
+                if (adetInput.value === "0") {
+                    adetInput.value = '';
+                }
+            });
 
-    function selectTvCodes() {
-        const tvCodes = ["100047", "100040", "100041", "100042", "100043", "100044", "100045", "100046"];
-        toggleSelection(tvCodes);
-    }
+            adetInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    const adetValue = parseInt(adetInput.value) || 0;
+                    adetInput.dataset.total = parseInt(adetInput.dataset.total) + adetValue; // Update total
+                    guncellePaketSayisi(adetInput.dataset.total, paketSayi, row.cells[3]);
+                    adetInput.value = ''; // Clear input for new entry
+                    event.preventDefault(); // Prevent form submission
+                }
+            });
 
-    function selectGirisCodes() {
-        const girisCodes = ["100001", "100002", "100003", "100061", "100062", "100063"];
-        toggleSelection(girisCodes);
-    }
+            row.insertCell(2).appendChild(adetInput);
+            const paketGerekliCell = row.insertCell(3);
+            paketGerekliCell.innerText = 0; // Başlangıçta 0 paket
+        }
 
-    function selectAritmaCodes() {
-        const aritmaCodes = ["100048", "100049", "100050", "100051", "100052", "100053", "100054", "100055", "100056"];
-        toggleSelection(aritmaCodes);
-    }
+        // Enerji Etiketi Hesaplama
+        for (const [malzeme, paketSayi] of Object.entries(enerjiEtiketiPleksileri)) {
+            const row = enerjiTableBody.insertRow();
+            row.insertCell(0).innerText = malzeme;
+            row.insertCell(1).innerText = paketSayi;
 
-    function copySelectedCodes() {
-        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
-        const textToCopy = selectedCodes.join(", ");
-        
-        if (textToCopy) {
-            navigator.clipboard.writeText(textToCopy)
-                .then(() => alert("POP Kodlarınız Kopyalandı!"))
-                .catch(err => alert("Kopyalama hatası: " + err));
-        } else {
-            alert("Kopyalanacak kod seçilmedi.");
+            const adetInput = document.createElement('input');
+            adetInput.type = 'number';
+            adetInput.value = 0;
+            adetInput.dataset.total = 0; // Store the total for this material
+
+            // Clear '0' when focused
+            adetInput.addEventListener('focus', () => {
+                if (adetInput.value === "0") {
+                    adetInput.value = '';
+                }
+            });
+
+            adetInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    const adetValue = parseInt(adetInput.value) || 0;
+                    adetInput.dataset.total = parseInt(adetInput.dataset.total) + adetValue; // Update total
+                    guncellePaketSayisi(adetInput.dataset.total, paketSayi, row.cells[3]);
+                    adetInput.value = ''; // Clear input for new entry
+                    event.preventDefault(); // Prevent form submission
+                }
+            });
+
+            row.insertCell(2).appendChild(adetInput);
+            const paketGerekliCell = row.insertCell(3);
+            paketGerekliCell.innerText = 0; // Başlangıçta 0 paket
         }
     }
 
-    function clearSelectedCodes() {
-        document.querySelectorAll('.checkbox:checked').forEach(cb => cb.checked = false);
+    function guncellePaketSayisi(adet, paketSayi, paketGerekliCell) {
+        adet = parseInt(adet) || 0; // NaN kontrolü
+        const paketGerekli = Math.ceil(adet / paketSayi);
+        paketGerekliCell.innerText = paketGerekli;
     }
+
+    // Sayfa yüklendiğinde parola listesi yükle
+    window.onload = loadPasswordList;
 </script>
 
 </body>
