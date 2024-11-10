@@ -10,8 +10,8 @@
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
-            display: none;
-            user-select: none;
+            display: none; /* Başlangıçta içeriği gizle */
+            user-select: none; /* Metin seçimini engeller */
         }
         .frame {
             margin: 0 auto;
@@ -88,7 +88,6 @@
             border-radius: 4px;
             border: 1px solid #ccc;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-            text-align: center; /* Adet sütunu içeriğini ortala */
         }
         .footer {
             text-align: center;
@@ -97,12 +96,6 @@
             margin-top: 15px;
             font-style: italic;
         }
-
-        th:nth-child(3),
-        td:nth-child(3) {
-            text-align: center; /* Adet sütununu ve başlığını ortala */
-        }
-
         th:nth-child(2),
         th:nth-child(4),
         td:nth-child(2),
@@ -168,7 +161,156 @@
 </div>
 
 <script>
-    // Mevcut JavaScript kodunuz burada kalabilir.
+    const PASSWORD_URL = 'https://mkotbas.github.io/host/mp4827.html';
+    const ACCESS_TIME_LIMIT = 60 * 60 * 1000; // 60 dakika (1 saat)
+
+    function isMobile() {
+        return window.innerWidth < 768;
+    }
+
+    if (isMobile()) {
+        alert('Bu sayfa mobil erişime kapalıdır. Sadece tablet ve bilgisayarla giriş yapınız.');
+        document.body.style.display = 'none';
+    } else {
+        window.onload = checkAccess;
+    }
+
+    async function fetchPasswords() {
+        const response = await fetch(PASSWORD_URL);
+        if (!response.ok) throw new Error('Parola listesini yüklerken bir hata oluştu.');
+        const data = await response.text();
+        return data.split(',').map(p => p.trim());
+    }
+
+    function isAccessAllowed() {
+        const storedTimestamp = localStorage.getItem('accessTimestamp');
+        const currentTime = Date.now();
+        return storedTimestamp && (currentTime - storedTimestamp <= ACCESS_TIME_LIMIT);
+    }
+
+    async function checkAccess() {
+        try {
+            if (isAccessAllowed()) {
+                document.body.style.display = 'block';
+                hesapla();
+                return;
+            }
+
+            const passwords = await fetchPasswords();
+            requestPassword(passwords);
+        } catch (error) {
+            alert(error.message);
+            location.reload();
+        }
+    }
+
+    function requestPassword(validPasswords = []) {
+        const enteredPassword = prompt('Lütfen parolanızı girin:');
+        
+        if (enteredPassword === null) {
+            alert('İptal Edildi.');
+            return;
+        }
+
+        if (enteredPassword.trim() === '') {
+            alert('Lütfen parolanızı girin.');
+            requestPassword(validPasswords);
+            return;
+        }
+
+        if (validPasswords.includes(enteredPassword)) {
+            localStorage.setItem('accessTimestamp', Date.now());
+            document.body.style.display = 'block';
+            hesapla();
+        } else {
+            alert('Yanlış parola!');
+            localStorage.removeItem('accessTimestamp');
+            location.reload();
+        }
+    }
+
+    setTimeout(() => {
+        localStorage.removeItem('accessTimestamp');
+        location.reload();
+    }, ACCESS_TIME_LIMIT);
+
+    const fiyatetiketivemalzemeler = {
+        "ASKILI ÇM-KM FİYAT ETİKETLİK": 10,
+        "PLEKSİ A5 AYAKLI": 10,
+        "PLEKSI A5 MIKNATISLI": 20,
+        "PLEKSI A5 VANTUZLU": 10,
+        "ANKASTRE SET ETİKETLİK": 10,
+        "PLEKSI A6 AYAKLI": 10,
+        "PLEKSI YATAY VELCRO": 10,
+        "PLEKSI YATAY VANTUZLU": 10,
+        "KILÇIK-KEA ETİKETLİK": 500,
+        "PLEKSI KEA ETIKETLİK": 20,
+        "PLEKSİ A4 AYAKLI": 10,
+        "PLEKSI KEA ETİKETLİK": 20,
+        "TUTUCU-SAÇ MAŞASI": 10,
+        "TUTUCU (KATLI) SAÇ MAŞASI": 1,
+        "TUTUCU-FÖN MAKİNESİ": 10,
+        "TUTUCU-TRAŞ MAKİNESİ": 5,
+    };
+
+    const enerjiEtiketiPleksileri = {
+        "PLEKSİ ENERJİ ETİKETİ VANTUZLU 85X170": 25,
+        "PLEKSİ ENERJİ ETİKETİ VANTUZLU 102X201": 10,
+        "MIKNATISLI ENERJİ ETİKET TUTUCU 102X021": 10,
+        "ENERJİ ETİKETİ STANDI": 10,
+    };
+
+    function hesapla() {
+        const fiyatTableBody = document.getElementById("fiyatTable").getElementsByTagName("tbody")[0];
+        const enerjiTableBody = document.getElementById("enerjiTable").getElementsByTagName("tbody")[0];
+        populateTable(fiyatTableBody, fiyatetiketivemalzemeler);
+        populateTable(enerjiTableBody, enerjiEtiketiPleksileri);
+    }
+
+    function populateTable(tableBody, data) {
+        for (const key in data) {
+            const row = tableBody.insertRow();
+            row.insertCell(0).textContent = key;
+            row.insertCell(1).textContent = data[key];
+            const adetInput = document.createElement("input");
+            adetInput.type = "number";
+            adetInput.min = 0;
+            adetInput.value = 0;
+            adetInput.dataset.total = 0;
+
+            const paketSayi = data[key];
+            adetInput.addEventListener('focus', () => {
+                if (adetInput.value === "0") {
+                    adetInput.value = '';
+                }
+            });
+
+            adetInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    işlemYap(adetInput, paketSayi, row.cells[3]);
+                    event.preventDefault();
+                }
+            });
+
+            adetInput.addEventListener('blur', () => {
+                işlemYap(adetInput, paketSayi, row.cells[3]);
+            });
+
+            row.insertCell(2).appendChild(adetInput);
+            row.insertCell(3).textContent = "0";
+        }
+    }
+
+    function işlemYap(adetInput, paketSayi, paketGerekliCell) {
+        const adetValue = parseInt(adetInput.value) || 0;
+        adetInput.dataset.total = parseInt(adetInput.dataset.total) + adetValue;
+        guncellePaketSayisi(adetInput.dataset.total, paketSayi, paketGerekliCell);
+        adetInput.value = ''; 
+    }
+
+    function guncellePaketSayisi(total, paketSayi, paketGerekliCell) {
+        paketGerekliCell.textContent = Math.ceil(total / paketSayi);
+    }
 </script>
 
 </body>
