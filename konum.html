@@ -54,12 +54,14 @@
             margin-top: 10px;
         }
 
-        #customButton, #clearButton, #dbButton {
+        #customButton, #clearButton, #dbButton, #copyButton {
             padding: 10px 20px;
             font-size: 16px;
             border-radius: 4px;
             cursor: pointer;
             border: none;
+            display: flex;
+            align-items: center;
         }
 
         #customButton {
@@ -87,6 +89,15 @@
 
         #dbButton:hover {
             background-color: #005f8a;
+        }
+
+        #copyButton {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        #copyButton:hover {
+            background-color: #e67e22;
         }
 
         #results {
@@ -165,6 +176,7 @@
         <div id="buttonContainer">
             <button id="customButton">Yükle</button>
             <button id="clearButton">Sil</button>
+            <button id="copyButton">Kopyala</button>
             <button id="dbButton">DB</button>
         </div>
     </div>
@@ -239,58 +251,75 @@
 
                 const headers = Object.keys(filteredData[0]);
                 const headerRow = document.createElement('tr');
-                headers.forEach(header => {
-                    const th = document.createElement('th');
-                    th.textContent = header;
-                    headerRow.appendChild(th);
-                });
+                headerRow.innerHTML = '<th>Seç</th>' + headers.map(header => `<th>${header}</th>`).join('');
                 thead.appendChild(headerRow);
                 table.appendChild(thead);
 
                 filteredData.forEach(row => {
                     const tr = document.createElement('tr');
-                    Object.entries(row).forEach(([key, value]) => {
+                    const checkboxCell = document.createElement('td');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.setAttribute('data-bayi-kodu', row['Bayi Kodu']);
+                    checkbox.setAttribute('data-bayi', row['Bayi']);
+                    checkboxCell.appendChild(checkbox);
+                    tr.appendChild(checkboxCell);
+
+                    Object.values(row).forEach(value => {
                         const td = document.createElement('td');
-                        if (key.toLowerCase() === "konum" && value !== "Boş") {
-                            const coords = value.split(',').map(coord => coord.trim());
-                            if (coords.length === 2) {
-                                const link = document.createElement('a');
-                                link.href = `https://www.google.com/maps?q=${coords[0]},${coords[1]}`;
-                                link.target = "_blank";
-                                link.textContent = "Harita";
-                                td.appendChild(link);
-                            } else {
-                                td.textContent = value;
-                            }
-                        } else {
-                            td.textContent = value || "Boş";
-                        }
+                        td.textContent = value;
                         tr.appendChild(td);
                     });
+
                     tbody.appendChild(tr);
                 });
 
                 table.appendChild(tbody);
                 resultsDiv.appendChild(table);
             } else {
-                resultsDiv.textContent = "Sonuç bulunamadı.";
+                resultsDiv.textContent = "Sonuç bulunamadı!";
             }
         });
 
-        document.getElementById('clearButton').addEventListener('click', () => {
-            document.getElementById('results').innerHTML = '';
-            document.getElementById('searchInput').value = '';
-            alert("Sonuç sayfası temizlendi!");
+        // Copy selected rows directly to the clipboard
+        document.getElementById('copyButton').addEventListener('click', () => {
+            const selectedRows = [];
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+
+            checkboxes.forEach(checkbox => {
+                const bayiKodu = checkbox.getAttribute('data-bayi-kodu');
+                const bayi = checkbox.getAttribute('data-bayi');
+                selectedRows.push(`${bayiKodu} - ${bayi}`);
+            });
+
+            if (selectedRows.length > 0) {
+                const message = `Günaydın, bugün FiDe yapacağım bayiler;\n\n${selectedRows.join('\n')}`;
+
+                // Create a temporary text area to copy to clipboard
+                const textArea = document.createElement('textarea');
+                textArea.value = message;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+
+                alert("Seçilen bayiler panoya kopyalandı.");
+            } else {
+                alert("Lütfen kopyalamak için en az bir satır seçin.");
+            }
         });
 
+        // Clear results and search input
+        document.getElementById('clearButton').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('results').innerHTML = '';
+        });
+
+        // Clear localStorage and cookies
         document.getElementById('dbButton').addEventListener('click', () => {
-            // Clear localStorage and cookies
-            localStorage.clear();
-            document.cookie.split(";").forEach(cookie => {
-                const [name] = cookie.split("=");
-                document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
-            });
-            alert("LocalStorage ve tüm çerezler temizlendi!");
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(STORAGE_EXPIRY_KEY);
+            alert("Veritabanı temizlendi.");
         });
     </script>
 </body>
