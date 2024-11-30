@@ -54,7 +54,7 @@
             margin-top: 10px;
         }
 
-        #customButton, #clearButton, #dbButton, #copyButton {
+        #customButton, #clearButton, #copyButton, #dbButton {
             padding: 10px 20px;
             font-size: 16px;
             border-radius: 4px;
@@ -101,31 +101,31 @@
         }
 
         #results {
-            margin-top: 20px;
-            width: 100%;
-            max-width: 1000px;
+            margin: 0 auto;  /* Ortalamak için */
+            width: 100%;     /* Tam genişlik */
+            max-width: 1000px; /* Genişliği sınırlandırmak için */
         }
 
         table {
-            width: 800px;  /* Sabit genişlik */
+            width: 100%;  /* Tabloyu %100 genişlikte yaparak sağ ve soldan eşitle */
             border-collapse: collapse;
             margin-top: 20px;
             background-color: white;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
-            table-layout: fixed; /* Sabit hücre genişlikleri */
-            font-size: 12px; /* Font boyutunu küçülttük */
+            table-layout: fixed;
+            font-size: 12px;
         }
 
         th, td {
-            padding: 8px 10px; /* Hücre içi boşlukları küçülttük */
+            padding: 8px 10px;
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
-            word-wrap: break-word; /* Uzun kelimeleri kırarak hücreye sığdırır */
-            overflow: hidden; /* Aşırı metni gizler */
-            text-overflow: ellipsis; /* Hücrede taşan metni '...' ile gösterir */
+            word-wrap: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         th {
@@ -158,7 +158,7 @@
         }
 
         td {
-            font-size: 12px; /* Font boyutunu küçültme */
+            font-size: 12px;
         }
 
         a {
@@ -288,12 +288,10 @@
                         headers.map(header => `<td>${row[header]}</td>`).join('');
                     tbody.appendChild(rowElement);
                 });
-
                 table.appendChild(tbody);
                 resultsDiv.appendChild(table);
-                noResultsMessage.innerHTML = '';  
             } else {
-                noResultsMessage.innerHTML = "Sonuç bulunamadı!";
+                noResultsMessage.innerHTML = 'Aradığınız kriterlere uygun sonuç bulunamadı.';
             }
         });
 
@@ -304,20 +302,28 @@
         });
 
         document.getElementById('copyButton').addEventListener('click', () => {
-            const rows = Array.from(document.querySelectorAll('table tr'));
-            const data = rows.map(row => 
-                Array.from(row.querySelectorAll('td, th')).map(cell => cell.innerText).join('\t')
-            ).join('\n');
-            
-            if (data) {
-                navigator.clipboard.writeText(data).then(() => {
-                    alert('Veriler kopyalandı!');
+            const selectedRows = document.querySelectorAll('#results input[type="checkbox"]:checked');
+            if (selectedRows.length) {
+                let textToCopy = '';
+                selectedRows.forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    const cells = row.querySelectorAll('td');
+                    cells.forEach(cell => {
+                        textToCopy += cell.innerText + '\t';
+                    });
+                    textToCopy += '\n';
                 });
+
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => alert('Seçilen veriler kopyalandı!'))
+                    .catch(err => alert('Kopyalama sırasında hata oluştu: ' + err));
+            } else {
+                alert('Lütfen önce veri seçin.');
             }
         });
 
         document.getElementById('dbButton').addEventListener('click', () => {
-            alert("Veri tabanı bağlantısı yapılmadı!");
+            alert('Veritabanı işlemi henüz yapılmamıştır.');
         });
     </script>
 </body>
