@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinamik Excel Arama Otomasyonu</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f7fc;
+            color: #333;
+        }
+
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+            margin: 0 0 20px;
+            background: linear-gradient(to right, #ff5c5c, #8b0000);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            max-width: 90%;
+        }
+
+        #searchContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        #searchInput {
+            margin: 10px 0;
+            padding: 10px;
+            width: 300px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #buttonContainer {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        #customButton, #clearButton, #dbButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+        }
+
+        #customButton {
+            background-color: #5cb85c;
+            color: white;
+        }
+
+        #customButton:hover {
+            background-color: #4cae4c;
+        }
+
+        #clearButton {
+            background-color: #d9534f;
+            color: white;
+        }
+
+        #clearButton:hover {
+            background-color: #c9302c;
+        }
+
+        #dbButton {
+            background-color: #008CBA;
+            color: white;
+        }
+
+        #dbButton:hover {
+            background-color: #005f8a;
+        }
+
+        #results {
+            margin-top: 20px;
+            width: 90%;
+            max-width: 1000px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        th {
+            background-color: #2c3e50;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        td:last-child, th:last-child {
+            border-right: none;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        tr:hover {
+            background-color: #f1f5f9;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        a {
+            color: #2980b9;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="header">Bayi Konum Otomasyonu</h1>
+
+    <div id="searchContainer">
+        <input type="text" id="searchInput" placeholder="Aramak istediğiniz kelimeyi yazın...">
+        <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
+        <div id="buttonContainer">
+            <button id="customButton">Yükle</button>
+            <button id="clearButton">Sil</button>
+            <button id="dbButton">DB</button>
+        </div>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        let excelData = [];
+        const STORAGE_KEY = 'excelData';
+        const STORAGE_EXPIRY_KEY = 'excelDataExpiry';
+
+        // Load saved data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            const expiryTime = localStorage.getItem(STORAGE_EXPIRY_KEY);
+
+            if (savedData && expiryTime && new Date() < new Date(expiryTime)) {
+                excelData = JSON.parse(savedData);
+                alert("Kaydedilmiş veri yüklendi.");
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(STORAGE_EXPIRY_KEY);
+            }
+        });
+
+        document.getElementById('customButton').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    excelData = XLSX.utils.sheet_to_json(worksheet, { defval: "Boş" });
+                    const expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + 30);
+
+                    // Save data and expiry date to localStorage
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(excelData));
+                    localStorage.setItem(STORAGE_EXPIRY_KEY, expiryDate.toISOString());
+                    alert("Excel dosyası yüklendi ve 30 gün boyunca kaydedildi!");
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
+
+        document.getElementById('searchInput').addEventListener('input', () => {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            if (!excelData.length) {
+                resultsDiv.textContent = "Lütfen önce bir Excel dosyası yükleyin!";
+                return;
+            }
+
+            const filteredData = excelData.filter(row => {
+                return Object.values(row).some(value =>
+                    value.toString().toLowerCase().includes(query)
+                );
+            });
+
+            if (filteredData.length) {
+                const table = document.createElement('table');
+                const thead = document.createElement('thead');
+                const tbody = document.createElement('tbody');
+
+                const headers = Object.keys(filteredData[0]);
+                const headerRow = document.createElement('tr');
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                filteredData.forEach(row => {
+                    const tr = document.createElement('tr');
+                    Object.entries(row).forEach(([key, value]) => {
+                        const td = document.createElement('td');
+                        if (key.toLowerCase() === "konum" && value !== "Boş") {
+                            const coords = value.split(',').map(coord => coord.trim());
+                            if (coords.length === 2) {
+                                const link = document.createElement('a');
+                                link.href = `https://www.google.com/maps?q=${coords[0]},${coords[1]}`;
+                                link.target = "_blank";
+                                link.textContent = "Harita";
+                                td.appendChild(link);
+                            } else {
+                                td.textContent = value;
+                            }
+                        } else {
+                            td.textContent = value || "Boş";
+                        }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+
+                table.appendChild(tbody);
+                resultsDiv.appendChild(table);
+            } else {
+                resultsDiv.textContent = "Sonuç bulunamadı.";
+            }
+        });
+
+        document.getElementById('clearButton').addEventListener('click', () => {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('searchInput').value = '';
+            alert("Sonuç sayfası temizlendi!");
+        });
+
+        document.getElementById('dbButton').addEventListener('click', () => {
+            // Clear localStorage and cookies
+            localStorage.clear();
+            document.cookie.split(";").forEach(cookie => {
+                const [name] = cookie.split("=");
+                document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+            });
+            alert("LocalStorage ve tüm çerezler temizlendi!");
+        });
+    </script>
+</body>
+</html>
