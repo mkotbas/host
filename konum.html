@@ -102,26 +102,28 @@
 
         #results {
             margin-top: 20px;
-            width: 90%;
+            width: 100%;
             max-width: 1000px;
+            overflow-x: auto; /* Yatay kaydırma eklenebilir, ancak biz engelliyoruz */
         }
 
         table {
-            width: 100%; /* Tabloyu tam genişlikte yap */
+            width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             background-color: white;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
-            table-layout: fixed; /* Hücrelerin eşit genişlikte olmasını sağlar */
+            table-layout: auto; /* Tablo düzeni esnek olacak şekilde ayarlandı */
         }
 
         th, td {
-            padding: 12px 15px;
+            padding: 10px 12px;  /* Hem başlıklar hem veriler için padding */
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
+            word-wrap: break-word; /* Uzun kelimelerin satır sonunda kesilmesini sağlar */
         }
 
         th {
@@ -177,28 +179,25 @@
         /* Mobil İçin Özelleştirme */
         @media (max-width: 768px) {
             table {
-                /* Tabloyu taşımak için yatay kaydırma ekliyoruz */
+                width: 100%;
                 display: block;
-                overflow-x: auto; /* Yatay kaydırma ekler */
-                -webkit-overflow-scrolling: touch; /* Mobil cihazlarda düzgün kaydırma */
-                white-space: nowrap; /* Hücrelerin taşmasını engellemek */
+                overflow-x: hidden;  /* Yatay kaydırma engellendi */
+                white-space: nowrap; /* Hücrelerin taşmasını engeller */
             }
 
             th, td {
-                padding: 8px; /* Mobil cihazlar için daha az padding */
-                font-size: 12px; /* Yazı boyutunu biraz küçültüyoruz */
+                padding: 8px;  /* Mobilde daha küçük padding */
+                font-size: 12px; /* Yazı boyutunu küçültüyoruz */
             }
 
-            /* Tablonun başlık hücrelerini ve veri hücrelerini eşit hale getiriyoruz */
             td {
-                word-wrap: break-word; /* Metnin taşmaması için */
+                text-overflow: ellipsis;
+                overflow: hidden;  /* Mobilde fazla metin kaybolur */
             }
-        }
 
-        /* Bilgisayar ve büyük ekranlar için normal tablo düzeni */
-        @media (min-width: 769px) {
-            table {
-                width: 100%; /* Tablo ekran genişliğine göre hizalanır */
+            /* Daha büyük ekranlar için kutuların genişliğini sınırlandır */
+            #results {
+                width: 100%;
             }
         }
     </style>
