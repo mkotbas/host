@@ -165,6 +165,13 @@
         a:hover {
             text-decoration: underline;
         }
+
+        #noResultsMessage, #noFileMessage {
+            margin-top: 20px;  /* Burada 20px boşluk ekleniyor */
+            color: #e74c3c;
+            font-size: 16px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -179,6 +186,8 @@
             <button id="copyButton">Kopyala</button>
             <button id="dbButton">DB</button>
         </div>
+        <div id="noResultsMessage"></div>  <!-- Sonuç bulunamadı uyarısı burada yer alacak -->
+        <div id="noFileMessage"></div> <!-- Excel dosyası yüklenmemişse mesaj burada yer alacak -->
     </div>
 
     <div id="results"></div>
@@ -187,15 +196,22 @@
         let excelData = [];
         const STORAGE_KEY = 'excelData';
         const STORAGE_EXPIRY_KEY = 'excelDataExpiry';
+        const FIRST_LOAD_KEY = 'firstLoadCompleted';  // Yeni bayrak ekledik
 
         // Load saved data on page load
         document.addEventListener('DOMContentLoaded', () => {
             const savedData = localStorage.getItem(STORAGE_KEY);
             const expiryTime = localStorage.getItem(STORAGE_EXPIRY_KEY);
+            const firstLoad = localStorage.getItem(FIRST_LOAD_KEY);  // Veriyi yükleyip yüklemediğimizi kontrol ediyoruz
 
             if (savedData && expiryTime && new Date() < new Date(expiryTime)) {
                 excelData = JSON.parse(savedData);
-                alert("Kaydedilmiş veri yüklendi.");
+
+                // İlk defa veri yüklendiyse uyarıyı göster
+                if (!firstLoad) {
+                    alert("Kaydedilmiş veri yüklendi.");
+                    localStorage.setItem(FIRST_LOAD_KEY, 'true');  // Uyarıyı gösterdiğimizde bayrağı 'true' yapıyoruz
+                }
             } else {
                 localStorage.removeItem(STORAGE_KEY);
                 localStorage.removeItem(STORAGE_EXPIRY_KEY);
@@ -208,6 +224,9 @@
 
         document.getElementById('fileInput').addEventListener('change', (event) => {
             const file = event.target.files[0];
+            const noFileMessage = document.getElementById('noFileMessage');
+            noFileMessage.innerHTML = ''; // Dosya seçildiğinde mesajı temizliyoruz
+
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -222,19 +241,25 @@
                     // Save data and expiry date to localStorage
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(excelData));
                     localStorage.setItem(STORAGE_EXPIRY_KEY, expiryDate.toISOString());
+                    localStorage.setItem(FIRST_LOAD_KEY, 'true');  // İlk yüklemeden sonra bayrağı kaydediyoruz
                     alert("Excel dosyası yüklendi ve 30 gün boyunca kaydedildi!");
                 };
                 reader.readAsArrayBuffer(file);
+            } else {
+                noFileMessage.innerHTML = "Lütfen önce bir Excel dosyası yükleyin!";
             }
         });
 
         document.getElementById('searchInput').addEventListener('input', () => {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const resultsDiv = document.getElementById('results');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            const noFileMessage = document.getElementById('noFileMessage');
             resultsDiv.innerHTML = '';
+            noResultsMessage.innerHTML = '';  // Sonuç mesajını temizliyoruz
 
             if (!excelData.length) {
-                resultsDiv.textContent = "Lütfen önce bir Excel dosyası yükleyin!";
+                noFileMessage.innerHTML = "Lütfen önce bir Excel dosyası yükleyin!";
                 return;
             }
 
@@ -277,7 +302,7 @@
                 table.appendChild(tbody);
                 resultsDiv.appendChild(table);
             } else {
-                resultsDiv.textContent = "Sonuç bulunamadı!";
+                noResultsMessage.innerHTML = "Sonuç bulunamadı!";
             }
         });
 
@@ -319,6 +344,7 @@
         document.getElementById('dbButton').addEventListener('click', () => {
             localStorage.removeItem(STORAGE_KEY);
             localStorage.removeItem(STORAGE_EXPIRY_KEY);
+            localStorage.removeItem(FIRST_LOAD_KEY);  // Bayrağı da temizliyoruz
             alert("Veritabanı temizlendi.");
         });
     </script>
