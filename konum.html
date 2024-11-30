@@ -54,7 +54,7 @@
             margin-top: 10px;
         }
 
-        #customButton, #clearButton, #dbButton, #copyButton {
+        #customButton, #clearButton, #copyButton, #dbButton {
             padding: 10px 20px;
             font-size: 16px;
             border-radius: 4px;
@@ -291,13 +291,12 @@
                         const td = document.createElement('td');
                         const value = row[key];
                         
-                        // Eğer 'Konum' başlığı varsa, koordinatları alıp Google Maps linki yapalım
-                        if (key.toLowerCase() === 'konum' && value) {
+                        if (key.toLowerCase() === 'konum' && value && value !== "Boş") {
                             const [latitude, longitude] = value.split(',').map(coord => coord.trim());
                             const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
                             td.innerHTML = `<a href="${mapLink}" target="_blank">Harita</a>`;
                         } else {
-                            td.textContent = value;
+                            td.textContent = value || "Boş";
                         }
 
                         tr.appendChild(td);
