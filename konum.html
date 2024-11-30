@@ -54,7 +54,7 @@
             margin-top: 10px;
         }
 
-        #customButton, #clearButton, #copyButton, #dbButton {
+        #customButton, #clearButton, #dbButton, #copyButton {
             padding: 10px 20px;
             font-size: 16px;
             border-radius: 4px;
@@ -102,9 +102,8 @@
 
         #results {
             margin-top: 20px;
-            width: 100%;
+            width: 90%;
             max-width: 1000px;
-            overflow-x: auto; /* Yatay kaydırma eklenebilir, ancak biz engelliyoruz */
         }
 
         table {
@@ -115,15 +114,13 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
-            table-layout: auto; /* Tablo düzeni esnek olacak şekilde ayarlandı */
         }
 
         th, td {
-            padding: 10px 12px;  /* Hem başlıklar hem veriler için padding */
+            padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
-            word-wrap: break-word; /* Uzun kelimelerin satır sonunda kesilmesini sağlar */
         }
 
         th {
@@ -170,35 +167,10 @@
         }
 
         #noResultsMessage, #noFileMessage {
-            margin-top: 20px;
+            margin-top: 20px;  /* Burada 20px boşluk ekleniyor */
             color: #e74c3c;
             font-size: 16px;
             font-weight: bold;
-        }
-
-        /* Mobil İçin Özelleştirme */
-        @media (max-width: 768px) {
-            table {
-                width: 100%;
-                display: block;
-                overflow-x: hidden;  /* Yatay kaydırma engellendi */
-                white-space: nowrap; /* Hücrelerin taşmasını engeller */
-            }
-
-            th, td {
-                padding: 8px;  /* Mobilde daha küçük padding */
-                font-size: 12px; /* Yazı boyutunu küçültüyoruz */
-            }
-
-            td {
-                text-overflow: ellipsis;
-                overflow: hidden;  /* Mobilde fazla metin kaybolur */
-            }
-
-            /* Daha büyük ekranlar için kutuların genişliğini sınırlandır */
-            #results {
-                width: 100%;
-            }
         }
     </style>
 </head>
@@ -214,8 +186,8 @@
             <button id="copyButton">Kopyala</button>
             <button id="dbButton">DB</button>
         </div>
-        <div id="noResultsMessage"></div> 
-        <div id="noFileMessage"></div>
+        <div id="noResultsMessage"></div>  <!-- Sonuç bulunamadı uyarısı burada yer alacak -->
+        <div id="noFileMessage"></div> <!-- Excel dosyası yüklenmemişse mesaj burada yer alacak -->
     </div>
 
     <div id="results"></div>
@@ -224,20 +196,21 @@
         let excelData = [];
         const STORAGE_KEY = 'excelData';
         const STORAGE_EXPIRY_KEY = 'excelDataExpiry';
-        const FIRST_LOAD_KEY = 'firstLoadCompleted';
+        const FIRST_LOAD_KEY = 'firstLoadCompleted';  // Yeni bayrak ekledik
 
         // Load saved data on page load
         document.addEventListener('DOMContentLoaded', () => {
             const savedData = localStorage.getItem(STORAGE_KEY);
             const expiryTime = localStorage.getItem(STORAGE_EXPIRY_KEY);
-            const firstLoad = localStorage.getItem(FIRST_LOAD_KEY);
+            const firstLoad = localStorage.getItem(FIRST_LOAD_KEY);  // Veriyi yükleyip yüklemediğimizi kontrol ediyoruz
 
             if (savedData && expiryTime && new Date() < new Date(expiryTime)) {
                 excelData = JSON.parse(savedData);
 
+                // İlk defa veri yüklendiyse uyarıyı göster
                 if (!firstLoad) {
                     alert("Kaydedilmiş veri yüklendi.");
-                    localStorage.setItem(FIRST_LOAD_KEY, 'true');
+                    localStorage.setItem(FIRST_LOAD_KEY, 'true');  // Uyarıyı gösterdiğimizde bayrağı 'true' yapıyoruz
                 }
             } else {
                 localStorage.removeItem(STORAGE_KEY);
@@ -252,7 +225,7 @@
         document.getElementById('fileInput').addEventListener('change', (event) => {
             const file = event.target.files[0];
             const noFileMessage = document.getElementById('noFileMessage');
-            noFileMessage.innerHTML = '';
+            noFileMessage.innerHTML = ''; // Dosya seçildiğinde mesajı temizliyoruz
 
             if (file) {
                 const reader = new FileReader();
@@ -265,9 +238,10 @@
                     const expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 30);
 
+                    // Save data and expiry date to localStorage
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(excelData));
                     localStorage.setItem(STORAGE_EXPIRY_KEY, expiryDate.toISOString());
-                    localStorage.setItem(FIRST_LOAD_KEY, 'true');
+                    localStorage.setItem(FIRST_LOAD_KEY, 'true');  // İlk yüklemeden sonra bayrağı kaydediyoruz
                     alert("Excel dosyası yüklendi ve 30 gün boyunca kaydedildi!");
                 };
                 reader.readAsArrayBuffer(file);
@@ -282,7 +256,7 @@
             const noResultsMessage = document.getElementById('noResultsMessage');
             const noFileMessage = document.getElementById('noFileMessage');
             resultsDiv.innerHTML = '';
-            noResultsMessage.innerHTML = '';
+            noResultsMessage.innerHTML = '';  // Sonuç mesajını temizliyoruz
 
             if (!excelData.length) {
                 noFileMessage.innerHTML = "Lütfen önce bir Excel dosyası yükleyin!";
@@ -332,6 +306,7 @@
             }
         });
 
+        // Copy selected rows directly to the clipboard
         document.getElementById('copyButton').addEventListener('click', () => {
             const selectedRows = [];
             const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
@@ -345,6 +320,7 @@
             if (selectedRows.length > 0) {
                 const message = `Günaydın, bugün FiDe yapacağım bayiler;\n\n${selectedRows.join('\n')}`;
 
+                // Create a temporary text area to copy to clipboard
                 const textArea = document.createElement('textarea');
                 textArea.value = message;
                 document.body.appendChild(textArea);
@@ -358,15 +334,17 @@
             }
         });
 
+        // Clear results and search input
         document.getElementById('clearButton').addEventListener('click', () => {
             document.getElementById('searchInput').value = '';
             document.getElementById('results').innerHTML = '';
         });
 
+        // Clear localStorage and cookies
         document.getElementById('dbButton').addEventListener('click', () => {
             localStorage.removeItem(STORAGE_KEY);
             localStorage.removeItem(STORAGE_EXPIRY_KEY);
-            localStorage.removeItem(FIRST_LOAD_KEY);
+            localStorage.removeItem(FIRST_LOAD_KEY);  // Bayrağı da temizliyoruz
             alert("Veritabanı temizlendi.");
         });
     </script>
