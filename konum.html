@@ -54,7 +54,7 @@
             margin-top: 10px;
         }
 
-        #customButton, #clearButton, #copyButton, #dbButton {
+        #customButton, #clearButton, #dbButton, #copyButton {
             padding: 10px 20px;
             font-size: 16px;
             border-radius: 4px;
@@ -102,33 +102,25 @@
 
         #results {
             margin-top: 20px;
-            width: 100%;
+            width: 90%;
             max-width: 1000px;
-            margin: 0 auto;  /* Ortalamayı sağladık */
         }
 
         table {
-            width: calc(100% - 2px);  /* %100 genişlik - 1px sağ ve soldan boşluk */
+            width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             background-color: white;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
-            table-layout: fixed;
-            margin-left: 1px;  /* 1px sağ ve soldan boşluk */
-            margin-right: 1px; 
         }
 
         th, td {
-            padding: 4px 6px;  /* Daha küçük padding */
+            padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
-            word-wrap: break-word;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: 10px;  /* Daha küçük yazı boyutu */
         }
 
         th {
@@ -137,7 +129,14 @@
             font-weight: bold;
             text-transform: uppercase;
             border-right: 1px solid #e0e0e0;
-            font-size: 10px;  /* Başlıklar için de daha küçük yazı boyutu */
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        td:last-child, th:last-child {
+            border-right: none;
         }
 
         tr:nth-child(even) {
@@ -154,7 +153,7 @@
         }
 
         td {
-            font-size: 10px;  /* Tablo hücrelerindeki yazı boyutu */
+            font-size: 14px;
         }
 
         a {
@@ -168,7 +167,7 @@
         }
 
         #noResultsMessage, #noFileMessage {
-            margin-top: 20px;
+            margin-top: 20px;  /* Burada 20px boşluk ekleniyor */
             color: #e74c3c;
             font-size: 16px;
             font-weight: bold;
@@ -187,8 +186,8 @@
             <button id="copyButton">Kopyala</button>
             <button id="dbButton">DB</button>
         </div>
-        <div id="noResultsMessage"></div>  
-        <div id="noFileMessage"></div>
+        <div id="noResultsMessage"></div>  <!-- Sonuç bulunamadı uyarısı burada yer alacak -->
+        <div id="noFileMessage"></div> <!-- Excel dosyası yüklenmemişse mesaj burada yer alacak -->
     </div>
 
     <div id="results"></div>
@@ -197,19 +196,21 @@
         let excelData = [];
         const STORAGE_KEY = 'excelData';
         const STORAGE_EXPIRY_KEY = 'excelDataExpiry';
-        const FIRST_LOAD_KEY = 'firstLoadCompleted';  
+        const FIRST_LOAD_KEY = 'firstLoadCompleted';  // Yeni bayrak ekledik
 
+        // Load saved data on page load
         document.addEventListener('DOMContentLoaded', () => {
             const savedData = localStorage.getItem(STORAGE_KEY);
             const expiryTime = localStorage.getItem(STORAGE_EXPIRY_KEY);
-            const firstLoad = localStorage.getItem(FIRST_LOAD_KEY);  
+            const firstLoad = localStorage.getItem(FIRST_LOAD_KEY);  // Veriyi yükleyip yüklemediğimizi kontrol ediyoruz
 
             if (savedData && expiryTime && new Date() < new Date(expiryTime)) {
                 excelData = JSON.parse(savedData);
 
+                // İlk defa veri yüklendiyse uyarıyı göster
                 if (!firstLoad) {
                     alert("Kaydedilmiş veri yüklendi.");
-                    localStorage.setItem(FIRST_LOAD_KEY, 'true');  
+                    localStorage.setItem(FIRST_LOAD_KEY, 'true');  // Uyarıyı gösterdiğimizde bayrağı 'true' yapıyoruz
                 }
             } else {
                 localStorage.removeItem(STORAGE_KEY);
@@ -224,7 +225,7 @@
         document.getElementById('fileInput').addEventListener('change', (event) => {
             const file = event.target.files[0];
             const noFileMessage = document.getElementById('noFileMessage');
-            noFileMessage.innerHTML = '';
+            noFileMessage.innerHTML = ''; // Dosya seçildiğinde mesajı temizliyoruz
 
             if (file) {
                 const reader = new FileReader();
@@ -237,9 +238,10 @@
                     const expiryDate = new Date();
                     expiryDate.setDate(expiryDate.getDate() + 30);
 
+                    // Save data and expiry date to localStorage
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(excelData));
                     localStorage.setItem(STORAGE_EXPIRY_KEY, expiryDate.toISOString());
-                    localStorage.setItem(FIRST_LOAD_KEY, 'true');  
+                    localStorage.setItem(FIRST_LOAD_KEY, 'true');  // İlk yüklemeden sonra bayrağı kaydediyoruz
                     alert("Excel dosyası yüklendi ve 30 gün boyunca kaydedildi!");
                 };
                 reader.readAsArrayBuffer(file);
@@ -252,68 +254,98 @@
             const query = document.getElementById('searchInput').value.toLowerCase();
             const resultsDiv = document.getElementById('results');
             const noResultsMessage = document.getElementById('noResultsMessage');
+            const noFileMessage = document.getElementById('noFileMessage');
+            resultsDiv.innerHTML = '';
+            noResultsMessage.innerHTML = '';  // Sonuç mesajını temizliyoruz
 
-            if (!query || !excelData.length) {
-                resultsDiv.innerHTML = '';
-                noResultsMessage.innerHTML = '';
+            if (!excelData.length) {
+                noFileMessage.innerHTML = "Lütfen önce bir Excel dosyası yükleyin!";
                 return;
             }
 
             const filteredData = excelData.filter(row => {
-                return Object.values(row).some(value => 
-                    String(value).toLowerCase().includes(query)
+                return Object.values(row).some(value =>
+                    value.toString().toLowerCase().includes(query)
                 );
             });
 
-            resultsDiv.innerHTML = '';  
-
             if (filteredData.length) {
-                const headers = Object.keys(filteredData[0]);
                 const table = document.createElement('table');
                 const thead = document.createElement('thead');
+                const tbody = document.createElement('tbody');
+
+                const headers = Object.keys(filteredData[0]);
                 const headerRow = document.createElement('tr');
-                headerRow.innerHTML = `<th><input type="checkbox"></th>` + 
-                    headers.map(header => `<th>${header}</th>`).join('');
+                headerRow.innerHTML = '<th>Seç</th>' + headers.map(header => `<th>${header}</th>`).join('');
                 thead.appendChild(headerRow);
                 table.appendChild(thead);
 
-                const tbody = document.createElement('tbody');
                 filteredData.forEach(row => {
-                    const rowElement = document.createElement('tr');
-                    rowElement.innerHTML = `<td><input type="checkbox"></td>` + 
-                        headers.map(header => `<td>${row[header]}</td>`).join('');
-                    tbody.appendChild(rowElement);
+                    const tr = document.createElement('tr');
+                    const checkboxCell = document.createElement('td');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.setAttribute('data-bayi-kodu', row['Bayi Kodu']);
+                    checkbox.setAttribute('data-bayi', row['Bayi']);
+                    checkboxCell.appendChild(checkbox);
+                    tr.appendChild(checkboxCell);
+
+                    Object.values(row).forEach(value => {
+                        const td = document.createElement('td');
+                        td.textContent = value;
+                        tr.appendChild(td);
+                    });
+
+                    tbody.appendChild(tr);
                 });
 
                 table.appendChild(tbody);
                 resultsDiv.appendChild(table);
-                noResultsMessage.innerHTML = '';  
             } else {
                 noResultsMessage.innerHTML = "Sonuç bulunamadı!";
             }
         });
 
-        document.getElementById('clearButton').addEventListener('click', () => {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('results').innerHTML = '';
-            document.getElementById('noResultsMessage').innerHTML = '';
-        });
-
+        // Copy selected rows directly to the clipboard
         document.getElementById('copyButton').addEventListener('click', () => {
-            const rows = Array.from(document.querySelectorAll('table tr'));
-            const data = rows.map(row => 
-                Array.from(row.querySelectorAll('td, th')).map(cell => cell.innerText).join('\t')
-            ).join('\n');
-            
-            if (data) {
-                navigator.clipboard.writeText(data).then(() => {
-                    alert('Veriler kopyalandı!');
-                });
+            const selectedRows = [];
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+
+            checkboxes.forEach(checkbox => {
+                const bayiKodu = checkbox.getAttribute('data-bayi-kodu');
+                const bayi = checkbox.getAttribute('data-bayi');
+                selectedRows.push(`${bayiKodu} - ${bayi}`);
+            });
+
+            if (selectedRows.length > 0) {
+                const message = `Günaydın, bugün FiDe yapacağım bayiler;\n\n${selectedRows.join('\n')}`;
+
+                // Create a temporary text area to copy to clipboard
+                const textArea = document.createElement('textarea');
+                textArea.value = message;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+
+                alert("Seçilen bayiler panoya kopyalandı.");
+            } else {
+                alert("Lütfen kopyalamak için en az bir satır seçin.");
             }
         });
 
+        // Clear results and search input
+        document.getElementById('clearButton').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('results').innerHTML = '';
+        });
+
+        // Clear localStorage and cookies
         document.getElementById('dbButton').addEventListener('click', () => {
-            alert("Veri tabanı bağlantısı yapılmadı!");
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(STORAGE_EXPIRY_KEY);
+            localStorage.removeItem(FIRST_LOAD_KEY);  // Bayrağı da temizliyoruz
+            alert("Veritabanı temizlendi.");
         });
     </script>
 </body>
