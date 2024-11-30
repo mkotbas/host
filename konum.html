@@ -102,7 +102,7 @@
 
         #results {
             margin-top: 20px;
-            width: 90%;
+            width: 100%;
             max-width: 1000px;
             overflow-x: auto; /* Yatay kaydırma ekliyoruz */
         }
@@ -115,11 +115,11 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
-            min-width: 800px; /* Tabloya minimum genişlik veriyoruz */
+            font-size: 12px; /* Font boyutunu küçülttük */
         }
 
         th, td {
-            padding: 12px 15px;
+            padding: 8px 10px; /* Hücre içi boşlukları küçülttük */
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
@@ -269,16 +269,16 @@
             });
 
             if (filteredData.length) {
+                const headers = Object.keys(filteredData[0]);
                 const table = document.createElement('table');
                 const thead = document.createElement('thead');
-                const tbody = document.createElement('tbody');
-
-                const headers = Object.keys(filteredData[0]);
                 const headerRow = document.createElement('tr');
-                headerRow.innerHTML = '<th>Seç</th>' + headers.map(header => `<th>${header}</th>`).join('');
+                headerRow.innerHTML = `<th><input type="checkbox"></th>` + 
+                    headers.map(header => `<th>${header}</th>`).join('');
                 thead.appendChild(headerRow);
                 table.appendChild(thead);
 
+                const tbody = document.createElement('tbody');
                 filteredData.forEach(row => {
                     const rowElement = document.createElement('tr');
                     rowElement.innerHTML = `<td><input type="checkbox"></td>` + 
