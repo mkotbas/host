@@ -108,7 +108,7 @@
         }
 
         table {
-            width: 100%;  /* Tabloyu %100 genişlikte yaparak sağ ve soldan eşitle */
+            width: calc(100% - 2px);  /* %100 genişlik - 1px sağ ve soldan boşluk */
             border-collapse: collapse;
             margin-top: 20px;
             background-color: white;
@@ -116,6 +116,8 @@
             border-radius: 8px;
             overflow: hidden;
             table-layout: fixed;
+            margin-left: 1px;  /* 1px sağ ve soldan boşluk */
+            margin-right: 1px; 
         }
 
         th, td {
@@ -276,20 +278,42 @@
                 table.appendChild(thead);
 
                 const tbody = document.createElement('tbody');
-                filteredData.forEach((row, rowIndex) => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td><input type="checkbox" data-row="${rowIndex}"></td>` +
+                filteredData.forEach(row => {
+                    const rowElement = document.createElement('tr');
+                    rowElement.innerHTML = `<td><input type="checkbox"></td>` + 
                         headers.map(header => `<td>${row[header]}</td>`).join('');
-                    tbody.appendChild(tr);
+                    tbody.appendChild(rowElement);
                 });
 
                 table.appendChild(tbody);
                 resultsDiv.appendChild(table);
-                noResultsMessage.innerHTML = '';
-
+                noResultsMessage.innerHTML = '';  
             } else {
-                noResultsMessage.innerHTML = "Sonuç bulunamadı.";
+                noResultsMessage.innerHTML = "Sonuç bulunamadı!";
             }
+        });
+
+        document.getElementById('clearButton').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('noResultsMessage').innerHTML = '';
+        });
+
+        document.getElementById('copyButton').addEventListener('click', () => {
+            const rows = Array.from(document.querySelectorAll('table tr'));
+            const data = rows.map(row => 
+                Array.from(row.querySelectorAll('td, th')).map(cell => cell.innerText).join('\t')
+            ).join('\n');
+            
+            if (data) {
+                navigator.clipboard.writeText(data).then(() => {
+                    alert('Veriler kopyalandı!');
+                });
+            }
+        });
+
+        document.getElementById('dbButton').addEventListener('click', () => {
+            alert("Veri tabanı bağlantısı yapılmadı!");
         });
     </script>
 </body>
