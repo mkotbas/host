@@ -101,9 +101,10 @@
         }
 
         #results {
-            margin: 0 auto;  /* Ortalamak için */
-            width: 100%;     /* Tam genişlik */
-            max-width: 1000px; /* Genişliği sınırlandırmak için */
+            margin-top: 20px;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;  /* Ortalamayı sağladık */
         }
 
         table {
@@ -115,17 +116,17 @@
             border-radius: 8px;
             overflow: hidden;
             table-layout: fixed;
-            font-size: 12px;
         }
 
         th, td {
-            padding: 8px 10px;
+            padding: 4px 6px;  /* Daha küçük padding */
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
             word-wrap: break-word;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-size: 10px;  /* Daha küçük yazı boyutu */
         }
 
         th {
@@ -134,14 +135,7 @@
             font-weight: bold;
             text-transform: uppercase;
             border-right: 1px solid #e0e0e0;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        td:last-child, th:last-child {
-            border-right: none;
+            font-size: 10px;  /* Başlıklar için de daha küçük yazı boyutu */
         }
 
         tr:nth-child(even) {
@@ -158,7 +152,7 @@
         }
 
         td {
-            font-size: 12px;
+            font-size: 10px;  /* Tablo hücrelerindeki yazı boyutu */
         }
 
         a {
@@ -282,48 +276,20 @@
                 table.appendChild(thead);
 
                 const tbody = document.createElement('tbody');
-                filteredData.forEach(row => {
-                    const rowElement = document.createElement('tr');
-                    rowElement.innerHTML = `<td><input type="checkbox"></td>` + 
+                filteredData.forEach((row, rowIndex) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td><input type="checkbox" data-row="${rowIndex}"></td>` +
                         headers.map(header => `<td>${row[header]}</td>`).join('');
-                    tbody.appendChild(rowElement);
+                    tbody.appendChild(tr);
                 });
+
                 table.appendChild(tbody);
                 resultsDiv.appendChild(table);
+                noResultsMessage.innerHTML = '';
+
             } else {
-                noResultsMessage.innerHTML = 'Aradığınız kriterlere uygun sonuç bulunamadı.';
+                noResultsMessage.innerHTML = "Sonuç bulunamadı.";
             }
-        });
-
-        document.getElementById('clearButton').addEventListener('click', () => {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('results').innerHTML = '';
-            document.getElementById('noResultsMessage').innerHTML = '';
-        });
-
-        document.getElementById('copyButton').addEventListener('click', () => {
-            const selectedRows = document.querySelectorAll('#results input[type="checkbox"]:checked');
-            if (selectedRows.length) {
-                let textToCopy = '';
-                selectedRows.forEach(checkbox => {
-                    const row = checkbox.closest('tr');
-                    const cells = row.querySelectorAll('td');
-                    cells.forEach(cell => {
-                        textToCopy += cell.innerText + '\t';
-                    });
-                    textToCopy += '\n';
-                });
-
-                navigator.clipboard.writeText(textToCopy)
-                    .then(() => alert('Seçilen veriler kopyalandı!'))
-                    .catch(err => alert('Kopyalama sırasında hata oluştu: ' + err));
-            } else {
-                alert('Lütfen önce veri seçin.');
-            }
-        });
-
-        document.getElementById('dbButton').addEventListener('click', () => {
-            alert('Veritabanı işlemi henüz yapılmamıştır.');
         });
     </script>
 </body>
