@@ -104,7 +104,6 @@
             margin-top: 20px;
             width: 100%;
             max-width: 1000px;
-            overflow-x: auto; /* Yatay kaydırma ekliyoruz */
         }
 
         table {
@@ -115,6 +114,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
+            table-layout: fixed; /* Hücreleri sabitleyerek genişliklerini dengeledik */
             font-size: 12px; /* Font boyutunu küçülttük */
         }
 
@@ -123,6 +123,9 @@
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
+            word-wrap: break-word; /* Uzun kelimeleri kırarak hücreye sığdırır */
+            overflow: hidden; /* Aşırı metni gizler */
+            text-overflow: ellipsis; /* Hücrede taşan metni '...' ile gösterir */
         }
 
         th {
@@ -155,7 +158,7 @@
         }
 
         td {
-            font-size: 14px;
+            font-size: 12px; /* Font boyutunu küçültme */
         }
 
         a {
@@ -253,20 +256,13 @@
             const query = document.getElementById('searchInput').value.toLowerCase();
             const resultsDiv = document.getElementById('results');
             const noResultsMessage = document.getElementById('noResultsMessage');
-            const noFileMessage = document.getElementById('noFileMessage');
-            resultsDiv.innerHTML = '';
-            noResultsMessage.innerHTML = '';  
-
-            if (!excelData.length) {
-                noFileMessage.innerHTML = "Lütfen önce bir Excel dosyası yükleyin!";
-                return;
-            }
-
             const filteredData = excelData.filter(row => {
-                return Object.values(row).some(value =>
-                    value.toString().toLowerCase().includes(query)
+                return Object.values(row).some(value => 
+                    String(value).toLowerCase().includes(query)
                 );
             });
+
+            resultsDiv.innerHTML = '';  
 
             if (filteredData.length) {
                 const headers = Object.keys(filteredData[0]);
