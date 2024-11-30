@@ -107,14 +107,14 @@
         }
 
         table {
-            width: 100%;
+            width: 800px;  /* Sabit genişlik */
             border-collapse: collapse;
             margin-top: 20px;
             background-color: white;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
-            table-layout: fixed; /* Hücreleri sabitleyerek genişliklerini dengeledik */
+            table-layout: fixed; /* Sabit hücre genişlikleri */
             font-size: 12px; /* Font boyutunu küçülttük */
         }
 
@@ -256,6 +256,13 @@
             const query = document.getElementById('searchInput').value.toLowerCase();
             const resultsDiv = document.getElementById('results');
             const noResultsMessage = document.getElementById('noResultsMessage');
+
+            if (!query || !excelData.length) {
+                resultsDiv.innerHTML = '';
+                noResultsMessage.innerHTML = '';
+                return;
+            }
+
             const filteredData = excelData.filter(row => {
                 return Object.values(row).some(value => 
                     String(value).toLowerCase().includes(query)
