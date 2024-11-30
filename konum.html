@@ -104,6 +104,7 @@
             margin-top: 20px;
             width: 90%;
             max-width: 1000px;
+            overflow-x: auto;  /* Yatay kaydırma ekliyoruz */
         }
 
         table {
@@ -114,6 +115,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
+            table-layout: fixed;  /* Tablo hücrelerinin eşit genişlikte olmasını sağlıyoruz */
         }
 
         th, td {
@@ -121,6 +123,7 @@
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
             border-right: 1px solid #e0e0e0;
+            white-space: nowrap; /* Hücre metinlerinin taşmasını engeller */
         }
 
         th {
