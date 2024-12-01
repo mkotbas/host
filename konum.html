@@ -319,17 +319,28 @@
         });
 
         document.getElementById('copyButton').addEventListener('click', () => {
-            const resultsTable = document.querySelector('#results table');
-            if (resultsTable) {
-                const tableText = resultsTable.innerText;
-                navigator.clipboard.writeText(tableText).then(() => {
-                    alert('Tablo kopyalandı!');
+            const selectedRows = Array.from(document.querySelectorAll('#results input[type="checkbox"]:checked'));
+            const copyData = ['Bugün FiDe yapılacak bayiler', ''];  // Boş bir satır ekleniyor
+
+            selectedRows.forEach(row => {
+                const bayiKodu = row.getAttribute('data-bayi-kodu');
+                const bayi = row.getAttribute('data-bayi');
+                copyData.push(`${bayiKodu} - ${bayi}`);
+            });
+
+            if (copyData.length > 1) {
+                navigator.clipboard.writeText(copyData.join('\n')).then(() => {
+                    alert('Veriler başarıyla kopyalandı!');
                 });
+            } else {
+                alert('Lütfen en az bir bayi seçin.');
             }
         });
 
         document.getElementById('dbButton').addEventListener('click', () => {
-            alert('DB butonuna tıklanmıştır.');
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(STORAGE_EXPIRY_KEY);
+            alert('LocalStorage ve çerezler temizlendi!');
         });
     </script>
 </body>
