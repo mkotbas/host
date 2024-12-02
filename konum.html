@@ -1,21 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bayi Konum Otomasyonu</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #f4f7fc;
-            color: #333;
         }
 
+        /* Başlık alanı stili */
         .header {
             font-size: 24px;
             font-weight: bold;
@@ -30,317 +26,224 @@
             letter-spacing: 1px;
             width: 100%;
             max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        #searchContainer {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
+        /* Dosya inputunu gizle */
+        #fileInput {
+            display: none;
         }
 
-        #searchInput {
-            margin: 10px 0;
-            padding: 10px;
-            width: 300px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        #buttonContainer {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        #customButton, #clearButton, #copyButton, #dbButton {
+        /* Özel Dosya Yükle Butonu */
+        #customButton {
             padding: 10px 20px;
             font-size: 16px;
             border-radius: 4px;
             cursor: pointer;
             border: none;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-        }
-
-        #customButton {
             background-color: #5cb85c;
             color: white;
+            width: auto; /* Butonun genişliğini ayarlayalım */
+            margin-right: 10px; /* Butonlar arasında mesafe */
         }
 
         #customButton:hover {
             background-color: #4cae4c;
         }
 
-        #clearButton {
-            background-color: #d9534f;
+        /* Diğer butonlar için stil */
+        .buttons-container button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            border-radius: 4px;
+            border: none;
+            background-color: #5cb85c;
             color: white;
         }
 
-        #clearButton:hover {
-            background-color: #c9302c;
+        .buttons-container button:hover {
+            background-color: #4cae4c;
         }
 
-        #dbButton {
-            background-color: #008CBA;
-            color: white;
-        }
-
-        #dbButton:hover {
-            background-color: #005f8a;
-        }
-
-        #copyButton {
-            background-color: #f39c12;
-            color: white;
-        }
-
-        #copyButton:hover {
-            background-color: #e67e22;
-        }
-
-        #results {
-            margin-top: 20px;
-            width: 90%;
-            max-width: 1000px;
+        #search {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            background-color: white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
         }
 
         th, td {
-            padding: 12px 15px;
+            padding: 10px;
             text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-            border-right: 1px solid #e0e0e0;
         }
 
         th {
-            background-color: #2c3e50;
-            color: white;
-            font-weight: bold;
-            text-transform: uppercase;
-            border-right: 1px solid #e0e0e0;
+            background-color: #f2f2f2;
         }
 
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        td:last-child, th:last-child {
-            border-right: none;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        tr:nth-child(odd) {
-            background-color: #ffffff;
-        }
-
-        tr:hover {
-            background-color: #f1f5f9;
-            transition: background-color 0.2s ease-in-out;
-        }
-
-        td {
-            font-size: 14px;
-        }
-
-        a {
-            color: #2980b9;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        #noResultsMessage, #noFileMessage {
-            margin-top: 20px;
-            color: #e74c3c;
-            font-size: 16px;
-            font-weight: bold;
+        .checkbox-column input {
+            width: 20px;
+            height: 20px;
         }
     </style>
 </head>
 <body>
-    <h1 class="header">Bayi Konum Otomasyonu</h1>
-
-    <div id="searchContainer">
-        <input type="text" id="searchInput" placeholder="Aramak istediğiniz kelimeyi yazın...">
-        <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
-        <div id="buttonContainer">
-            <button id="customButton">Yükle</button>
-            <button id="clearButton">Sil</button>
-            <button id="copyButton">Kopyala</button>
-            <button id="dbButton">DB</button>
-        </div>
-        <div id="noResultsMessage"></div>
-        <div id="noFileMessage"></div>
+    <!-- Başlık Alanı -->
+    <div class="header">
+        Bayi Konum Otomasyonu
     </div>
 
-    <div id="results"></div>
+    <!-- Arama Kutusu -->
+    <input type="text" id="search" placeholder="Arama yapın..." />
+
+    <!-- Butonlar: Dosya Yükle ve diğerleri -->
+    <div class="buttons-container">
+        <!-- Dosya Yükle Butonu sol tarafa alındı -->
+        <label for="fileInput" id="customButton">Dosya Yükle</label>
+        <input type="file" id="fileInput" accept=".xlsx, .xls" />
+        
+        <button id="copyButton">Kopyala</button>
+        <button id="clearButton">Temizle</button>
+        <button id="dbButton">DB</button>
+    </div>
+    
+    <table id="resultsTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Şehir</th>
+                <th>İlçe</th>
+                <th>Seç</th>
+                <th>Bayi Kodu</th>
+                <th>Bayi Adı</th>
+                <th>Konum</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
 
     <script>
         let excelData = [];
-        const STORAGE_KEY = 'excelData';
-        const STORAGE_EXPIRY_KEY = 'excelDataExpiry';
-        const FIRST_LOAD_KEY = 'firstLoadCompleted';
+        let copiedData = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            const expiryTime = localStorage.getItem(STORAGE_EXPIRY_KEY);
-            const firstLoad = localStorage.getItem(FIRST_LOAD_KEY);
-
-            if (savedData && expiryTime && new Date() < new Date(expiryTime)) {
-                excelData = JSON.parse(savedData);
-
-                if (!firstLoad) {
-                    alert("Kaydedilmiş veri yüklendi.");
-                    localStorage.setItem(FIRST_LOAD_KEY, 'true');
-                }
-            } else {
-                localStorage.removeItem(STORAGE_KEY);
-                localStorage.removeItem(STORAGE_EXPIRY_KEY);
-            }
-        });
-
-        document.getElementById('customButton').addEventListener('click', () => {
-            document.getElementById('fileInput').click();
-        });
-
-        document.getElementById('fileInput').addEventListener('change', (event) => {
+        document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
-            const noFileMessage = document.getElementById('noFileMessage');
-            noFileMessage.innerHTML = '';
-
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                reader.onload = function(e) {
+                    const data = e.target.result;
+                    const workbook = XLSX.read(data, { type: 'binary' });
                     const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    excelData = XLSX.utils.sheet_to_json(worksheet, { defval: "Boş" });
-                    const expiryDate = new Date();
-                    expiryDate.setDate(expiryDate.getDate() + 30);
-
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(excelData));
-                    localStorage.setItem(STORAGE_EXPIRY_KEY, expiryDate.toISOString());
-                    localStorage.setItem(FIRST_LOAD_KEY, 'true');
-                    alert("Excel dosyası yüklendi ve 30 gün boyunca kaydedildi!");
+                    const sheet = workbook.Sheets[sheetName];
+                    excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    displayResults(excelData);
                 };
-                reader.readAsArrayBuffer(file);
-            } else {
-                noFileMessage.innerHTML = "Lütfen önce bir Excel dosyası yükleyin!";
+                reader.readAsBinaryString(file);
             }
         });
 
-        document.getElementById('searchInput').addEventListener('input', () => {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const resultsDiv = document.getElementById('results');
-            const noResultsMessage = document.getElementById('noResultsMessage');
-            const noFileMessage = document.getElementById('noFileMessage');
-            resultsDiv.innerHTML = '';
-            noResultsMessage.innerHTML = '';
+        document.getElementById('search').addEventListener('input', function(event) {
+            const query = event.target.value.toLowerCase();
+            const filteredData = excelData.filter((row, index) => {
+                if (index === 0) return true;
+                return row.some(cell => cell && cell.toString().toLowerCase().includes(query));
+            });
+            displayResults(filteredData);
+        });
 
-            if (!excelData.length) {
-                noFileMessage.innerHTML = "Lütfen önce bir Excel dosyası yükleyin!";
-                return;
+        function displayResults(data) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            const resultsTable = document.getElementById('resultsTable');
+
+            if (data.length > 1) {
+                resultsTable.style.display = 'table';
+            } else {
+                resultsTable.style.display = 'none';
             }
 
-            const filteredData = excelData.filter(row => {
-                return Object.values(row).some(value =>
-                    value.toString().toLowerCase().includes(query)
-                );
-            });
+            data.forEach((row, index) => {
+                if (index === 0) return;
 
-            if (filteredData.length) {
-                const table = document.createElement('table');
-                const thead = document.createElement('thead');
-                const tbody = document.createElement('tbody');
+                const tr = document.createElement('tr');
 
-                const headers = Object.keys(filteredData[0]);
-                const headerRow = document.createElement('tr');
-                headerRow.innerHTML = '<th>Seç</th>' + headers.map(header => `<th>${header}</th>`).join('');
-                thead.appendChild(headerRow);
-                table.appendChild(thead);
-
-                filteredData.forEach(row => {
-                    const tr = document.createElement('tr');
-                    const checkboxCell = document.createElement('td');
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.setAttribute('data-bayi-kodu', row['Bayi Kodu']);
-                    checkbox.setAttribute('data-bayi', row['Bayi']);
-                    checkboxCell.appendChild(checkbox);
-                    tr.appendChild(checkboxCell);
-
-                    Object.keys(row).forEach(key => {
-                        const td = document.createElement('td');
-                        const value = row[key];
-                        
-                        if (key.toLowerCase() === 'konum' && value && value !== "Boş") {
-                            const [latitude, longitude] = value.split(',').map(coord => coord.trim());
-                            const mapLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-                            td.innerHTML = `<a href="${mapLink}" target="_blank">Harita</a>`;
-                        } else {
-                            td.textContent = value || "Boş";
-                        }
-
-                        tr.appendChild(td);
-                    });
-
-                    tbody.appendChild(tr);
+                ['Şehir', 'İlçe', '', 'Bayi Kodu', 'Bayi Adı', 'Konum'].forEach((_, colIndex) => {
+                    const td = document.createElement('td');
+                    if (colIndex === 2) {
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.classList.add('checkbox');
+                        td.appendChild(checkbox);
+                    } else {
+                        td.textContent = row[colIndex] || '';
+                    }
+                    tr.appendChild(td);
                 });
 
-                table.appendChild(tbody);
-                resultsDiv.appendChild(table);
-            } else {
-                noResultsMessage.innerHTML = "Sonuç bulunamadı!";
+                tableBody.appendChild(tr);
+            });
+        }
+
+        document.querySelector('#resultsTable').addEventListener('change', function(event) {
+            if (event.target.type === 'checkbox') {
+                const row = event.target.closest('tr');
+                const bayiKodu = row.cells[3].textContent;
+                const bayiAdı = row.cells[4].textContent;
+
+                if (event.target.checked) {
+                    // Bayi Adını 20 harfe kadar sınırla
+                    const bayiAdiLimited = bayiAdı.length > 20 ? bayiAdı.substring(0, 20) : bayiAdı;
+                    copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdiLimited}`);
+                } else {
+                    copiedData = copiedData.filter(data => !data.includes(`Bayi Kodu: ${bayiKodu}`));
+                }
             }
         });
 
-        document.getElementById('clearButton').addEventListener('click', () => {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('results').innerHTML = '';
-            document.getElementById('noResultsMessage').innerHTML = '';
-        });
-
-        document.getElementById('copyButton').addEventListener('click', () => {
-            const selectedRows = Array.from(document.querySelectorAll('#results input[type="checkbox"]:checked'));
-            const copyData = ['Bugün FiDe yapılacak bayiler', ''];  // Boş bir satır ekleniyor
-
-            selectedRows.forEach(row => {
-                const bayiKodu = row.getAttribute('data-bayi-kodu');
-                const bayi = row.getAttribute('data-bayi');
-                copyData.push(`${bayiKodu} - ${bayi}`);
-            });
-
-            if (copyData.length > 1) {
-                navigator.clipboard.writeText(copyData.join('\n')).then(() => {
-                    alert('Veriler başarıyla kopyalandı!');
+        document.getElementById('copyButton').addEventListener('click', function() {
+            if (copiedData.length > 0) {
+                const dataToCopy = `Bugün FiDe Yapılacak Bayiler:\n\n` + copiedData.join('\n\n');
+                navigator.clipboard.writeText(dataToCopy).then(() => {
+                    alert('Veri kopyalandı!');
                 });
             } else {
-                alert('Lütfen en az bir bayi seçin.');
+                alert('Öncelikle bir veri seçin!');
             }
         });
 
-        document.getElementById('dbButton').addEventListener('click', () => {
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(STORAGE_EXPIRY_KEY);
-            alert('LocalStorage ve çerezler temizlendi!');
+        document.getElementById('clearButton').addEventListener('click', function() {
+            document.querySelectorAll('.checkbox').forEach(checkbox => checkbox.checked = false);
+            copiedData = [];
+            document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('resultsTable').style.display = 'none';
+        });
+
+        document.getElementById('dbButton').addEventListener('click', function() {
+            localStorage.clear();
+            excelData = [];
+            copiedData = [];
+            document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('resultsTable').style.display = 'none';
+            document.cookie.split(';').forEach(cookie => {
+                const cookieName = cookie.split('=')[0].trim();
+                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+            });
+            alert('Veritabanı temizlendi, localStorage, Excel ve çerezler sıfırlandı!');
         });
     </script>
 </body>
