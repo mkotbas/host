@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobil Ana Sayfa</title>
+  <style>
+    /* Genel stil resetleme ve temel yapı */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 450px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Kart yapısı */
+    .card {
+      background-color: #fff;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      transform: scale(1);
+    }
+
+    .card:hover {
+      transform: scale(1.05); /* Kartın üzerine gelindiğinde büyüme */
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .card h2 {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .card a {
+      text-decoration: none;
+      color: inherit; /* Karttaki yazı rengi korunur */
+    }
+
+    /* Kart renk geçişi */
+    .card:nth-child(1) {
+      background: linear-gradient(145deg, #4caf50, #388e3c); /* Yeşil */
+    }
+
+    .card:nth-child(2) {
+      background: linear-gradient(145deg, #2196f3, #1976d2); /* Mavi */
+    }
+
+    .card:nth-child(3) {
+      background: linear-gradient(145deg, #f44336, #d32f2f); /* Kırmızı */
+    }
+
+    .card h2 {
+      color: white; /* Başlıklar beyaz olacak */
+    }
+
+    /* Kartlardaki hover efekti */
+    .card:nth-child(1):hover {
+      background: linear-gradient(145deg, #388e3c, #4caf50); /* Yeşil Hover */
+    }
+
+    .card:nth-child(2):hover {
+      background: linear-gradient(145deg, #1976d2, #2196f3); /* Mavi Hover */
+    }
+
+    .card:nth-child(3):hover {
+      background: linear-gradient(145deg, #d32f2f, #f44336); /* Kırmızı Hover */
+    }
+
+    /* Mobil uyum için medya sorguları */
+    @media (max-width: 600px) {
+      .card {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <a href="https://mkotbas.github.io/host/konum.html">
+        <h2>Konum Otomasyonu</h2>
+      </a>
+    </div>
+    <div class="card">
+      <a href="https://mkotbas.github.io/host/pop.html">
+        <h2>POP Kodları</h2>
+      </a>
+    </div>
+    <div class="card">
+      <a href="https://mkotbas.github.io/host/skala.html">
+        <h2>Skala</h2>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
