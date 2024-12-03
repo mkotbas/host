@@ -37,37 +37,37 @@
 
         /* Özel Dosya Yükle Butonu */
         #customButton {
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 6px 12px;
+            font-size: 14px;
             border-radius: 4px;
             cursor: pointer;
             border: none;
             display: inline-flex;
             align-items: center;
-            background-color: #5cb85c;
+            background-color: #059862; /* Yeni renk */
             color: white;
-            width: auto; /* Butonun genişliğini ayarlayalım */
-            margin-right: 10px; /* Butonlar arasında mesafe */
+            width: auto;
+            margin-right: 8px;
         }
 
         #customButton:hover {
-            background-color: #4cae4c;
+            background-color: #047c4d; /* Hover için daha koyu bir ton */
         }
 
         /* Diğer butonlar için stil */
         .buttons-container button {
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 6px 12px;
+            font-size: 14px;
             cursor: pointer;
-            margin-right: 10px;
+            margin-right: 8px;
             border-radius: 4px;
             border: none;
-            background-color: #5cb85c;
+            background-color: #059862; /* Yeni renk */
             color: white;
         }
 
         .buttons-container button:hover {
-            background-color: #4cae4c;
+            background-color: #047c4d; /* Hover için daha koyu bir ton */
         }
 
         #search {
@@ -101,6 +101,29 @@
             width: 20px;
             height: 20px;
         }
+
+        /* Harita bağlantıları için şık stil */
+        .map-link {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            font-size: 12px;
+        }
+
+        .map-link:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .map-link:active {
+            background-color: #004085;
+        }
     </style>
 </head>
 <body>
@@ -114,7 +137,6 @@
 
     <!-- Butonlar: Dosya Yükle ve diğerleri -->
     <div class="buttons-container">
-        <!-- Dosya Yükle Butonu sol tarafa alındı -->
         <label for="fileInput" id="customButton">Dosya Yükle</label>
         <input type="file" id="fileInput" accept=".xlsx, .xls" />
         
@@ -190,7 +212,18 @@
                         checkbox.classList.add('checkbox');
                         td.appendChild(checkbox);
                     } else {
-                        td.textContent = row[colIndex] || '';
+                        if (colIndex === 5 && row[colIndex]) {
+                            const coordinates = row[colIndex];
+                            const mapUrl = `https://www.google.com/maps?q=${coordinates}`;
+                            const mapLink = document.createElement('a');
+                            mapLink.href = mapUrl;
+                            mapLink.target = "_blank";
+                            mapLink.classList.add('map-link');
+                            mapLink.textContent = 'Harita';
+                            td.appendChild(mapLink);
+                        } else {
+                            td.textContent = row[colIndex] || '';
+                        }
                     }
                     tr.appendChild(td);
                 });
@@ -206,7 +239,6 @@
                 const bayiAdı = row.cells[4].textContent;
 
                 if (event.target.checked) {
-                    // Bayi Adını 20 harfe kadar sınırla
                     const bayiAdiLimited = bayiAdı.length > 20 ? bayiAdı.substring(0, 20) : bayiAdı;
                     copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdiLimited}`);
                 } else {
@@ -239,11 +271,7 @@
             copiedData = [];
             document.getElementById('tableBody').innerHTML = '';
             document.getElementById('resultsTable').style.display = 'none';
-            document.cookie.split(';').forEach(cookie => {
-                const cookieName = cookie.split('=')[0].trim();
-                document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
-            });
-            alert('Veritabanı temizlendi, localStorage, Excel ve çerezler sıfırlandı!');
+            alert('Veritabanı sıfırlandı!');
         });
     </script>
 </body>
