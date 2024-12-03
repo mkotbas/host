@@ -71,11 +71,20 @@
         }
 
         #search {
-            width: 100%;
+            width: 50%; /* Arama kutusunun genişliğini %50 yap */
             padding: 10px;
             font-size: 16px;
-            margin-bottom: 20px;
+            margin: 0 auto 20px; /* Yatayda ortalamak için auto margin */
+            display: block; /* Yatayda ortalanabilmesi için block yap */
             box-sizing: border-box;
+        }
+
+        /* Butonlar kapsayıcı stil */
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px; /* Butonlar arasına boşluk bırak */
+            margin-bottom: 20px; /* Alt taraftan boşluk */
         }
 
         table {
@@ -163,6 +172,41 @@
         let excelData = [];
         let copiedData = [];
 
+        // Verinin son yüklenme tarihini kontrol et ve 30 gün sonra temizle
+        function checkDataExpiry() {
+            const lastUploadDate = localStorage.getItem('lastUploadDate');
+            if (lastUploadDate) {
+                const currentDate = new Date();
+                const uploadDate = new Date(lastUploadDate);
+                const differenceInDays = (currentDate - uploadDate) / (1000 * 3600 * 24);
+
+                if (differenceInDays > 30) {
+                    // 30 günden fazla geçtiyse tüm veritabanını sıfırla
+                    localStorage.clear();
+                    alert("Veritabanı süresi dolmuş ve silinmiştir.");
+                }
+            }
+        }
+
+        // Veriyi localStorage'a kaydetme
+        function saveDataToLocalStorage() {
+            const currentDate = new Date().toISOString(); // Yükleme tarihi
+            localStorage.setItem('lastUploadDate', currentDate); // Yükleme tarihini sakla
+            localStorage.setItem('excelData', JSON.stringify(excelData)); // Excel verisini kaydet
+        }
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', function () {
+            checkDataExpiry(); // Sayfa yüklendiğinde süre kontrolü yap
+
+            // Eğer daha önce veriler kaydedildiyse, bunları yükle
+            const savedData = localStorage.getItem('excelData');
+            if (savedData) {
+                excelData = JSON.parse(savedData);
+                displayResults(excelData); // Veriyi ekrana yazdır
+            }
+        });
+
         document.getElementById('fileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
@@ -174,6 +218,7 @@
                     const sheet = workbook.Sheets[sheetName];
                     excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
                     displayResults(excelData);
+                    saveDataToLocalStorage(); // Veriyi sakla
                 };
                 reader.readAsBinaryString(file);
             }
