@@ -11,7 +11,6 @@
             margin: 20px;
         }
 
-        /* Başlık alanı stili */
         .header {
             font-size: 24px;
             font-weight: bold;
@@ -30,12 +29,10 @@
             margin-right: auto;
         }
 
-        /* Dosya inputunu gizle */
         #fileInput {
             display: none;
         }
 
-        /* Özel Dosya Yükle Butonu */
         #customButton {
             padding: 6px 12px;
             font-size: 14px;
@@ -44,17 +41,16 @@
             border: none;
             display: inline-flex;
             align-items: center;
-            background-color: #059862; /* Yeni renk */
+            background-color: #059862;
             color: white;
             width: auto;
             margin-right: 8px;
         }
 
         #customButton:hover {
-            background-color: #047c4d; /* Hover için daha koyu bir ton */
+            background-color: #047c4d;
         }
 
-        /* Diğer butonlar için stil */
         .buttons-container button {
             padding: 6px 12px;
             font-size: 14px;
@@ -62,29 +58,28 @@
             margin-right: 8px;
             border-radius: 4px;
             border: none;
-            background-color: #059862; /* Yeni renk */
+            background-color: #059862;
             color: white;
         }
 
         .buttons-container button:hover {
-            background-color: #047c4d; /* Hover için daha koyu bir ton */
+            background-color: #047c4d;
         }
 
         #search {
-            width: 50%; /* Arama kutusunun genişliğini %50 yap */
+            width: 50%;
             padding: 10px;
             font-size: 16px;
-            margin: 0 auto 20px; /* Yatayda ortalamak için auto margin */
-            display: block; /* Yatayda ortalanabilmesi için block yap */
+            margin: 0 auto 20px;
+            display: block;
             box-sizing: border-box;
         }
 
-        /* Butonlar kapsayıcı stil */
         .buttons-container {
             display: flex;
             justify-content: center;
-            gap: 10px; /* Butonlar arasına boşluk bırak */
-            margin-bottom: 20px; /* Alt taraftan boşluk */
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
         table {
@@ -111,7 +106,6 @@
             height: 20px;
         }
 
-        /* Harita bağlantıları için şık stil */
         .map-link {
             display: inline-block;
             padding: 5px 10px;
@@ -133,18 +127,22 @@
         .map-link:active {
             background-color: #004085;
         }
+
+        #resultsTable {
+            display: none;
+            width: 60%; /* Tabloyu %40 daraltarak %60 genişlik veriyoruz */
+            margin-left: auto;
+            margin-right: auto;
+        }
     </style>
 </head>
 <body>
-    <!-- Başlık Alanı -->
     <div class="header">
         Bayi Konum Otomasyonu
     </div>
 
-    <!-- Arama Kutusu -->
     <input type="text" id="search" placeholder="Arama yapın..." />
 
-    <!-- Butonlar: Dosya Yükle ve diğerleri -->
     <div class="buttons-container">
         <label for="fileInput" id="customButton">Yükle</label>
         <input type="file" id="fileInput" accept=".xlsx, .xls" />
@@ -154,7 +152,7 @@
         <button id="dbButton">DB</button>
     </div>
     
-    <table id="resultsTable" style="display:none;">
+    <table id="resultsTable">
         <thead>
             <tr>
                 <th>Şehir</th>
@@ -172,7 +170,6 @@
         let excelData = [];
         let copiedData = [];
 
-        // Verinin son yüklenme tarihini kontrol et ve 30 gün sonra temizle
         function checkDataExpiry() {
             const lastUploadDate = localStorage.getItem('lastUploadDate');
             if (lastUploadDate) {
@@ -181,29 +178,25 @@
                 const differenceInDays = (currentDate - uploadDate) / (1000 * 3600 * 24);
 
                 if (differenceInDays > 30) {
-                    // 30 günden fazla geçtiyse tüm veritabanını sıfırla
                     localStorage.clear();
                     alert("Veritabanı süresi dolmuş ve silinmiştir.");
                 }
             }
         }
 
-        // Veriyi localStorage'a kaydetme
         function saveDataToLocalStorage() {
-            const currentDate = new Date().toISOString(); // Yükleme tarihi
-            localStorage.setItem('lastUploadDate', currentDate); // Yükleme tarihini sakla
-            localStorage.setItem('excelData', JSON.stringify(excelData)); // Excel verisini kaydet
+            const currentDate = new Date().toISOString();
+            localStorage.setItem('lastUploadDate', currentDate);
+            localStorage.setItem('excelData', JSON.stringify(excelData));
         }
 
-        // Sayfa yüklendiğinde
         document.addEventListener('DOMContentLoaded', function () {
-            checkDataExpiry(); // Sayfa yüklendiğinde süre kontrolü yap
+            checkDataExpiry();
 
-            // Eğer daha önce veriler kaydedildiyse, bunları yükle
             const savedData = localStorage.getItem('excelData');
             if (savedData) {
                 excelData = JSON.parse(savedData);
-                displayResults(excelData); // Veriyi ekrana yazdır
+                displayResults(excelData);
             }
         });
 
@@ -217,12 +210,41 @@
                     const sheetName = workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
                     excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                    // A sütununun genişliğini ayarlamak için en uzun veriyi bulalım
+                    adjustColumnWidth(excelData, 0); // A sütunu için genişliği ayarlıyoruz
+
+                    // E sütunundaki "Bayi Adı"nı 15 karakterle sınırla
+                    excelData.forEach(row => {
+                        if (row[4] && row[4].length > 15) {
+                            row[4] = row[4].substring(0, 15); // 15 karakterle sınırlama
+                        }
+                    });
+
                     displayResults(excelData);
-                    saveDataToLocalStorage(); // Veriyi sakla
+                    saveDataToLocalStorage();
                 };
                 reader.readAsBinaryString(file);
             }
         });
+
+        // A sütununu en uzun veriye göre genişletme
+        function adjustColumnWidth(data, columnIndex) {
+            let maxLength = 0;
+            data.forEach(row => {
+                if (row[columnIndex] && row[columnIndex].length > maxLength) {
+                    maxLength = row[columnIndex].length;
+                }
+            });
+            // A sütununun genişliğini en uzun veriye göre ayarlıyoruz
+            const adjustedWidth = maxLength + 2; // 2 karakterlik ekstra boşluk ekledik
+            document.querySelectorAll('th')[0].style.width = `${adjustedWidth}ch`;
+            document.querySelectorAll('td').forEach((cell, index) => {
+                if (index % 6 === 0) { // A sütunundaki hücreler
+                    cell.style.width = `${adjustedWidth}ch`;
+                }
+            });
+        }
 
         document.getElementById('search').addEventListener('input', function(event) {
             const query = event.target.value.toLowerCase();
