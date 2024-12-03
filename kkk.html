@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayi Konum Otomasyonu</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+            margin: 0 0 20px;
+            background: linear-gradient(to right, #ff5c5c, #8b0000);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        #customButton {
+            padding: 6px 12px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            background-color: #059862;
+            color: white;
+            width: auto;
+            margin-right: 8px;
+        }
+
+        #customButton:hover {
+            background-color: #047c4d;
+        }
+
+        .buttons-container button {
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 8px;
+            border-radius: 4px;
+            border: none;
+            background-color: #059862;
+            color: white;
+        }
+
+        .buttons-container button:hover {
+            background-color: #047c4d;
+        }
+
+        #search {
+            width: 50%;
+            padding: 10px;
+            font-size: 16px;
+            margin: 0 auto 20px;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Tabloyu dinamik genişlikte oluştur */
+        #resultsTable {
+            width: auto;  /* Tabloyu otomatik genişlikte ayarlıyoruz */
+            margin: 0 auto;
+            overflow-x: auto;
+            display: none;
+            table-layout: auto;  /* İçeriğe göre genişlik ayarlaması yapar */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 4px 8px; /* Hücrelerin iç padding'ini azaltıyoruz */
+            text-align: left;
+            font-size: 13px; /* Font boyutunu biraz küçültüyoruz */
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-size: 14px;
+        }
+
+        /* B ve E sütunlarının dinamik genişliği */
+        th:nth-child(2), td:nth-child(2) {
+            width: auto;
+            white-space: nowrap;
+        }
+
+        th:nth-child(5), td:nth-child(5) {
+            width: auto;
+            white-space: nowrap;
+        }
+
+        .checkbox-column input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .map-link {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            font-size: 12px;
+        }
+
+        .map-link:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .map-link:active {
+            background-color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        Bayi Konum Otomasyonu
+    </div>
+
+    <input type="text" id="search" placeholder="Arama yapın..." />
+
+    <div class="buttons-container">
+        <label for="fileInput" id="customButton">Yükle</label>
+        <input type="file" id="fileInput" accept=".xlsx, .xls" />
+        
+        <button id="copyButton">Kopyala</button>
+        <button id="clearButton">Temizle</button>
+        <button id="dbButton">DB</button>
+    </div>
+    
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Şehir</th>
+                <th>İlçe</th>
+                <th>Seç</th>
+                <th>Bayi Kodu</th>
+                <th>Bayi Adı</th>
+                <th>Konum</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+        let excelData = [];
+        let copiedData = [];
+
+        function checkDataExpiry() {
+            const lastUploadDate = localStorage.getItem('lastUploadDate');
+            if (lastUploadDate) {
+                const currentDate = new Date();
+                const uploadDate = new Date(lastUploadDate);
+                const differenceInDays = (currentDate - uploadDate) / (1000 * 3600 * 24);
+
+                if (differenceInDays > 30) {
+                    localStorage.clear();
+                    alert("Veritabanı süresi dolmuş ve silinmiştir.");
+                }
+            }
+        }
+
+        function saveDataToLocalStorage() {
+            const currentDate = new Date().toISOString();
+            localStorage.setItem('lastUploadDate', currentDate);
+            localStorage.setItem('excelData', JSON.stringify(excelData));
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            checkDataExpiry();
+
+            const savedData = localStorage.getItem('excelData');
+            if (savedData) {
+                excelData = JSON.parse(savedData);
+                displayResults(excelData);
+            }
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = e.target.result;
+                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                    // E sütunundaki "Bayi Adı"nı 15 karakterle sınırla
+                    excelData.forEach(row => {
+                        if (row[4] && row[4].length > 15) {
+                            row[4] = row[4].substring(0, 15); // 15 karakterle sınırlama
+                        }
+                    });
+
+                    displayResults(excelData);
+                    saveDataToLocalStorage();
+                };
+                reader.readAsBinaryString(file);
+            }
+        });
+
+        document.getElementById('search').addEventListener('input', function(event) {
+            const query = event.target.value.toLowerCase();
+            const filteredData = excelData.filter((row, index) => {
+                if (index === 0) return true;
+                return row.some(cell => cell && cell.toString().toLowerCase().includes(query));
+            });
+            displayResults(filteredData);
+        });
+
+        function displayResults(data) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            const resultsTable = document.getElementById('resultsTable');
+
+            if (data.length > 1) {
+                resultsTable.style.display = 'table';
+            } else {
+                resultsTable.style.display = 'none';
+            }
+
+            data.forEach((row, index) => {
+                if (index === 0) return;
+
+                const tr = document.createElement('tr');
+
+                ['Şehir', 'İlçe', '', 'Bayi Kodu', 'Bayi Adı', 'Konum'].forEach((_, colIndex) => {
+                    const td = document.createElement('td');
+                    if (colIndex === 2) {
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.classList.add('checkbox');
+                        td.appendChild(checkbox);
+                    } else {
+                        if (colIndex === 5 && row[colIndex]) {
+                            const coordinates = row[colIndex];
+                            const mapUrl = `https://www.google.com/maps?q=${coordinates}`;
+                            const mapLink = document.createElement('a');
+                            mapLink.href = mapUrl;
+                            mapLink.target = "_blank";
+                            mapLink.classList.add('map-link');
+                            mapLink.textContent = 'Harita';
+                            td.appendChild(mapLink);
+                        } else {
+                            td.textContent = row[colIndex] || '';
+                        }
+                    }
+                    tr.appendChild(td);
+                });
+
+                tableBody.appendChild(tr);
+            });
+        }
+
+        document.querySelector('#resultsTable').addEventListener('change', function(event) {
+            if (event.target.type === 'checkbox') {
+                const row = event.target.closest('tr');
+                const bayiKodu = row.cells[3].textContent;
+                const bayiAdı = row.cells[4].textContent;
+
+                if (event.target.checked) {
+                    const bayiAdiLimited = bayiAdı.length > 20 ? bayiAdı.substring(0, 20) : bayiAdı;
+                    copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdiLimited}`);
+                } else {
+                    copiedData = copiedData.filter(data => !data.includes(`Bayi Kodu: ${bayiKodu}`));
+                }
+            }
+        });
+
+        document.getElementById('copyButton').addEventListener('click', function() {
+            if (copiedData.length > 0) {
+                const dataToCopy = `Bugün FiDe Yapılacak Bayiler:\n\n` + copiedData.join('\n\n');
+                navigator.clipboard.writeText(dataToCopy).then(() => {
+                    alert('Veri kopyalandı!');
+                });
+            } else {
+                alert('Öncelikle bir veri seçin!');
+            }
+        });
+
+        document.getElementById('clearButton').addEventListener('click', function() {
+            document.querySelectorAll('.checkbox').forEach(checkbox => checkbox.checked = false);
+            copiedData = [];
+            document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('resultsTable').style.display = 'none';
+        });
+
+        document.getElementById('dbButton').addEventListener('click', function() {
+            localStorage.clear();
+            excelData = [];
+            copiedData = [];
+            document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('resultsTable').style.display = 'none';
+            alert('Veritabanı sıfırlandı!');
+        });
+    </script>
+</body>
+</html>
