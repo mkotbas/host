@@ -82,18 +82,18 @@
             margin-bottom: 20px;
         }
 
-        /* Tabloyu dinamik genişlikte oluştur */
+        /* Tabloyu ekran genişliğine uyumlu hale getirelim */
         #resultsTable {
-            width: auto;  /* Tabloyu otomatik genişlikte ayarlıyoruz */
-            margin: 0 auto;
-            overflow-x: auto;
             display: none;
-            table-layout: auto;  /* İçeriğe göre genişlik ayarlaması yapar */
+            width: 100%;          /* Tablo genişliği %100 olacak */
+            margin-left: auto;
+            margin-right: auto;
+            table-layout: fixed;  /* Sütun genişliklerini eşit tutmak için */
         }
 
         table {
-            width: 100%;
-            border-collapse: collapse;
+            width: 100%;           /* Tablo genişliği %100 olacak */
+            border-collapse: collapse; /* Hücreler arasındaki boşluğu kaldır */
         }
 
         table, th, td {
@@ -101,30 +101,17 @@
         }
 
         th, td {
-            padding: 4px 8px; /* Hücrelerin iç padding'ini azaltıyoruz */
+            padding: 10px;
             text-align: left;
-            font-size: 13px; /* Font boyutunu biraz küçültüyoruz */
         }
 
         th {
             background-color: #f2f2f2;
-            font-size: 14px;
-        }
-
-        /* B ve E sütunlarının dinamik genişliği */
-        th:nth-child(2), td:nth-child(2) {
-            width: auto;
-            white-space: nowrap;
-        }
-
-        th:nth-child(5), td:nth-child(5) {
-            width: auto;
-            white-space: nowrap;
         }
 
         .checkbox-column input {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
         }
 
         .map-link {
@@ -148,6 +135,48 @@
         .map-link:active {
             background-color: #004085;
         }
+
+        /* Mobil uyumluluk: */
+        @media (max-width: 768px) {
+            table {
+                width: 100%;
+                /* Tabloyu sığdırmak için sütunlar daraltılacak */
+            }
+
+            th, td {
+                padding: 8px;
+                font-size: 12px; /* Yazı tipini küçültüyoruz */
+            }
+
+            /* 768px ve altı için tüm sütunlar görünür olacak */
+            td {
+                word-wrap: break-word;  /* Uzun metinleri satıra kırar */
+            }
+
+            /* Hücrelerdeki içerik sığmadığında, içerik otomatik olarak taşmaz */
+            th, td {
+                max-width: 120px;  /* Maksimum genişlik ayarladık */
+                overflow: hidden;
+                text-overflow: ellipsis; /* Taşan metni üç nokta ile gösterebiliriz */
+            }
+
+            .map-link {
+                font-size: 10px;
+                padding: 3px 6px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            th, td {
+                padding: 6px;
+                font-size: 10px; /* Yazı tipini daha da küçültüyoruz */
+            }
+
+            /* Harita linkini daha küçük yapma */
+            .map-link {
+                font-size: 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -166,19 +195,21 @@
         <button id="dbButton">DB</button>
     </div>
     
-    <table id="resultsTable">
-        <thead>
-            <tr>
-                <th>Şehir</th>
-                <th>İlçe</th>
-                <th>Seç</th>
-                <th>Bayi Kodu</th>
-                <th>Bayi Adı</th>
-                <th>Konum</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
+    <div class="table-container">
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>Şehir</th>
+                    <th>İlçe</th>
+                    <th>Seç</th>
+                    <th>Bayi Kodu</th>
+                    <th>Bayi Adı</th>
+                    <th>Konum</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
 
     <script>
         let excelData = [];
@@ -225,6 +256,9 @@
                     const sheet = workbook.Sheets[sheetName];
                     excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
+                    // A sütununun genişliğini ayarlamak için en uzun veriyi bulalım
+                    adjustColumnWidth(excelData, 0); // A sütunu için genişliği ayarlıyoruz
+
                     // E sütunundaki "Bayi Adı"nı 15 karakterle sınırla
                     excelData.forEach(row => {
                         if (row[4] && row[4].length > 15) {
@@ -238,6 +272,22 @@
                 reader.readAsBinaryString(file);
             }
         });
+
+        function adjustColumnWidth(data, columnIndex) {
+            let maxLength = 0;
+            data.forEach(row => {
+                if (row[columnIndex] && row[columnIndex].length > maxLength) {
+                    maxLength = row[columnIndex].length;
+                }
+            });
+            const adjustedWidth = maxLength + 2; // 2 karakterlik ekstra boşluk ekledik
+            document.querySelectorAll('th')[0].style.width = `${adjustedWidth}ch`;
+            document.querySelectorAll('td').forEach((cell, index) => {
+                if (index % 6 === 0) { // A sütunundaki hücreler
+                    cell.style.width = `${adjustedWidth}ch`;
+                }
+            });
+        }
 
         document.getElementById('search').addEventListener('input', function(event) {
             const query = event.target.value.toLowerCase();
