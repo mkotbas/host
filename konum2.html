@@ -75,6 +75,18 @@
             box-sizing: border-box;
         }
 
+        /* Mobil ekranlar için (768px ve altı) */
+        @media (max-width: 768px) {
+            #search {
+                width: 100%; /* Mobilde %100 genişlik */
+                padding: 8px; /* Mobilde daha uygun görünmesi için padding küçültülebilir */
+            }
+
+            #resultsTable {
+                width: 100%; /* Mobilde tabloyu tam genişlik yapalım */
+            }
+        }
+
         .buttons-container {
             display: flex;
             justify-content: center;
