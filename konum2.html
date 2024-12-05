@@ -84,6 +84,23 @@
 
             #resultsTable {
                 width: 100%; /* Mobilde tabloyu tam genişlik yapalım */
+                table-layout: auto; /* Hücre genişliklerini içeriklere göre otomatik ayarla */
+            }
+
+            th, td {
+                font-size: 14px; /* Yazı boyutunu biraz küçültüyoruz */
+                padding: 8px; /* Padding değerini küçültüyoruz */
+            }
+
+            /* Kolonların metin hizalamasını da iyileştirebiliriz */
+            td {
+                word-wrap: break-word; /* Uzun metinlerin taşmaması için */
+            }
+
+            /* Seçilen checkbox ve diğer öğelerin hizalanmasını düzeltiyoruz */
+            .checkbox-column input {
+                width: 16px;
+                height: 16px;
             }
         }
 
