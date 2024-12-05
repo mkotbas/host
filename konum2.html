@@ -67,11 +67,10 @@
         }
 
         #search {
-            width: 100%;
-            max-width: 960px;
+            width: 55%; /* Tabloyla aynı genişlik */
             padding: 10px;
             font-size: 16px;
-            margin: 0 auto 20px;
+            margin: 0 auto 20px; /* Ortalamak için */
             display: block;
             box-sizing: border-box;
         }
@@ -83,18 +82,10 @@
             margin-bottom: 20px;
         }
 
-        /* Tabloyu ekran genişliğine uyumlu hale getirelim */
-        #resultsTable {
-            display: none;
-            width: 100%;          /* Tablo genişliği %100 olacak */
-            margin-left: auto;
-            margin-right: auto;
-            table-layout: fixed;  /* Sütun genişliklerini eşit tutmak için */
-        }
-
         table {
-            width: 100%;           /* Tablo genişliği %100 olacak */
-            border-collapse: collapse; /* Hücreler arasındaki boşluğu kaldır */
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
 
         table, th, td {
@@ -137,46 +128,11 @@
             background-color: #004085;
         }
 
-        /* Mobil uyumluluk: */
-        @media (max-width: 768px) {
-            table {
-                width: 100%;
-                /* Tabloyu sığdırmak için sütunlar daraltılacak */
-            }
-
-            th, td {
-                padding: 8px;
-                font-size: 12px; /* Yazı tipini küçültüyoruz */
-            }
-
-            /* 768px ve altı için tüm sütunlar görünür olacak */
-            td {
-                word-wrap: break-word;  /* Uzun metinleri satıra kırar */
-            }
-
-            /* Hücrelerdeki içerik sığmadığında, içerik otomatik olarak taşmaz */
-            th, td {
-                max-width: 120px;  /* Maksimum genişlik ayarladık */
-                overflow: hidden;
-                text-overflow: ellipsis; /* Taşan metni üç nokta ile gösterebiliriz */
-            }
-
-            .map-link {
-                font-size: 10px;
-                padding: 3px 6px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            th, td {
-                padding: 6px;
-                font-size: 10px; /* Yazı tipini daha da küçültüyoruz */
-            }
-
-            /* Harita linkini daha küçük yapma */
-            .map-link {
-                font-size: 8px;
-            }
+        #resultsTable {
+            display: none;
+            width: 55%; /* Tabloyu %40 daraltarak %55 genişlik veriyoruz */
+            margin-left: auto;
+            margin-right: auto;
         }
     </style>
 </head>
@@ -196,21 +152,19 @@
         <button id="dbButton">DB</button>
     </div>
     
-    <div class="table-container">
-        <table id="resultsTable">
-            <thead>
-                <tr>
-                    <th>Şehir</th>
-                    <th>İlçe</th>
-                    <th>Seç</th>
-                    <th>Bayi Kodu</th>
-                    <th>Bayi Adı</th>
-                    <th>Konum</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-    </div>
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Şehir</th>
+                <th>İlçe</th>
+                <th>Seç</th>
+                <th>Bayi Kodu</th>
+                <th>Bayi Adı</th>
+                <th>Konum</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
 
     <script>
         let excelData = [];
@@ -274,6 +228,7 @@
             }
         });
 
+        // A sütununu en uzun veriye göre genişletme
         function adjustColumnWidth(data, columnIndex) {
             let maxLength = 0;
             data.forEach(row => {
@@ -281,6 +236,7 @@
                     maxLength = row[columnIndex].length;
                 }
             });
+            // A sütununun genişliğini en uzun veriye göre ayarlıyoruz
             const adjustedWidth = maxLength + 2; // 2 karakterlik ekstra boşluk ekledik
             document.querySelectorAll('th')[0].style.width = `${adjustedWidth}ch`;
             document.querySelectorAll('td').forEach((cell, index) => {
