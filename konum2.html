@@ -131,9 +131,10 @@
 
         #resultsTable {
             display: none;
-            width: 55%; /* Tabloyu %40 daraltarak %55 genişlik veriyoruz */
+            width: 100%; /* Tabloyu %100 genişlikte tutuyoruz */
             margin-left: auto;
             margin-right: auto;
+            overflow-x: auto; /* Tabloyu yatay kaydırmak yerine içerikleri sığdırıyoruz */
         }
 
         @media (max-width: 768px) {
@@ -142,6 +143,12 @@
                 width: 90%;  /* Mobilde arama kutusunun genişliği %90 olacak */
                 max-width: 100%; /* Maksimum genişlik %100 olacak şekilde sınırlandırılmış */
                 margin: 0 auto 20px; /* Yine merkezde hizalanacak */
+            }
+
+            #resultsTable {
+                width: 100%; /* Mobilde tablonun genişliği %100 olacak */
+                overflow-x: auto; /* Yatay kaydırma engelleniyor */
+                display: block; /* Tabloyu kaydırılabilir hale getirmek için block yapıyoruz */
             }
         }
     </style>
