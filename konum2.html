@@ -67,7 +67,8 @@
         }
 
         #search {
-            width: 50%;
+            width: 55%;  /* Arama kutusunun genişliğini, tablonun genişliğiyle uyumlu yapıyoruz */
+            max-width: 100%; /* Maksimum genişlik %100 olarak ayarlanıyor */
             padding: 10px;
             font-size: 16px;
             margin: 0 auto 20px;
@@ -133,6 +134,15 @@
             width: 55%; /* Tabloyu %40 daraltarak %55 genişlik veriyoruz */
             margin-left: auto;
             margin-right: auto;
+        }
+
+        @media (max-width: 768px) {
+            /* Ekran genişliği 768px ve altı olduğunda mobil uyumlu olacak şekilde ayarlamalar */
+            #search {
+                width: 90%;  /* Mobilde arama kutusunun genişliği %90 olacak */
+                max-width: 100%; /* Maksimum genişlik %100 olacak şekilde sınırlandırılmış */
+                margin: 0 auto 20px; /* Yine merkezde hizalanacak */
+            }
         }
     </style>
 </head>
