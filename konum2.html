@@ -67,10 +67,11 @@
         }
 
         #search {
-            width: 100%; /* Arama kutusunun tam genişlikte olması için */
+            width: 100%;
+            max-width: 95%; /* Tabloyla uyumlu genişlik */
             padding: 10px;
             font-size: 16px;
-            margin: 0 auto 20px; /* Ortalamak için */
+            margin: 0 auto 20px;
             display: block;
             box-sizing: border-box;
         }
@@ -86,7 +87,6 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            table-layout: fixed; /* Tablonun hücrelerini sabit genişlikte yapıyoruz */
         }
 
         table, th, td {
@@ -129,45 +129,12 @@
             background-color: #004085;
         }
 
-        #resultsTableWrapper {
-            overflow: hidden; /* Yatay kaydırma eklemiyoruz */
-        }
-
-        /* Mobil ekranlar için (768px ve altı) */
-        @media (max-width: 768px) {
-            #search {
-                width: 100%; /* Arama kutusunu tam genişlikte yapıyoruz */
-                padding: 8px; /* Mobilde daha uygun görünmesi için padding küçültülebilir */
-            }
-
-            #resultsTable {
-                width: 100%; /* Tabloyu mobilde %100 genişlik yapıyoruz */
-                table-layout: fixed; /* Sabit hücre genişliği ayarını kullanıyoruz */
-                display: block; /* Tabloyu blok olarak gösteriyoruz */
-            }
-
-            th, td {
-                font-size: 12px; /* Yazı boyutunu mobilde daha küçük yapıyoruz */
-                padding: 8px; /* Padding değerini küçültüyoruz */
-                text-overflow: ellipsis; /* Taşan metinlerin kısaltılmasını sağlıyoruz */
-                white-space: nowrap; /* Hücrelerde metin taşmasını engelliyoruz */
-                overflow: hidden; /* Taşan metni gizliyoruz */
-            }
-
-            /* Tablo başlıkları için eşit genişlik ayarları */
-            th {
-                width: 16%; /* Başlıklar için eşit genişlik */
-            }
-
-            td {
-                width: 16%; /* Veri hücreleri için de aynı genişlik */
-            }
-
-            /* Seçilen checkbox ve diğer öğelerin boyutlarını düzenliyoruz */
-            .checkbox-column input {
-                width: 14px;
-                height: 14px;
-            }
+        #resultsTable {
+            display: none;
+            width: 100%; /* Tablonun genişliği %100 */
+            max-width: 95%; /* Tabloyu %95 genişlikte tutuyoruz */
+            margin-left: auto;
+            margin-right: auto;
         }
     </style>
 </head>
@@ -187,21 +154,19 @@
         <button id="dbButton">DB</button>
     </div>
     
-    <div id="resultsTableWrapper">
-        <table id="resultsTable">
-            <thead>
-                <tr>
-                    <th>Şehir</th>
-                    <th>İlçe</th>
-                    <th>Seç</th>
-                    <th>Bayi Kodu</th>
-                    <th>Bayi Adı</th>
-                    <th>Konum</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-    </div>
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Şehir</th>
+                <th>İlçe</th>
+                <th>Seç</th>
+                <th>Bayi Kodu</th>
+                <th>Bayi Adı</th>
+                <th>Konum</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
 
     <script>
         let excelData = [];
