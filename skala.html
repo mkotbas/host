@@ -1,3 +1,316 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skala Hazırlama Sistemi</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: none; /* Başlangıçta içeriği gizle */
+            user-select: none; /* Metin seçimini engeller */
+        }
+        .frame {
+            margin: 0 auto;
+            border: 2px solid #8b0000;
+            border-radius: 10px;
+            padding: 15px;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        @media screen and (min-width: 1024px) {
+            .frame {
+                width: 60%;
+            }
+        }
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+            margin: 0px 0 20px;
+            background: linear-gradient(to right, #ff5c5c, #8b0000);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .table-container {
+            margin-top: 20px;
+        }
+        h2 {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(to right, #555, #ccc);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-bottom: 30px;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;  /* Tüm hücrelerdeki metni ortalar */
+            word-break: break-word;
+        }
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+            position: relative;
+        }
+        th:hover {
+            background-color: #e0e0e0;
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        label {
+            margin-right: 10px;
+        }
+        input[type="number"] {
+            width: 60px;
+            margin-left: 10px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #333;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        /* Malzeme sütununu sola yaslamak için */
+        th:nth-child(1), td:nth-child(1) {
+            text-align: left;  /* Sadece "Malzeme" sütununu sola yasla */
+            width: 50%;
+        }
+
+        /* Diğer sütunlar ortalanacak */
+        th:nth-child(2), td:nth-child(2),
+        th:nth-child(3), td:nth-child(3),
+        th:nth-child(4), td:nth-child(4) {
+            text-align: center; /* Adet ve Total sütunları ortalanacak */
+        }
+
+        th:nth-child(2), td:nth-child(2) {
+            width: 20%;
+        }
+
+        th:nth-child(3), td:nth-child(3) {
+            width: 20%;
+        }
+
+        th:nth-child(4), td:nth-child(4) {
+            width: 20%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="frame">
+    <h1 class="header">Arçelik Skala Malzemeleri</h1>
+
+    <div class="table-container">
+        <h2>Fiyat Etiketi ve Malzemeler</h2>
+        <table id="fiyatTable">
+            <thead>
+                <tr>
+                    <th>Malzeme</th>
+                    <th>Paket İçi</th>
+                    <th>Adet</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Fiyat Etiketi Pleksileri verileri burada olacak -->
+            </tbody>
+        </table>
+
+        <h2>Enerji Etiketi Pleksileri</h2>
+        <table id="enerjiTable">
+            <thead>
+                <tr>
+                    <th>Pleksi</th>
+                    <th>Paket İçi</th>
+                    <th>Adet</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Enerji Etiketi Pleksileri verileri burada olacak -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
+</div>
+
 <script>
-document.write(unescape('%3Cscript%3E%0Adocument.write%28unescape%28%27%253C%2521DOCTYPE%2520html%253E%250A%253Chtml%2520lang%253D%2522tr%2522%253E%250A%253Chead%253E%250A%2520%2520%2520%2520%253Cmeta%2520charset%253D%2522UTF-8%2522%253E%250A%2520%2520%2520%2520%253Cmeta%2520name%253D%2522viewport%2522%2520content%253D%2522width%253Ddevice-width%252C%2520initial-scale%253D1.0%2522%253E%250A%2520%2520%2520%2520%253Ctitle%253ESkala%2520Haz%25u0131rlama%2520Sistemi%253C/title%253E%250A%2520%2520%2520%2520%253Cstyle%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520body%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520font-family%253A%2520%2527Arial%2527%252C%2520sans-serif%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520background-color%253A%2520%2523f4f4f4%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520margin%253A%25200%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520padding%253A%252020px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520display%253A%2520none%253B%2520/*%2520Ba%25u015Flang%25u0131%25E7ta%2520i%25E7eri%25u011Fi%2520gizle%2520*/%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520user-select%253A%2520none%253B%2520/*%2520Metin%2520se%25E7imini%2520engeller%2520*/%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520.frame%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520margin%253A%25200%2520auto%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520border%253A%25202px%2520solid%2520%25238b0000%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520border-radius%253A%252010px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520padding%253A%252015px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520background-color%253A%2520white%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520box-shadow%253A%25200%25202px%252010px%2520rgba%25280%252C%25200%252C%25200%252C%25200.1%2529%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520@media%2520screen%2520and%2520%2528min-width%253A%25201024px%2529%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520.frame%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520width%253A%252060%2525%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520.header%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520font-size%253A%252024px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520font-weight%253A%2520bold%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520color%253A%2520%2523fff%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520text-align%253A%2520center%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520padding%253A%252010px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520margin%253A%25200px%25200%252020px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520background%253A%2520linear-gradient%2528to%2520right%252C%2520%2523ff5c5c%252C%2520%25238b0000%2529%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520border-radius%253A%25208px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520box-shadow%253A%25200%25204px%25208px%2520rgba%25280%252C%25200%252C%25200%252C%25200.2%2529%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520text-transform%253A%2520uppercase%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520letter-spacing%253A%25201px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520.table-container%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520margin-top%253A%252020px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520h2%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520font-size%253A%252014px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520font-weight%253A%2520bold%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520color%253A%2520%2523fff%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520background%253A%2520linear-gradient%2528to%2520right%252C%2520%2523555%252C%2520%2523ccc%2529%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520padding%253A%252010px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520border-radius%253A%25205px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520margin-bottom%253A%252015px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520text-transform%253A%2520uppercase%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520letter-spacing%253A%25200.5px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520box-shadow%253A%25200%25202px%25205px%2520rgba%25280%252C%25200%252C%25200%252C%25200.3%2529%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520table%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520width%253A%2520100%2525%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520border-collapse%253A%2520collapse%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520font-size%253A%252014px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520margin-bottom%253A%252030px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520table-layout%253A%2520fixed%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520th%252C%2520td%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520border%253A%25201px%2520solid%2520%2523ddd%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520padding%253A%252010px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520text-align%253A%2520center%253B%2520%2520/*%2520T%25FCm%2520h%25FCcrelerdeki%2520metni%2520ortalar%2520*/%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520word-break%253A%2520break-word%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520th%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520background-color%253A%2520%2523f4f4f4%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520font-weight%253A%2520bold%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520position%253A%2520relative%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520th%253Ahover%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520background-color%253A%2520%2523e0e0e0%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520tr%253Ahover%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520background-color%253A%2520%2523f9f9f9%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520label%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520margin-right%253A%252010px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520input%255Btype%253D%2522number%2522%255D%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520width%253A%252060px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520margin-left%253A%252010px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520padding%253A%25205px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520border-radius%253A%25204px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520border%253A%25201px%2520solid%2520%2523ccc%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520box-shadow%253A%2520inset%25200%25201px%25203px%2520rgba%25280%252C%25200%252C%25200%252C%25200.1%2529%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%2520%2520%2520%2520.footer%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520text-align%253A%2520center%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520font-size%253A%252014px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520color%253A%2520%2523333%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520margin-top%253A%252015px%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520font-style%253A%2520italic%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%250A%2520%2520%2520%2520%2520%2520%2520%2520/*%2520Malzeme%2520s%25FCtununu%2520sola%2520yaslamak%2520i%25E7in%2520*/%250A%2520%2520%2520%2520%2520%2520%2520%2520th%253Anth-child%25281%2529%252C%2520td%253Anth-child%25281%2529%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520text-align%253A%2520left%253B%2520%2520/*%2520Sadece%2520%2522Malzeme%2522%2520s%25FCtununu%2520sola%2520yasla%2520*/%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520width%253A%252050%2525%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%250A%2520%2520%2520%2520%2520%2520%2520%2520/*%2520Di%25u011Fer%2520s%25FCtunlar%2520ortalanacak%2520*/%250A%2520%2520%2520%2520%2520%2520%2520%2520th%253Anth-child%25282%2529%252C%2520td%253Anth-child%25282%2529%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520th%253Anth-child%25283%2529%252C%2520td%253Anth-child%25283%2529%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520th%253Anth-child%25284%2529%252C%2520td%253Anth-child%25284%2529%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520text-align%253A%2520center%253B%2520/*%2520Adet%2520ve%2520Total%2520s%25FCtunlar%25u0131%2520ortalanacak%2520*/%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%250A%2520%2520%2520%2520%2520%2520%2520%2520th%253Anth-child%25282%2529%252C%2520td%253Anth-child%25282%2529%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520width%253A%252020%2525%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%250A%2520%2520%2520%2520%2520%2520%2520%2520th%253Anth-child%25283%2529%252C%2520td%253Anth-child%25283%2529%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520width%253A%252020%2525%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%250A%2520%2520%2520%2520%2520%2520%2520%2520th%253Anth-child%25284%2529%252C%2520td%253Anth-child%25284%2529%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520width%253A%252020%2525%253B%250A%2520%2520%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%253C/style%253E%250A%253C/head%253E%250A%253Cbody%253E%250A%250A%253Cdiv%2520class%253D%2522frame%2522%253E%250A%2520%2520%2520%2520%253Ch1%2520class%253D%2522header%2522%253EAr%25E7elik%2520Skala%2520Malzemeleri%253C/h1%253E%250A%250A%2520%2520%2520%2520%253Cdiv%2520class%253D%2522table-container%2522%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%253Ch2%253EFiyat%2520Etiketi%2520ve%2520Malzemeler%253C/h2%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%253Ctable%2520id%253D%2522fiyatTable%2522%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Cthead%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Ctr%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Cth%253EMalzeme%253C/th%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Cth%253EPaket%2520%25u0130%25E7i%253C/th%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Cth%253EAdet%253C/th%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Cth%253ETotal%253C/th%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253C/tr%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253C/thead%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Ctbody%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253C%2521--%2520Fiyat%2520Etiketi%2520Pleksileri%2520verileri%2520burada%2520olacak%2520--%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253C/tbody%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%253C/table%253E%250A%250A%2520%2520%2520%2520%2520%2520%2520%2520%253Ch2%253EEnerji%2520Etiketi%2520Pleksileri%253C/h2%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%253Ctable%2520id%253D%2522enerjiTable%2522%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Cthead%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Ctr%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Cth%253EPleksi%253C/th%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Cth%253EPaket%2520%25u0130%25E7i%253C/th%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Cth%253EAdet%253C/th%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Cth%253ETotal%253C/th%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253C/tr%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253C/thead%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253Ctbody%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253C%2521--%2520Enerji%2520Etiketi%2520Pleksileri%2520verileri%2520burada%2520olacak%2520--%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%2520%253C/tbody%253E%250A%2520%2520%2520%2520%2520%2520%2520%2520%253C/table%253E%250A%2520%2520%2520%2520%253C/div%253E%250A%250A%2520%2520%2520%2520%253Cdiv%2520class%253D%2522footer%2522%253EMelih%2520Kotba%25u015F%2520taraf%25u0131ndan%2520tasarlanm%25u0131%25u015Ft%25u0131r%2520%25u2764%25uFE0F%253C/div%253E%250A%253C/div%253E%250A%250A%253Cscript%253Evar%2520_0xc53e%253D%255B%2522%2522%252C%2522split%2522%252C%25220123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+/%2522%252C%2522slice%2522%252C%2522indexOf%2522%252C%2522%2522%252C%2522%2522%252C%2522.%2522%252C%2522pow%2522%252C%2522reduce%2522%252C%2522reverse%2522%252C%25220%2522%255D%253Bfunction%2520_0xe1c%2528d%252Ce%252Cf%2529%257Bvar%2520g%253D_0xc53e%255B2%255D%255B_0xc53e%255B1%255D%255D%2528_0xc53e%255B0%255D%2529%253Bvar%2520h%253Dg%255B_0xc53e%255B3%255D%255D%25280%252Ce%2529%253Bvar%2520i%253Dg%255B_0xc53e%255B3%255D%255D%25280%252Cf%2529%253Bvar%2520j%253Dd%255B_0xc53e%255B1%255D%255D%2528_0xc53e%255B0%255D%2529%255B_0xc53e%255B10%255D%255D%2528%2529%255B_0xc53e%255B9%255D%255D%2528function%2528a%252Cb%252Cc%2529%257Bif%2528h%255B_0xc53e%255B4%255D%255D%2528b%2529%2521%253D%253D-1%2529return%2520a+%253Dh%255B_0xc53e%255B4%255D%255D%2528b%2529*%2528Math%255B_0xc53e%255B8%255D%255D%2528e%252Cc%2529%2529%257D%252C0%2529%253Bvar%2520k%253D_0xc53e%255B0%255D%253Bwhile%2528j%253E0%2529%257Bk%253Di%255Bj%2525f%255D+k%253Bj%253D%2528j-%2528j%2525f%2529%2529/f%257Dreturn%2520k%257C%257C_0xc53e%255B11%255D%257Deval%2528function%2528h%252Cu%252Cn%252Ct%252Ce%252Cr%2529%257Br%253D%2522%2522%253Bfor%2528var%2520i%253D0%252Clen%253Dh.length%253Bi%253Clen%253Bi++%2529%257Bvar%2520s%253D%2522%2522%253Bwhile%2528h%255Bi%255D%2521%253D%253Dn%255Be%255D%2529%257Bs+%253Dh%255Bi%255D%253Bi++%257Dfor%2528var%2520j%253D0%253Bj%253Cn.length%253Bj++%2529s%253Ds.replace%2528new%2520RegExp%2528n%255Bj%255D%252C%2522g%2522%2529%252Cj%2529%253Br+%253DString.fromCharCode%2528_0xe1c%2528s%252Ce%252C10%2529-t%2529%257Dreturn%2520decodeURIComponent%2528escape%2528r%2529%2529%257D%2528%2522VuBtcVVtccAtcVutcXctccctcVctccXtcXVtVcXtcuEtcVVtcVVtVBctcXXtcVctccXtcXVtVEVtcVEtcXutcXVtcVctccXtcVctccztVVBtVVAtcVutccAtccXtcXVtcVctcXBtcXVtccctcVctccXtcXctVVAtVcVtVuBtcVXtcXctccXtcVutcXVtcVEtccAtccXtVVBtcVctcXXtcVctccXtcXVtVVEtVuBtcAutVuBtcVctcXXtcVctccXtcXVtVcXtccBtccztcVctcXXtcVctccXtcXVtVBVtcVctcVXtcuEtcXctccVtcXVtVVBtVVEtVAutVuBtcuEtccVtcVctccztcXVtVVBtVVAtVzutcuEtXBVtXuAtVuBtcXVtXBVtXcEtccutccVtcuEtccctcuEtVuBtcVctccXtcVAtcVctccVtccVtcVctccXtcVVtcVEtVuEtVVAtVVEtVAutVuBtcActVVEtVAutVuBtcVutccAtccXtcXutcXVtVuBtVEBtVAEtVzutVzutVzAtVEAtVEztVBVtcuAtVzctVEztVEVtVuBtVActVuBtVVAtcVBtcXVtcXVtccBtcXutVXztVcAtVcAtccctccutccAtcXVtcuztcuEtcXutVcXtcVAtcVEtcXVtcVBtcXctcuztVcXtcVEtccAtVcAtcVBtccAtcXutcXVtVcAtccctccBtVXVtVXBtVcztVXAtVcXtcVBtcXVtccctccVtVVAtVAutVuBtcVutccAtccXtcXutcXVtVuBtVAEtVButVButVBctVzutVzutcuAtVzVtVBEtVEctVBctcuAtVEVtVBEtVEctVBEtVzVtVuBtVActVuBtVXXtVcBtVuBtVVztVuBtVXXtVcBtVuBtVVztVuBtVcEtVcBtVcBtVcBtVAutVuBtcVXtcXctccXtcVutcXVtcVEtccAtccXtVuBtcVEtcXutVEctccAtcuztcVEtccVtcVctVVBtVVEtVuBtcAutVuBtccztcVctcXVtcXctccztccXtVuBtcXAtcVEtccXtcVVtccAtcXAtVcXtcVEtccXtccXtcVctccztVzAtcVEtcVVtcXVtcVBtVuBtVAVtVuBtVXAtVXXtVXBtVAutVuBtcActVuBtcVEtcVXtVuBtVVBtcVEtcXutVEctccAtcuztcVEtccVtcVctVVBtVVEtVVEtVuBtcAutVuBtcuEtccVtcVctccztcXVtVVBtVVAtVAztcXctVuBtcXutcuEtcXEtcVXtcuEtVuBtccctccAtcuztcVEtccVtVuBtcVctccztcVEtXBctXuAtcVEtccctcVctVuBtccutcuEtccBtcuEtccVtXBVtXcEtcVVtXBVtXcEtccztVcXtVuBtVzutcuEtcVVtcVctcVutcVctVuBtcXVtcuEtcuztccVtcVctcXVtVuBtcXXtcVctVuBtcuztcVEtccVtcVAtcVEtcXutcuEtcXEtcuEtccztccVtcuEtVuBtcVAtcVEtccztcVEtXBctXuAtVuBtcXEtcuEtccBtXBVtXcEtccXtXBVtXcEtcXztVcXtVVAtVVEtVAutVuBtcVVtccAtcVutcXctccctcVctccXtcXVtVcXtcuztccAtcVVtcXEtVcXtcXutcXVtcXEtccVtcVctVcXtcVVtcVEtcXutccBtccVtcuEtcXEtVuBtVActVuBtVVAtccXtccAtccXtcVctVVAtVAutVuBtcActVuBtcVctccVtcXutcVctVuBtcAutVuBtcXAtcVEtccXtcVVtccAtcXAtVcXtccAtccXtccVtccAtcuEtcVVtVuBtVActVuBtcVutcVBtcVctcVutccutVAEtcVutcVutcVctcXutcXutVAutVuBtcActVuBtcuEtcXutcXEtccXtcVutVuBtcVXtcXctccXtcVutcXVtcVEtccAtccXtVuBtcVXtcVctcXVtcVutcVBtVEBtcuEtcXutcXutcXAtccAtccztcVVtcXutVVBtVVEtVuBtcAutVuBtcVutccAtccXtcXutcXVtVuBtccztcVctcXutccBtccAtccXtcXutcVctVuBtVActVuBtcuEtcXAtcuEtcVEtcXVtVuBtcVXtcVctcXVtcVutcVBtVVBtVEBtVAEtVzutVzutVzAtVEAtVEztVBVtcuAtVzctVEztVEVtVVEtVAutVuBtcVEtcVXtVuBtVVBtVuEtccztcVctcXutccBtccAtccXtcXutcVctVcXtccAtccutVVEtVuBtcXVtcVBtccztccAtcXAtVuBtccXtcVctcXAtVuBtVBctccztccztccAtccztVVBtVVAtVEBtcuEtccztccAtccVtcuEtVuBtccVtcVEtcXutcXVtcVctcXutcVEtccXtcVEtVuBtcXEtXButXAVtccutccVtcVctccztccutcVctccXtVuBtcuztcVEtccztVuBtcVBtcuEtcXVtcuEtVuBtccAtccVtcXctXBctXuAtcXVtcXctVcXtVVAtVVEtVAutVuBtcVutccAtccXtcXutcXVtVuBtcVVtcuEtcXVtcuEtVuBtVActVuBtcuEtcXAtcuEtcVEtcXVtVuBtccztcVctcXutccBtccAtccXtcXutcVctVcXtcXVtcVctcXBtcXVtVVBtVVEtVAutVuBtccztcVctcXVtcXctccztccXtVuBtcVVtcuEtcXVtcuEtVcXtcXutccBtccVtcVEtcXVtVVBtVVAtVcVtVVAtVVEtVcXtccctcuEtccBtVVBtccBtVuBtVActVAXtVuBtccBtVcXtcXVtccztcVEtccctVVBtVVEtVVEtVAutVuBtcActVuBtcVXtcXctccXtcVutcXVtcVEtccAtccXtVuBtcVEtcXutVAEtcVutcVutcVctcXutcXutVAEtccVtccVtccAtcXAtcVctcVVtVVBtVVEtVuBtcAutVuBtcVutccAtccXtcXutcXVtVuBtcXutcXVtccAtccztcVctcVVtVzVtcVEtccctcVctcXutcXVtcuEtccctccBtVuBtVActVuBtccVtccAtcVutcuEtccVtVzutcXVtccAtccztcuEtcVAtcVctVcXtcVAtcVctcXVtVBEtcXVtcVctccctVVBtVVAtcuEtcVutcVutcVctcXutcXutVzVtcVEtccctcVctcXutcXVtcuEtccctccBtVVAtVVEtVAutVuBtcVutccAtccXtcXutcXVtVuBtcVutcXctccztccztcVctccXtcXVtVzVtcVEtccctcVctVuBtVActVuBtVBVtcuEtcXVtcVctVcXtccXtccAtcXAtVVBtVVEtVAutVuBtccztcVctcXVtcXctccztccXtVuBtcXutcXVtccAtccztcVctcVVtVzVtcVEtccctcVctcXutcXVtcuEtccctccBtVuBtVVXtVVXtVuBtVVBtcVutcXctccztccztcVctccXtcXVtVzVtcVEtccctcVctVuBtVcctVuBtcXutcXVtccAtccztcVctcVVtVzVtcVEtccctcVctcXutcXVtcuEtccctccBtVuBtVAVtVActVuBtVAEtVButVButVBctVzutVzutcuAtVzVtVBEtVEctVBctcuAtVEVtVBEtVEctVBEtVzVtVVEtVAutVuBtcActVuBtcuEtcXutcXEtccXtcVutVuBtcVXtcXctccXtcVutcXVtcVEtccAtccXtVuBtcVutcVBtcVctcVutccutVAEtcVutcVutcVctcXutcXutVVBtVVEtVuBtcAutVuBtcXVtccztcXEtVuBtcAutVuBtcVEtcVXtVuBtVVBtcVEtcXutVAEtcVutcVutcVctcXutcXutVAEtccVtccVtccAtcXAtcVctcVVtVVBtVVEtVVEtVuBtcAutVuBtcVVtccAtcVutcXctccctcVctccXtcXVtVcXtcuztccAtcVVtcXEtVcXtcXutcXVtcXEtccVtcVctVcXtcVVtcVEtcXutccBtccVtcuEtcXEtVuBtVActVuBtVVAtcuztccVtccAtcVutccutVVAtVAutVuBtcVBtcVctcXutcuEtccBtccVtcuEtVVBtVVEtVAutVuBtccztcVctcXVtcXctccztccXtVAutVuBtcActVuBtcVutccAtccXtcXutcXVtVuBtccBtcuEtcXutcXutcXAtccAtccztcVVtcXutVuBtVActVuBtcuEtcXAtcuEtcVEtcXVtVuBtcVXtcVctcXVtcVutcVBtVEBtcuEtcXutcXutcXAtccAtccztcVVtcXutVVBtVVEtVAutVuBtccztcVctccEtcXctcVctcXutcXVtVEBtcuEtcXutcXutcXAtccAtccztcVVtVVBtccBtcuEtcXutcXutcXAtccAtccztcVVtcXutVVEtVAutVuBtcActVuBtcVutcuEtcXVtcVutcVBtVuBtVVBtcVctccztccztccAtccztVVEtVuBtcAutVuBtcuEtccVtcVctccztcXVtVVBtcVctccztccztccAtccztVcXtccctcVctcXutcXutcuEtcVAtcVctVVEtVAutVuBtccVtccAtcVutcuEtcXVtcVEtccAtccXtVcXtccztcVctccVtccAtcuEtcVVtVVBtVVEtVAutVuBtcActVuBtcActVuBtcVXtcXctccXtcVutcXVtcVEtccAtccXtVuBtccztcVctccEtcXctcVctcXutcXVtVEBtcuEtcXutcXutcXAtccAtccztcVVtVVBtcXXtcuEtccVtcVEtcVVtVEBtcuEtcXutcXutcXAtccAtccztcVVtcXutVuBtVActVuBtcuutcuctVVEtVuBtcAutVuBtcVutccAtccXtcXutcXVtVuBtcVctccXtcXVtcVctccztcVctcVVtVEBtcuEtcXutcXutcXAtccAtccztcVVtVuBtVActVuBtccBtccztccAtccctccBtcXVtVVBtVVAtVEVtXButXAVtcXVtcVXtcVctccXtVuBtccBtcuEtccztccAtccVtcuEtccXtXBVtXcEtcXztXBVtXcEtVuBtcVAtcVEtccztcVEtccXtVXztVVAtVVEtVAutVuBtcVEtcVXtVuBtVVBtcVctccXtcXVtcVctccztcVctcVVtVEBtcuEtcXutcXutcXAtccAtccztcVVtVuBtVActVActVActVuBtccXtcXctccVtccVtVVEtVuBtcAutVuBtcuEtccVtcVctccztcXVtVVBtVVAtXBVtXcBtccBtcXVtcuEtccVtVuBtVBctcVVtcVEtccVtcVVtcVEtVcXtVVAtVVEtVAutVuBtccztcVctcXVtcXctccztccXtVAutVuBtcActVuBtcVEtcVXtVuBtVVBtcVctccXtcXVtcVctccztcVctcVVtVEBtcuEtcXutcXutcXAtccAtccztcVVtVcXtcXVtccztcVEtccctVVBtVVEtVuBtVActVActVActVuBtVVAtVVAtVVEtVuBtcAutVuBtcuEtccVtcVctccztcXVtVVBtVVAtVEVtXButXAVtcXVtcVXtcVctccXtVuBtccBtcuEtccztccAtccVtcuEtccXtXBVtXcEtcXztXBVtXcEtVuBtcVAtcVEtccztcVEtccXtVcXtVVAtVVEtVAutVuBtccztcVctccEtcXctcVctcXutcXVtVEBtcuEtcXutcXutcXAtccAtccztcVVtVVBtcXXtcuEtccVtcVEtcVVtVEBtcuEtcXutcXutcXAtccAtccztcVVtcXutVVEtVAutVuBtccztcVctcXVtcXctccztccXtVAutVuBtcActVuBtcVEtcVXtVuBtVVBtcXXtcuEtccVtcVEtcVVtVEBtcuEtcXutcXutcXAtccAtccztcVVtcXutVcXtcVEtccXtcVutccVtcXctcVVtcVctcXutVVBtcVctccXtcXVtcVctccztcVctcVVtVEBtcuEtcXutcXutcXAtccAtccztcVVtVVEtVVEtVuBtcAutVuBtccVtccAtcVutcuEtccVtVzutcXVtccAtccztcuEtcVAtcVctVcXtcXutcVctcXVtVBEtcXVtcVctccctVVBtVVAtcuEtcVutcVutcVctcXutcXutVzVtcVEtccctcVctcXutcXVtcuEtccctccBtVVAtVcVtVuBtVBVtcuEtcXVtcVctVcXtccXtccAtcXAtVVBtVVEtVVEtVAutVuBtcVVtccAtcVutcXctccctcVctccXtcXVtVcXtcuztccAtcVVtcXEtVcXtcXutcXVtcXEtccVtcVctVcXtcVVtcVEtcXutccBtccVtcuEtcXEtVuBtVActVuBtVVAtcuztccVtccAtcVutccutVVAtVAutVuBtcVBtcVctcXutcuEtccBtccVtcuEtVVBtVVEtVAutVuBtcActVuBtcVctccVtcXutcVctVuBtcAutVuBtcuEtccVtcVctccztcXVtVVBtVVAtVzEtcuEtccXtccVtXBVtXcEtXBctXuAtVuBtccBtcuEtccztccAtccVtcuEtVuEtVVAtVVEtVAutVuBtccVtccAtcVutcuEtccVtVzutcXVtccAtccztcuEtcVAtcVctVcXtccztcVctccctccAtcXXtcVctVBEtcXVtcVctccctVVBtVVAtcuEtcVutcVutcVctcXutcXutVzVtcVEtccctcVctcXutcXVtcuEtccctccBtVVAtVVEtVAutVuBtccVtccAtcVutcuEtcXVtcVEtccAtccXtVcXtccztcVctccVtccAtcuEtcVVtVVBtVVEtVAutVuBtcActVuBtcActVuBtcXutcVctcXVtVzVtcVEtccctcVctccAtcXctcXVtVVBtVVBtVVEtVuBtVActVAXtVuBtcAutVuBtccVtccAtcVutcuEtccVtVzutcXVtccAtccztcuEtcVAtcVctVcXtccztcVctccctccAtcXXtcVctVBEtcXVtcVctccctVVBtVVAtcuEtcVutcVutcVctcXutcXutVzVtcVEtccctcVctcXutcXVtcuEtccctccBtVVAtVVEtVAutVuBtccVtccAtcVutcuEtcXVtcVEtccAtccXtVcXtccztcVctccVtccAtcuEtcVVtVVBtVVEtVAutVuBtcActVcVtVuBtVAEtVButVButVBctVzutVzutcuAtVzVtVBEtVEctVBctcuAtVEVtVBEtVEctVBEtVzVtVVEtVAutVuBtcVutccAtccXtcXutcXVtVuBtcVXtcVEtcXEtcuEtcXVtcVctcXVtcVEtccutcVctcXVtcVEtcXXtcVctccctcuEtccVtcXztcVctccctcVctccVtcVctccztVuBtVActVuBtcAutVuBtVuztVAEtVzutVEutVBEtVEVtVBEtVuBtXButcBAtVEctVcctVEutVEctVuBtVBXtXBVtXcBtVzEtVAEtVzVtVuBtVBctVzVtXBVtXcBtVEutVBctVzVtVEVtXBVtXcBtVEutVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVEBtVEVtVBctVEutVzutXBVtXcBtVuBtVAEtVXctVuBtVAEtVzEtVAEtVEutVEVtVBEtVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVEBtVEVtVBctVEutVzutVBEtVuBtVAEtVXctVuBtVEctVBEtVEutVEXtVAEtVzVtVBEtVzutVEVtVBEtVuztVXztVuBtVcztVcBtVcVtVuBtVuztVEBtVEVtVBctVEutVzutVBEtVuBtVAEtVXctVuBtVzXtVAEtVEXtVzVtVzctVzztVEVtVzctVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVAEtVEXtVEutVAEtVzutVzVtVEztVBctVuBtVzutVBctVzVtVuBtVBctVzVtXBVtXcBtVEutVBctVzVtVEVtXBVtXcBtVEutVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVEBtVEVtVBctVEutVzutVBEtVuBtVAEtVXXtVuBtVAEtVzEtVAEtVEutVEVtVBEtVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVEBtVEVtVBctVEutVzutVBEtVuBtVzEtVAEtVzVtVAEtVzEtVuBtVzXtVBctVEVtVButVEztVEAtVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVEBtVEVtVBctVEutVzutVBEtVuBtVzEtVAEtVzVtVAEtVzEtVuBtVzXtVAEtVEXtVzVtVzctVzztVEVtVzctVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVEutVBEtVEVtXButcBAtVBEtVEutVcctVEutVBctVAEtVuBtVBctVzVtXBVtXcBtVEutVBctVzVtVEVtXBVtXcBtVEutVuztVXztVuBtVXctVcBtVcBtVcVtVuBtVuztVEBtVEVtVBctVEutVzutVBEtVuBtVEutVBctVAEtVuBtVBctVzVtVBEtVEutVBctVzVtVEVtXBVtXcBtVEutVuztVXztVuBtVcztVcBtVcVtVuBtVuztVEBtVEVtVBctVEutVzutXBVtXcBtVuBtVAEtVXVtVuBtVAEtVzEtVAEtVEutVEVtVBEtVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVEBtVEVtVBctVEutVzutVBEtVuBtVEutVBctVAEtVuBtVBctVzVtXBVtXcBtVEutVBctVzVtVEVtXBVtXcBtVEutVuztVXztVuBtVcztVcBtVcVtVuBtVuztVzVtVzctVzVtVzctVButVzctVcctVzutVAEtXButcBAtVuBtVEctVAEtXBctXuXtVAEtVzutVBEtVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVzVtVzctVzVtVzctVButVzctVuBtVVBtVEutVAEtVzVtVEVtVBEtVVEtVuBtVzutVAEtXButcBAtVuBtVEctVAEtXBctXuXtVAEtVzutVBEtVuztVXztVuBtVcEtVcVtVuBtVuztVzVtVzctVzVtVzctVButVzctVcctVBXtXButczXtVEXtVuBtVEctVAEtVEutXBVtXcBtVEXtVBctVzutXBVtXcBtVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVzVtVzctVzVtVzctVButVzctVcctVzVtVEztVAEtXBctXuXtVuBtVEctVAEtVEutXBVtXcBtVEXtVBctVzutXBVtXcBtVuztVXztVuBtVXctVcVtVuBtcActVAutVuBtcVutccAtccXtcXutcXVtVuBtcVctccXtcVctccztcVztcVEtVBctcXVtcVEtccutcVctcXVtcVEtVEBtccVtcVctccutcXutcVEtccVtcVctccztcVEtVuBtVActVuBtcAutVuBtVuztVEBtVEVtVBctVEutVzutXBVtXcBtVuBtVBctVEXtVBctVEztVBztXBVtXcBtVuBtVBctVzVtXBVtXcBtVEutVBctVzVtXBVtXcBtVuBtVzXtVAEtVEXtVzVtVzctVzztVEVtVzctVuBtVXBtVXctVzBtVcEtVXAtVcBtVuztVXztVuBtVcztVXctVcVtVuBtVuztVEBtVEVtVBctVEutVzutXBVtXcBtVuBtVBctVEXtVBctVEztVBztXBVtXcBtVuBtVBctVzVtXBVtXcBtVEutVBctVzVtXBVtXcBtVuBtVzXtVAEtVEXtVzVtVzctVzztVEVtVzctVuBtVcEtVcBtVcztVzBtVcztVcBtVcEtVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVEctVBEtVEutVEXtVAEtVzVtVBEtVzutVEVtVBEtVuBtVBctVEXtVBctVEztVBztXBVtXcBtVuBtVBctVzVtXBVtXcBtVEutVBctVzVtVuBtVzVtVzctVzVtVzctVButVzctVuBtVcEtVcBtVcztVzBtVcBtVcztVcEtVuztVXztVuBtVcEtVcBtVcVtVuBtVuztVBctVEXtVBctVEztVBztXBVtXcBtVuBtVBctVzVtXBVtXcBtVEutVBctVzVtXBVtXcBtVuBtVzutVzVtVAEtVEXtVBVtVBEtVuztVXztVuBtVcEtVcBtVcVtVuBtcActVAutVuBtcVXtcXctccXtcVutcXVtcVEtccAtccXtVuBtcVBtcVctcXutcuEtccBtccVtcuEtVVBtVVEtVuBtcAutVuBtcVutccAtccXtcXutcXVtVuBtcVXtcVEtcXEtcuEtcXVtVzVtcuEtcuztccVtcVctVAztccAtcVVtcXEtVuBtVActVuBtcVVtccAtcVutcXctccctcVctccXtcXVtVcXtcVAtcVctcXVtVBctccVtcVctccctcVctccXtcXVtVAztcXEtVBEtcVVtVVBtVuztcVXtcVEtcXEtcuEtcXVtVzVtcuEtcuztccVtcVctVuztVVEtVcXtcVAtcVctcXVtVBctccVtcVctccctcVctccXtcXVtcXutVAztcXEtVzVtcuEtcVAtVEXtcuEtccctcVctVVBtVuztcXVtcuztccAtcVVtcXEtVuztVVEtcuutVcBtcuctVAutVuBtcVutccAtccXtcXutcXVtVuBtcVctccXtcVctccztcVztcVEtVzVtcuEtcuztccVtcVctVAztccAtcVVtcXEtVuBtVActVuBtcVVtccAtcVutcXctccctcVctccXtcXVtVcXtcVAtcVctcXVtVBctccVtcVctccctcVctccXtcXVtVAztcXEtVBEtcVVtVVBtVuztcVctccXtcVctccztcVztcVEtVzVtcuEtcuztccVtcVctVuztVVEtVcXtcVAtcVctcXVtVBctccVtcVctccctcVctccXtcXVtcXutVAztcXEtVzVtcuEtcVAtVEXtcuEtccctcVctVVBtVuztcXVtcuztccAtcVVtcXEtVuztVVEtcuutVcBtcuctVAutVuBtccBtccAtccBtcXctccVtcuEtcXVtcVctVzVtcuEtcuztccVtcVctVVBtcVXtcVEtcXEtcuEtcXVtVzVtcuEtcuztccVtcVctVAztccAtcVVtcXEtVcVtVuBtcVXtcVEtcXEtcuEtcXVtcVctcXVtcVEtccutcVctcXVtcVEtcXXtcVctccctcuEtccVtcXztcVctccctcVctccVtcVctccztVVEtVAutVuBtccBtccAtccBtcXctccVtcuEtcXVtcVctVzVtcuEtcuztccVtcVctVVBtcVctccXtcVctccztcVztcVEtVzVtcuEtcuztccVtcVctVAztccAtcVVtcXEtVcVtVuBtcVctccXtcVctccztcVztcVEtVBctcXVtcVEtccutcVctcXVtcVEtVEBtccVtcVctccutcXutcVEtccVtcVctccztcVEtVVEtVAutVuBtcActVuBtcVXtcXctccXtcVutcXVtcVEtccAtccXtVuBtccBtccAtccBtcXctccVtcuEtcXVtcVctVzVtcuEtcuztccVtcVctVVBtcXVtcuEtcuztccVtcVctVAztccAtcVVtcXEtVcVtVuBtcVVtcuEtcXVtcuEtVVEtVuBtcAutVuBtcVXtccAtccztVuBtVVBtcVutccAtccXtcXutcXVtVuBtccutcVctcXEtVuBtcVEtccXtVuBtcVVtcuEtcXVtcuEtVVEtVuBtcAutVuBtcVutccAtccXtcXutcXVtVuBtccztccAtcXAtVuBtVActVuBtcXVtcuEtcuztccVtcVctVAztccAtcVVtcXEtVcXtcVEtccXtcXutcVctccztcXVtVEztccAtcXAtVVBtVVEtVAutVuBtccztccAtcXAtVcXtcVEtccXtcXutcVctccztcXVtVButcVctccVtccVtVVBtVcBtVVEtVcXtcXVtcVctcXBtcXVtVButccAtccXtcXVtcVctccXtcXVtVuBtVActVuBtccutcVctcXEtVAutVuBtccztccAtcXAtVcXtcVEtccXtcXutcVctccztcXVtVButcVctccVtccVtVVBtVcEtVVEtVcXtcXVtcVctcXBtcXVtVButccAtccXtcXVtcVctccXtcXVtVuBtVActVuBtcVVtcuEtcXVtcuEtcuutccutcVctcXEtcuctVAutVuBtcVutccAtccXtcXutcXVtVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVuBtVActVuBtcVVtccAtcVutcXctccctcVctccXtcXVtVcXtcVutccztcVctcuEtcXVtcVctVBctccVtcVctccctcVctccXtcXVtVVBtVuztcVEtccXtccBtcXctcXVtVuztVVEtVAutVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcXVtcXEtccBtcVctVuBtVActVuBtVuztccXtcXctccctcuztcVctccztVuztVAutVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtccctcVEtccXtVuBtVActVuBtVcBtVAutVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcXXtcuEtccVtcXctcVctVuBtVActVuBtVcBtVAutVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcVVtcuEtcXVtcuEtcXutcVctcXVtVcXtcXVtccAtcXVtcuEtccVtVuBtVActVuBtVcBtVAutVuBtcVutccAtccXtcXutcXVtVuBtccBtcuEtccutcVctcXVtVzutcuEtcXEtcVEtVuBtVActVuBtcVVtcuEtcXVtcuEtcuutccutcVctcXEtcuctVAutVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcuEtcVVtcVVtVBctcXXtcVctccXtcXVtVEVtcVEtcXutcXVtcVctccXtcVctccztVVBtVVAtcVXtccAtcVutcXctcXutVVAtVcVtVuBtVVBtVVEtVuBtVActVAXtVuBtcAutVuBtcVEtcVXtVuBtVVBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcXXtcuEtccVtcXctcVctVuBtVActVActVActVuBtVuztVcBtVuztVVEtVuBtcAutVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcXXtcuEtccVtcXctcVctVuBtVActVuBtVVAtVVAtVAutVuBtcActVuBtcActVVEtVAutVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcuEtcVVtcVVtVBctcXXtcVctccXtcXVtVEVtcVEtcXutcXVtcVctccXtcVctccztVVBtVVAtccutcVctcXEtcVVtccAtcXAtccXtVVAtVcVtVuBtVVBtcVctcXXtcVctccXtcXVtVVEtVuBtVActVAXtVuBtcAutVuBtcVEtcVXtVuBtVVBtcVctcXXtcVctccXtcXVtVcXtccutcVctcXEtVuBtVActVActVActVuBtVVAtVBctccXtcXVtcVctccztVVAtVVEtVuBtcAutVuBtcVEtXBctXuAtccVtcVctccctVzEtcuEtccBtVVBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcVtVuBtccBtcuEtccutcVctcXVtVzutcuEtcXEtcVEtVcVtVuBtccztccAtcXAtVcXtcVutcVctccVtccVtcXutcuutVXutcuctVVEtVAutVuBtcVctcXXtcVctccXtcXVtVcXtccBtccztcVctcXXtcVctccXtcXVtVBVtcVctcVXtcuEtcXctccVtcXVtVVBtVVEtVAutVuBtcActVuBtcActVVEtVAutVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcuEtcVVtcVVtVBctcXXtcVctccXtcXVtVEVtcVEtcXutcXVtcVctccXtcVctccztVVBtVVAtcuztccVtcXctccztVVAtVcVtVuBtVVBtVVEtVuBtVActVAXtVuBtcAutVuBtcVEtXBctXuAtccVtcVctccctVzEtcuEtccBtVVBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcVtVuBtccBtcuEtccutcVctcXVtVzutcuEtcXEtcVEtVcVtVuBtccztccAtcXAtVcXtcVutcVctccVtccVtcXutcuutVXutcuctVVEtVAutVuBtcActVVEtVAutVuBtccztccAtcXAtVcXtcVEtccXtcXutcVctccztcXVtVButcVctccVtccVtVVBtVcztVVEtVcXtcuEtccBtccBtcVctccXtcVVtVButcVBtcVEtccVtcVVtVVBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVVEtVAutVuBtccztccAtcXAtVcXtcVEtccXtcXutcVctccztcXVtVButcVctccVtccVtVVBtVXutVVEtVcXtcXVtcVctcXBtcXVtVButccAtccXtcXVtcVctccXtcXVtVuBtVActVuBtVuztVcBtVuztVAutVuBtcActVuBtcActVuBtcVXtcXctccXtcVutcXVtcVEtccAtccXtVuBtcVEtXBctXuAtccVtcVctccctVzEtcuEtccBtVVBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcVtVuBtccBtcuEtccutcVctcXVtVzutcuEtcXEtcVEtVcVtVuBtccBtcuEtccutcVctcXVtVBAtcVctccztcVctccutccVtcVEtVButcVctccVtccVtVVEtVuBtcAutVuBtcVutccAtccXtcXutcXVtVuBtcuEtcVVtcVctcXVtVzXtcuEtccVtcXctcVctVuBtVActVuBtccBtcuEtccztcXutcVctVBEtccXtcXVtVVBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcXXtcuEtccVtcXctcVctVVEtVuBtcAVtcAVtVuBtVcBtVAutVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcVVtcuEtcXVtcuEtcXutcVctcXVtVcXtcXVtccAtcXVtcuEtccVtVuBtVActVuBtccBtcuEtccztcXutcVctVBEtccXtcXVtVVBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcVVtcuEtcXVtcuEtcXutcVctcXVtVcXtcXVtccAtcXVtcuEtccVtVVEtVuBtVcutVuBtcuEtcVVtcVctcXVtVzXtcuEtccVtcXctcVctVAutVuBtcVAtcXctccXtcVutcVctccVtccVtcVctVEBtcuEtccutcVctcXVtVzutcuEtcXEtcVEtcXutcVEtVVBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcVVtcuEtcXVtcuEtcXutcVctcXVtVcXtcXVtccAtcXVtcuEtccVtVcVtVuBtccBtcuEtccutcVctcXVtVzutcuEtcXEtcVEtVcVtVuBtccBtcuEtccutcVctcXVtVBAtcVctccztcVctccutccVtcVEtVButcVctccVtccVtVVEtVAutVuBtcuEtcVVtcVctcXVtVBEtccXtccBtcXctcXVtVcXtcXXtcuEtccVtcXctcVctVuBtVActVuBtVVAtVVAtVAutVuBtcActVuBtcVXtcXctccXtcVutcXVtcVEtccAtccXtVuBtcVAtcXctccXtcVutcVctccVtccVtcVctVEBtcuEtccutcVctcXVtVzutcuEtcXEtcVEtcXutcVEtVVBtcXVtccAtcXVtcuEtccVtVcVtVuBtccBtcuEtccutcVctcXVtVzutcuEtcXEtcVEtVcVtVuBtccBtcuEtccutcVctcXVtVBAtcVctccztcVctccutccVtcVEtVButcVctccVtccVtVVEtVuBtcAutVuBtccBtcuEtccutcVctcXVtVBAtcVctccztcVctccutccVtcVEtVButcVctccVtccVtVcXtcXVtcVctcXBtcXVtVButccAtccXtcXVtcVctccXtcXVtVuBtVActVuBtVEctcuEtcXVtcVBtVcXtcVutcVctcVEtccVtVVBtcXVtccAtcXVtcuEtccVtVuBtVcAtVuBtccBtcuEtccutcVctcXVtVzutcuEtcXEtcVEtVVEtVAutVuBtcActBzt%2522%252C72%252C%2522uVcXABEzt%2522%252C37%252C8%252C12%2529%2529%253C/script%253E%250A%250A%253C/body%253E%250A%253C/html%253E%250A%27%29%29%3B%0A%3C/script%3E%0A'));
+    // Sağ tıklamayı engellemek için aşağıdaki kodu ekliyoruz
+    document.addEventListener('contextmenu', function(event) {
+        event.preventDefault(); // Sağ tıklama menüsünü engelle
+        alert('Sağ tıklama engellendi!'); // İsteğe bağlı: kullanıcıya bildirim
+    });
+
+    const PASSWORD_URL = 'https://mkotbas.github.io/host/mp4827.html';
+    const ACCESS_TIME_LIMIT = 60 * 60 * 1000; // 60 dakika (1 saat)
+
+    window.onload = checkAccess;
+
+    async function fetchPasswords() {
+        const response = await fetch(PASSWORD_URL);
+        if (!response.ok) throw new Error('Parola listesini yüklerken bir hata oluştu.');
+        const data = await response.text();
+        return data.split(',').map(p => p.trim());
+    }
+
+    function isAccessAllowed() {
+        const storedTimestamp = localStorage.getItem('accessTimestamp');
+        const currentTime = Date.now();
+        return storedTimestamp && (currentTime - storedTimestamp <= ACCESS_TIME_LIMIT);
+    }
+
+    async function checkAccess() {
+        try {
+            if (isAccessAllowed()) {
+                document.body.style.display = 'block';
+                hesapla();
+                return;
+            }
+
+            const passwords = await fetchPasswords();
+            requestPassword(passwords);
+        } catch (error) {
+            alert(error.message);
+            location.reload();
+        }
+    }
+
+    function requestPassword(validPasswords = []) {
+        const enteredPassword = prompt('Lütfen parolanızı girin:');
+        
+        if (enteredPassword === null) {
+            alert('İptal Edildi.');
+            return;
+        }
+
+        if (enteredPassword.trim() === '') {
+            alert('Lütfen parolanızı girin.');
+            requestPassword(validPasswords);
+            return;
+        }
+
+        if (validPasswords.includes(enteredPassword)) {
+            localStorage.setItem('accessTimestamp', Date.now());
+            document.body.style.display = 'block';
+            hesapla();
+        } else {
+            alert('Yanlış parola!');
+            localStorage.removeItem('accessTimestamp');
+            location.reload();
+        }
+    }
+
+    setTimeout(() => {
+        localStorage.removeItem('accessTimestamp');
+        location.reload();
+    }, ACCESS_TIME_LIMIT);
+
+    const fiyatetiketivemalzemeler = {
+        "ASKILI ÇM-KM FİYAT ETİKETLİK": 10,
+        "PLEKSİ A5 AYAKLI": 10,
+        "PLEKSI A5 MIKNATISLI": 20,
+        "PLEKSI A5 VANTUZLU": 10,
+        "ANKASTRE SET ETİKETLİK": 10,
+        "PLEKSI A6 AYAKLI": 10,
+        "PLEKSI YATAY VELCRO": 10,
+        "PLEKSI YATAY VANTUZLU": 10,
+        "KILÇIK-KEA ETİKETLİK": 500,
+        "PLEKSİ KEA ETIKETLİK": 20,
+        "PLEKSİ A4 AYAKLI": 10,
+        "TUTUCU-SAÇ MAŞASI": 10,
+        "TUTUCU (KATLI) SAÇ MAŞASI": 1,
+        "TUTUCU-FÖN MAKİNESİ": 10,
+        "TUTUCU-TRAŞ MAKİNESİ": 5,
+    };
+
+    const enerjiEtiketiPleksileri = {
+        "PLEKSİ ENERJİ ETİKETİ VANTUZLU 85X170": 25,
+        "PLEKSİ ENERJİ ETİKETİ VANTUZLU 102X201": 10,
+        "MIKNATISLI ENERJİ ETİKET TUTUCU 102X021": 10,
+        "ENERJİ ETİKETİ STANDI": 10,
+    };
+
+    function hesapla() {
+        const fiyatTableBody = document.getElementById("fiyatTable").getElementsByTagName("tbody")[0];
+        const enerjiTableBody = document.getElementById("enerjiTable").getElementsByTagName("tbody")[0];
+        populateTable(fiyatTableBody, fiyatetiketivemalzemeler);
+        populateTable(enerjiTableBody, enerjiEtiketiPleksileri);
+    }
+
+    function populateTable(tableBody, data) {
+        for (const key in data) {
+            const row = tableBody.insertRow();
+            row.insertCell(0).textContent = key;
+            row.insertCell(1).textContent = data[key];
+            const adetInput = document.createElement("input");
+            adetInput.type = "number";
+            adetInput.min = 0;
+            adetInput.value = 0;
+            adetInput.dataset.total = 0;
+
+            const paketSayi = data[key];
+            adetInput.addEventListener('focus', () => {
+                if (adetInput.value === "0") {
+                    adetInput.value = '';
+                }
+            });
+
+            adetInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    işlemYap(adetInput, paketSayi, row.cells[3]);
+                    event.preventDefault();
+                }
+            });
+
+            adetInput.addEventListener('blur', () => {
+                işlemYap(adetInput, paketSayi, row.cells[3]);
+            });
+
+            row.insertCell(2).appendChild(adetInput);
+            row.insertCell(3).textContent = "0";
+        }
+    }
+
+    function işlemYap(adetInput, paketSayi, paketGerekliCell) {
+        const adetValue = parseInt(adetInput.value) || 0;
+        adetInput.dataset.total = parseInt(adetInput.dataset.total) + adetValue;
+        guncellePaketSayisi(adetInput.dataset.total, paketSayi, paketGerekliCell);
+        adetInput.value = ''; 
+    }
+
+    function guncellePaketSayisi(total, paketSayi, paketGerekliCell) {
+        paketGerekliCell.textContent = Math.ceil(total / paketSayi);
+    }
 </script>
+
+</body>
+</html>
