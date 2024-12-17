@@ -29,6 +29,28 @@
             margin-right: auto;
         }
 
+        /* Arama kutusunun stilini güncelledik */
+        #search {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            height: 40px; /* Yüksekliği arttırdık */
+            margin-bottom: 20px;
+        }
+
+        /* Mobil ekranlar için arama kutusunun genişliği ve yüksekliği */
+        @media (max-width: 768px) {
+            #search {
+                width: 90%; /* Başlık ile aynı hizaya getirmek için genişliği %90 yapıyoruz */
+                height: 40px; /* Yüksekliği de mobilde uygun seviyeye getiriyoruz */
+                margin: 0 auto 20px;
+                display: block;
+            }
+        }
+
         #fileInput {
             display: none;
         }
@@ -64,15 +86,6 @@
 
         .buttons-container button:hover {
             background-color: #047c4d;
-        }
-
-        #search {
-            width: 50%;
-            padding: 10px;
-            font-size: 16px;
-            margin: 0 auto 20px;
-            display: block;
-            box-sizing: border-box;
         }
 
         .buttons-container {
