@@ -19,10 +19,11 @@
             padding: 15px;
             background-color: white;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 100%; /* Mobilde tam genişlik */
         }
         @media screen and (min-width: 1024px) {
             .frame {
-                width: 60%;
+                width: 60%; /* Geniş ekranlarda sabit genişlik */
             }
         }
         .header {
@@ -58,7 +59,7 @@
             border-collapse: collapse;
             font-size: 14px;
             margin-bottom: 30px;
-            table-layout: fixed;
+            table-layout: fixed; /* Tablo hücrelerinin genişliği sabit */
         }
         th, td {
             border: 1px solid #ddd;
@@ -119,6 +120,37 @@
 
         th:nth-child(4), td:nth-child(4) {
             width: 20%;
+        }
+
+        /* Mobil cihazlar için stil ayarları */
+        @media screen and (max-width: 768px) {
+            .frame {
+                padding: 10px; /* Mobilde daha az padding */
+            }
+            table {
+                font-size: 12px; /* Mobilde daha küçük yazı boyutu */
+                table-layout: auto; /* Mobilde esnek tablo hücreleri */
+            }
+            th, td {
+                padding: 8px; /* Mobilde daha az padding */
+            }
+            input[type="number"] {
+                width: 50px; /* Mobilde daha küçük input alanı */
+                margin-left: 5px;
+            }
+            .header {
+                font-size: 20px; /* Mobilde daha küçük başlık */
+            }
+
+            /* Mobilde sütun genişliklerini ayarla */
+            th:nth-child(1), td:nth-child(1) {
+                width: 40%; /* Malzeme sütunu daha dar */
+            }
+            th:nth-child(2), td:nth-child(2),
+            th:nth-child(3), td:nth-child(3),
+            th:nth-child(4), td:nth-child(4) {
+                width: 20%; /* Diğer sütunlar daha dar */
+            }
         }
     </style>
 </head>
