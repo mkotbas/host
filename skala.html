@@ -10,7 +10,6 @@
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
-            display: none; /* Başlangıçta içeriği gizle */
             user-select: none; /* Metin seçimini engeller */
         }
         .frame {
@@ -164,76 +163,6 @@
 </div>
 
 <script>
-    // Sağ tıklamayı engellemek için aşağıdaki kodu ekliyoruz
-    document.addEventListener('contextmenu', function(event) {
-        event.preventDefault(); // Sağ tıklama menüsünü engelle
-        alert('Sağ tıklama engellendi!'); // İsteğe bağlı: kullanıcıya bildirim
-    });
-
-    const PASSWORD_URL = 'https://mkotbas.github.io/host/mp4827.html';
-    const ACCESS_TIME_LIMIT = 60 * 60 * 1000; // 60 dakika (1 saat)
-
-    window.onload = checkAccess;
-
-    async function fetchPasswords() {
-        const response = await fetch(PASSWORD_URL);
-        if (!response.ok) throw new Error('Parola listesini yüklerken bir hata oluştu.');
-        const data = await response.text();
-        return data.split(',').map(p => p.trim());
-    }
-
-    function isAccessAllowed() {
-        const storedTimestamp = localStorage.getItem('accessTimestamp');
-        const currentTime = Date.now();
-        return storedTimestamp && (currentTime - storedTimestamp <= ACCESS_TIME_LIMIT);
-    }
-
-    async function checkAccess() {
-        try {
-            if (isAccessAllowed()) {
-                document.body.style.display = 'block';
-                hesapla();
-                return;
-            }
-
-            const passwords = await fetchPasswords();
-            requestPassword(passwords);
-        } catch (error) {
-            alert(error.message);
-            location.reload();
-        }
-    }
-
-    function requestPassword(validPasswords = []) {
-        const enteredPassword = prompt('Lütfen parolanızı girin:');
-        
-        if (enteredPassword === null) {
-            alert('İptal Edildi.');
-            return;
-        }
-
-        if (enteredPassword.trim() === '') {
-            alert('Lütfen parolanızı girin.');
-            requestPassword(validPasswords);
-            return;
-        }
-
-        if (validPasswords.includes(enteredPassword)) {
-            localStorage.setItem('accessTimestamp', Date.now());
-            document.body.style.display = 'block';
-            hesapla();
-        } else {
-            alert('Yanlış parola!');
-            localStorage.removeItem('accessTimestamp');
-            location.reload();
-        }
-    }
-
-    setTimeout(() => {
-        localStorage.removeItem('accessTimestamp');
-        location.reload();
-    }, ACCESS_TIME_LIMIT);
-
     const fiyatetiketivemalzemeler = {
         "ASKILI ÇM-KM FİYAT ETİKETLİK": 10,
         "PLEKSİ A5 AYAKLI": 10,
@@ -310,6 +239,9 @@
     function guncellePaketSayisi(total, paketSayi, paketGerekliCell) {
         paketGerekliCell.textContent = Math.ceil(total / paketSayi);
     }
+
+    // Sayfa yüklendiğinde hesapla fonksiyonunu çalıştır
+    window.onload = hesapla;
 </script>
 
 </body>
