@@ -58,7 +58,7 @@
             gap: 10px;
             margin-top: 20px;
         }
-        .copy-button, .clear-button, .select-specific-button, .select-kea-button, .select-ankastre-button {
+        .copy-button, .clear-button, .select-specific-button, .select-kea-button, .select-ankastre-button, .select-yeni-button {
             padding: 10px;
             background-color: #4CAF50;
             color: white;
@@ -71,7 +71,7 @@
         .clear-button {
             background-color: #f44336;
         }
-        .select-specific-button, .select-kea-button, .select-ankastre-button {
+        .select-specific-button, .select-kea-button, .select-ankastre-button, .select-yeni-button {
             background-color: #008CBA;
         }
         .footer {
@@ -96,6 +96,7 @@
         <button class="select-specific-button" onclick="select2025Codes()">2025</button>
         <button class="select-kea-button" onclick="select2024Codes()">2024</button>
         <button class="select-ankastre-button" onclick="select20SubatCodes()">20 Şubat</button>
+        <button class="select-yeni-button" onclick="selectYeniCodes()">Süresiz</button>
     </div>
 
     <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
@@ -103,7 +104,7 @@
 
 <script>
     const popCodes = [
-        "100001", "100004", "100005", "100006", "100009", "100007", "100010", "100011", 
+        "100001", "100004", "100005", "100006", "100007", "100009", "100010", "100011", 
         "100012", "100013", "100014", "100015", "100017", "100018", "100021", "100022", 
         "100023", "100024", "100025", "100026", "100027", "100028", "100029", "100030", 
         "100031", "100032", "100033", "100034", "100036", "100037", "100040", "100041", 
@@ -162,6 +163,15 @@
             "100074", "100075", "100078", "100080", "100083", "100095", "100072"
         ];
         toggleSelection(codes20Subat);
+    }
+
+    function selectYeniCodes() {
+        const codesYeni = [
+            "100001", "100004", "100005", "100006", "100007", "100009", "100012", "100013", 
+            "100014", "100015", "100017", "100021", "100022", "100034", "100040", "100041", 
+            "100042", "100043", "100044", "100045", "100046", "100047", "100060", "100068"
+        ];
+        toggleSelection(codesYeni);
     }
 
     function copySelectedCodes() {
