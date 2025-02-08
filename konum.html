@@ -29,26 +29,24 @@
             margin-right: auto;
         }
 
-        /* Arama kutusunun stilini güncelledik */
         #search {
-            width: 90%; /* Başlık ile aynı hizaya getirmek için genişliği %90 yapıyoruz */
+            width: 90%;
             padding: 10px;
             font-size: 16px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
-            height: 40px; /* Yüksekliği arttırdık */
+            height: 40px;
             margin-bottom: 20px;
             display: block;
             margin-left: auto;
             margin-right: auto;
         }
 
-        /* Mobil ekranlar için arama kutusunun genişliği ve yüksekliği */
         @media (max-width: 768px) {
             #search {
-                width: 90%; /* Başlık ile aynı hizaya getirmek için genişliği %90 yapıyoruz */
-                height: 40px; /* Yüksekliği de mobilde uygun seviyeye getiriyoruz */
+                width: 90%;
+                height: 40px;
                 margin: 0 auto 20px;
                 display: block;
             }
@@ -111,6 +109,10 @@
         th, td {
             padding: 10px;
             text-align: left;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         th {
@@ -146,9 +148,15 @@
 
         #resultsTable {
             display: none;
-            width: 55%; /* Tabloyu %40 daraltarak %55 genişlik veriyoruz */
+            width: 55%;
             margin-left: auto;
             margin-right: auto;
+        }
+
+        @media (max-width: 768px) {
+            #resultsTable {
+                width: 90%;
+            }
         }
     </style>
 </head>
@@ -191,7 +199,7 @@
             if (lastUploadDate) {
                 const currentDate = new Date();
                 const uploadDate = new Date(lastUploadDate);
-                const differenceInDays = (currentDate - uploadDate) / (1000 * 3600 * 24);
+                const differenceInDays = (currentDate.getTime() - uploadDate.getTime()) / (1000 * 3600 * 24);
 
                 if (differenceInDays > 30) {
                     localStorage.clear();
@@ -204,6 +212,28 @@
             const currentDate = new Date().toISOString();
             localStorage.setItem('lastUploadDate', currentDate);
             localStorage.setItem('excelData', JSON.stringify(excelData));
+        }
+
+        function adjustColumnWidth(data, columnIndex) {
+            if (data.length === 0) return;
+
+            let maxLength = data.reduce((max, row) => {
+                const cellValue = row[columnIndex]?.toString() || "";
+                return Math.max(max, cellValue.length);
+            }, 0);
+
+            setTimeout(() => {
+                const thElements = document.querySelectorAll('th');
+                const tdElements = document.querySelectorAll('td:nth-child(1)');
+                
+                if (thElements.length > 0 && tdElements.length > 0) {
+                    const adjustedWidth = maxLength + 2;
+                    thElements[0].style.width = `${adjustedWidth}ch`;
+                    tdElements.forEach(td => {
+                        td.style.width = `${adjustedWidth}ch`;
+                    });
+                }
+            }, 0);
         }
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -221,46 +251,19 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const data = e.target.result;
-                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
                     const sheetName = workbook.SheetNames[0];
                     const sheet = workbook.Sheets[sheetName];
                     excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-                    // A sütununun genişliğini ayarlamak için en uzun veriyi bulalım
-                    adjustColumnWidth(excelData, 0); // A sütunu için genişliği ayarlıyoruz
-
-                    // E sütunundaki "Bayi Adı"nı 15 karakterle sınırla
-                    excelData.forEach(row => {
-                        if (row[4] && row[4].length > 15) {
-                            row[4] = row[4].substring(0, 15); // 15 karakterle sınırlama
-                        }
-                    });
-
                     displayResults(excelData);
+                    adjustColumnWidth(excelData, 0);
                     saveDataToLocalStorage();
                 };
-                reader.readAsBinaryString(file);
+                reader.readAsArrayBuffer(file);
             }
         });
-
-        // A sütununu en uzun veriye göre genişletme
-        function adjustColumnWidth(data, columnIndex) {
-            let maxLength = 0;
-            data.forEach(row => {
-                if (row[columnIndex] && row[columnIndex].length > maxLength) {
-                    maxLength = row[columnIndex].length;
-                }
-            });
-            // A sütununun genişliğini en uzun veriye göre ayarlıyoruz
-            const adjustedWidth = maxLength + 2; // 2 karakterlik ekstra boşluk ekledik
-            document.querySelectorAll('th')[0].style.width = `${adjustedWidth}ch`;
-            document.querySelectorAll('td').forEach((cell, index) => {
-                if (index % 6 === 0) { // A sütunundaki hücreler
-                    cell.style.width = `${adjustedWidth}ch`;
-                }
-            });
-        }
 
         document.getElementById('search').addEventListener('input', function(event) {
             const query = event.target.value.toLowerCase();
