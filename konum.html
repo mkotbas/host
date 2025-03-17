@@ -321,12 +321,13 @@
         document.querySelector('#resultsTable').addEventListener('change', function(event) {
             if (event.target.type === 'checkbox') {
                 const row = event.target.closest('tr');
-                const bayiKodu = row.cells[3].textContent;
-                const bayiAdı = row.cells[4].textContent;
+                const bayiKodu = row.cells[3].textContent; // Bayi Kodu
+                const bayiAdı = row.cells[4].textContent; // Bayi Adı
+                const şehir = row.cells[0].textContent;   // Şehir
 
                 if (event.target.checked) {
                     const bayiAdiLimited = bayiAdı.length > 20 ? bayiAdı.substring(0, 20) : bayiAdı;
-                    copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdiLimited}`);
+                    copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdiLimited}\nŞehir: ${şehir}`);
                 } else {
                     copiedData = copiedData.filter(data => !data.includes(`Bayi Kodu: ${bayiKodu}`));
                 }
