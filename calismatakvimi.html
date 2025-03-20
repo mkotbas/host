@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profesyonel Bayi Planlayıcı</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .calendar-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            max-width: 1200px;
+        }
+
+        .month-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            padding: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        .month-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .month-header {
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #6366f1, #3b82f6);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .weekdays-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .weekday {
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #64748b;
+            padding: 0.25rem;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+
+        .day {
+            text-align: center;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-weight: 500;
+            position: relative;
+            transition: all 0.2s ease;
+            background: #f8fafc;
+            color: #475569;
+        }
+
+        .day.workday {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .day.three {
+            background: #f59e0b;
+            color: white;
+            box-shadow: 0 2px 8px rgba(245,158,11,0.15);
+        }
+
+        .day.two {
+            background: #10b981;
+            color: white;
+            box-shadow: 0 2px 8px rgba(16,185,129,0.15);
+        }
+
+        .day.empty {
+            visibility: hidden;
+        }
+
+        .day:hover:not(.empty) {
+            transform: translateY(-2px);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 992px) {
+            .calendar-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .calendar-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .weekday {
+                font-size: 0.75rem;
+            }
+            
+            .month-header {
+                font-size: 1.1rem;
+            }
+            
+            .day {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calendar-container"></div>
+
+    <script>
+        const monthsTR = [
+            'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+            'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+        ];
+
+        const weekdaysTR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz'];
+
+        class VisitPlanner {
+            constructor(year) {
+                this.year = year;
+                this.calendarContainer = document.querySelector('.calendar-container');
+            }
+
+            getWorkDays(month) {
+                const days = [];
+                const date = new Date(this.year, month, 1);
+                while(date.getMonth() === month) {
+                    const dayOfWeek = date.getDay();
+                    if(dayOfWeek !== 0 && dayOfWeek !== 6) {
+                        days.push(date.getDate());
+                    }
+                    date.setDate(date.getDate() + 1);
+                }
+                return days;
+            }
+
+            calculateDistribution(workDays) {
+                const total = 46;
+                let threeDays = total - (workDays.length * 2);
+                threeDays = Math.max(0, threeDays);
+                
+                // Optimal denge için ayarlamalar
+                if(threeDays === 0 && workDays.length > 20) threeDays = 1;
+                if(threeDays === workDays.length) threeDays -= 1;
+                
+                return {
+                    three: threeDays,
+                    two: workDays.length - threeDays
+                };
+            }
+
+            shuffleDays(array) {
+                for(let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            createMonthCalendar(month) {
+                const workDays = this.getWorkDays(month);
+                const distribution = this.calculateDistribution(workDays);
+                const shuffledDays = this.shuffleDays([...workDays]);
+                
+                const plan = {};
+                shuffledDays.slice(0, distribution.three).forEach(d => plan[d] = 3);
+                shuffledDays.slice(distribution.three).forEach(d => plan[d] = 2);
+
+                return plan;
+            }
+
+            render() {
+                this.calendarContainer.innerHTML = '';
+                
+                for(let month = 0; month < 12; month++) {
+                    const plan = this.createMonthCalendar(month);
+                    const firstDay = new Date(this.year, month, 1).getDay();
+                    const monthDiv = document.createElement('div');
+                    monthDiv.className = 'month-card';
+                    
+                    // Ay başlığı
+                    const header = document.createElement('div');
+                    header.className = 'month-header';
+                    header.textContent = `${monthsTR[month]} ${this.year}`;
+                    
+                    // Haftanın günleri
+                    const weekdaysDiv = document.createElement('div');
+                    weekdaysDiv.className = 'weekdays-row';
+                    weekdaysTR.forEach(day => {
+                        const dayDiv = document.createElement('div');
+                        dayDiv.className = 'weekday';
+                        dayDiv.textContent = day;
+                        weekdaysDiv.appendChild(dayDiv);
+                    });
+
+                    // Günler gridi
+                    const daysGrid = document.createElement('div');
+                    daysGrid.className = 'days-grid';
+                    
+                    // Boşluklar
+                    const emptyDays = (firstDay === 0 ? 6 : firstDay - 1);
+                    for(let i = 0; i < emptyDays; i++) {
+                        daysGrid.innerHTML += '<div class="day empty"></div>';
+                    }
+
+                    // Gerçek günler
+                    const totalDays = new Date(this.year, month + 1, 0).getDate();
+                    for(let day = 1; day <= totalDays; day++) {
+                        const dayDiv = document.createElement('div');
+                        dayDiv.className = 'day';
+                        dayDiv.textContent = day;
+                        
+                        const date = new Date(this.year, month, day);
+                        if(date.getDay() !== 0 && date.getDay() !== 6) {
+                            dayDiv.classList.add('workday');
+                            if(plan[day] === 3) dayDiv.classList.add('three');
+                            if(plan[day] === 2) dayDiv.classList.add('two');
+                        }
+                        
+                        daysGrid.appendChild(dayDiv);
+                    }
+
+                    monthDiv.append(header, weekdaysDiv, daysGrid);
+                    this.calendarContainer.appendChild(monthDiv);
+                }
+            }
+        }
+
+        // Kullanım
+        const currentYear = new Date().getFullYear();
+        const planner = new VisitPlanner(currentYear);
+        planner.render();
+    </script>
+</body>
+</html>
