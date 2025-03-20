@@ -42,12 +42,17 @@
             text-align: center;
             font-size: 1.25rem;
             font-weight: 600;
-            color: white;
-            background: linear-gradient(135deg, #6366f1, #3b82f6);
+            color: #fff;
+            background: linear-gradient(to right, #ff7f7f, #cc0000);
             padding: 1rem;
             border-radius: 12px;
             margin-bottom: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s ease;
+        }
+
+        .month-header:hover {
+            background: linear-gradient(to right, #cc0000, #ff7f7f);
         }
 
         .weekdays-row {
