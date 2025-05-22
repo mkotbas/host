@@ -26,7 +26,7 @@
             color: #fff;
             text-align: center;
             padding: 10px;
-            margin: 0px 0 20px;
+            margin: 0 0 20px 0;
             background: linear-gradient(to right, #ff5c5c, #8b0000);
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -81,7 +81,9 @@
             margin-top: 15px;
             font-style: italic;
             user-select: none;
-            white-space: pre-line;
+        }
+        .footer .footer-text {
+            margin-bottom: 0.5rem; /* Alt satırla arada boşluk */
         }
     </style>
 </head>
@@ -98,9 +100,8 @@
     </div>
 
     <div class="footer">
-        Melih Kotbaş tarafından tasarlanmıştır ❤️
-
-        <br><br>Versiyon: V 1.0
+        <div class="footer-text">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
+        <div class="footer-version">Versiyon: V 1.0</div>
     </div>
 </div>
 
