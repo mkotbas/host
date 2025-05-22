@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pop Kodları Seçim Sistemi</title>
     <style>
         body {
@@ -58,7 +58,7 @@
             gap: 10px;
             margin-top: 20px;
         }
-        .copy-button, .clear-button, .select-specific-button, .select-kea-button, .select-ankastre-button, .select-yeni-button {
+        .copy-button, .clear-button, .select-yeni-button {
             padding: 10px;
             background-color: #4CAF50;
             color: white;
@@ -71,7 +71,7 @@
         .clear-button {
             background-color: #f44336;
         }
-        .select-specific-button, .select-kea-button, .select-ankastre-button, .select-yeni-button {
+        .select-yeni-button {
             background-color: #008CBA;
         }
         .footer {
@@ -80,6 +80,8 @@
             color: #333;
             margin-top: 15px;
             font-style: italic;
+            user-select: none;
+            white-space: pre-line;
         }
     </style>
 </head>
@@ -92,14 +94,14 @@
     <div class="button-container">
         <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
         <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
-
-        <button class="select-specific-button" onclick="select2025Codes()">2025</button>
-        <button class="select-kea-button" onclick="select2024Codes()">2024</button>
-        <button class="select-ankastre-button" onclick="select20SubatCodes()">20 Şubat</button>
         <button class="select-yeni-button" onclick="selectYeniCodes()">Süresiz</button>
     </div>
 
-    <div class="footer">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
+    <div class="footer">
+        Melih Kotbaş tarafından tasarlanmıştır ❤️
+
+        <br><br>Versiyon: V 1.0
+    </div>
 </div>
 
 <script>
@@ -136,30 +138,6 @@
                 checkbox.checked = !checkbox.checked;
             }
         });
-    }
-
-    function select2025Codes() {
-        const codes2025 = [
-            "100068", "100070", "100071", "100072", "100074", "100075", "100076", 
-            "100077", "100078", "100080", "100083", "100085", "100087", "100088", 
-            "100090", "100094", "100095"
-        ];
-        toggleSelection(codes2025);
-    }
-
-    function select2024Codes() {
-        const codes2024 = [
-            "100056", "100054", "100030", "100031", "100032", "100036", "100037", 
-            "100047", "100029", "100052", "100055", "100064", "100065"
-        ];
-        toggleSelection(codes2024);
-    }
-
-    function select20SubatCodes() {
-        const codes20Subat = [
-            "100074", "100075", "100078", "100080", "100083", "100095", "100072"
-        ];
-        toggleSelection(codes20Subat);
     }
 
     function selectYeniCodes() {
