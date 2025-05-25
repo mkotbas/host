@@ -6,122 +6,221 @@
   <title>Bayi Konum Otomasyonu</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px;
+      padding: 0;
+    }
     .header {
       font-size: 24px;
       font-weight: bold;
       color: #fff;
       text-align: center;
-      padding: 10px;
-      margin: 0 0 20px;
+      padding: 15px;
+      margin: 0 auto 20px;
       background: linear-gradient(to right, #ff5c5c, #8b0000);
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       text-transform: uppercase;
       letter-spacing: 1px;
-      width: 100%;
-      max-width: 90%;
-      margin-left: auto;
-      margin-right: auto;
+      width: 90%;
+      max-width: 800px;
     }
     #search {
       width: 90%;
-      padding: 10px;
+      max-width: 500px;
+      padding: 12px;
       font-size: 16px;
       border: 1px solid #ddd;
-      border-radius: 4px;
+      border-radius: 6px;
       box-sizing: border-box;
-      height: 40px;
-      margin-bottom: 20px;
+      height: 45px;
+      margin: 0 auto 20px;
       display: block;
-      margin-left: auto;
-      margin-right: auto;
     }
-    #fileInput { display: none; }
+    #fileInput { 
+      display: none; 
+    }
     #customButton {
-      padding: 6px 12px;
-      font-size: 14px;
-      border-radius: 4px;
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 6px;
       cursor: pointer;
       border: none;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       background-color: #059862;
       color: white;
-      width: auto;
-      margin-right: 8px;
+      min-width: 100px;
+      margin: 5px;
+      transition: background-color 0.3s;
     }
-    #customButton:hover { background-color: #047c4d; }
+    #customButton:hover { 
+      background-color: #047c4d; 
+    }
     .buttons-container button {
-      padding: 6px 12px;
-      font-size: 14px;
+      padding: 10px 15px;
+      font-size: 16px;
       cursor: pointer;
-      margin-right: 8px;
-      border-radius: 4px;
+      margin: 5px;
+      border-radius: 6px;
       border: none;
       background-color: #059862;
       color: white;
+      min-width: 100px;
+      transition: background-color 0.3s;
     }
-    .buttons-container button:hover { background-color: #047c4d; }
+    .buttons-container button:hover { 
+      background-color: #047c4d; 
+    }
     .buttons-container {
       display: flex;
       justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
+      flex-wrap: wrap;
+      margin: 0 auto 20px;
+      max-width: 800px;
     }
-    table {
+    .table-container {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+      max-width: 100%;
+      overflow-x: auto;
+      margin: 20px auto;
+      padding: 0 10px;
+      box-sizing: border-box;
     }
-    table, th, td { border: 1px solid #ddd; }
-    th, td {
-      padding: 10px;
+    #resultsTable {
+      width: 100%;
+      max-width: 100%;
+      border-collapse: collapse;
+      margin: 0 auto;
+      display: none;
+    }
+    #resultsTable, #resultsTable th, #resultsTable td { 
+      border: 1px solid #ddd; 
+    }
+    #resultsTable th, #resultsTable td {
+      padding: 12px;
       text-align: left;
-      max-width: 150px;
+      min-width: 120px;
+      max-width: 250px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    th { background-color: #f2f2f2; }
+    #resultsTable th { 
+      background-color: #f2f2f2;
+      position: sticky;
+      top: 0;
+    }
     .checkbox-column input {
       width: 20px;
       height: 20px;
+      cursor: pointer;
     }
     .map-button {
-      display: inline-block;
-      padding: 5px 10px;
-      margin-right: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      margin: 2px;
       color: white;
       font-weight: bold;
       text-decoration: none;
-      border-radius: 5px;
+      border-radius: 6px;
       text-align: center;
-      transition: background-color 0.3s ease, transform 0.3s ease;
-      font-size: 12px;
+      transition: all 0.3s ease;
+      font-size: 14px;
       border: none;
       cursor: pointer;
-      width: 24px;
-      height: 24px;
-      line-height: 14px;
+      width: 36px;
+      height: 36px;
       box-sizing: border-box;
     }
-    .map-button:hover { transform: scale(1.05); }
-    .map-button:active { opacity: 0.8; }
-    .map-button.google { background-color: #4285F4; }
-    .map-button.google:hover { background-color: #3367D6; }
-    .map-button.yandex { background-color: #FF0000; }
-    .map-button.yandex:hover { background-color: #D60000; }
-    .map-button.copy { background-color: #059862; }
-    .map-button.copy:hover { background-color: #047c4d; }
-    #resultsTable {
-      display: none;
-      width: 55%;
-      margin-left: auto;
-      margin-right: auto;
+    .map-button:hover { 
+      transform: scale(1.1); 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
+    .map-button:active { 
+      opacity: 0.8; 
+    }
+    .map-button.google { 
+      background-color: #4285F4; 
+    }
+    .map-button.google:hover { 
+      background-color: #3367D6; 
+    }
+    .map-button.yandex { 
+      background-color: #FF0000; 
+    }
+    .map-button.yandex:hover { 
+      background-color: #D60000; 
+    }
+    .map-button.copy { 
+      background-color: #059862; 
+    }
+    .map-button.copy:hover { 
+      background-color: #047c4d; 
+    }
+
+    /* Mobil Optimizasyonları */
     @media (max-width: 768px) {
-      #resultsTable { width: 90%; }
+      .header {
+        font-size: 20px;
+        padding: 12px;
+      }
+      
+      #search {
+        font-size: 14px;
+        padding: 10px;
+        height: 40px;
+      }
+      
+      #customButton, .buttons-container button {
+        font-size: 14px;
+        padding: 8px 12px;
+        min-width: 80px;
+      }
+      
+      #resultsTable th, #resultsTable td {
+        padding: 8px 10px;
+        font-size: 14px;
+        min-width: 100px;
+      }
+      
+      .map-button {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        margin: 10px;
+      }
+      
+      .header {
+        font-size: 18px;
+        padding: 10px;
+        width: 95%;
+      }
+      
+      .buttons-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      #customButton, .buttons-container button {
+        width: 90%;
+        max-width: 300px;
+        margin: 5px 0;
+      }
+      
+      .map-button {
+        width: 28px;
+        height: 28px;
+      }
     }
   </style>
 </head>
@@ -135,19 +234,21 @@
     <button id="clearButton">Temizle</button>
     <button id="dbButton">DB</button>
   </div>
-  <table id="resultsTable">
-    <thead>
-      <tr>
-        <th>Şehir</th>
-        <th>İlçe</th>
-        <th>Seç</th>
-        <th>Bayi Kodu</th>
-        <th>Bayi Adı</th>
-        <th>Konum</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+  <div class="table-container">
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th>Şehir</th>
+          <th>İlçe</th>
+          <th>Seç</th>
+          <th>Bayi Kodu</th>
+          <th>Bayi Adı</th>
+          <th>Konum</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
 
   <script>
     let excelData = [];
