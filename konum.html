@@ -85,18 +85,22 @@
       box-sizing: border-box;
     }
     #resultsTable {
-      width: auto;
+      width: 100%;
+      max-width: 100%;
       border-collapse: collapse;
       margin: 0 auto;
       display: none;
-      table-layout: auto;
     }
     #resultsTable, #resultsTable th, #resultsTable td { 
       border: 1px solid #ddd; 
     }
     #resultsTable th, #resultsTable td {
-      padding: 8px 12px;
+      padding: 12px;
       text-align: left;
+      min-width: 120px;
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: nowrap;
     }
     #resultsTable th { 
@@ -104,14 +108,11 @@
       position: sticky;
       top: 0;
     }
-    #resultsTable td:nth-child(3) {
-      text-align: center;
-      width: 1%;
+    .checkbox-column input {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
     }
-    #resultsTable td:nth-child(6) {
-      white-space: normal;
-    }
-
     .map-button {
       display: inline-flex;
       align-items: center;
@@ -157,33 +158,25 @@
       background-color: #047c4d; 
     }
 
-    /* Masaüstü için daraltılmış görünüm */
-    @media (min-width: 992px) {
-      .table-container {
-        width: 70%;
-        margin-left: auto;
-        margin-right: auto;
-      }
-      #search {
-        width: 70%;
-      }
-    }
-
     /* Mobil Optimizasyonları */
     @media (max-width: 768px) {
       .header {
         font-size: 20px;
         padding: 12px;
       }
+      
       #search {
         font-size: 14px;
         padding: 10px;
         height: 40px;
       }
+      
       #resultsTable th, #resultsTable td {
-        padding: 6px 8px;
+        padding: 8px 10px;
         font-size: 14px;
+        min-width: 100px;
       }
+      
       .map-button {
         width: 32px;
         height: 32px;
@@ -195,15 +188,13 @@
       body {
         margin: 10px;
       }
+      
       .header {
         font-size: 18px;
         padding: 10px;
         width: 95%;
       }
-      #resultsTable th, #resultsTable td {
-        padding: 4px 6px;
-        font-size: 12px;
-      }
+      
       .map-button {
         width: 28px;
         height: 28px;
