@@ -6,198 +6,144 @@
   <title>Bayi Konum Otomasyonu</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
+    body {
+      font-family: Arial, sans-serif;
       margin: 20px;
-      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
+
     .header {
       font-size: 24px;
       font-weight: bold;
-      color: #fff;
       text-align: center;
       padding: 15px;
-      margin: 0 auto 20px;
       background: linear-gradient(to right, #ff5c5c, #8b0000);
+      color: white;
       border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      margin-bottom: 20px;
       width: 90%;
       max-width: 800px;
     }
+
     #search {
+      display: block;
+      margin: 0 auto 20px;
       width: 90%;
       max-width: 500px;
       padding: 12px;
       font-size: 16px;
-      border: 1px solid #ddd;
       border-radius: 6px;
-      box-sizing: border-box;
-      height: 45px;
-      margin: 0 auto 20px;
-      display: block;
+      border: 1px solid #ddd;
     }
-    #fileInput { 
-      display: none; 
-    }
-    #customButton {
-      padding: 6px 12px;
-      font-size: 14px;
-      border-radius: 4px;
-      cursor: pointer;
-      border: none;
-      display: inline-flex;
-      align-items: center;
-      background-color: #059862;
-      color: white;
-      width: auto;
-      margin-right: 8px;
-    }
-    #customButton:hover { 
-      background-color: #047c4d; 
-    }
-    .buttons-container button {
-      padding: 6px 12px;
-      font-size: 14px;
-      cursor: pointer;
-      margin-right: 8px;
-      border-radius: 4px;
-      border: none;
-      background-color: #059862;
-      color: white;
-    }
-    .buttons-container button:hover { 
-      background-color: #047c4d; 
-    }
+
     .buttons-container {
       display: flex;
       justify-content: center;
       gap: 10px;
       margin-bottom: 20px;
+      width: 90%;
+      max-width: 800px;
     }
-    .table-container {
-      width: 100%;
-      max-width: 100%;
-      overflow-x: auto;
-      margin: 20px auto;
-      padding: 0 10px;
-      box-sizing: border-box;
+
+    .buttons-container button,
+    #customButton {
+      padding: 6px 12px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #059862;
+      color: white;
     }
-    #resultsTable {
-      width: 100%;
-      max-width: 100%;
-      border-collapse: collapse;
-      margin: 0 auto;
+
+    #customButton:hover,
+    .buttons-container button:hover {
+      background-color: #047c4d;
+    }
+
+    #fileInput {
       display: none;
     }
-    #resultsTable, #resultsTable th, #resultsTable td { 
-      border: 1px solid #ddd; 
+
+    .table-container {
+      display: inline-block;
+      overflow-x: auto;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0 10px;
+      text-align: center;
+      width: 100%;
     }
-    #resultsTable th, #resultsTable td {
-      padding: 12px;
+
+    table {
+      border-collapse: collapse;
+      width: auto;
+      table-layout: auto;
+      margin: 0 auto;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
       text-align: left;
-      min-width: 120px;
+      white-space: nowrap;
       max-width: 250px;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
     }
-    #resultsTable th { 
+
+    th {
       background-color: #f2f2f2;
       position: sticky;
       top: 0;
     }
-    .checkbox-column input {
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-    }
-    .map-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8px;
-      margin: 2px;
-      color: white;
-      font-weight: bold;
-      text-decoration: none;
-      border-radius: 6px;
+
+    .select-column {
       text-align: center;
-      transition: all 0.3s ease;
-      font-size: 14px;
-      border: none;
-      cursor: pointer;
-      width: 36px;
-      height: 36px;
-      box-sizing: border-box;
-    }
-    .map-button:hover { 
-      transform: scale(1.1); 
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    .map-button:active { 
-      opacity: 0.8; 
-    }
-    .map-button.google { 
-      background-color: #4285F4; 
-    }
-    .map-button.google:hover { 
-      background-color: #3367D6; 
-    }
-    .map-button.yandex { 
-      background-color: #FF0000; 
-    }
-    .map-button.yandex:hover { 
-      background-color: #D60000; 
-    }
-    .map-button.copy { 
-      background-color: #059862; 
-    }
-    .map-button.copy:hover { 
-      background-color: #047c4d; 
+      width: 50px;
     }
 
-    /* Mobil Optimizasyonları */
+    .select-column input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .map-button {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      width: 32px;
+      height: 32px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      margin: 0 2px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .map-button.google { background-color: #4285F4; }
+    .map-button.yandex { background-color: #FF0000; }
+    .map-button.copy { background-color: #059862; }
+
+    .map-button:hover {
+      transform: scale(1.1);
+    }
+
     @media (max-width: 768px) {
       .header {
         font-size: 20px;
-        padding: 12px;
       }
-      
       #search {
         font-size: 14px;
-        padding: 10px;
-        height: 40px;
       }
-      
-      #resultsTable th, #resultsTable td {
-        padding: 8px 10px;
+      th, td {
         font-size: 14px;
-        min-width: 100px;
-      }
-      
-      .map-button {
-        width: 32px;
-        height: 32px;
-        font-size: 12px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      body {
-        margin: 10px;
-      }
-      
-      .header {
-        font-size: 18px;
-        padding: 10px;
-        width: 95%;
-      }
-      
-      .map-button {
-        width: 28px;
-        height: 28px;
+        padding: 8px;
+        max-width: 150px;
       }
     }
   </style>
@@ -205,6 +151,7 @@
 <body>
   <div class="header">Bayi Konum Otomasyonu</div>
   <input type="text" id="search" placeholder="Arama yapın..." />
+
   <div class="buttons-container">
     <label for="fileInput" id="customButton">Yükle</label>
     <input type="file" id="fileInput" accept=".xlsx, .xls" />
@@ -212,13 +159,14 @@
     <button id="clearButton">Temizle</button>
     <button id="dbButton">DB</button>
   </div>
+
   <div class="table-container">
-    <table id="resultsTable">
+    <table id="resultsTable" style="display:none;">
       <thead>
         <tr>
           <th>Şehir</th>
           <th>İlçe</th>
-          <th>Seç</th>
+          <th class="select-column">Seç</th>
           <th>Bayi Kodu</th>
           <th>Bayi Adı</th>
           <th>Konum</th>
@@ -251,65 +199,13 @@
     }
 
     function openYandexMaps(coordinates) {
-      if (!coordinates) return;
       const cleanedCoords = coordinates.trim().replace(/\s+/g, '');
-      const parts = cleanedCoords.split(',');
-      if (parts.length !== 2) {
-        alert('Geçersiz koordinat formatı');
-        return;
-      }
-      const lat = parts[0];
-      const lon = parts[1];
+      const [lat, lon] = cleanedCoords.split(',');
       const reversedCoords = `${lon},${lat}`;
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      if (isMobile) {
-        const appUrl = `yandexmaps://maps.yandex.com/?ll=${reversedCoords}&z=16&pt=${reversedCoords}`;
-        window.location.href = appUrl;
-        setTimeout(() => {
-          if (!document.hidden) {
-            const webUrl = `https://yandex.com.tr/harita/?ll=${reversedCoords}&z=16&pt=${reversedCoords}`;
-            window.open(webUrl, '_blank');
-          }
-        }, 500);
-      } else {
-        const webUrl = `https://yandex.com.tr/harita/?ll=${reversedCoords}&z=16&pt=${reversedCoords}`;
-        window.open(webUrl, '_blank');
-      }
+      const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+      const url = `https://yandex.com.tr/harita/?ll=${reversedCoords}&z=16&pt=${reversedCoords}`;
+      window.open(url, '_blank');
     }
-
-    document.addEventListener('DOMContentLoaded', function () {
-      checkDataExpiry();
-      const savedData = localStorage.getItem('excelData');
-      if (savedData) {
-        excelData = JSON.parse(savedData);
-        displayResults(excelData);
-      }
-    });
-
-    document.getElementById('fileInput').addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-          displayResults(excelData);
-          saveDataToLocalStorage();
-        };
-        reader.readAsArrayBuffer(file);
-      }
-    });
-
-    document.getElementById('search').addEventListener('input', function(event) {
-      const query = event.target.value.toLowerCase();
-      const filtered = excelData.filter((row, index) => {
-        if (index === 0) return true;
-        return row.some(cell => cell && cell.toString().toLowerCase().includes(query));
-      });
-      displayResults(filtered);
-    });
 
     function displayResults(data) {
       const tbody = document.getElementById('tableBody');
@@ -322,7 +218,9 @@
         const tr = document.createElement('tr');
         for (let col = 0; col <= 5; col++) {
           const td = document.createElement('td');
+
           if (col === 2) {
+            td.className = 'select-column';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.classList.add('checkbox');
@@ -354,23 +252,72 @@
             td.appendChild(yBtn);
             td.appendChild(cBtn);
           } else {
-            td.textContent = row[col] || '';
+            if (col === 4) {
+              const fullText = row[col] || '';
+              const shortText = fullText.toString().substring(0, 20);
+              td.textContent = shortText;
+              td.title = fullText;
+            } else {
+              td.textContent = row[col] || '';
+            }
           }
+
           tr.appendChild(td);
         }
         tbody.appendChild(tr);
       });
+
+      // Sütun genişliklerini optimize et
+      setTimeout(() => {
+        const container = document.querySelector('.table-container');
+        const tableWidth = table.offsetWidth;
+        container.style.maxWidth = `${Math.min(tableWidth + 20, window.innerWidth - 40)}px`;
+      }, 0);
     }
 
-    document.querySelector('#resultsTable').addEventListener('change', function(event) {
-      if (event.target.type === 'checkbox') {
-        const row = event.target.closest('tr');
+    document.addEventListener('DOMContentLoaded', () => {
+      checkDataExpiry();
+      const saved = localStorage.getItem('excelData');
+      if (saved) {
+        excelData = JSON.parse(saved);
+        displayResults(excelData);
+      }
+    });
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          displayResults(excelData);
+          saveDataToLocalStorage();
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    });
+
+    document.getElementById('search').addEventListener('input', function(e) {
+      const query = e.target.value.toLowerCase();
+      const filtered = excelData.filter((row, i) => {
+        if (i === 0) return true;
+        return row.some(cell => cell && cell.toString().toLowerCase().includes(query));
+      });
+      displayResults(filtered);
+    });
+
+    document.getElementById('resultsTable').addEventListener('change', function(e) {
+      if (e.target.type === 'checkbox') {
+        const row = e.target.closest('tr');
         const bayiKodu = row.cells[3].textContent;
-        const bayiAdı = row.cells[4].textContent;
+        const bayiAdı = row.cells[4].title;
         const şehir = row.cells[0].textContent;
-        if (event.target.checked) {
-          const bayiAdıKısa = bayiAdı.length > 20 ? bayiAdı.substring(0, 20) : bayiAdı;
-          copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdıKısa}\nŞehir: ${şehir}`);
+
+        if (e.target.checked) {
+          copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdı}\nŞehir: ${şehir}`);
         } else {
           copiedData = copiedData.filter(item => !item.includes(`Bayi Kodu: ${bayiKodu}`));
         }
