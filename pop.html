@@ -1,167 +1,175 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pop Kodları Seçim Sistemi</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-            user-select: none;
-        }
-        .frame {
-            border: 2px solid #8b0000;
-            border-radius: 10px;
-            padding: 15px;
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            display: none;
-        }
-        .header {
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
-            text-align: center;
-            padding: 10px;
-            margin: 0 0 20px 0;
-            background: linear-gradient(to right, #ff5c5c, #8b0000);
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 3px;
-        }
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            padding: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            justify-content: center;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-        }
-        .checkbox {
-            margin-right: 5px;
-        }
-        .button-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .copy-button, .clear-button, .select-yeni-button {
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
-            width: 100%;
-            text-align: center;
-        }
-        .clear-button {
-            background-color: #f44336;
-        }
-        .select-yeni-button {
-            background-color: #008CBA;
-        }
-        .footer {
-            text-align: center;
-            font-size: 14px;
-            color: #333;
-            margin-top: 15px;
-            font-style: italic;
-            user-select: none;
-        }
-        .footer .footer-text {
-            margin-bottom: 0.5rem; /* Alt satırla arada boşluk */
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pop Kodları Seçim Sistemi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+    .frame {
+      border: 2px solid #8b0000;
+      border-radius: 10px;
+      padding: 15px;
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+      margin-bottom: 20px;
+      background: linear-gradient(to right, #ff5c5c, #8b0000);
+      border-radius: 8px;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 5px;
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+      font-size: 14px;
+      cursor: pointer;
+      justify-content: center;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+    .checkbox {
+      margin-right: 5px;
+    }
+    .button-container {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+    .copy-button { background-color: #4CAF50; }
+    .clear-button { background-color: #f44336; }
+    .email-button { background-color: #008CBA; }
+    .footer {
+      text-align: center;
+      font-size: 14px;
+      color: #333;
+      margin-top: 15px;
+      font-style: italic;
+      user-select: none;
+    }
+    .footer-text {
+      margin-bottom: 0.5rem;
+    }
+  </style>
 </head>
 <body>
 
 <div class="frame" id="contentFrame">
-    <h2 class="header">Arçelik Pop Kodları</h2>
-    <div class="container" id="popCodesContainer"></div>
+  <h2 class="header">Arçelik Pop Kodları</h2>
+  <div class="container" id="popCodesContainer"></div>
 
-    <div class="button-container">
-        <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
-        <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
-        <button class="select-yeni-button" onclick="selectYeniCodes()">Süresiz</button>
-    </div>
+  <div class="button-container">
+    <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
+    <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
+    <button class="email-button" onclick="openEmailDraft()">E-Posta Görünümünde Aç</button>
+  </div>
 
-    <div class="footer">
-        <div class="footer-text">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
-        <div class="footer-version">Versiyon: V 1.0</div>
-    </div>
+  <div class="footer">
+    <div class="footer-text">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
+    <div class="footer-version">V 1.1</div>
+  </div>
 </div>
 
 <script>
-    const popCodes = [
-        "100001", "100004", "100005", "100006", "10007", "100009", "100012", "100013",
-        "100014", "100015", "100017", "100021", "100022", "100029", "100030", "100031",
-        "100032", "100034", "100036", "100037", "100040", "100041", "100042", "100043",
-        "100044", "100045", "100046", "100047", "100052", "100054", "100055", "100056",
-        "100060", "100064", "100065", "100068", "100070", "100071", "100072", "100074",
-        "100075", "100076", "100077", "100078", "100080", "100083", "100085", "100087",
-        "100088", "100090", "100094", "100095", "100096"
-    ];
+  const popCodes = [
+    "100001", "100004", "100005", "100006", "10007", "100009", "100012", "100013",
+    "100014", "100015", "100017", "100021", "100022", "100029", "100030", "100031",
+    "100032", "100034", "100036", "100037", "100040", "100041", "100042", "100043",
+    "100044", "100045", "100046", "100047", "100052", "100054", "100055", "100056",
+    "100060", "100064", "100065", "100068", "100070", "100071", "100072", "100074",
+    "100075", "100076", "100077", "100078", "100080", "100083", "100085", "100087",
+    "100088", "100090", "100094", "100095", "100096"
+  ];
 
-    const popCodesContainer = document.getElementById('popCodesContainer');
+  const popCodesContainer = document.getElementById('popCodesContainer');
 
-    function initializeApp() {
-        document.getElementById('contentFrame').style.display = 'block';
-        popCodes.forEach(code => {
-            const label = document.createElement('label');
-            label.classList.add('checkbox-label');
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = code;
-            checkbox.classList.add('checkbox');
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(code));
-            popCodesContainer.appendChild(label);
-        });
+  function initializeApp() {
+    document.getElementById('contentFrame').style.display = 'block';
+    popCodes.forEach(code => {
+      const label = document.createElement('label');
+      label.classList.add('checkbox-label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = code;
+      checkbox.classList.add('checkbox');
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(code));
+      popCodesContainer.appendChild(label);
+    });
+  }
+
+  function copySelectedCodes() {
+    const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked'))
+      .map(cb => cb.value).join(', ');
+    navigator.clipboard.writeText(selectedCodes).then(() => alert("Kopyalandı!"));
+  }
+
+  function clearSelectedCodes() {
+    document.querySelectorAll('.checkbox').forEach(cb => cb.checked = false);
+  }
+
+  function openEmailDraft() {
+    const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+    if (selectedCodes.length === 0) {
+      alert("Lütfen en az bir kod seçin.");
+      return;
     }
 
-    function toggleSelection(codes) {
-        document.querySelectorAll('.checkbox').forEach(checkbox => {
-            if (codes.includes(checkbox.value)) {
-                checkbox.checked = !checkbox.checked;
-            }
-        });
-    }
+    const kodSatiri = selectedCodes.join(', ');
 
-    function selectYeniCodes() {
-        const codesYeni = [
-            "100001", "100004", "100005", "100006", "100007", "100009", "100012", "100013", 
-            "100014", "100015", "100017", "100021", "100022", "100034", "100040", "100041", 
-            "100042", "100043", "100044", "100045", "100046", "100047", "100060", "100068"
-        ];
-        toggleSelection(codesYeni);
-    }
+    const emailHTML = `
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>E-Posta Taslağı</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background-color: #fff; }
+    .block { margin-bottom: 15px; }
+    .label { font-weight: bold; color: #555; display: inline-block; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="block"><span class="label">Kime:</span> Ozan.Firat@arcelik.com; ibrahim.karatas@arcelik.com.tr</div>
+  <div class="block"><span class="label">CC:</span> fatih.tan@arcelik.com.tr; yasin.durmus@arcelik.com.tr</div>
+  <div class="block"><span class="label">Konu:</span> (Boş)</div>
+  <div class="block">
+    <span class="label">İçerik:</span>
+    <div>${kodSatiri}</div>
+  </div>
+</body>
+</html>
+`;
 
-    function copySelectedCodes() {
-        const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked'))
-            .map(checkbox => checkbox.value)
-            .join(', ');
-        navigator.clipboard.writeText(selectedCodes).then(() => alert("Seçilen kodlar kopyalandı!"));
-    }
+    const emailWindow = window.open('', '_blank');
+    emailWindow.document.write(emailHTML);
+    emailWindow.document.close();
+  }
 
-    function clearSelectedCodes() {
-        document.querySelectorAll('.checkbox').forEach(checkbox => checkbox.checked = false);
-    }
-
-    initializeApp();
+  initializeApp();
 </script>
 
 </body>
