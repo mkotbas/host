@@ -91,24 +91,43 @@
     /* Mobil cihazlar için ek stil */
     @media (max-width: 480px) {
       .button-container {
-        flex-direction: column;
+        flex-direction: row;
         align-items: stretch;
-        gap: 8px;
+        gap: 6px;
+        padding: 0 5px;
       }
       
       button {
-        width: 100%;
+        flex: 1 1 calc(50% - 8px);
         min-width: unset;
-        padding: 8px;
+        padding: 8px 3px;
+        font-size: 12px;
+        border-radius: 3px;
       }
       
       .container {
-        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(65px, 1fr));
+        gap: 4px;
       }
       
       .checkbox-label {
+        font-size: 11px;
+        padding: 3px 2px;
+      }
+      
+      .header {
+        font-size: 20px;
+        padding: 8px;
+        margin-bottom: 15px;
+      }
+      
+      .frame {
+        padding: 10px;
+      }
+      
+      .footer {
         font-size: 12px;
-        padding: 3px;
+        margin-top: 10px;
       }
     }
   </style>
