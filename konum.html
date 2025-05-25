@@ -202,7 +202,6 @@
       const cleanedCoords = coordinates.trim().replace(/\s+/g, '');
       const [lat, lon] = cleanedCoords.split(',');
       const reversedCoords = `${lon},${lat}`;
-      const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
       const url = `https://yandex.com.tr/harita/?ll=${reversedCoords}&z=16&pt=${reversedCoords}`;
       window.open(url, '_blank');
     }
@@ -267,7 +266,6 @@
         tbody.appendChild(tr);
       });
 
-      // Sütun genişliklerini optimize et
       setTimeout(() => {
         const container = document.querySelector('.table-container');
         const tableWidth = table.offsetWidth;
@@ -313,7 +311,7 @@
       if (e.target.type === 'checkbox') {
         const row = e.target.closest('tr');
         const bayiKodu = row.cells[3].textContent;
-        const bayiAdı = row.cells[4].title;
+        const bayiAdı = row.cells[4].title.substring(0, 20); // 20 karakterle sınırlı
         const şehir = row.cells[0].textContent;
 
         if (e.target.checked) {
