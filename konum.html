@@ -124,10 +124,10 @@
             height: 20px;
         }
 
-        .map-link {
+        .map-button {
             display: inline-block;
             padding: 5px 10px;
-            background-color: #007bff;
+            margin-right: 4px;
             color: white;
             font-weight: bold;
             text-decoration: none;
@@ -135,15 +135,44 @@
             text-align: center;
             transition: background-color 0.3s ease, transform 0.3s ease;
             font-size: 12px;
+            border: none;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            line-height: 14px;
+            box-sizing: border-box;
         }
 
-        .map-link:hover {
-            background-color: #0056b3;
+        .map-button:hover {
             transform: scale(1.05);
         }
 
-        .map-link:active {
-            background-color: #004085;
+        .map-button:active {
+            opacity: 0.8;
+        }
+
+        .map-button.google {
+            background-color: #4285F4;
+        }
+
+        .map-button.google:hover {
+            background-color: #3367D6;
+        }
+
+        .map-button.yandex {
+            background-color: #FF0000;
+        }
+
+        .map-button.yandex:hover {
+            background-color: #D60000;
+        }
+
+        .map-button.copy {
+            background-color: #059862;
+        }
+
+        .map-button.copy:hover {
+            background-color: #047c4d;
         }
 
         #resultsTable {
@@ -175,7 +204,7 @@
         <button id="clearButton">Temizle</button>
         <button id="dbButton">DB</button>
     </div>
-    
+
     <table id="resultsTable">
         <thead>
             <tr>
@@ -225,7 +254,7 @@
             setTimeout(() => {
                 const thElements = document.querySelectorAll('th');
                 const tdElements = document.querySelectorAll('td:nth-child(1)');
-                
+
                 if (thElements.length > 0 && tdElements.length > 0) {
                     const adjustedWidth = maxLength + 2;
                     thElements[0].style.width = `${adjustedWidth}ch`;
@@ -300,13 +329,36 @@
                     } else {
                         if (colIndex === 5 && row[colIndex]) {
                             const coordinates = row[colIndex];
-                            const mapUrl = `https://www.google.com/maps?q=${coordinates}`;
-                            const mapLink = document.createElement('a');
-                            mapLink.href = mapUrl;
-                            mapLink.target = "_blank";
-                            mapLink.classList.add('map-link');
-                            mapLink.textContent = 'Harita';
-                            td.appendChild(mapLink);
+
+                            const gMapLink = document.createElement('button');
+                            gMapLink.className = 'map-button google';
+                            gMapLink.title = 'Google Haritalar\'da aç';
+                            gMapLink.innerHTML = 'G';
+                            gMapLink.addEventListener('click', () => {
+                                window.open(`https://www.google.com/maps?q=${coordinates}`, '_blank');
+                            });
+
+                            const yMapLink = document.createElement('button');
+                            yMapLink.className = 'map-button yandex';
+                            yMapLink.title = 'Yandex Haritalar\'da aç';
+                            yMapLink.innerHTML = 'Y';
+                            yMapLink.addEventListener('click', () => {
+                                window.open(`https://yandex.com.tr/harita/?text=${coordinates}`, '_blank');
+                            });
+
+                            const copyBtn = document.createElement('button');
+                            copyBtn.className = 'map-button copy';
+                            copyBtn.title = 'Koordinatları kopyala';
+                            copyBtn.innerHTML = 'K';
+                            copyBtn.addEventListener('click', () => {
+                                navigator.clipboard.writeText(coordinates).then(() => {
+                                    alert('Koordinatlar kopyalandı.');
+                                });
+                            });
+
+                            td.appendChild(gMapLink);
+                            td.appendChild(yMapLink);
+                            td.appendChild(copyBtn);
                         } else {
                             td.textContent = row[colIndex] || '';
                         }
@@ -321,9 +373,9 @@
         document.querySelector('#resultsTable').addEventListener('change', function(event) {
             if (event.target.type === 'checkbox') {
                 const row = event.target.closest('tr');
-                const bayiKodu = row.cells[3].textContent; // Bayi Kodu
-                const bayiAdı = row.cells[4].textContent; // Bayi Adı
-                const şehir = row.cells[0].textContent;   // Şehir
+                const bayiKodu = row.cells[3].textContent;
+                const bayiAdı = row.cells[4].textContent;
+                const şehir = row.cells[0].textContent;
 
                 if (event.target.checked) {
                     const bayiAdiLimited = bayiAdı.length > 20 ? bayiAdı.substring(0, 20) : bayiAdı;
