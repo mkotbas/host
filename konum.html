@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bayi Konum Otomasyonu</title>
+  <title>Bayi Konum Otomasyonu (Yeni)</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
   <style>
     body {
@@ -149,7 +149,7 @@
   </style>
 </head>
 <body>
-  <div class="header">Bayi Konum Otomasyonu</div>
+  <div class="header">Bayi Konum Otomasyonu (Yeni)</div>
   <input type="text" id="search" placeholder="Arama yapın..." />
 
   <div class="buttons-container">
@@ -176,6 +176,7 @@
     </table>
   </div>
 
+  <!-- JavaScript -->
   <script>
     let excelData = [];
     let copiedData = [];
@@ -214,36 +215,52 @@
 
       data.forEach((row, index) => {
         if (index === 0) return;
+
         const tr = document.createElement('tr');
-        for (let col = 0; col <= 5; col++) {
+
+        const sehir = row[4] || '';
+        const ilce = row[5] || '';
+        const bayiKodu = row[8] || '';
+        const bayiAdi = row[10] || '';
+        const konum = row[11] || '';
+
+        const cells = [
+          sehir,
+          ilce,
+          'SEÇ',
+          bayiKodu,
+          bayiAdi,
+          konum
+        ];
+
+        cells.forEach((cell, colIndex) => {
           const td = document.createElement('td');
 
-          if (col === 2) {
+          if (colIndex === 2) {
             td.className = 'select-column';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.classList.add('checkbox');
             td.appendChild(checkbox);
-          } else if (col === 5 && row[col]) {
-            const coords = row[col];
+          } else if (colIndex === 5 && konum) {
             const gBtn = document.createElement('button');
             gBtn.className = 'map-button google';
             gBtn.innerHTML = 'G';
             gBtn.title = 'Google Haritalar\'da aç';
-            gBtn.onclick = () => window.open(`https://www.google.com/maps?q=${coords}`, '_blank');
+            gBtn.onclick = () => window.open(`https://www.google.com/maps?q=${konum}`, '_blank');
 
             const yBtn = document.createElement('button');
             yBtn.className = 'map-button yandex';
             yBtn.innerHTML = 'Y';
             yBtn.title = 'Yandex Haritalar\'da aç';
-            yBtn.onclick = () => openYandexMaps(coords);
+            yBtn.onclick = () => openYandexMaps(konum);
 
             const cBtn = document.createElement('button');
             cBtn.className = 'map-button copy';
             cBtn.innerHTML = 'K';
             cBtn.title = 'Koordinatları kopyala';
             cBtn.onclick = () => {
-              navigator.clipboard.writeText(coords);
+              navigator.clipboard.writeText(konum);
               alert('Koordinatlar kopyalandı.');
             };
 
@@ -251,18 +268,19 @@
             td.appendChild(yBtn);
             td.appendChild(cBtn);
           } else {
-            if (col === 4) {
-              const fullText = row[col] || '';
+            if (colIndex === 4) {
+              const fullText = cell || '';
               const shortText = fullText.toString().substring(0, 20);
               td.textContent = shortText;
               td.title = fullText;
             } else {
-              td.textContent = row[col] || '';
+              td.textContent = cell || '';
             }
           }
 
           tr.appendChild(td);
-        }
+        });
+
         tbody.appendChild(tr);
       });
 
@@ -311,11 +329,11 @@
       if (e.target.type === 'checkbox') {
         const row = e.target.closest('tr');
         const bayiKodu = row.cells[3].textContent;
-        const bayiAdı = row.cells[4].title.substring(0, 20); // 20 karakterle sınırlı
-        const şehir = row.cells[0].textContent;
+        const bayiAdi = row.cells[4].title.substring(0, 20);
+        const sehir = row.cells[0].textContent;
 
         if (e.target.checked) {
-          copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdı}\nŞehir: ${şehir}`);
+          copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdi}\nŞehir: ${sehir}`);
         } else {
           copiedData = copiedData.filter(item => !item.includes(`Bayi Kodu: ${bayiKodu}`));
         }
