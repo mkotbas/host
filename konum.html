@@ -13,7 +13,6 @@
       flex-direction: column;
       align-items: center;
     }
-
     .header {
       font-size: 24px;
       font-weight: bold;
@@ -26,7 +25,6 @@
       width: 90%;
       max-width: 800px;
     }
-
     #search {
       display: block;
       margin: 0 auto 20px;
@@ -37,7 +35,6 @@
       border-radius: 6px;
       border: 1px solid #ddd;
     }
-
     .buttons-container {
       display: flex;
       justify-content: center;
@@ -46,7 +43,6 @@
       width: 90%;
       max-width: 800px;
     }
-
     .buttons-container button,
     #customButton {
       padding: 6px 12px;
@@ -57,16 +53,13 @@
       background-color: #059862;
       color: white;
     }
-
     #customButton:hover,
     .buttons-container button:hover {
       background-color: #047c4d;
     }
-
     #fileInput {
       display: none;
     }
-
     .table-container {
       display: inline-block;
       overflow-x: auto;
@@ -76,14 +69,12 @@
       text-align: center;
       width: 100%;
     }
-
     table {
       border-collapse: collapse;
       width: auto;
       table-layout: auto;
       margin: 0 auto;
     }
-
     th, td {
       border: 1px solid #ddd;
       padding: 10px;
@@ -93,24 +84,20 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
     th {
       background-color: #f2f2f2;
       position: sticky;
       top: 0;
     }
-
     .select-column {
       text-align: center;
       width: 50px;
     }
-
     .select-column input {
       width: 18px;
       height: 18px;
       cursor: pointer;
     }
-
     .map-button {
       display: inline-flex;
       justify-content: center;
@@ -124,22 +111,15 @@
       color: white;
       cursor: pointer;
     }
-
     .map-button.google { background-color: #4285F4; }
     .map-button.yandex { background-color: #FF0000; }
     .map-button.copy { background-color: #059862; }
-
     .map-button:hover {
       transform: scale(1.1);
     }
-
     @media (max-width: 768px) {
-      .header {
-        font-size: 20px;
-      }
-      #search {
-        font-size: 14px;
-      }
+      .header { font-size: 20px; }
+      #search { font-size: 14px; }
       th, td {
         font-size: 14px;
         padding: 8px;
@@ -176,7 +156,6 @@
     </table>
   </div>
 
-  <!-- JavaScript -->
   <script>
     let excelData = [];
     let copiedData = [];
@@ -216,22 +195,14 @@
       data.forEach((row, index) => {
         if (index === 0) return;
 
-        const tr = document.createElement('tr');
-
         const sehir = row[4] || '';
         const ilce = row[5] || '';
         const bayiKodu = row[7] || '';
         const bayiAdi = row[9] || '';
         const konum = row[10] || '';
 
-        const cells = [
-          sehir,
-          ilce,
-          'SEÇ',
-          bayiKodu,
-          bayiAdi,
-          konum
-        ];
+        const tr = document.createElement('tr');
+        const cells = [sehir, ilce, 'SEÇ', bayiKodu, bayiAdi, konum];
 
         cells.forEach((cell, colIndex) => {
           const td = document.createElement('td');
@@ -268,14 +239,7 @@
             td.appendChild(yBtn);
             td.appendChild(cBtn);
           } else {
-            if (colIndex === 4) {
-              const fullText = cell || '';
-              const shortText = fullText.toString().substring(0, 20);
-              td.textContent = shortText;
-              td.title = fullText;
-            } else {
-              td.textContent = cell || '';
-            }
+            td.textContent = cell || '';
           }
 
           tr.appendChild(td);
@@ -328,9 +292,9 @@
     document.getElementById('resultsTable').addEventListener('change', function(e) {
       if (e.target.type === 'checkbox') {
         const row = e.target.closest('tr');
-        const bayiKodu = row.cells[3].textContent;
-        const bayiAdi = row.cells[4].title.substring(0, 20);
-        const sehir = row.cells[0].textContent;
+        const bayiKodu = row.cells[3].textContent.trim();
+        const bayiAdi = row.cells[4].textContent.trim();
+        const sehir = row.cells[0].textContent.trim();
 
         if (e.target.checked) {
           copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdi}\nŞehir: ${sehir}`);
