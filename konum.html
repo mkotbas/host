@@ -181,8 +181,12 @@
     function openYandexMaps(coordinates) {
       const cleanedCoords = coordinates.trim().replace(/\s+/g, '');
       const [lat, lon] = cleanedCoords.split(',');
-      const reversedCoords = `${lon},${lat}`;
-      const url = `https://yandex.com.tr/harita/?ll=${reversedCoords}&z=18&pt=${reversedCoords},pm2rdl`;
+      
+      // Yeni rota planlama URL'si
+      // rtext: ~ ile sadece hedef belirtilir (kullanıcı konumu otomatik alınır)
+      // rtt=auto: rota türü otomatik seçilir (araba/yürüme/toplu taşıma)
+      const url = `https://yandex.com.tr/harita/?rtext=~${lat},${lon}&rtt=auto`;
+      
       window.open(url, '_blank');
     }
 
@@ -223,7 +227,7 @@
             const yBtn = document.createElement('button');
             yBtn.className = 'map-button yandex';
             yBtn.innerHTML = 'Y';
-            yBtn.title = 'Yandex Haritalar\'da aç';
+            yBtn.title = 'Yandex Haritalar\'da rota oluştur';
             yBtn.onclick = () => openYandexMaps(konum);
 
             const cBtn = document.createElement('button');
