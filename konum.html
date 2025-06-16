@@ -182,7 +182,7 @@
       const cleanedCoords = coordinates.trim().replace(/\s+/g, '');
       const [lat, lon] = cleanedCoords.split(',');
       const reversedCoords = `${lon},${lat}`;
-      const url = `https://yandex.com.tr/harita/?ll=${reversedCoords}&z=16&pt=${reversedCoords}`;
+      const url = `https://yandex.com.tr/harita/?ll=${reversedCoords}&z=18&pt=${reversedCoords},pm2rdl`;
       window.open(url, '_blank');
     }
 
