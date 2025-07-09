@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Skala Hazırlama Sistemi</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -40,7 +41,6 @@
             letter-spacing: 1px;
         }
         
-        /* GÜNCELLENMİŞ TOPLAM KART STİLLERİ */
         .summary-container {
             display: flex;
             justify-content: center;
@@ -101,29 +101,44 @@
             color: #0077b6;
         }
         
-        /* GÜNCELLENMİŞ TEMİZLE BUTONU */
-        .clear-all-btn {
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .action-btn {
             padding: 10px 20px;
-            background: #d9534f;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin: 15px auto;
-            display: block;
             font-weight: bold;
             font-size: 14px;
             transition: all 0.3s;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             text-transform: uppercase;
+            min-width: 200px;
+            text-align: center;
         }
-        .clear-all-btn:hover {
+        .clear-btn {
+            background: #d9534f;
+        }
+        .clear-btn:hover {
             background: #c9302c;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
+        .export-btn {
+            background: #2e8b57;
+        }
+        .export-btn:hover {
+            background: #1f6b3d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
         
-        /* ORİJİNAL TABLO STİLLERİ */
         .table-container {
             margin-top: 20px;
         }
@@ -200,7 +215,6 @@
             transform: scale(1.2);
         }
         
-        /* MOBİL UYUMLULUK */
         @media screen and (max-width: 768px) {
             .summary-container {
                 flex-direction: column;
@@ -228,6 +242,14 @@
             .header {
                 font-size: 20px;
             }
+            .button-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .action-btn {
+                width: 100%;
+                max-width: 280px;
+            }
         }
     </style>
 </head>
@@ -236,7 +258,6 @@
 <div class="frame">
     <h1 class="header">Arçelik Skala Girişi</h1>
 
-    <!-- GÜNCELLENMİŞ TOPLAM KARTLARI -->
     <div class="summary-container">
         <div class="total-card">
             <div class="total-icon">📦</div>
@@ -255,8 +276,10 @@
         </div>
     </div>
 
-    <!-- GÜNCELLENMİŞ TEMİZLE BUTONU -->
-    <button id="clearAllBtn" class="clear-all-btn">TÜM VERİLERİ TEMİZLE</button>
+    <div class="button-container">
+        <button id="exportExcelBtn" class="action-btn export-btn">EXCEL OLARAK İNDİR</button>
+        <button id="clearAllBtn" class="action-btn clear-btn">TÜM VERİLERİ TEMİZLE</button>
+    </div>
 
     <div class="table-container">
         <h2>Fiyat Etiketi ve Malzemeler</h2>
@@ -503,6 +526,99 @@
         saveData();
     }
 
+    // Excel export fonksiyonu - TAM ORTALANMIŞ HALİ
+    function exportToExcel() {
+        // Workbook oluştur
+        const workbook = XLSX.utils.book_new();
+        
+        // 1. FİYAT ETİKETLERİ SAYFASI
+        const fiyatData = [];
+        document.querySelectorAll('#fiyatTable tbody tr').forEach(row => {
+            fiyatData.push({
+                'Malzeme': row.cells[0].textContent,
+                'Toplam Paket': parseInt(row.cells[3].textContent) || 0
+            });
+        });
+        
+        // 2. ENERJİ ETİKETLERİ SAYFASI
+        const enerjiData = [];
+        document.querySelectorAll('#enerjiTable tbody tr').forEach(row => {
+            enerjiData.push({
+                'Enerji Etiketi Pleksileri': row.cells[0].textContent,
+                'Toplam Paket': parseInt(row.cells[3].textContent) || 0
+            });
+        });
+        
+        // 3. ÖZET SAYFASI
+        const summaryData = [
+            ['TOPLAMLAR', ''],
+            ['Toplam Fiyat Etiketi Paketi', parseInt(document.getElementById('totalFiyat').textContent) || 0],
+            ['Toplam Enerji Etiketi Paketi', parseInt(document.getElementById('totalEnerji').textContent) || 0],
+            ['', ''],
+            ['Oluşturulma Tarihi', new Date().toLocaleString('tr-TR')]
+        ];
+        
+        // Sheet'leri oluştur
+        const fiyatSheet = XLSX.utils.json_to_sheet(fiyatData);
+        const enerjiSheet = XLSX.utils.json_to_sheet(enerjiData);
+        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+        
+        // MERKEZ HİZALAMA STİLİ
+        const centerStyle = {
+            alignment: {
+                horizontal: 'center',
+                vertical: 'center',
+                wrapText: true
+            }
+        };
+        
+        // Tüm hücrelere ortalama uygula
+        const applyCenterStyle = (sheet) => {
+            const range = XLSX.utils.decode_range(sheet['!ref']);
+            for(let R = range.s.r; R <= range.e.r; ++R) {
+                for(let C = range.s.c; C <= range.e.c; ++C) {
+                    const cell_address = {c:C, r:R};
+                    const cell_ref = XLSX.utils.encode_cell(cell_address);
+                    if(sheet[cell_ref]) {
+                        sheet[cell_ref].s = centerStyle;
+                        // Sayısal değerler için özel format
+                        if(typeof sheet[cell_ref].v === 'number') {
+                            sheet[cell_ref].z = '#,##0';
+                        }
+                    }
+                }
+            }
+        };
+        
+        applyCenterStyle(fiyatSheet);
+        applyCenterStyle(enerjiSheet);
+        applyCenterStyle(summarySheet);
+        
+        // SÜTUN GENİŞLİKLERİ
+        fiyatSheet['!cols'] = [
+            { wch: Math.max(...fiyatData.map(item => item.Malzeme.length), 20) + 2 },
+            { wch: 15 }
+        ];
+        
+        enerjiSheet['!cols'] = [
+            { wch: Math.max(...enerjiData.map(item => item['Enerji Etiketi Pleksileri'].length), 25) + 2 },
+            { wch: 15 }
+        ];
+        
+        summarySheet['!cols'] = [
+            { wch: 30 },
+            { wch: 20 }
+        ];
+        
+        // Workbook'a sheet'leri ekle
+        XLSX.utils.book_append_sheet(workbook, fiyatSheet, "Fiyat Etiketleri");
+        XLSX.utils.book_append_sheet(workbook, enerjiSheet, "Enerji Etiketleri");
+        XLSX.utils.book_append_sheet(workbook, summarySheet, "Özet");
+        
+        // Excel dosyasını indir
+        XLSX.writeFile(workbook, `Arcelik_Skala_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
     // Tüm verileri temizle butonu
     document.getElementById('clearAllBtn').addEventListener('click', () => {
         if (confirm('Tüm verileri silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) {
@@ -511,9 +627,11 @@
         }
     });
 
+    // Excel indir butonu
+    document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+
     // Sayfa yüklendiğinde hesapla fonksiyonunu çalıştır
     window.onload = hesapla;
 </script>
-
 </body>
 </html>
