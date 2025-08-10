@@ -628,7 +628,16 @@
     });
 
     // Excel indir butonu
-    document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+    document.getElementById('exportExcelBtn').addEventListener('click', () => {
+        const totalFiyat = parseInt(document.getElementById('totalFiyat').textContent) || 0;
+        const totalEnerji = parseInt(document.getElementById('totalEnerji').textContent) || 0;
+
+        if (totalFiyat === 0 && totalEnerji === 0) {
+            alert('Dışa aktarılacak veri bulunmamaktadır. Lütfen öncelikle giriş yapınız.');
+        } else {
+            exportToExcel();
+        }
+    });
 
     // Sayfa yüklendiğinde hesapla fonksiyonunu çalıştır
     window.onload = hesapla;
