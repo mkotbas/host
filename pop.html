@@ -239,12 +239,16 @@
 
   function openEmailDraft() {
     const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
-    if (selectedCodes.length === 0) {
-      alert("Lütfen en az bir kod seçin.");
+    
+    // Süresi dolmamış kodları filtrele
+    const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
+
+    if (nonExpiredCodes.length === 0) {
+      alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin.");
       return;
     }
 
-    const kodSatiri = selectedCodes.join(', ');
+    const kodSatiri = nonExpiredCodes.join(', ');
 
     const emailHTML = `
 <!DOCTYPE html>
