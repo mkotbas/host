@@ -73,6 +73,7 @@
     .copy-button { background-color: #4CAF50; }
     .clear-button { background-color: #f44336; }
     .email-button { background-color: #008CBA; }
+    .select-expired-button { background-color: #FFA500; }
     .footer {
       text-align: center;
       font-size: 14px;
@@ -86,6 +87,17 @@
     }
     .footer-version {
       margin-top: 0.2rem;
+    }
+    .warning-message {
+      color: #d32f2f;
+      background-color: #ffebee;
+      border: 1px solid #d32f2f;
+      border-radius: 4px;
+      padding: 10px;
+      margin-top: 10px;
+      text-align: center;
+      font-weight: bold;
+      display: none;
     }
 
     @media (max-width: 480px) {
@@ -135,21 +147,26 @@
   <h2 class="header">Arçelik Pop Kodları</h2>
   <div class="container" id="popCodesContainer"></div>
 
+  <div class="warning-message" id="expiredWarning">
+    Seçiminizde süresi dolmuş kodlar bulunmaktadır. Bu kodlar kopyalanmayacaktır.
+  </div>
+
   <div class="button-container">
-    <button class="copy-button" onclick="copySelectedCodes()">Seçilenleri Kopyala</button>
-    <button class="clear-button" onclick="clearSelectedCodes()">Seçilenleri Temizle</button>
-    <button class="email-button" onclick="openEmailDraft()">E-Posta Görünümünde Aç</button>
+    <button class="copy-button" onclick="copySelectedCodes()">Kopyala</button>
+    <button class="clear-button" onclick="clearSelectedCodes()">Temizle</button>
+    <button class="select-expired-button" onclick="selectExpiredCodes()">Bitenler</button>
+    <button class="email-button" onclick="openEmailDraft()">E-Posta</button>
   </div>
 
   <div class="footer">
     <div class="footer-text">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
-    <div class="footer-version">V 1.2</div>
+    <div class="footer-version">V 1.4</div>
   </div>
 </div>
 
 <script>
   const popCodes = [
-    "100001", "100004", "100005", "100006", "10007", "100009", "100012", "100013",
+    "100001", "100004", "100005", "100006", "100007", "100009", "100012", "100013",
     "100014", "100015", "100017", "100021", "100022", "100029", "100030", "100031",
     "100032", "100034", "100036", "100037", "100040", "100041", "100042", "100043",
     "100044", "100045", "100046", "100047", "100052", "100054", "100055", "100056",
@@ -160,7 +177,21 @@
     "100108"
   ];
 
+  const expiredCodes = ["100029", "100030", "100031", "100032", "100036", "100037", "100064", "100065"];
+
   const popCodesContainer = document.getElementById('popCodesContainer');
+  const warningMessage = document.getElementById('expiredWarning');
+
+  function checkExpiredCodes() {
+    const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+    const hasExpired = selectedCodes.some(code => expiredCodes.includes(code));
+    
+    if (hasExpired) {
+      warningMessage.style.display = 'block';
+    } else {
+      warningMessage.style.display = 'none';
+    }
+  }
 
   function initializeApp() {
     document.getElementById('contentFrame').style.display = 'block';
@@ -174,17 +205,36 @@
       label.appendChild(checkbox);
       label.appendChild(document.createTextNode(code));
       popCodesContainer.appendChild(label);
+      
+      // Her bir checkbox'a değişiklik olay dinleyicisi ekle
+      checkbox.addEventListener('change', checkExpiredCodes);
     });
   }
 
   function copySelectedCodes() {
-    const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked'))
-      .map(cb => cb.value).join(', ');
-    navigator.clipboard.writeText(selectedCodes).then(() => alert("Kopyalandı!"));
+    const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+
+    const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
+
+    if (nonExpiredCodes.length === 0) {
+      alert("Kopyalamak için geçerli (süresi dolmamış) kod seçin.");
+      return;
+    }
+
+    const kodSatiri = nonExpiredCodes.join(', ');
+    navigator.clipboard.writeText(kodSatiri).then(() => alert("Seçilen geçerli kodlar kopyalandı!"));
   }
 
   function clearSelectedCodes() {
     document.querySelectorAll('.checkbox').forEach(cb => cb.checked = false);
+    checkExpiredCodes(); // Temizledikten sonra uyarıyı kaldır
+  }
+
+  function selectExpiredCodes() {
+    document.querySelectorAll('.checkbox').forEach(cb => {
+      cb.checked = expiredCodes.includes(cb.value);
+    });
+    checkExpiredCodes(); // Bitenleri seçtikten sonra uyarıyı göster
   }
 
   function openEmailDraft() {
@@ -209,7 +259,7 @@
   </style>
 </head>
 <body>
-  <div class="block"><span class="label">Kime:</span> Ozan.Firat@arcelik.com; ibrahim.karatas@arcelik.com.tr</div>
+  <div class="block"><span class="label">Kime:</span> gediz.toplutepe@arcelik.com.tr</div>
   <div class="block"><span class="label">CC:</span> fatih.tan@arcelik.com.tr; yasin.durmus@arcelik.com.tr</div>
   <div class="block"><span class="label">Konu:</span> (Boş)</div>
   <div class="block">
@@ -227,6 +277,5 @@
 
   initializeApp();
 </script>
-
 </body>
 </html>
