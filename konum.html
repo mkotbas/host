@@ -222,7 +222,7 @@
             gBtn.className = 'map-button google';
             gBtn.innerHTML = 'G';
             gBtn.title = 'Google Haritalar\'da aç';
-            gBtn.onclick = () => window.open(`https://www.google.com/maps?q=${konum}`, '_blank');
+            gBtn.onclick = () => window.open(`https://www.google.com/maps/search/?api=1&query=${konum}`, '_blank');
 
             const yBtn = document.createElement('button');
             yBtn.className = 'map-button yandex';
