@@ -143,7 +143,7 @@
 </head>
 <body>
 
-<div class="frame" id="contentFrame">
+<div class="frame" id="contentFrame" style="display:none;">
   <h2 class="header">Arçelik Pop Kodları</h2>
   <div class="container" id="popCodesContainer"></div>
 
@@ -280,6 +280,35 @@
   }
 
   initializeApp();
+
+  // --- ŞİFRE KORUMASI KODU BAŞLANGICI ---
+
+  // Parola: arc01 (Base64 ile kodlanmış hali)
+  const dogruSifre = atob("YXJjMDE="); 
+
+  // Sayfa yüklendiğinde şifre sormak için bir fonksiyon.
+  function sifreSor() {
+    // Kullanıcıya şifre soran ve girilen değeri alan kutucuk.
+    const girilenSifre = prompt("Lütfen sistemi kullanmak için şifreyi girin:", "");
+
+    // Eğer girilen şifre, belirlediğimiz doğru şifre ile aynıysa...
+    if (girilenSifre === dogruSifre) {
+      // 1. Adım'da gizlediğimiz ana içeriği görünür yap.
+      document.getElementById('contentFrame').style.display = 'block';
+    } 
+    // Eğer şifre yanlışsa veya kullanıcı "İptal"e basarsa...
+    else {
+      // Bir uyarı mesajı göster.
+      alert("Hatalı şifre! Erişim reddedildi.");
+      // Sayfa içeriğini boş bırakmak için gövdeyi temizle.
+      document.body.innerHTML = '<h2 style="text-align:center; color:red; margin-top:50px;">Erişim Engellendi</h2>';
+    }
+  }
+
+  // Sayfa tamamen yüklendiğinde sifreSor fonksiyonunu çalıştır.
+  sifreSor();
+
+  // --- ŞİFRE KORUMASI KODU SONU ---
 </script>
 </body>
 </html>
