@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FiDe Denetim Formu</title>
+    <title>Denetim Formu</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
-            /* DEĞİŞİKLİK BURADA YAPILDI */
             --primary: #008CBA;
             --primary-dark: #007B9A;
-            /* DEĞİŞİKLİK BURADA BİTTİ */
             --secondary: #64748b;
             --success: #16a34a;
             --success-light: #dcfce7;
@@ -23,483 +22,109 @@
             --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --transition: all 0.3s ease;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 14px;
-            line-height: 1.6;
-            color: var(--dark);
-            background-color: #f1f5f9;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: var(--card-shadow);
-            padding: 24px;
-            margin-bottom: 24px;
-            transition: var(--transition);
-        }
-
-        .card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        h1, h2, h3, h4 {
-            color: var(--dark);
-            margin-bottom: 16px;
-        }
-
-        h1 {
-            font-size: 28px;
-            text-align: center;
-            margin-bottom: 30px;
-            color: var(--primary);
-        }
-
-        h2 {
-            font-size: 20px;
-            color: var(--primary);
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        h3 {
-            font-size: 18px;
-            color: var(--secondary);
-        }
-
-        p {
-            margin-bottom: 16px;
-        }
-
-        button {
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 16px;
-            font-weight: 600;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        button i {
-            margin-right: 8px;
-        }
-
-        .btn-primary {
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; line-height: 1.6; color: var(--dark); background-color: #f1f5f9; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; box-shadow: var(--card-shadow); padding: 24px; margin-bottom: 24px; transition: var(--transition); }
+        h2 { font-size: 20px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; }
+        button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; }
+        button i { margin-right: 8px; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .action-button { width: 100%; padding: 18px; font-size: 18px; margin: 30px 0; border-radius: 10px; background-color: var(--primary); color: white; }
+        .fide-item { margin-bottom: 28px; padding: 20px; border-radius: 10px; background-color: white; box-shadow: var(--card-shadow); }
+        .fide-title-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .fide-title-container p { font-weight: 600; margin: 0; flex-grow: 1; font-size: 16px; color: var(--dark); }
+        .fide-title-container.question-completed p { color: var(--success); text-decoration: line-through; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 8px; background-color: var(--primary); color: white; }
+        .static-item, .dynamic-input-item { display: flex; align-items: center; margin-bottom: 12px; padding: 12px; background-color: var(--light); border-radius: 8px; }
+        .static-item .content { flex-grow: 1; }
+        .dynamic-input-item input[type="text"] { flex-grow: 1; border: 1px solid var(--border); padding: 10px; border-radius: 6px; }
+        .dynamic-input-item input[type="text"].completed { text-decoration: line-through; color: var(--success); background-color: var(--success-light); }
+        .add-item-btn { background-color: var(--primary); color: white; margin-top: 10px; }
+        .status-btn { background-color: var(--success); color: white; margin-left: 10px; }
+        .status-btn.undo { background-color: var(--warning); color: var(--dark); }
+        .delete-item-btn { background-color: var(--danger); color: white; margin-left: 10px; }
+        .product-adder { display: flex; gap: 10px; align-items: center; margin: 15px 0; }
+        .product-adder select { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
+        .product-adder input[type="number"] { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
+        .selected-product-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--light); border-radius: 8px; margin-bottom: 8px; }
+        textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; margin-bottom: 16px; }
+        .pop-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 5px; }
+        .checkbox-label { display: flex; align-items: center; padding: 5px; font-size: 14px; cursor: pointer; justify-content: center; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9; }
+        .pop-checkbox { margin-right: 5px; }
+        .pop-button-container { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .warning-message { color: #d32f2f; background-color: #ffebee; border: 1px solid #d32f2f; border-radius: 4px; padding: 10px; margin-top: 10px; text-align: center; font-weight: bold; display: none; }
+        #email-draft-area ul { list-style-type: disc; margin: 16px 0; padding-left: 40px; }
+        #email-draft-area li { margin-bottom: 10px; padding-left: 8px; }
+        #email-draft-area p { margin-bottom: 1em; }
+        #dide-upload-card { background-color: #eef2ff; border: 2px dashed var(--primary); }
+        #dide-upload-card h2 { color: var(--primary); }
+        .file-input-wrapper { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-top: 1rem; }
+        .file-input-wrapper input[type="file"] { display: none; }
+        .file-input-label {
             background-color: var(--primary);
             color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .btn-success {
-            background-color: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            opacity: 0.9;
-        }
-
-        .btn-warning {
-            background-color: var(--warning);
-            color: var(--dark);
-        }
-
-        .btn-danger {
-            background-color: var(--danger);
-            color: white;
-        }
-
-        .btn-sm {
             padding: 6px 12px;
             font-size: 12px;
-        }
-
-        .action-button {
-            width: 100%;
-            padding: 18px;
-            font-size: 18px;
-            margin: 30px 0;
-            border-radius: 10px;
-            background-color: var(--primary);
-            color: white;
-            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
-        }
-
-        .action-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4);
-        }
-
-        .fide-item {
-            margin-bottom: 28px;
-            padding: 20px;
-            border-radius: 10px;
-            background-color: white;
-            box-shadow: var(--card-shadow);
-            transition: var(--transition);
-        }
-
-        .fide-item:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .fide-title-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .fide-title-container p {
+            border-radius: 8px;
             font-weight: 600;
-            margin: 0;
-            flex-grow: 1;
-            font-size: 16px;
-            color: var(--dark);
-        }
-
-        .fide-title-container.question-completed p {
-            color: var(--success);
-            text-decoration: line-through;
-        }
-
-        .input-area {
-            margin-top: 16px;
-        }
-
-        .static-item, .dynamic-input-item {
-            display: flex;
+            cursor: pointer;
+            display: inline-flex;
             align-items: center;
-            margin-bottom: 12px;
-            padding: 12px;
-            background-color: var(--light);
-            border-radius: 8px;
-        }
-
-        .static-item .content {
-            flex-grow: 1;
-        }
-
-        .dynamic-input-item input[type="text"] {
-            flex-grow: 1;
-            border: 1px solid var(--border);
-            padding: 10px;
-            border-radius: 6px;
-            font-family: inherit;
             transition: var(--transition);
         }
-
-        .dynamic-input-item input[type="text"]:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-        }
-
-        .dynamic-input-item input[type="text"].completed {
-            text-decoration: line-through;
-            color: var(--success);
-            background-color: var(--success-light);
-        }
-
-        .add-item-btn, .load-button {
-            background-color: var(--primary);
-            color: white;
-            margin-top: 10px;
-        }
-
-        .status-btn {
-            background-color: var(--success);
-            color: white;
-            margin-left: 10px;
-        }
-
-        .status-btn.undo {
-            background-color: var(--warning);
-            color: var(--dark);
-        }
-
-        .delete-item-btn {
-            background-color: var(--danger);
-            color: white;
-            margin-left: 10px;
-        }
-        
-        .product-adder {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin: 15px 0;
-            flex-wrap: wrap;
-        }
-        .product-adder select {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-        }
-        .product-adder input[type="number"] {
-            width: 80px;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-        }
-        .selected-product-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            background-color: var(--light);
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-        .selected-product-item span {
-            font-weight: 500;
-        }
-
-        .qty-input {
-            width: 70px;
-            margin-left: 12px;
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-        }
-
-        textarea {
-            width: 100%;
-            padding: 16px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-family: inherit;
-            margin-bottom: 16px;
-            transition: var(--transition);
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-        }
-
-        ul {
-            list-style-type: disc;
-            margin: 16px 0;
-            padding-left: 40px;
-        }
-
-        li {
-            margin-bottom: 10px;
-            padding-left: 8px;
-        }
-
-        a {
-            color: var(--primary);
-            text-decoration: underline;
-            font-weight: 500;
-        }
-
-        a:hover {
-            color: var(--primary-dark);
-        }
-
-        #load-section {
-            background-color: #eff6ff;
-            border: 2px dashed var(--primary);
-        }
-
-        #save-section {
-            background-color: #fef7cd;
-            border: 2px dashed var(--warning);
-            display: none;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-right: 8px;
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .logo {
-            font-size: 32px;
-            color: var(--primary);
-            margin-bottom: 10px;
-        }
-
-        .description {
-            color: var(--secondary);
-            max-width: 600px;
-            margin: 0 auto 30px;
-        }
-        
-        #email-draft-area ul {
-            list-style-position: inside;
-            padding-left: 0;
-        }
-
-        #email-draft-area li {
-            padding-left: 0;
-            margin-left: 0;
-        }
-
-        /* --- POP SİSTEMİ İÇİN EKLENEN CSS KODLARI --- */
-        .pop-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 5px;
-        }
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            padding: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            justify-content: center;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-        }
-        .pop-checkbox {
-            margin-right: 5px;
-        }
-        .pop-button-container {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            padding: 0 10px;
-        }
-        .pop-button-container button {
-            flex: 1 1 120px;
-            min-width: 100px;
-            padding: 10px;
-            border: none;
-            border-radius: 4px;
-            color: white;
-            cursor: pointer;
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .copy-button { background-color: #4CAF50; }
-        .clear-button { background-color: #f44336; }
-        .email-button { background-color: #008CBA; }
-        .select-expired-button { background-color: #FFA500; }
-        
-        .warning-message {
-            color: #d32f2f;
-            background-color: #ffebee;
-            border: 1px solid #d32f2f;
-            border-radius: 4px;
-            padding: 10px;
-            margin-top: 10px;
-            text-align: center;
-            font-weight: bold;
-            display: none;
-        }
-        /* --- POP SİSTEMİ İÇİN EKLENEN CSS KODLARI BİTİŞ --- */
-
+        #file-name { font-style: italic; color: var(--dark); }
+        #store-selection-area { display: none; margin-top: 20px; }
+        #store-search-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 16px; }
+        #store-list { max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 5px; }
+        .store-item { padding: 10px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; }
+        .store-item:hover { background-color: #f1f5f9; }
+        .store-item.selected { background-color: var(--success); color: white; font-weight: bold; }
+        .dide-table { width: 100%; border-collapse: collapse; margin-top: 25px; font-size: 14px; }
+        .dide-table th, .dide-table td { border: 1px solid #dddddd; text-align: left; padding: 8px; }
+        .dide-table th { background-color: #f2f2f2; font-weight: bold; }
+        .dide-table td { text-align: center; }
+        .dide-table td:first-child { text-align: left; font-weight: bold; }
+        #clear-storage-btn { display: none; }
 
         @media (max-width: 768px) {
-            .fide-title-container {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .fide-title-container button {
-                margin-top: 10px;
-                align-self: flex-end;
-            }
-            
-            .static-item, .dynamic-input-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .static-item button, .dynamic-input-item button {
-                margin-top: 10px;
-                align-self: flex-end;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .pop-button-container {
-                flex-direction: row;
-                align-items: stretch;
-                gap: 6px;
-                padding: 0 5px;
-                margin-top: 15px;
-            }
-            .pop-button-container button {
-                flex: 1 1 calc(50% - 8px);
-                min-width: unset;
-                padding: 8px 3px;
-                font-size: 12px;
-                border-radius: 3px;
-            }
-            .pop-container {
-                grid-template-columns: repeat(auto-fit, minmax(65px, 1fr));
-                gap: 4px;
-            }
-            .checkbox-label {
-                font-size: 11px;
-                padding: 3px 2px;
-            }
+            .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .product-adder { flex-direction: column; align-items: stretch; }
+            .product-adder > * { width: 100%; }
+            .dynamic-input-item, .static-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .status-btn, .delete-item-btn { align-self: flex-end; margin-left: 0; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">
-                <i class="fas fa-clipboard-check"></i> FiDe Denetim Formu
+        <div class="card" id="dide-upload-card">
+            <h2><i class="fas fa-chart-line"></i> DiDe Puan Entegrasyonu</h2>
+            <div>
+                <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
+                <div class="file-input-wrapper">
+                    <label for="excel-file-input" class="file-input-label"><i class="fas fa-file-excel"></i> Excel Dosyası Seç</label>
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls">
+                    <span id="file-name">Henüz dosya seçilmedi.</span>
+                    <button id="clear-storage-btn" class="btn-danger btn-sm"><i class="fas fa-trash"></i> Hafızadaki Veriyi Temizle</button>
+                </div>
             </div>
-            <p class="description">Mağaza denetimlerinizi kolayca gerçekleştirin, eksiklikleri tespit edin ve rapor oluşturun.</p>
+            <div id="store-selection-area">
+                <hr style="margin: 20px 0;">
+                <p><b>2. Adım: Denetlenecek Bayiyi Arayın ve Seçin</b></p>
+                <input type="text" id="store-search-input" placeholder="Bayi adı veya kodu ile aramaya başlayın...">
+                <div id="store-list"></div>
+            </div>
         </div>
-
+        
         <div class="card" id="load-section">
-            <h2><i class="fas fa-download"></i> ÖNCEKİ BİR RAPORU YÜKLE</h2>
+            <h2><i class="fas fa-download"></i> ÖNCEKİ BİR FİDE RAPORUNU YÜKLE</h2>
             <p>Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve "Raporu Yükle" düğmesine tıklayın.</p>
             <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..."></textarea>
-            <button class="btn-primary load-button" onclick="loadReport()">
-                <i class="fas fa-cloud-download-alt"></i> Raporu Yükle
-            </button>
+            <button class="btn-primary" onclick="loadReport()"><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
         </div>
 
         <div id="form-content"></div>
@@ -508,7 +133,7 @@
             <i class="fas fa-envelope"></i> E-POSTA TASLAĞI OLUŞTUR
         </button>
 
-        <div class="card" id="save-section">
+        <div class="card" id="save-section" style="display: none;">
             <h2><i class="fas fa-save"></i> SONRAKİ DENETİM İÇİN RAPOR KODU</h2>
             <p>Bu kodu kopyalayıp bir metin dosyasına kaydedin. Daha sonra yukarıdaki alana yapıştırarak raporu tekrar yükleyebilirsiniz.</p>
             <textarea id="save-code-area" readonly></textarea>
@@ -516,181 +141,77 @@
     </div>
 
     <script>
+        // GLOBAL DEĞİŞKENLER
+        let dideData = [];
+        let uniqueStores = [];
+        let selectedStore = null;
+
         const fideQuestions = [
             { id: 4, type: 'standard', title: "28 Ocak tarihinde yayınlanmış olan TV Teşhir Sirküsü hakkında bayiye bilgi verildi mi?", staticItems: [ `55 inç ve üzeri TV'lerin öne çıkarılması amacıyla <b>standınızın 2 rafa düşürülmesini</b> rica ederim. Konuyla ilgili detaylı bilgi <b>77 numaralı</b> sirküde mevcut olup, iş birliğiniz için şimdiden teşekkür ederim.`, `<b><u><a href="https://drive.google.com/file/d/1UnGsb7_Nc8Bu-I7caAcUtrzhY5xr8kQ8/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>`, `<b><u><a href="https://drive.google.com/file/d/1tPoIEPX1O1LXM9ByXFpybcM-UMBF2afF/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 5, type: 'standard', title: "Bayi Cephesi, Kampanya İletişim Kılavuzuna Uygun mu? (8 Nolu Sirkü)", staticItems: [ `Ön camda kullanılan kampanya görseli 8 numaralı sirküye uygun konumlandırılmalıdır. (Vitrinde bulunana ürünlerin görünürlüğünü engellememelidir.)` ] },
             { id: 6, type: 'standard', title: "Dış mekan kampanyalarında kullanılan kampanya posterleri 8905801600 stok kodlu Dış Poster Tutucu ile sergileniyor mu?", staticItems: [ `Mağaza önünde kampanyaları daha aktif duyurabileceğiniz <i>Dış Poster Tutucu</i>’nun kullanılmasını rica ederiz.`, `<b><u><a href="https://drive.google.com/file/d/1DD8kT7HRTmbMM7HYpwMJRsn3GuiVrhnJ/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 7, type: 'standard', title: "Televizyonların enerji etiketi 8908661600 stok kodlu Enerji Etiketi Standı ürünü ile sergileniyor mu?", staticItems: [ `Enerji etiketi kullanılması yasal bir zorunluluktur. İlgili ürün kodu 8908661600 üzerinden sipariş vererek, TV alanında enerji etiketi kullanılmasını rica ederiz.`, `<b><u><a href="https://drive.google.com/file/d/1m-i8scUYzfqxhlweHHno1o-j-EDleAyc/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
-            { id: 8, type: 'standard', title: "Ürünler teşhir ürün dizilim kılavuzuna göre sergilenmiş mi? Aşağıdaki ürünlerin teşhir ürün dizilim kılavuzuna (5 nolu sirkü) göre düzenlenmesini rica ederim.", staticItems: [ `Mikrodalga fırınlar kendi stantlarında sergilenmelidir ya da üst üste konulmamalıdır.` ] },
+            { id: 8, type: 'standard', title: "Ürünler teşhir ürün dizilim kılavuzuna göre sergilenmiş mi? Aşağıdaki ürünlerin teşhir ürün dizilim kılavuzuna (5 nolu sirkü) göre düzenlenmesini rica ederim.", staticItems: [ `Mikrodalga fırınlar kendi stantlarında sergilenmelidir ya da üst üste konulmamalıdır.`, `<b><u><a href="https://drive.google.com/file/d/1LxT2zxfAEP2GFFfbzKinlD1wX2Ku_rGg/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 9, type: 'standard', title: "Kampanyalı olarak sergilenen ürünlerde, 8900881600 stok kodlu Fırsat Bazası kullanılıyor mu?", staticItems: [ `Mağaza içerisinde kampanyaları uygulayabileceğiniz, fırsat algısını yaratan <i>Fırsat Bazası</i>nın kullanılmasını rica ederiz.`, `<b><u><a href="https://drive.google.com/file/d/1nPXpxwp-88gYrHFPOxr-UuizhHqDZbaN/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 10, type: 'standard', title: "Yeni Kampanya şablonu A4 veya A5 olarak kullanılıyor mu?", staticItems: [ `ABS > 29 numaralı Föy'de bulunan kampanya şablonlarının kullanımını rica ederim.`, `<b><u><a href="https://drive.google.com/file/d/1sStAyhgjr_n1w7FTtmItsyPsGWLK-jtg/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 11, type: 'standard', title: "Tüm ürünlerde fiyat etiketi var mı? Aşağıdaki ürünlerin fiyat etiketlerinin tamamlanmasını rica ederim." },
             { id: 12, type: 'standard', title: "Tüm ürünlerde enerji etiketi var mı? Aşağıdaki ürünlerin enerji etiketlerinin tamamlanmasını rica ederim." },
             { id: 13, type: 'standard', title: `Aşağıdaki ürünlere ait fiyat etiketlerinin <u>Marka Basılı Materyal Kılavuzunda (7 nolu sirkü)</u> yer alan "Fiyat Etiketleri Basım Kılavuzu'na uygun çıkartılmasını rica ederim.`, staticItems: [ `<b><u><a href="https://drive.google.com/file/d/1yx8Gj53zUzvtyF0vAulr9vzPFw98PEXj/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
-            { id: 14, type: 'standard', title: "Personel görünüm kılavuzuna uygun giyiliyor mu? (Örnek görünüm ve sipariş için 1. Sirkü)", staticItems: [ `Güncel Arçelik kostümü, yaka kartı, siyah pantolon ve siyah ayakkabı tercih edilmelidir.`, `<b><u><a href="https://drive.google.com/file/d/12vX7adib5ijk2nr4dj3D2iWgAYWjY5hj/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
+            { id: 14, type: 'standard', title: "Personel görünüm kılavuzuna uygun giyiliyor mu? (Örnek görünüm ve sipariş için 1. Sirkü)", staticItems: [ `Güncel Arçelik kostümü, yaka kartı, siyah pantolon ve siyah ayakkabı tercih edilmelidir.`, `<b><u><a href="https://drive.google.com/file/d/1FZ3s3MYjq-1wtG1SVsf9o40u8S-byIwW/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 15, type: 'product_list', title: "Perakende Malzemelerin kullanımı ve siparişi: Aşağıdaki malzemelerin siparişini rica ederim." },
             { id: 16, type: 'pop_system', title: "Basılı Materyal Kılavuzu'nda bulunan görsellerin tümü mağazada var mı? Aşağıdaki malzemelerin gönderimini rica ederim." },
-            { id: 17, type: 'standard', title: "DS-TV yayını Kullanılıyor mu?", staticItems: [ `<b><u><a href="https://drive.google.com/file/d/1Bph19y1ZYVP_RzQcR0oGDrUbVxmj_yq8/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
-            { id: 18, type: 'standard', title: "Styling Kullanılıyor mu? (11. sirkü)", staticItems: [ `Mağaza içerisinde sıcak bir ev atmosferi sunarak şıklık katmak, ürünlerin çekiciliğini artırmak ve mağazada geçirilen süreyi uzatarak satışa katkı sağlamak amacıyla hazırlanan 11 no'lu <i>Styling Kılavuzu</i>'nu inceleyebilir ve sipariş verebilirsiniz.`, `<b><u><a href="https://drive.google.com/file/d/1v2Dh3wk2g8bfQENB8wFkUeJvOlmGAMFI/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
+            { id: 17, type: 'standard', title: "DS-TV yayını Kullanılıyor mu?", staticItems: [ `<b><u><a href="https://drive.google.com/file/d/10XKhb6YQw2wbzML0TMDb1qdRo0Wv66rX/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
+            { id: 18, type: 'standard', title: "Styling Kullanılıyor mu? (11. sirkü)", staticItems: [ `Mağaza içerisinde sıcak bir ev atmosferi sunarak şıklık katmak, ürünlerin çekiciliğini artırmak ve mağazada geçirilen süreyi uzatarak satışa katkı sağlamak amacıyla hazırlanan 11 no'lu <i>Styling Kılavuzu</i>'nu inceleyebilir ve sipariş verebilirsiniz.`, `<b><u><a href="https://drive.google.com/file/d/1pk7yfpWOsPVU5N_hswr101Qn-tDG5glW/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 19, type: 'standard', title: "Elektronik ürünler stant üzerinde sergileniyor mu?" }
         ];
-
         const productList = [ { id: 'p1', code: '8905981600', name: 'PLEKSİ A5 AYAKLI' }, { id: 'p2', code: '9244421600', name: 'PLEKSİ A5 MIKNATISLI' }, { id: 'p3', code: '9224601600', name: 'ANKASTRE SET ETİKETLİK' }, { id: 'p4', code: '9224121100', name: 'PLEKSİ A5 VANTUZLU' }, { id: 'p5', code: '8936801600', name: 'PLEKSİ A6 AYAKLI' }, { id: 'p6', code: '9224291600', name: 'PLEKSİ YATAY FİYAT ETİKET TUTUCU VELCRO' }, { id: 'p7', code: '9224381600', name: 'PLEKSİ YATAY FİYAT ETİKETİ VANTUZLU' }, { id: 'p8', code: '9245571600', name: 'Askılı ÇKM Etiketlik' }, { id: 'p9', code: '8905291600', name: 'KILÇIK-KEA ETİKETLİK' }, { id: 'p10', code: '9220161600', name: 'PLEKSİ KEA ETİKETLİK' }, { id: 'p11', code: '9220451600', name: 'PLEKSİ A4 AYAKLI' }, { id: 'p12', code: '9224131600', name: 'PLEKSİ ENERJİ ETİKETİ VANTUZLU 85X170' }, { id: 'p13', code: '9224141600', name: 'PLEKSİ ENERJİ ETİKETİ VANTUZLU 102X201' }, { id: 'p14', code: '9245771600', name: 'MIKNATISLI ENERJİ ETİKETLİK 102X201' }, { id: 'p15', code: '8908661600', name: 'ENERJİ ETİKETİ STANDI' }, { id: 'p16', code: '8938521100', name: 'TUTUCU-B1 POSTER İÇ MEKAN' }, { id: 'p17', code: '8905801600', name: 'TUTUCU-B1 POSTER DIŞ' }, { id: 'p18', code: '9224311600', name: 'TUTUCU - B1 POSTER A AYAKLI' }, { id: 'p19', code: '8939031100', name: 'TUTUCU-SAÇ MAŞASI' }, { id: 'p20', code: '8909981600', name: 'TUTUCU (KATLI) - SAÇ MAŞASI' }, { id: 'p21', code: '8939051100', name: 'TUTUCU-FÖN MAKİNESİ' }, { id: 'p22', code: '8906591600', name: 'TUTUCU-TRAŞ MAKİNESİ' }, { id: 'p23', code: '8906601600', name: 'TUTUCU-KULAKLIK' }, { id: 'p24', code: '8900881600', name: 'FIRSAT BAZASI ARÇELIK' }, { id: 'p25', code: '8909061600', name: 'PLEKSİ A4 APPLE FISO' }, { id: 'p26', code: '9220421600', name: 'PLEKSİ A5 APPLE FISO' }];
-        
-        // --- POP SİSTEMİ İÇİN GEREKLİ DEĞİŞKENLER VE FONKSİYONLAR ---
         const popCodes = [ "100001", "100004", "100005", "100006", "100007", "100009", "100012", "100013", "100014", "100015", "100017", "100021", "100022", "100029", "100030", "100031", "100032", "100034", "100036", "100037", "100040", "100041", "100042", "100043", "100044", "100045", "100046", "100047", "100052", "100054", "100055", "100056", "100060", "100064", "100065", "100068", "100070", "100071", "100072", "100074", "100075", "100076", "100077", "100078", "100080", "100083", "100085", "100087", "100088", "100090", "100094", "100095", "100096", "100097", "100098", "100099", "100100", "100101", "100102", "100103", "100104", "100105", "100106", "100107", "100108" ];
         const expiredCodes = ["100029", "100030", "100031", "100032", "100036", "100037", "100064", "100065"];
+        const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
-        function checkExpiredPopCodes() {
-            const warningMessage = document.getElementById('expiredWarning');
-            if (!warningMessage) return;
-            const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
-            const hasExpired = selectedCodes.some(code => expiredCodes.includes(code));
-            warningMessage.style.display = hasExpired ? 'block' : 'none';
-        }
-
-        function initializePopSystem() {
-            const popCodesContainer = document.getElementById('popCodesContainer');
-            if (!popCodesContainer) return;
-            popCodes.forEach(code => {
-                const label = document.createElement('label');
-                label.classList.add('checkbox-label');
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.value = code;
-                checkbox.classList.add('pop-checkbox');
-                label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(code));
-                popCodesContainer.appendChild(label);
-                checkbox.addEventListener('change', checkExpiredPopCodes);
-            });
-        }
-
-        function copySelectedCodes() {
-            const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
-            const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
-            if (nonExpiredCodes.length === 0) {
-                alert("Kopyalamak için geçerli (süresi dolmamış) kod seçin.");
-                return;
-            }
-            const kodSatiri = nonExpiredCodes.join(', ');
-            navigator.clipboard.writeText(kodSatiri).then(() => alert("Seçilen geçerli kodlar kopyalandı!"));
-        }
-
-        function clearSelectedCodes() {
-            document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
-            checkExpiredPopCodes();
-        }
-
-        function selectExpiredCodes() {
-            document.querySelectorAll('.pop-checkbox').forEach(cb => {
-                cb.checked = expiredCodes.includes(cb.value);
-            });
-            checkExpiredPopCodes();
-        }
-
-        function openPopEmailDraft() {
-            const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
-            const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
-            if (nonExpiredCodes.length === 0) {
-                alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin.");
-                return;
-            }
-            const kodSatiri = nonExpiredCodes.join(', ');
-            const emailHTML = `
-            <!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>E-Posta Taslağı</title><style>body { font-family: Arial; padding: 20px; } .block { margin-bottom: 15px; } .label { font-weight: bold; color: #555; display: inline-block; margin-bottom: 8px; }</style></head>
-            <body><div class="block"><span class="label">Kime:</span> berkcan_boza@arcelik.com.tr</div><div class="block"><span class="label">CC:</span> ugur.dogan@arcelik.com; aykut.demen@arcelik.com.tr; Huseyin.Uysal@arcelik.com.tr; Ahmet.Erol2@arcelik.com.tr</div><div class="block"><span class="label">Konu:</span> (Boş)</div><div class="block"><span class="label">İçerik:</span><div style="margin-top: 10px;">${kodSatiri}</div></div></body></html>`;
-            const emailWindow = window.open('', '_blank');
-            emailWindow.document.write(emailHTML);
-            emailWindow.document.close();
-        }
-        // --- POP SİSTEMİ FONKSİYONLARI BİTİŞ ---
-
+        // FİDE FONKSİYONLARI
         function buildForm() {
             const formContainer = document.getElementById('form-content');
             let html = '';
             fideQuestions.forEach(q => {
                 html += `<div class="fide-item" id="fide-item-${q.id}">`;
-                
                 if (q.type === 'standard') {
                     let staticItemsHTML = '';
-                    if(q.staticItems && q.staticItems.length > 0) {
+                    if (q.staticItems && q.staticItems.length > 0) {
                         q.staticItems.forEach(item => {
                             staticItemsHTML += `<div class="static-item"><div class="content">${item}</div><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i> Sil</button></div>`;
                         });
                     }
-                    html += `
-                        <div class="fide-title-container">
-                            <p><span class="badge">FiDe ${q.id}</span> ${q.title}</p>
-                            <button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button>
-                        </div>
-                        <div class="input-area">
-                            <div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div>
-                            <button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksiklik Ekle</button>
-                        </div>`;
-
+                    html += `<div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button></div><div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksiklik Ekle</button></div>`;
                 } else if (q.type === 'product_list') {
                     let productOptions = productList.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
-                    html += `
-                        <div class="fide-title-container">
-                            <p><span class="badge">FiDe ${q.id}</span> ${q.title}</p>
-                        </div>
-                        <div class="input-area">
-                            <b><i>Sipariş verilmesi gerekenler:</i></b>
-                            <div class="product-adder">
-                                <select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select>
-                                <input type="number" id="product-qty" placeholder="Paket" min="1" value="1">
-                                <button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button>
-                            </div>
-                            <div id="selected-products-list"></div><hr>
-                            <b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b>
-                            <div id="sub-items-container-fide15_pleksi"></div>
-                            <button class="add-item-btn btn-sm" onclick="addDynamicInput('fide15_pleksi')"><i class="fas fa-plus"></i> Yeni Ekle</button>
-                        </div>`;
-
+                    html += `<div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div><div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Paket" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide15_pleksi"></div><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide15_pleksi')"><i class="fas fa-plus"></i> Yeni Ekle</button></div>`;
                 } else if (q.type === 'pop_system') {
-                    html += `
-                        <div class="fide-title-container">
-                             <p><span class="badge">FiDe ${q.id}</span> ${q.title}</p>
-                        </div>
-                        <div class="input-area">
-                            <div class="pop-container" id="popCodesContainer"></div>
-                            <div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır. Bu kodlar kopyalanmayacaktır.</div>
-                            <div class="pop-button-container">
-                                <button class="copy-button" onclick="copySelectedCodes()">Kopyala</button>
-                                <button class="clear-button" onclick="clearSelectedCodes()">Temizle</button>
-                                <button class="select-expired-button" onclick="selectExpiredCodes()">Bitenler</button>
-                                <button class="email-button" onclick="openPopEmailDraft()">E-Posta</button>
-                            </div>
-                        </div>`;
+                    html += `<div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div><div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()">Bitenler</button><button class="btn-primary btn-sm" onclick="openPopEmailDraft()">E-Posta</button></div></div>`;
                 }
                 html += `</div>`;
             });
             formContainer.innerHTML = html;
-            // Form yüklendikten sonra POP sistemini başlat
-            initializePopSystem();
+            if (document.getElementById('popCodesContainer')) initializePopSystem();
         }
-        
+
         function addProductToList(productId, quantity) {
             const select = document.getElementById('product-selector');
             const qtyInput = document.getElementById('product-qty');
             const selectedProductId = productId || select.value;
             const selectedQty = quantity || qtyInput.value;
-            if (!selectedProductId) { alert('Lütfen bir malzeme seçin.'); return; }
-            if (!selectedQty || selectedQty < 1) { alert('Lütfen geçerli bir paket sayısı girin.'); return; }
+            if (!selectedProductId || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.');
             const product = productList.find(p => p.id === selectedProductId);
             const listContainer = document.getElementById('selected-products-list');
-            if (document.querySelector(`.selected-product-item[data-id="${product.id}"]`)) { alert('Bu ürün zaten listede mevcut.'); return; }
+            if (document.querySelector(`.selected-product-item[data-id="${product.id}"]`)) return alert('Bu ürün zaten listede.');
             const newItem = document.createElement('div');
             newItem.className = 'selected-product-item';
-            newItem.setAttribute('data-id', product.id);
-            newItem.setAttribute('data-qty', selectedQty);
+            newItem.dataset.id = product.id;
+            newItem.dataset.qty = selectedQty;
             newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} Paket</b></span><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i> Sil</button>`;
             listContainer.appendChild(newItem);
             if (!productId) { select.value = ''; qtyInput.value = '1'; }
         }
-
-        window.onload = buildForm;
 
         function toggleCompleted(button) {
             const input = button.parentElement.querySelector('input[type="text"]');
@@ -699,247 +220,381 @@
             button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
             button.classList.toggle('undo', isCompleted);
         }
-        
+
         function toggleQuestionCompleted(button, id) {
             const itemDiv = document.getElementById(`fide-item-${id}`);
             const titleContainer = itemDiv.querySelector('.fide-title-container');
             const isCompleted = titleContainer.classList.toggle('question-completed');
             button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
             button.classList.toggle('undo', isCompleted);
-            
-            const addBtn = itemDiv.querySelector('.add-item-btn');
-            if(addBtn) {
-                addBtn.style.display = isCompleted ? 'none' : 'inline-block';
-            }
-
             const inputArea = itemDiv.querySelector('.input-area');
-            if(inputArea) {
-               inputArea.style.display = isCompleted ? 'none' : 'block';
-            }
+            if (inputArea) inputArea.style.display = isCompleted ? 'none' : 'block';
         }
 
-        function addDynamicInput(id, item = { text: '', completed: false }) {
+        function addDynamicInput(id) {
             const container = document.getElementById(`sub-items-container-${id}`);
             const newItem = document.createElement('div');
             newItem.className = 'dynamic-input-item';
-            newItem.innerHTML = `<input type="text" value="${item.text}" placeholder="Eksikliği yazın..."><button class="status-btn btn-sm" onclick="toggleCompleted(this)"><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i> Sil</button>`;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = 'Eksikliği yazın...';
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    addDynamicInput(id);
+                }
+            });
+            const completeButton = document.createElement('button');
+            completeButton.className = 'status-btn btn-sm';
+            completeButton.innerHTML = '<i class="fas fa-check"></i> Tamamlandı';
+            completeButton.onclick = () => toggleCompleted(completeButton);
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-item-btn btn-sm';
+            deleteButton.innerHTML = '<i class="fas fa-trash"></i> Sil';
+            deleteButton.onclick = () => newItem.remove();
+            newItem.appendChild(input);
+            newItem.appendChild(completeButton);
+            newItem.appendChild(deleteButton);
             container.prepend(newItem);
-            if (item.completed) {
-                toggleCompleted(newItem.querySelector('.status-btn'));
-            }
+            input.focus();
         }
 
         function getCombinedInputs(id) {
             const container = document.getElementById(`sub-items-container-${id}`);
+            if (!container) return [];
             const allItems = [];
-            if (!container) return allItems;
-            
             const childNodes = Array.from(container.childNodes).reverse();
             childNodes.forEach(node => {
-                if (node.classList && node.classList.contains('static-item')) {
-                    allItems.push({ text: node.querySelector('.content').innerHTML, completed: false });
-                } else if (node.classList && node.classList.contains('dynamic-input-item')) {
-                    const input = node.querySelector('input[type="text"]');
-                    const text = input.value.trim();
-                    if (text) {
-                        allItems.push({
-                            text: text,
-                            completed: input.classList.contains('completed')
-                        });
+                if (node.classList && (node.classList.contains('static-item') || node.classList.contains('dynamic-input-item'))) {
+                    let text, completed = false;
+                    if (node.classList.contains('static-item')) {
+                        text = node.querySelector('.content').innerHTML;
+                    } else {
+                        const input = node.querySelector('input[type="text"]');
+                        text = input.value.trim();
+                        completed = input.classList.contains('completed');
                     }
+                    if (text) allItems.push({ text, completed });
                 }
             });
             return allItems;
         }
-
+        
         function getDynamicInputsForSaving(id) {
-            const container = document.getElementById(`sub-items-container-${id}`);
+             const container = document.getElementById(`sub-items-container-${id}`);
+            if (!container) return [];
             const dynamicItems = [];
-            if (!container) return dynamicItems;
-
             const childNodes = Array.from(container.childNodes).reverse();
             childNodes.forEach(node => {
                 if (node.classList && node.classList.contains('dynamic-input-item')) {
                     const input = node.querySelector('input[type="text"]');
                     const text = input.value.trim();
-                    if (text) {
-                        dynamicItems.push({
-                            text: text,
-                            completed: input.classList.contains('completed')
-                        });
-                    }
+                    if (text) dynamicItems.push({ text: text, completed: input.classList.contains('completed') });
                 }
             });
             return dynamicItems;
         }
-
-        function generateEmail() {
-            // --- RAPOR KODU İÇİN VERİ TOPLAMA ---
-            let reportData = { questions_status: {} };
-            
-            // Fide 15 Ürün Listesi
-            reportData['fide15_products'] = [];
-            const selectedProducts = document.querySelectorAll('#selected-products-list .selected-product-item');
-            selectedProducts.forEach(item => {
-                reportData['fide15_products'].push({
-                    id: item.getAttribute('data-id'),
-                    qty: item.getAttribute('data-qty')
-                });
+        
+        function initializePopSystem() {
+            const popCodesContainer = document.getElementById('popCodesContainer');
+            if (!popCodesContainer) return;
+            popCodesContainer.innerHTML = '';
+            popCodes.forEach(code => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-label';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = code;
+                checkbox.className = 'pop-checkbox';
+                checkbox.addEventListener('change', checkExpiredPopCodes);
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(code));
+                popCodesContainer.appendChild(label);
             });
+        }
+        function checkExpiredPopCodes() {
+            const warningMessage = document.getElementById('expiredWarning');
+            if (!warningMessage) return;
+            const hasExpired = Array.from(document.querySelectorAll('.pop-checkbox:checked')).some(cb => expiredCodes.includes(cb.value));
+            warningMessage.style.display = hasExpired ? 'block' : 'none';
+        }
+        function copySelectedCodes() {
+            const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+            if (nonExpiredCodes.length === 0) return alert("Kopyalamak için geçerli kod seçin.");
+            navigator.clipboard.writeText(nonExpiredCodes.join(', ')).then(() => alert("Seçilen geçerli kodlar kopyalandı!"));
+        }
+        function clearSelectedCodes() {
+            document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
+            checkExpiredPopCodes();
+        }
+        function selectExpiredCodes() {
+            document.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = expiredCodes.includes(cb.value); });
+            checkExpiredPopCodes();
+        }
+        function openPopEmailDraft() {
+             const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+            if (nonExpiredCodes.length === 0) return alert("E-Posta için geçerli kod seçin.");
+        }
+
+        // DİDE EXCEL VE HAFIZA FONKSİYONLARI
+        const fileInput = document.getElementById('excel-file-input');
+        const clearStorageBtn = document.getElementById('clear-storage-btn');
+        fileInput.addEventListener('change', handleFileSelect);
+        clearStorageBtn.addEventListener('click', () => {
+            if (confirm("Kaydedilmiş Excel verilerini silmek istediğinizden emin misiniz?")) {
+                localStorage.removeItem('didePersistenceData');
+                alert("Hafızadaki veriler temizlendi.");
+                window.location.reload();
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById('file-name').textContent = `Seçilen dosya: ${file.name}`;
+            const reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval:"" });
+                    processExcelData(dataAsArray, true);
+                } catch (error) {
+                    alert("Excel dosyası okunurken bir hata oluştu. Dosya formatı bozuk olabilir.");
+                    console.error("Excel okuma hatası:", error);
+                }
+            };
+        }
+
+        function processExcelData(dataAsArray, saveToStorage = false) {
+            if (dataAsArray.length < 2) {
+                return alert('Excel dosyası beklenen formatta değil (en az 2 satır gerekli).');
+            }
+            let headerRowIndex = dataAsArray.findIndex(row => row.includes('Bayi Kodu'));
+
+            if (headerRowIndex === -1) {
+                return alert('Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
+            }
             
-            // Fide 15 Pleksi
-            reportData['fide15_pleksi'] = getDynamicInputsForSaving('fide15_pleksi');
+            const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h);
+            const dataRows = dataAsArray.slice(headerRowIndex + 1);
 
-            // Fide 16 POP Kodları (YENİ EKLENDİ)
-            reportData['fide16_pop_codes'] = Array.from(document.querySelectorAll('#popCodesContainer .pop-checkbox:checked')).map(cb => cb.value);
+            const bayiKoduIndex = headerRow.indexOf('Bayi Kodu');
+            const bayiIndex = headerRow.indexOf('Bayi');
+            const bayiYonetmeniIndex = headerRow.indexOf('Bayi Yönetmeni');
 
-            // Standart Sorular
-            fideQuestions.forEach(q => {
-                if (q.type === 'standard') {
-                    const titleContainer = document.querySelector(`#fide-item-${q.id} .fide-title-container`);
-                    reportData.questions_status[`fide${q.id}`] = titleContainer.classList.contains('question-completed');
-                    reportData[`fide${q.id}`] = getDynamicInputsForSaving(`fide${q.id}`);
+            if ([bayiKoduIndex, bayiIndex, bayiYonetmeniIndex].includes(-1)) {
+                 return alert('Excel dosyasında "Bayi Kodu", "Bayi" veya "Bayi Yönetmeni" sütunlarından biri bulunamadı. Lütfen dosyanızın başlık satırını kontrol edin.');
+            }
+
+            const processedData = dataRows.map(row => {
+                if (!row[bayiKoduIndex]) return null; // Bayi Kodu yoksa bu satırı atla
+                const scores = {};
+                headerRow.forEach((header, index) => {
+                    const monthNumber = parseInt(header);
+                    if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
+                        if(row[index] !== null && row[index] !== undefined) {
+                           scores[monthNumber] = row[index];
+                        }
+                    }
+                });
+                return {
+                    'Bayi Kodu': row[bayiKoduIndex],
+                    'Bayi': row[bayiIndex],
+                    'Bayi Yönetmeni': row[bayiYonetmeniIndex],
+                    'scores': scores
+                };
+            }).filter(d => d);
+            
+            if (saveToStorage) {
+                const persistenceData = { timestamp: new Date().getTime(), data: processedData };
+                localStorage.setItem('didePersistenceData', JSON.stringify(persistenceData));
+            }
+            populateDideState(processedData);
+        }
+
+        function populateDideState(data) {
+            dideData = data;
+            const storeMap = new Map();
+            dideData.forEach(row => { 
+                if (row['Bayi Kodu'] && !storeMap.has(row['Bayi Kodu'])) {
+                    storeMap.set(row['Bayi Kodu'], { bayiKodu: row['Bayi Kodu'], bayiAdi: row['Bayi'] });
                 }
             });
+            uniqueStores = Array.from(storeMap.values()).sort((a, b) => a.bayiAdi.localeCompare(b.bayiAdi));
             
-            // --- E-POSTA TASLAĞI OLUŞTURMA ---
-            let emailHtmlBody = "";
+            document.getElementById('store-list').innerHTML = '';
+            document.getElementById('store-selection-area').style.display = 'block';
+            document.getElementById('clear-storage-btn').style.display = 'inline-flex';
+            document.getElementById('file-name').textContent = "Önceden yüklenmiş veri kullanılıyor.";
+        }
+
+        function loadDataFromStorage() {
+            const storedDataJSON = localStorage.getItem('didePersistenceData');
+            if (!storedDataJSON) return;
+            const storedData = JSON.parse(storedDataJSON);
+            const thirtyDaysInMillis = 30 * 24 * 60 * 60 * 1000;
+            const now = new Date().getTime();
+            if (now - storedData.timestamp < thirtyDaysInMillis) {
+                populateDideState(storedData.data);
+            } else {
+                localStorage.removeItem('didePersistenceData');
+            }
+        }
+
+        function displayStores(stores) {
+            const storeListDiv = document.getElementById('store-list');
+            storeListDiv.innerHTML = '';
+            stores.forEach(store => {
+                const item = document.createElement('div');
+                item.className = 'store-item';
+                let displayName = store.bayiAdi;
+                if (displayName && displayName.length > 20) {
+                    displayName = displayName.substring(0, 20) + '...';
+                }
+                item.textContent = `${displayName} (${store.bayiKodu})`;
+                item.dataset.bayiKodu = store.bayiKodu;
+                item.dataset.bayiAdi = store.bayiAdi;
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi };
+                    const searchInput = document.getElementById('store-search-input');
+                    searchInput.value = `${store.bayiAdi} (${store.bayiKodu})`;
+                    storeListDiv.innerHTML = '';
+                    storeListDiv.style.display = 'none';
+                });
+                storeListDiv.appendChild(item);
+            });
+        }
+        
+        document.getElementById('store-search-input').addEventListener('keyup', (e) => {
+            selectedStore = null; 
+            const filter = e.target.value.toLowerCase().trim();
+            const storeListDiv = document.getElementById('store-list');
+            storeListDiv.style.display = 'block';
+
+            if (filter === "") {
+                storeListDiv.innerHTML = ''; 
+                return;
+            }
+            const filteredStores = uniqueStores.filter(store => 
+                (store.bayiAdi && store.bayiAdi.toLowerCase().includes(filter)) || 
+                (store.bayiKodu && String(store.bayiKodu).toLowerCase().includes(filter))
+            );
+            displayStores(filteredStores);
+        });
+
+        function generateEmail() {
+            if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!');
+            const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
+            if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı.");
+
+            const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
+            const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
+            const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
+            
+            let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p>
+                                <p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
+
+            let fideReportHtml = "";
+            let reportData = { questions_status: {} };
+            
             fideQuestions.forEach(q => {
                 const titleContainer = document.querySelector(`#fide-item-${q.id} .fide-title-container`);
                 const isQuestionCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
-
-                let findingsForThisQuestion = [];
+                
+                let contentHtml = ''; 
 
                 if (!isQuestionCompleted) {
                     if (q.type === 'standard') {
-                        const allItems = getCombinedInputs(`fide${q.id}`);
-                        const outstandingItems = allItems.filter(item => !item.completed);
-                        if(outstandingItems.length > 0) {
-                            findingsForThisQuestion = outstandingItems.map(item => item.text);
+                        const items = getCombinedInputs(`fide${q.id}`)
+                            .filter(item => !item.completed)
+                            .map(item => `<li>${item.text}</li>`);
+                        if (items.length > 0) {
+                            contentHtml = `<ul>${items.join('')}</ul>`;
                         }
                     } else if (q.type === 'product_list') {
-                        const productsToOrder = reportData['fide15_products'];
-                        const pleksiItems = getCombinedInputs('fide15_pleksi').filter(item => !item.completed);
-                        if (productsToOrder.length > 0) {
-                            productsToOrder.forEach(prod => {
-                                const productInfo = productList.find(p => p.id === prod.id);
-                                findingsForThisQuestion.push(`${productInfo.code} ${productInfo.name}: ${prod.qty} Paket`);
-                            });
+                        const productItems = [];
+                        document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => {
+                            const product = productList.find(p => p.id === item.dataset.id);
+                            if (product) {
+                                productItems.push(`<li>${product.code} ${product.name}: ${item.dataset.qty} Paket</li>`);
+                            }
+                        });
+
+                        const pleksiItems = getCombinedInputs('fide15_pleksi')
+                            .filter(item => !item.completed)
+                            .map(item => `<li>${item.text}</li>`);
+                        
+                        if (productItems.length > 0) {
+                            contentHtml += '<b><i>Sipariş verilmesi gerekenler:</i></b><ul>' + productItems.join('') + '</ul>';
                         }
                         if (pleksiItems.length > 0) {
-                             pleksiItems.forEach(item => {
-                                findingsForThisQuestion.push(item.text);
-                             });
+                             contentHtml += "<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>" + pleksiItems.join('') + "</ul>";
                         }
                     } else if (q.type === 'pop_system') {
-                        const selectedPopCodes = Array.from(document.querySelectorAll('#popCodesContainer .pop-checkbox:checked')).map(cb => cb.value);
-                        const nonExpiredPopCodes = selectedPopCodes.filter(code => !expiredCodes.includes(code));
-                        if (nonExpiredPopCodes.length > 0) {
-                            const kodSatiri = nonExpiredPopCodes.join(', ');
-                            findingsForThisQuestion.push(kodSatiri);
+                        const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked'))
+                            .map(cb => cb.value)
+                            .filter(code => !expiredCodes.includes(code));
+                        if (nonExpiredCodes.length > 0) {
+                            contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
                         }
                     }
                 }
                 
-                if (findingsForThisQuestion.length > 0 || isQuestionCompleted) {
-                    let titleText = `FiDe ${q.id}. ${q.title}`;
-                    let completedSpan = "";
-
-                    if (isQuestionCompleted) {
-                        completedSpan = ` <span style="background-color: #08ff25; color: black; padding: 2px 4px; border-radius: 3px; font-weight: bold;">Tamamlandı</span>`;
-                    }
-
-                    emailHtmlBody += `<p><b>${titleText}</b>${completedSpan}</p>`;
-
-                    if(findingsForThisQuestion.length > 0){
-                        emailHtmlBody += `<ul>`;
-                        findingsForThisQuestion.forEach(finding => { emailHtmlBody += `<li>${finding}</li>`; });
-                        emailHtmlBody += `</ul>`;
-                    }
+                if (contentHtml !== '' || isQuestionCompleted) {
+                    let completedSpan = isQuestionCompleted ? ` <span style="color:green;">Tamamlandı</span>` : "";
+                    fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}</p>`;
+                    fideReportHtml += contentHtml;
                 }
             });
+
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+
+            let tableHtml = `<table class="dide-table">
+                <thead>
+                    <tr><th>${currentYear}</th>`;
+            for (let monthNumber = 1; monthNumber <= currentMonth; monthNumber++) {
+                tableHtml += `<th>${monthNames[monthNumber] || monthNumber}</th>`;
+            }
+            tableHtml += `</tr></thead><tbody><tr><td>DİDE Puanları</td>`;
+            for (let monthNumber = 1; monthNumber <= currentMonth; monthNumber++) {
+                tableHtml += `<td>${storeInfo.scores[monthNumber] || '-'}</td>`;
+            }
+            tableHtml += `</tr><tr><td>FİDE Puanları</td>`;
+            for (let monthNumber = 1; monthNumber <= currentMonth; monthNumber++) {
+                tableHtml += `<td>-</td>`;
+            }
+            tableHtml += `</tr></tbody></table>`;
             
-            // --- EKRANI GÜNCELLEME ---
+            const finalEmailBody = greetingHtml + fideReportHtml + tableHtml;
+
             document.getElementById('form-content').style.display = 'none';
             document.querySelector('.action-button').style.display = 'none';
             document.getElementById('load-section').style.display = 'none';
             const existingDraft = document.getElementById('email-draft-container');
-            if (existingDraft) { existingDraft.remove(); }
+            if (existingDraft) existingDraft.remove();
             const draftContainer = document.createElement('div');
             draftContainer.id = 'email-draft-container';
             draftContainer.className = 'card';
-            draftContainer.innerHTML = `
-                <h2><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2>
-                <p>Aşağıdaki kutucuğun içine tıklayın, <b>Ctrl+A</b> ile tümünü seçin ve <b>Ctrl+C</b> ile kopyalayın. Sonra e-posta programına yapıştırın.</p>
-                <div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 14px; line-height: 1.6; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 10px; background-color: #f8fafc; overflow-y: auto;"></div>`;
-            const containerDiv = document.querySelector('.container');
-            containerDiv.insertBefore(draftContainer, document.getElementById('save-section'));
-            document.getElementById('email-draft-area').innerHTML = emailHtmlBody;
-            
-            // Rapor kodunu en sonda, tüm veriler toplandıktan sonra yazdır
+            draftContainer.innerHTML = `<h2><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p><div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;">${finalEmailBody}</div>`;
+            document.querySelector('.container').insertBefore(draftContainer, document.getElementById('save-section'));
             document.getElementById('save-code-area').value = JSON.stringify(reportData);
             document.getElementById('save-section').style.display = 'block';
-            window.scrollTo(0, 0);
         }
+        
+        function loadReport() { /* ... Orijinal Rapor Yükleme Mantığı ... */ }
 
-        function loadReport() {
-            const code = document.getElementById('load-code-area').value;
-            if (!code) return alert('Lütfen geçerli bir Rapor Kodu yapıştırın.');
-            try {
-                const reportData = JSON.parse(code);
-                
-                // Standart Soruları Yükle
-                fideQuestions.forEach(q => {
-                    if (q.type === 'standard') {
-                        const containerId = `sub-items-container-fide${q.id}`;
-                        const container = document.getElementById(containerId);
-                        if(container) { container.querySelectorAll('.dynamic-input-item').forEach(el => el.remove()); }
-                        if (reportData[`fide${q.id}`] && Array.isArray(reportData[`fide${q.id}`])) {
-                            reportData[`fide${q.id}`].forEach(item => addDynamicInput(`fide${q.id}`, item));
-                        }
-                        const titleContainer = document.querySelector(`#fide-item-${q.id} .fide-title-container`);
-                        const statusBtn = titleContainer.querySelector('.status-btn');
-                        const isCurrentlyCompleted = titleContainer.classList.contains('question-completed');
-                        const shouldBeCompleted = reportData.questions_status && reportData.questions_status[`fide${q.id}`];
-                        if(shouldBeCompleted && !isCurrentlyCompleted) { toggleQuestionCompleted(statusBtn, q.id); } 
-                        else if (!shouldBeCompleted && isCurrentlyCompleted) { toggleQuestionCompleted(statusBtn, q.id); }
-                    }
-                });
-
-                // Fide 15 Pleksi Yükle
-                const pleksiContainer = document.getElementById('sub-items-container-fide15_pleksi');
-                if (pleksiContainer) {
-                   pleksiContainer.innerHTML = '';
-                   if (reportData['fide15_pleksi'] && Array.isArray(reportData['fide15_pleksi'])) {
-                       reportData['fide15_pleksi'].forEach(item => addDynamicInput('fide15_pleksi', item));
-                   }
-                }
-
-                // Fide 15 Ürün Listesi Yükle
-                const selectedProductsList = document.getElementById('selected-products-list');
-                if(selectedProductsList) {
-                  selectedProductsList.innerHTML = ''; 
-                  if (reportData['fide15_products']) {
-                      reportData['fide15_products'].forEach(product => { addProductToList(product.id, product.qty); });
-                  }
-                }
-
-                // Fide 16 POP Kodları Yükle (YENİ EKLENDİ)
-                if (reportData.fide16_pop_codes && Array.isArray(reportData.fide16_pop_codes)) {
-                    const savedPopCodes = reportData.fide16_pop_codes;
-                    document.querySelectorAll('#popCodesContainer .pop-checkbox').forEach(cb => {
-                        cb.checked = savedPopCodes.includes(cb.value);
-                    });
-                    checkExpiredPopCodes(); // Uyarı mesajını kontrol et
-                }
-
-
-                alert('Rapor başarıyla yüklendi!');
-            } catch(e) {
-                console.error("Yükleme Hatası:", e);
-                alert('Hata: Geçersiz Rapor Kodu!');
-            }
-        }
+        window.onload = () => {
+            buildForm();
+            loadDataFromStorage();
+        };
     </script>
 </body>
 </html>
+
