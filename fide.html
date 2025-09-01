@@ -33,7 +33,7 @@
         .btn-success { background-color: var(--success); color: white; }
         .btn-danger { background-color: var(--danger); color: white; }
         .btn-sm { padding: 6px 12px; font-size: 12px; }
-        .action-button { width: 100%; padding: 18px; font-size: 18px; margin: 30px 0; border-radius: 10px; background-color: var(--primary); color: white; }
+        .action-button { width: 100%; padding: 12px; font-size: 15px; margin: 10px 0 30px; border-radius: 10px; background-color: var(--primary); color: white; }
         .fide-item { margin-bottom: 28px; padding: 20px; border-radius: 10px; background-color: white; box-shadow: var(--card-shadow); }
         .fide-title-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
         .fide-title-container p { font-weight: 600; margin: 0; flex-grow: 1; font-size: 16px; color: var(--dark); }
@@ -124,8 +124,8 @@
         </div>
         
         <div class="card" id="load-section">
-            <h2><i class="fas fa-download"></i> ÖNCEKİ BİR FİDE RAPORUNU YÜKLE</h2>
-            <p>Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve "Raporu Yükle" düğmesine tıklayın.</p>
+            <h2><i class="fas fa-download"></i> Önceki Bir Fide Raporunu Yükle</h2>
+            <p style="margin-bottom: 8px;">Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve "Raporu Yükle" düğmesine tıklayın.</p>
             <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..."></textarea>
             <button class="btn-primary" onclick="loadReport()"><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
         </div>
@@ -585,7 +585,7 @@
             const draftContainer = document.createElement('div');
             draftContainer.id = 'email-draft-container';
             draftContainer.className = 'card';
-            draftContainer.innerHTML = `<h2><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p><div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;">${finalEmailBody}</div>`;
+            draftContainer.innerHTML = `<h2><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p><div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
             document.querySelector('.container').insertBefore(draftContainer, document.getElementById('save-section'));
             document.getElementById('save-code-area').value = JSON.stringify(reportData);
             document.getElementById('save-section').style.display = 'block';
@@ -600,3 +600,4 @@
     </script>
 </body>
 </html>
+
