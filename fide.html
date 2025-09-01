@@ -558,20 +558,26 @@
 
             const currentYear = new Date().getFullYear();
             const currentMonth = new Date().getMonth() + 1;
+            
+            // Tablo için stil tanımlamaları
+            const tableStyle = `border-collapse: collapse; margin-top: 25px; font-size: 11pt; border: 1px solid #dddddd;`;
+            const thStyle = `border: 1px solid #dddddd; text-align: center; padding: 8px; background-color: #f2f2f2; font-weight: bold;`;
+            const tdStyle = `border: 1px solid #dddddd; text-align: center; padding: 8px;`;
+            const tdFirstStyle = `border: 1px solid #dddddd; text-align: left; padding: 8px; font-weight: bold;`;
 
-            let tableHtml = `<table class="dide-table">
+            let tableHtml = `<table style="${tableStyle}">
                 <thead>
-                    <tr><th>${currentYear}</th>`;
+                    <tr><th style="${thStyle}">${currentYear}</th>`;
             for (let monthNumber = 1; monthNumber <= currentMonth; monthNumber++) {
-                tableHtml += `<th>${monthNames[monthNumber] || monthNumber}</th>`;
+                tableHtml += `<th style="${thStyle}">${monthNames[monthNumber] || monthNumber}</th>`;
             }
-            tableHtml += `</tr></thead><tbody><tr><td>DİDE Puanları</td>`;
+            tableHtml += `</tr></thead><tbody><tr><td style="${tdFirstStyle}">DiDe</td>`;
             for (let monthNumber = 1; monthNumber <= currentMonth; monthNumber++) {
-                tableHtml += `<td>${storeInfo.scores[monthNumber] || '-'}</td>`;
+                tableHtml += `<td style="${tdStyle}">${storeInfo.scores[monthNumber] || '-'}</td>`;
             }
-            tableHtml += `</tr><tr><td>FİDE Puanları</td>`;
+            tableHtml += `</tr><tr><td style="${tdFirstStyle}">FiDe</td>`;
             for (let monthNumber = 1; monthNumber <= currentMonth; monthNumber++) {
-                tableHtml += `<td>-</td>`;
+                tableHtml += `<td style="${tdStyle}">-</td>`;
             }
             tableHtml += `</tr></tbody></table>`;
             
