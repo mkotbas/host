@@ -50,7 +50,6 @@
         .add-item-btn { background-color: var(--primary); color: white; }
         .status-btn { background-color: var(--success); color: white; margin-left: 10px; }
         .status-btn.undo { background-color: var(--warning); color: var(--dark); }
-        /* DEĞİŞTİRİLDİ: Silme çubuğunun genişliği daraltıldı */
         .delete-bar { flex-shrink: 0; width: 32px; border-radius: 0 8px 8px 0; cursor: pointer; align-self: stretch; display: flex; align-items: center; justify-content: center; margin: -12px -12px -12px 15px; padding: 12px 0; }
         .delete-bar i { margin: 0; color: white; font-size: 14px; transition: transform 0.2s ease; }
         .delete-bar:hover i { transform: scale(1.2); }
@@ -364,15 +363,20 @@
             childNodes.forEach(node => {
                 if (node.classList && (node.classList.contains('static-item') || node.classList.contains('dynamic-input-item'))) {
                     if(node.classList.contains('is-deleting')) return; // Geri almayı bekleyenleri rapora ekleme
-                    let text, completed = false;
+                    
+                    // --- GÜNCELLEME 1 BAŞLANGICI: Maddelere tip etiketi ekleniyor ---
+                    let text, completed = false, type = '';
                     if (node.classList.contains('static-item')) {
                         text = node.querySelector('.content').innerHTML;
+                        type = 'static'; // Bu hazır (statik) bir maddedir.
                     } else {
                         const input = node.querySelector('input[type="text"]');
                         text = input.value.trim();
                         completed = input.classList.contains('completed');
+                        type = 'dynamic'; // Bu sizin eklediğiniz (dinamik) bir maddedir.
                     }
-                    if (text) allItems.push({ text, completed });
+                    if (text) allItems.push({ text, completed, type });
+                    // --- GÜNCELLEME 1 SONU ---
                 }
             });
             return allItems;
@@ -617,29 +621,36 @@
                     if (!isQuestionCompleted) {
                         const container = document.getElementById(`sub-items-container-fide${q.id}`);
                         if (container) {
+                            
+                            // --- GÜNCELLEME 2 BAŞLANGICI: Gelişmiş sıralama mantığı ---
                             const allItems = getCombinedInputs(`fide${q.id}`);
-                            const staticTextItems = [];
-                            const dynamicTextItems = [];
+                            const textItems = [];
                             const linkItems = [];
 
                             allItems.forEach(item => {
-                                if (item.text.includes('</a>')) {
-                                    linkItems.push(item.text);
-                                } else if (item.isStatic) { // getCombinedInputs'ı güncellemek gerekebilir
-                                     staticTextItems.push(item.text);
-                                } else {
-                                     dynamicTextItems.push(item.text);
+                                if (!item.completed) {
+                                    // BİR MADDEYİ SONA ATMAK İÇİN ŞARTLAR:
+                                    // 1. Tipi 'static' OLMALI (yani hazır madde olmalı)
+                                    // 2. Link İÇERMELİ ('<a href')
+                                    if (item.type === 'static' && item.text.includes('<a href')) {
+                                        linkItems.push(item); // Sadece bu şartları sağlayanlar sona atılacak listeye eklenir.
+                                    } else {
+                                        // Geriye kalan her şey (tüm kendi yazdıklarınız ve link içermeyen hazır maddeler)
+                                        // normal sıralamada kalacak listeye eklenir.
+                                        textItems.push(item);
+                                    }
                                 }
                             });
+                            
+                            // Önce normal metinleri, sonra özel olarak ayırdığımız linkleri birleştiriyoruz.
+                            const sortedItems = textItems.concat(linkItems);
 
-
-                            const listItems = allItems
-                                .filter(item => !item.completed)
-                                .map(item => `<li>${item.text}</li>`);
-
-                            if (listItems.length > 0) {
-                                contentHtml = `<ul>${listItems.join('')}</ul>`;
+                            // Eğer sıralanmış listede madde varsa, bunları HTML formatında e-postaya ekliyoruz.
+                            if (sortedItems.length > 0) {
+                                const listItemsHTML = sortedItems.map(item => `<li>${item.text}</li>`).join('');
+                                contentHtml = `<ul>${listItemsHTML}</ul>`;
                             }
+                            // --- GÜNCELLEME 2 SONU ---
                         }
                     }
                 } else if (q.type === 'product_list') {
