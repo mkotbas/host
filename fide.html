@@ -140,6 +140,9 @@
             <h2><i class="fas fa-save"></i> SONRAKİ DENETİM İÇİN RAPOR KODU</h2>
             <p>Bu kodu kopyalayıp bir metin dosyasına kaydedin. Daha sonra yukarıdaki alana yapıştırarak raporu tekrar yükleyebilirsiniz.</p>
             <textarea id="save-code-area" readonly></textarea>
+            <button class="btn-success" id="download-report-btn" onclick="downloadReportCode()" style="margin-top: 10px;">
+                <i class="fas fa-download"></i> Rapor Kodunu İndir (.txt)
+            </button>
         </div>
     </div>
 
@@ -149,6 +152,7 @@
         let uniqueStores = [];
         let selectedStore = null;
 
+        // --- DEĞİŞİKLİK: staticItems içindeki elemanların sırası, okunabilir ve mantıksal sıraya geri getirildi. ---
         const fideQuestions = [
             { id: 4, type: 'standard', title: "28 Ocak tarihinde yayınlanmış olan TV Teşhir Sirküsü hakkında bayiye bilgi verildi mi?", staticItems: [ `55 inç ve üzeri TV'lerin öne çıkarılması amacıyla <b>standınızın 2 rafa düşürülmesini</b> rica ederim. Konuyla ilgili detaylı bilgi <b>77 numaralı</b> sirküde mevcut olup, iş birliğiniz için şimdiden teşekkür ederim.`, `<b><u><a href="https://drive.google.com/file/d/1UnGsb7_Nc8Bu-I7caAcUtrzhY5xr8kQ8/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>`, `<b><u><a href="https://drive.google.com/file/d/1tPoIEPX1O1LXM9ByXFpybcM-UMBF2afF/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 5, type: 'standard', title: "Bayi Cephesi, Kampanya İletişim Kılavuzuna Uygun mu? (8 Nolu Sirkü)", staticItems: [ `Ön camda kullanılan kampanya görseli 8 numaralı sirküye uygun konumlandırılmalıdır. (Vitrinde bulunana ürünlerin görünürlüğünü engellememelidir.)` ] },
@@ -501,6 +505,7 @@
             const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
             
             let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p>
+                                <p>&nbsp;</p>
                                 <p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
 
             let fideReportHtml = "";
@@ -512,40 +517,75 @@
                 
                 let contentHtml = ''; 
 
-                if (!isQuestionCompleted) {
-                    if (q.type === 'standard') {
-                        const items = getCombinedInputs(`fide${q.id}`)
-                            .filter(item => !item.completed)
-                            .map(item => `<li>${item.text}</li>`);
-                        if (items.length > 0) {
-                            contentHtml = `<ul>${items.join('')}</ul>`;
-                        }
-                    } else if (q.type === 'product_list') {
-                        const productItems = [];
-                        document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => {
-                            const product = productList.find(p => p.id === item.dataset.id);
-                            if (product) {
-                                productItems.push(`<li>${product.code} ${product.name}: ${item.dataset.qty} Paket</li>`);
-                            }
-                        });
+                if (q.type === 'standard') {
+                    if (!isQuestionCompleted) {
+                        // --- DEĞİŞİKLİK: İstenen sıralama için yeni mantık ---
+                        const container = document.getElementById(`sub-items-container-fide${q.id}`);
+                        if (container) {
+                            const staticTextItems = [];
+                            const dynamicTextItems = [];
+                            const linkItems = [];
 
-                        const pleksiItems = getCombinedInputs('fide15_pleksi')
-                            .filter(item => !item.completed)
-                            .map(item => `<li>${item.text}</li>`);
-                        
-                        if (productItems.length > 0) {
-                            contentHtml += '<b><i>Sipariş verilmesi gerekenler:</i></b><ul>' + productItems.join('') + '</ul>';
+                            // DOM'daki elemanları tiplerine göre ayır
+                            container.childNodes.forEach(node => {
+                                if (node.classList) {
+                                    if (node.classList.contains('dynamic-input-item')) {
+                                        const input = node.querySelector('input[type="text"]');
+                                        if (!input.classList.contains('completed')) {
+                                            dynamicTextItems.push(input.value.trim());
+                                        }
+                                    } else if (node.classList.contains('static-item')) {
+                                        const content = node.querySelector('.content').innerHTML;
+                                        if (content.includes('</a>')) {
+                                            linkItems.push(content);
+                                        } else {
+                                            staticTextItems.push(content);
+                                        }
+                                    }
+                                }
+                            });
+
+                            // İstenen sırada birleştir: 1. Statik Metin, 2. Dinamik Metin, 3. Linkler
+                            const allSortedItems = [
+                                ...staticTextItems,
+                                ...dynamicTextItems.reverse(), // prepend ile eklendiği için ters çevir
+                                ...linkItems
+                            ];
+
+                            const listItems = allSortedItems
+                                .filter(item => item) // Boş olanları filtrele
+                                .map(item => `<li>${item}</li>`);
+
+                            if (listItems.length > 0) {
+                                contentHtml = `<ul>${listItems.join('')}</ul>`;
+                            }
                         }
-                        if (pleksiItems.length > 0) {
-                             contentHtml += "<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>" + pleksiItems.join('') + "</ul>";
+                    }
+                } else if (q.type === 'product_list') {
+                    const productItems = [];
+                    document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => {
+                        const product = productList.find(p => p.id === item.dataset.id);
+                        if (product) {
+                            productItems.push(`<li>${product.code} ${product.name}: ${item.dataset.qty} Paket</li>`);
                         }
-                    } else if (q.type === 'pop_system') {
-                        const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked'))
-                            .map(cb => cb.value)
-                            .filter(code => !expiredCodes.includes(code));
-                        if (nonExpiredCodes.length > 0) {
-                            contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
-                        }
+                    });
+
+                    const pleksiItems = getCombinedInputs('fide15_pleksi')
+                        .filter(item => !item.completed)
+                        .map(item => `<li>${item.text}</li>`);
+                    
+                    if (productItems.length > 0) {
+                        contentHtml += '<b><i>Sipariş verilmesi gerekenler:</i></b><ul>' + productItems.join('') + '</ul>';
+                    }
+                    if (pleksiItems.length > 0) {
+                         contentHtml += "<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>" + pleksiItems.join('') + "</ul>";
+                    }
+                } else if (q.type === 'pop_system') {
+                    const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked'))
+                        .map(cb => cb.value)
+                        .filter(code => !expiredCodes.includes(code));
+                    if (nonExpiredCodes.length > 0) {
+                        contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
                     }
                 }
                 
@@ -553,19 +593,20 @@
                     let completedSpan = isQuestionCompleted ? ` <span style="color:green;">Tamamlandı</span>` : "";
                     fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}</p>`;
                     fideReportHtml += contentHtml;
+                    fideReportHtml += '<p>&nbsp;</p>';
                 }
             });
 
             const currentYear = new Date().getFullYear();
             const currentMonth = new Date().getMonth() + 1;
             
-            // Tablo için stil tanımlamaları
-            const tableStyle = `border-collapse: collapse; margin-top: 25px; font-size: 11pt; border: 1px solid #dddddd;`;
-            const thStyle = `border: 1px solid #dddddd; text-align: center; padding: 8px; background-color: #f2f2f2; font-weight: bold;`;
-            const tdStyle = `border: 1px solid #dddddd; text-align: center; padding: 8px;`;
-            const tdFirstStyle = `border: 1px solid #dddddd; text-align: left; padding: 8px; font-weight: bold;`;
+            const tableWrapperStyle = `overflow-x: auto; -webkit-overflow-scrolling: touch;`;
+            const tableStyle = `border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #dddddd;`;
+            const thStyle = `border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;`;
+            const tdStyle = `border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;`;
+            const tdFirstStyle = `border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;`;
 
-            let tableHtml = `<table style="${tableStyle}">
+            let tableHtml = `<div style="${tableWrapperStyle}"><table style="${tableStyle}">
                 <thead>
                     <tr><th style="${thStyle}">${currentYear}</th>`;
             for (let monthNumber = 1; monthNumber <= currentMonth; monthNumber++) {
@@ -579,9 +620,9 @@
             for (let monthNumber = 1; monthNumber <= currentMonth; monthNumber++) {
                 tableHtml += `<td style="${tdStyle}">-</td>`;
             }
-            tableHtml += `</tr></tbody></table>`;
+            tableHtml += `</tr></tbody></table></div>`;
             
-            const finalEmailBody = greetingHtml + fideReportHtml + tableHtml;
+            const finalEmailBody = greetingHtml + '<p>&nbsp;</p>' + fideReportHtml + tableHtml;
 
             document.getElementById('form-content').style.display = 'none';
             document.querySelector('.action-button').style.display = 'none';
@@ -597,6 +638,32 @@
             document.getElementById('save-section').style.display = 'block';
         }
         
+        function downloadReportCode() {
+            const reportCode = document.getElementById('save-code-area').value;
+            if (!selectedStore) {
+                alert('Bayi seçilmediği için dosya adı oluşturulamadı.');
+                return;
+            }
+            if (!reportCode) {
+                alert('İndirilecek rapor kodu bulunamadı.');
+                return;
+            }
+            const bayiKodu = selectedStore.bayiKodu;
+            const shortBayiAdi = selectedStore.bayiAdi.substring(0, 15).trim();
+            const sanitizedBayiAdi = shortBayiAdi.replace(/[\\/:*?"<>|]/g, '_'); 
+            const filename = `${bayiKodu} - ${sanitizedBayiAdi}.txt`;
+            const blob = new Blob([reportCode], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
         function loadReport() { /* ... Orijinal Rapor Yükleme Mantığı ... */ }
 
         window.onload = () => {
@@ -606,4 +673,3 @@
     </script>
 </body>
 </html>
-
