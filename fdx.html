@@ -28,29 +28,40 @@
         .card { background: white; border-radius: 12px; box-shadow: var(--card-shadow); padding: 24px; margin-bottom: 24px; transition: var(--transition); }
         h2 { font-size: 20px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; }
         button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; }
+        button:disabled { background-color: var(--gray); cursor: not-allowed; opacity: 0.7; }
         button i { margin-right: 8px; }
         .btn-primary { background-color: var(--primary); color: white; }
         .btn-success { background-color: var(--success); color: white; }
         .btn-danger { background-color: var(--danger); color: white; }
+        .btn-warning { background-color: var(--warning); color: var(--dark); }
         .btn-sm { padding: 6px 12px; font-size: 12px; }
         .action-button { width: 100%; padding: 12px; font-size: 15px; margin: 10px 0 30px; border-radius: 10px; background-color: var(--primary); color: white; }
-        .fide-item { margin-bottom: 28px; padding: 20px; border-radius: 10px; background-color: white; box-shadow: var(--card-shadow); }
-        .fide-title-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .fide-item { margin-bottom: 28px; padding: 20px; border-radius: 12px; background-color: white; box-shadow: var(--card-shadow); transition: var(--transition); }
+        .fide-item.question-removed { opacity: 0.6; background-color: #fafafa; }
+        .fide-title-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px;}
         .fide-title-container p { font-weight: 600; margin: 0; flex-grow: 1; font-size: 16px; color: var(--dark); }
         .fide-title-container.question-completed p { color: var(--success); text-decoration: line-through; }
+        .fide-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
         .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 8px; background-color: var(--primary); color: white; }
-        .static-item, .dynamic-input-item { display: flex; align-items: center; margin-bottom: 12px; padding: 12px; background-color: var(--light); border-radius: 8px; }
-        .static-item .content { flex-grow: 1; }
-        .dynamic-input-item input[type="text"] { flex-grow: 1; border: 1px solid var(--border); padding: 10px; border-radius: 6px; }
+        .static-item, .dynamic-input-item { display: flex; align-items: center; margin-bottom: 12px; padding: 12px; background-color: var(--light); border-radius: 8px; transition: all 0.3s ease; overflow: hidden; }
+        .static-item .content { flex-grow: 1; transition: all 0.3s ease; }
+        .dynamic-input-item input[type="text"] { flex-grow: 1; border: 1px solid var(--border); padding: 10px; border-radius: 6px; transition: all 0.3s ease;}
         .dynamic-input-item input[type="text"].completed { text-decoration: line-through; color: var(--success); background-color: var(--success-light); }
-        .add-item-btn { background-color: var(--primary); color: white; margin-top: 10px; }
+        .add-item-btn { background-color: var(--primary); color: white; }
         .status-btn { background-color: var(--success); color: white; margin-left: 10px; }
         .status-btn.undo { background-color: var(--warning); color: var(--dark); }
-        .delete-item-btn { background-color: var(--danger); color: white; margin-left: 10px; }
+        /* DEĞİŞTİRİLDİ: Silme çubuğunun genişliği daraltıldı */
+        .delete-bar { flex-shrink: 0; width: 32px; border-radius: 0 8px 8px 0; cursor: pointer; align-self: stretch; display: flex; align-items: center; justify-content: center; margin: -12px -12px -12px 15px; padding: 12px 0; }
+        .delete-bar i { margin: 0; color: white; font-size: 14px; transition: transform 0.2s ease; }
+        .delete-bar:hover i { transform: scale(1.2); }
+        .static-item.is-deleting .content, .dynamic-input-item.is-deleting input { text-decoration: line-through; opacity: 0.5; }
+        .dynamic-input-item.is-deleting .status-btn { pointer-events: none; opacity: 0.5; }
         .product-adder { display: flex; gap: 10px; align-items: center; margin: 15px 0; }
         .product-adder select { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
         .product-adder input[type="number"] { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
         .selected-product-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--light); border-radius: 8px; margin-bottom: 8px; }
+        .delete-item-btn { background-color: var(--danger); color: white; margin-left:10px;}
+        .delete-item-btn i { margin-right: 0; }
         textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; margin-bottom: 16px; }
         .pop-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 5px; }
         .checkbox-label { display: flex; align-items: center; padding: 5px; font-size: 14px; cursor: pointer; justify-content: center; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9; }
@@ -64,21 +75,8 @@
         #dide-upload-card h2 { color: var(--primary); }
         .file-input-wrapper { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-top: 1rem; }
         .file-input-wrapper input[type="file"] { display: none; }
-        .file-input-label {
-            background-color: var(--primary);
-            color: white;
-            padding: 6px 12px;
-            font-size: 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            transition: var(--transition);
-        }
-        .file-input-label i {
-            margin-right: 8px; /* İkon ve yazı arasına boşluk eklendi */
-        }
+        .file-input-label { background-color: var(--primary); color: white; padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; transition: var(--transition); }
+        .file-input-label i { margin-right: 8px; }
         #file-name { font-style: italic; color: var(--dark); }
         #store-selection-area { display: none; margin-top: 20px; }
         #store-search-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 16px; }
@@ -97,8 +95,6 @@
             .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
             .product-adder { flex-direction: column; align-items: stretch; }
             .product-adder > * { width: 100%; }
-            .dynamic-input-item, .static-item { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .status-btn, .delete-item-btn { align-self: flex-end; margin-left: 0; }
         }
     </style>
 </head>
@@ -152,7 +148,6 @@
         let uniqueStores = [];
         let selectedStore = null;
 
-        // --- DEĞİŞİKLİK: staticItems içindeki elemanların sırası, okunabilir ve mantıksal sıraya geri getirildi. ---
         const fideQuestions = [
             { id: 4, type: 'standard', title: "28 Ocak tarihinde yayınlanmış olan TV Teşhir Sirküsü hakkında bayiye bilgi verildi mi?", staticItems: [ `55 inç ve üzeri TV'lerin öne çıkarılması amacıyla <b>standınızın 2 rafa düşürülmesini</b> rica ederim. Konuyla ilgili detaylı bilgi <b>77 numaralı</b> sirküde mevcut olup, iş birliğiniz için şimdiden teşekkür ederim.`, `<b><u><a href="https://drive.google.com/file/d/1UnGsb7_Nc8Bu-I7caAcUtrzhY5xr8kQ8/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>`, `<b><u><a href="https://drive.google.com/file/d/1tPoIEPX1O1LXM9ByXFpybcM-UMBF2afF/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 5, type: 'standard', title: "Bayi Cephesi, Kampanya İletişim Kılavuzuna Uygun mu? (8 Nolu Sirkü)", staticItems: [ `Ön camda kullanılan kampanya görseli 8 numaralı sirküye uygun konumlandırılmalıdır. (Vitrinde bulunana ürünlerin görünürlüğünü engellememelidir.)` ] },
@@ -181,25 +176,83 @@
             const formContainer = document.getElementById('form-content');
             let html = '';
             fideQuestions.forEach(q => {
-                html += `<div class="fide-item" id="fide-item-${q.id}">`;
+                let questionActionsHTML = '';
+                let questionContentHTML = '';
+
                 if (q.type === 'standard') {
+                    questionActionsHTML = `
+                        <div class="fide-actions">
+                            <button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button>
+                            <button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button>
+                            <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button>
+                        </div>
+                    `;
                     let staticItemsHTML = '';
                     if (q.staticItems && q.staticItems.length > 0) {
                         q.staticItems.forEach(item => {
-                            staticItemsHTML += `<div class="static-item"><div class="content">${item}</div><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i> Sil</button></div>`;
+                            staticItemsHTML += `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`;
                         });
                     }
-                    html += `<div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button></div><div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksiklik Ekle</button></div>`;
+                    questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
                 } else if (q.type === 'product_list') {
+                     questionActionsHTML = `
+                        <div class="fide-actions">
+                            <button class="add-item-btn btn-sm" onclick="addDynamicInput('fide15_pleksi')"><i class="fas fa-plus"></i> Yeni Ekle</button>
+                            <button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button>
+                            <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button>
+                        </div>
+                    `;
                     let productOptions = productList.map(p => `<option value="${p.id}">${p.code} - ${p.name}</option>`).join('');
-                    html += `<div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div><div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Paket" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide15_pleksi"></div><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide15_pleksi')"><i class="fas fa-plus"></i> Yeni Ekle</button></div>`;
+                    questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Paket" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`;
                 } else if (q.type === 'pop_system') {
-                    html += `<div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div><div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()">Bitenler</button><button class="btn-primary btn-sm" onclick="openPopEmailDraft()">E-Posta</button></div></div>`;
+                    questionActionsHTML = `
+                        <div class="fide-actions">
+                            <button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button>
+                            <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button>
+                        </div>
+                    `;
+                    questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()">Bitenler</button><button class="btn-primary btn-sm" onclick="openPopEmailDraft()">E-Posta</button></div></div>`;
                 }
-                html += `</div>`;
+
+                html += `
+                    <div class="fide-item" id="fide-item-${q.id}">
+                        <div class="fide-title-container">
+                            <p><span class="badge">FiDe ${q.id}</span> ${q.title}</p>
+                        </div>
+                        ${questionContentHTML}
+                        ${questionActionsHTML}
+                    </div>
+                `;
             });
             formContainer.innerHTML = html;
             if (document.getElementById('popCodesContainer')) initializePopSystem();
+        }
+
+        function initiateDeleteItem(buttonEl) {
+            const itemEl = buttonEl.parentElement;
+            
+            if (itemEl.classList.contains('is-deleting')) {
+                clearTimeout(itemEl.dataset.deleteTimer);
+                itemEl.removeAttribute('data-delete-timer');
+                itemEl.classList.remove('is-deleting');
+                
+                buttonEl.querySelector('i').className = 'fas fa-trash';
+                buttonEl.classList.remove('btn-warning');
+                buttonEl.classList.add('btn-danger');
+
+            } else {
+                itemEl.classList.add('is-deleting');
+                
+                buttonEl.querySelector('i').className = 'fas fa-undo';
+                buttonEl.classList.remove('btn-danger');
+                buttonEl.classList.add('btn-warning');
+
+                const timerId = setTimeout(() => {
+                    itemEl.remove();
+                }, 4000);
+                
+                itemEl.dataset.deleteTimer = timerId;
+            }
         }
 
         function addProductToList(productId, quantity) {
@@ -215,7 +268,7 @@
             newItem.className = 'selected-product-item';
             newItem.dataset.id = product.id;
             newItem.dataset.qty = selectedQty;
-            newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} Paket</b></span><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i> Sil</button>`;
+            newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} Paket</b></span><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>`;
             listContainer.appendChild(newItem);
             if (!productId) { select.value = ''; qtyInput.value = '1'; }
         }
@@ -238,10 +291,42 @@
             if (inputArea) inputArea.style.display = isCompleted ? 'none' : 'block';
         }
 
+        function toggleQuestionRemoved(button, id) {
+            const itemDiv = document.getElementById(`fide-item-${id}`);
+            const inputArea = itemDiv.querySelector('.input-area');
+            const actionsContainer = button.closest('.fide-actions');
+            const addItemBtn = actionsContainer.querySelector('.add-item-btn');
+            const completeBtn = actionsContainer.querySelector('.status-btn');
+            
+            const isRemoved = itemDiv.classList.toggle('question-removed');
+            
+            if (isRemoved) {
+                if (inputArea) inputArea.style.display = 'none';
+                
+                button.innerHTML = '<i class="fas fa-undo"></i> Geri Al';
+                button.classList.remove('btn-danger');
+                button.classList.add('btn-primary');
+
+                if (addItemBtn) addItemBtn.disabled = true;
+                if (completeBtn) completeBtn.disabled = true;
+
+            } else {
+                if (inputArea) inputArea.style.display = 'block';
+
+                button.innerHTML = '<i class="fas fa-times-circle"></i> Çıkar';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-danger');
+
+                if (addItemBtn) addItemBtn.disabled = false;
+                if (completeBtn) completeBtn.disabled = false;
+            }
+        }
+
         function addDynamicInput(id) {
             const container = document.getElementById(`sub-items-container-${id}`);
             const newItem = document.createElement('div');
             newItem.className = 'dynamic-input-item';
+            
             const input = document.createElement('input');
             input.type = 'text';
             input.placeholder = 'Eksikliği yazın...';
@@ -251,17 +336,22 @@
                     addDynamicInput(id);
                 }
             });
+
             const completeButton = document.createElement('button');
             completeButton.className = 'status-btn btn-sm';
             completeButton.innerHTML = '<i class="fas fa-check"></i> Tamamlandı';
             completeButton.onclick = () => toggleCompleted(completeButton);
+            
             const deleteButton = document.createElement('button');
-            deleteButton.className = 'delete-item-btn btn-sm';
-            deleteButton.innerHTML = '<i class="fas fa-trash"></i> Sil';
-            deleteButton.onclick = () => newItem.remove();
+            deleteButton.className = 'delete-bar btn-danger';
+            deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+            deleteButton.onclick = function() { initiateDeleteItem(this); };
+
+
             newItem.appendChild(input);
             newItem.appendChild(completeButton);
             newItem.appendChild(deleteButton);
+
             container.prepend(newItem);
             input.focus();
         }
@@ -273,6 +363,7 @@
             const childNodes = Array.from(container.childNodes).reverse();
             childNodes.forEach(node => {
                 if (node.classList && (node.classList.contains('static-item') || node.classList.contains('dynamic-input-item'))) {
+                    if(node.classList.contains('is-deleting')) return; // Geri almayı bekleyenleri rapora ekleme
                     let text, completed = false;
                     if (node.classList.contains('static-item')) {
                         text = node.querySelector('.content').innerHTML;
@@ -512,6 +603,11 @@
             let reportData = { questions_status: {} };
             
             fideQuestions.forEach(q => {
+                const itemDiv = document.getElementById(`fide-item-${q.id}`);
+                if (itemDiv && itemDiv.classList.contains('question-removed')) {
+                    return; 
+                }
+
                 const titleContainer = document.querySelector(`#fide-item-${q.id} .fide-title-container`);
                 const isQuestionCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
                 
@@ -519,42 +615,27 @@
 
                 if (q.type === 'standard') {
                     if (!isQuestionCompleted) {
-                        // --- DEĞİŞİKLİK: İstenen sıralama için yeni mantık ---
                         const container = document.getElementById(`sub-items-container-fide${q.id}`);
                         if (container) {
+                            const allItems = getCombinedInputs(`fide${q.id}`);
                             const staticTextItems = [];
                             const dynamicTextItems = [];
                             const linkItems = [];
 
-                            // DOM'daki elemanları tiplerine göre ayır
-                            container.childNodes.forEach(node => {
-                                if (node.classList) {
-                                    if (node.classList.contains('dynamic-input-item')) {
-                                        const input = node.querySelector('input[type="text"]');
-                                        if (!input.classList.contains('completed')) {
-                                            dynamicTextItems.push(input.value.trim());
-                                        }
-                                    } else if (node.classList.contains('static-item')) {
-                                        const content = node.querySelector('.content').innerHTML;
-                                        if (content.includes('</a>')) {
-                                            linkItems.push(content);
-                                        } else {
-                                            staticTextItems.push(content);
-                                        }
-                                    }
+                            allItems.forEach(item => {
+                                if (item.text.includes('</a>')) {
+                                    linkItems.push(item.text);
+                                } else if (item.isStatic) { // getCombinedInputs'ı güncellemek gerekebilir
+                                     staticTextItems.push(item.text);
+                                } else {
+                                     dynamicTextItems.push(item.text);
                                 }
                             });
 
-                            // İstenen sırada birleştir: 1. Statik Metin, 2. Dinamik Metin, 3. Linkler
-                            const allSortedItems = [
-                                ...staticTextItems,
-                                ...dynamicTextItems.reverse(), // prepend ile eklendiği için ters çevir
-                                ...linkItems
-                            ];
 
-                            const listItems = allSortedItems
-                                .filter(item => item) // Boş olanları filtrele
-                                .map(item => `<li>${item}</li>`);
+                            const listItems = allItems
+                                .filter(item => !item.completed)
+                                .map(item => `<li>${item.text}</li>`);
 
                             if (listItems.length > 0) {
                                 contentHtml = `<ul>${listItems.join('')}</ul>`;
