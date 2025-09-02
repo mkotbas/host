@@ -362,21 +362,19 @@
             const childNodes = Array.from(container.childNodes).reverse();
             childNodes.forEach(node => {
                 if (node.classList && (node.classList.contains('static-item') || node.classList.contains('dynamic-input-item'))) {
-                    if(node.classList.contains('is-deleting')) return; // Geri almayı bekleyenleri rapora ekleme
+                    if(node.classList.contains('is-deleting')) return;
                     
-                    // --- GÜNCELLEME 1 BAŞLANGICI: Maddelere tip etiketi ekleniyor ---
                     let text, completed = false, type = '';
                     if (node.classList.contains('static-item')) {
                         text = node.querySelector('.content').innerHTML;
-                        type = 'static'; // Bu hazır (statik) bir maddedir.
+                        type = 'static';
                     } else {
                         const input = node.querySelector('input[type="text"]');
                         text = input.value.trim();
                         completed = input.classList.contains('completed');
-                        type = 'dynamic'; // Bu sizin eklediğiniz (dinamik) bir maddedir.
+                        type = 'dynamic';
                     }
                     if (text) allItems.push({ text, completed, type });
-                    // --- GÜNCELLEME 1 SONU ---
                 }
             });
             return allItems;
@@ -493,7 +491,7 @@
             }
 
             const processedData = dataRows.map(row => {
-                if (!row[bayiKoduIndex]) return null; // Bayi Kodu yoksa bu satırı atla
+                if (!row[bayiKoduIndex]) return null;
                 const scores = {};
                 headerRow.forEach((header, index) => {
                     const monthNumber = parseInt(header);
@@ -599,6 +597,7 @@
             const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
             const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
             
+            // --- GERİ ALINAN DEĞİŞİKLİK: Giriş metnindeki boşluk tekrar eklendi ---
             let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p>
                                 <p>&nbsp;</p>
                                 <p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
@@ -622,35 +621,26 @@
                         const container = document.getElementById(`sub-items-container-fide${q.id}`);
                         if (container) {
                             
-                            // --- GÜNCELLEME 2 BAŞLANGICI: Gelişmiş sıralama mantığı ---
                             const allItems = getCombinedInputs(`fide${q.id}`);
                             const textItems = [];
                             const linkItems = [];
 
                             allItems.forEach(item => {
                                 if (!item.completed) {
-                                    // BİR MADDEYİ SONA ATMAK İÇİN ŞARTLAR:
-                                    // 1. Tipi 'static' OLMALI (yani hazır madde olmalı)
-                                    // 2. Link İÇERMELİ ('<a href')
                                     if (item.type === 'static' && item.text.includes('<a href')) {
-                                        linkItems.push(item); // Sadece bu şartları sağlayanlar sona atılacak listeye eklenir.
+                                        linkItems.push(item);
                                     } else {
-                                        // Geriye kalan her şey (tüm kendi yazdıklarınız ve link içermeyen hazır maddeler)
-                                        // normal sıralamada kalacak listeye eklenir.
                                         textItems.push(item);
                                     }
                                 }
                             });
                             
-                            // Önce normal metinleri, sonra özel olarak ayırdığımız linkleri birleştiriyoruz.
                             const sortedItems = textItems.concat(linkItems);
 
-                            // Eğer sıralanmış listede madde varsa, bunları HTML formatında e-postaya ekliyoruz.
                             if (sortedItems.length > 0) {
                                 const listItemsHTML = sortedItems.map(item => `<li>${item.text}</li>`).join('');
                                 contentHtml = `<ul>${listItemsHTML}</ul>`;
                             }
-                            // --- GÜNCELLEME 2 SONU ---
                         }
                     }
                 } else if (q.type === 'product_list') {
@@ -682,9 +672,11 @@
                 }
                 
                 if (contentHtml !== '' || isQuestionCompleted) {
-                    let completedSpan = isQuestionCompleted ? ` <span style="color:green;">Tamamlandı</span>` : "";
+                    // "Tamamlandı" etiketinin stili güncel tutuldu
+                    let completedSpan = isQuestionCompleted ? ` <span style="background-color:#33de18; color:#1e293b; font-weight:bold; padding: 2px 8px; border-radius: 4px;">Tamamlandı</span>` : "";
                     fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}</p>`;
                     fideReportHtml += contentHtml;
+                    // --- GERİ ALINAN DEĞİŞİKLİK: Fide maddeleri arasındaki boşluk tekrar eklendi ---
                     fideReportHtml += '<p>&nbsp;</p>';
                 }
             });
@@ -714,6 +706,7 @@
             }
             tableHtml += `</tr></tbody></table></div>`;
             
+            // --- GERİ ALINAN DEĞİŞİKLİK: Giriş metni ile Fide listesi arasındaki boşluk tekrar eklendi ---
             const finalEmailBody = greetingHtml + '<p>&nbsp;</p>' + fideReportHtml + tableHtml;
 
             document.getElementById('form-content').style.display = 'none';
