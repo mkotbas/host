@@ -213,6 +213,15 @@
         const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
         // FİDE FONKSİYONLARI
+
+        function getUnitForProduct(productName) {
+            const upperCaseName = productName.toUpperCase();
+            if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) {
+                return 'Adet';
+            }
+            return 'Paket';
+        }
+
         function buildForm() {
             const formContainer = document.getElementById('form-content');
             let html = '';
@@ -261,7 +270,7 @@
                         productOptions += `</optgroup>`;
                     }
 
-                    questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Paket" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`;
+                    questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`;
                 } else if (q.type === 'pop_system') {
                     questionActionsHTML = `
                         <div class="fide-actions">
@@ -324,11 +333,14 @@
             const product = productList.find(p => p.id === selectedProductId);
             const listContainer = document.getElementById('selected-products-list');
             if (document.querySelector(`.selected-product-item[data-id="${product.id}"]`)) return alert('Bu ürün zaten listede.');
+            
+            const unit = getUnitForProduct(product.name);
+
             const newItem = document.createElement('div');
             newItem.className = 'selected-product-item';
             newItem.dataset.id = product.id;
             newItem.dataset.qty = selectedQty;
-            newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} Paket</b></span><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`;
+            newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} ${unit}</b></span><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`;
             listContainer.appendChild(newItem);
             if (!productId) { select.value = ''; qtyInput.value = '1'; }
             saveFormState();
@@ -726,7 +738,8 @@
                     document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => {
                         const product = productList.find(p => p.id === item.dataset.id);
                         if (product) {
-                            productItemsHtml.push(`<li>${product.code} ${product.name}: ${item.dataset.qty} Paket</li>`);
+                            const unit = getUnitForProduct(product.name);
+                            productItemsHtml.push(`<li>${product.code} ${product.name}: ${item.dataset.qty} ${unit}</li>`);
                         }
                     });
 
