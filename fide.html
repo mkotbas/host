@@ -72,7 +72,7 @@
         #email-draft-area p { margin-bottom: 1em; }
         #dide-upload-card { background-color: #eef2ff; border: 2px dashed var(--primary); }
         #dide-upload-card h2 { color: var(--primary); }
-        .file-input-wrapper { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; margin-top: 1rem; }
+        .file-input-wrapper { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 1rem; }
         .file-input-wrapper input[type="file"] { display: none; }
         .file-input-label { background-color: var(--primary); color: white; padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; transition: var(--transition); }
         .file-input-label i { margin-right: 8px; }
@@ -88,7 +88,7 @@
         .dide-table th { background-color: #f2f2f2; font-weight: bold; }
         .dide-table td { text-align: center; }
         .dide-table td:first-child { text-align: left; font-weight: bold; }
-        #clear-storage-btn { display: none; }
+        #clear-storage-btn, #clear-excel-btn { display: none; }
 
         @media (max-width: 768px) {
             .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -105,9 +105,10 @@
                 <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
                 <div class="file-input-wrapper">
                     <label for="excel-file-input" class="file-input-label"><i class="fas fa-file-excel"></i> Excel Dosyası Seç</label>
+                    <button id="clear-storage-btn" class="btn-danger btn-sm"><i class="fas fa-eraser"></i> Formu Temizle</button>
+                    <button id="clear-excel-btn" class="btn-danger btn-sm"><i class="fas fa-trash-alt"></i> Excell'i Temizle</button>
                     <input type="file" id="excel-file-input" accept=".xlsx, .xls">
                     <span id="file-name">Henüz dosya seçilmedi.</span>
-                    <button id="clear-storage-btn" class="btn-danger btn-sm"><i class="fas fa-trash"></i> Hafızadaki Veriyi Temizle</button>
                 </div>
             </div>
             <div id="store-selection-area">
@@ -152,13 +153,13 @@
             { id: 5, type: 'standard', title: "Bayi Cephesi, Kampanya İletişim Kılavuzuna Uygun mu? (8 Nolu Sirkü)", staticItems: [ `Ön camda kullanılan kampanya görseli 8 numaralı sirküye uygun konumlandırılmalıdır. (Vitrinde bulunana ürünlerin görünürlüğünü engellememelidir.)` ] },
             { id: 6, type: 'standard', title: "Dış mekan kampanyalarında kullanılan kampanya posterleri 8905801600 stok kodlu Dış Poster Tutucu ile sergileniyor mu?", staticItems: [ `Mağaza önünde kampanyaları daha aktif duyurabileceğiniz <i>Dış Poster Tutucu</i>’nun kullanılmasını rica ederiz.`, `<b><u><a href="https://drive.google.com/file/d/1DD8kT7HRTmbMM7HYpwMJRsn3GuiVrhnJ/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 7, type: 'standard', title: "Televizyonların enerji etiketi 8908661600 stok kodlu Enerji Etiketi Standı ürünü ile sergileniyor mu?", staticItems: [ `Enerji etiketi kullanılması yasal bir zorunluluktur. İlgili ürün kodu 8908661600 üzerinden sipariş vererek, TV alanında enerji etiketi kullanılmasını rica ederiz.`, `<b><u><a href="https://drive.google.com/file/d/1m-i8scUYzfqxhlweHHno1o-j-EDleAyc/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
-            { id: 8, type: 'standard', title: "Ürünler teşhir ürün dizilim kılavuzuna göre sergilenmiş mi? Aşağıdaki ürünlerin teşhir ürün dizilim kılavuzuna (5 nolu sirkü) göre düzenlenmesini rica ederim.", staticItems: [ `Mikrodalga fırınlar kendi stantlarında sergilenmelidir ya da üst üste konulmamalıdır.`, `<b><u><a href="https://drive.google.com/file/d/1LxT2zxfAEP2GFFfbzKinlD1wX2Ku_rGg/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
+            { id: 8, type: 'standard', title: "Ürünler teşhir ürün dizilim kılavuzuna göre sergilenmiş mi? Aşağıdaki ürünlerin teşhir ürün dizilim kılavuzuna (5 nolu sirkü) göre düzenlenmesini rica ederim." },
             { id: 9, type: 'standard', title: "Kampanyalı olarak sergilenen ürünlerde, 8900881600 stok kodlu Fırsat Bazası kullanılıyor mu?", staticItems: [ `Mağaza içerisinde kampanyaları uygulayabileceğiniz, fırsat algısını yaratan <i>Fırsat Bazası</i>nın kullanılmasını rica ederiz.`, `<b><u><a href="https://drive.google.com/file/d/1nPXpxwp-88gYrHFPOxr-UuizhHqDZbaN/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 10, type: 'standard', title: "Yeni Kampanya şablonu A4 veya A5 olarak kullanılıyor mu?", staticItems: [ `ABS > 29 numaralı Föy'de bulunan kampanya şablonlarının kullanımını rica ederim.`, `<b><u><a href="https://drive.google.com/file/d/1sStAyhgjr_n1w7FTtmItsyPsGWLK-jtg/view?usp=drive_link" target="_blank">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 11, type: 'standard', title: "Tüm ürünlerde fiyat etiketi var mı? Aşağıdaki ürünlerin fiyat etiketlerinin tamamlanmasını rica ederim." },
             { id: 12, type: 'standard', title: "Tüm ürünlerde enerji etiketi var mı? Aşağıdaki ürünlerin enerji etiketlerinin tamamlanmasını rica ederim." },
             { id: 13, type: 'standard', title: `Aşağıdaki ürünlere ait fiyat etiketlerinin <u>Marka Basılı Materyal Kılavuzunda (7 nolu sirkü)</u> yer alan "Fiyat Etiketleri Basım Kılavuzu'na uygun çıkartılmasını rica ederim.`, staticItems: [ `<b><u><a href="https://drive.google.com/file/d/1yx8Gj53zUzvtyF0vAulr9vzPFw98PEXj/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
-            { id: 14, type: 'standard', title: "Personel görünüm kılavuzuna uygun giyiliyor mu? (Örnek görünüm ve sipariş için 1. Sirkü)", staticItems: [ `Güncel Arçelik kıyafeti, yaka kartı, siyah pantolon ve siyah ayakkabı tercih edilmelidir.`, `<b><u><a href="https://drive.google.com/file/d/1FZ3s3MYjq-1wtG1SVsf9o40u8S-byIwW/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
+            { id: 14, type: 'standard', title: "Personel görünüm kılavuzuna uygun giyiliyor mu? (Örnek görünüm ve sipariş için 1. Sirkü)", staticItems: [ `Güncel Arçelik kostümü, yaka kartı, siyah pantolon ve siyah ayakkabı tercih edilmelidir.`, `<b><u><a href="https://drive.google.com/file/d/1FZ3s3MYjq-1wtG1SVsf9o40u8S-byIwW/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
             { id: 15, type: 'product_list', title: "Perakende Malzemelerin kullanımı ve siparişi: Aşağıdaki malzemelerin siparişini rica ederim." },
             { id: 16, type: 'pop_system', title: "Basılı Materyal Kılavuzu'nda bulunan görsellerin tümü mağazada var mı? Aşağıdaki malzemelerin gönderimini rica ederim." },
             { id: 17, type: 'standard', title: "DS-TV yayını Kullanılıyor mu?", staticItems: [ `<b><u><a href="https://drive.google.com/file/d/10XKhb6YQw2wbzML0TMDb1qdRo0Wv66rX/view?usp=drive_link" target="_blank">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>` ] },
@@ -248,10 +249,12 @@
 
                 const timerId = setTimeout(() => {
                     itemEl.remove();
+                    saveFormState();
                 }, 4000);
                 
                 itemEl.dataset.deleteTimer = timerId;
             }
+            saveFormState();
         }
 
         function addProductToList(productId, quantity) {
@@ -267,9 +270,10 @@
             newItem.className = 'selected-product-item';
             newItem.dataset.id = product.id;
             newItem.dataset.qty = selectedQty;
-            newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} Paket</b></span><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>`;
+            newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} Paket</b></span><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`;
             listContainer.appendChild(newItem);
             if (!productId) { select.value = ''; qtyInput.value = '1'; }
+            saveFormState();
         }
 
         function toggleCompleted(button) {
@@ -278,6 +282,7 @@
             input.readOnly = isCompleted;
             button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
             button.classList.toggle('undo', isCompleted);
+            saveFormState();
         }
 
         function toggleQuestionCompleted(button, id) {
@@ -288,6 +293,7 @@
             button.classList.toggle('undo', isCompleted);
             const inputArea = itemDiv.querySelector('.input-area');
             if (inputArea) inputArea.style.display = isCompleted ? 'none' : 'block';
+            saveFormState();
         }
 
         function toggleQuestionRemoved(button, id) {
@@ -319,9 +325,10 @@
                 if (addItemBtn) addItemBtn.disabled = false;
                 if (completeBtn) completeBtn.disabled = false;
             }
+            saveFormState();
         }
 
-        function addDynamicInput(id) {
+        function addDynamicInput(id, value = '', isCompleted = false) {
             const container = document.getElementById(`sub-items-container-${id}`);
             const newItem = document.createElement('div');
             newItem.className = 'dynamic-input-item';
@@ -329,12 +336,14 @@
             const input = document.createElement('input');
             input.type = 'text';
             input.placeholder = 'Eksikliği yazın...';
+            input.value = value;
             input.addEventListener('keydown', function(event) {
                 if (event.key === 'Enter') {
                     event.preventDefault();
                     addDynamicInput(id);
                 }
             });
+            input.addEventListener('blur', saveFormState);
 
             const completeButton = document.createElement('button');
             completeButton.className = 'status-btn btn-sm';
@@ -350,9 +359,16 @@
             newItem.appendChild(input);
             newItem.appendChild(completeButton);
             newItem.appendChild(deleteButton);
+            
+            if(isCompleted) {
+                 toggleCompleted(completeButton);
+            }
 
             container.prepend(newItem);
-            input.focus();
+            if (value === '') {
+                 input.focus();
+            }
+            saveFormState();
         }
 
         function getCombinedInputs(id) {
@@ -406,7 +422,10 @@
                 checkbox.type = 'checkbox';
                 checkbox.value = code;
                 checkbox.className = 'pop-checkbox';
-                checkbox.addEventListener('change', checkExpiredPopCodes);
+                checkbox.addEventListener('change', () => {
+                    checkExpiredPopCodes();
+                    saveFormState();
+                });
                 label.appendChild(checkbox);
                 label.appendChild(document.createTextNode(code));
                 popCodesContainer.appendChild(label);
@@ -426,10 +445,12 @@
         function clearSelectedCodes() {
             document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
             checkExpiredPopCodes();
+            saveFormState();
         }
         function selectExpiredCodes() {
             document.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = expiredCodes.includes(cb.value); });
             checkExpiredPopCodes();
+            saveFormState();
         }
         function openPopEmailDraft() {
              const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
@@ -439,11 +460,21 @@
         // DİDE EXCEL VE HAFIZA FONKSİYONLARI
         const fileInput = document.getElementById('excel-file-input');
         const clearStorageBtn = document.getElementById('clear-storage-btn');
+        const clearExcelBtn = document.getElementById('clear-excel-btn');
         fileInput.addEventListener('change', handleFileSelect);
+        
         clearStorageBtn.addEventListener('click', () => {
-            if (confirm("Kaydedilmiş Excel verilerini silmek istediğinizden emin misiniz?")) {
+            if (confirm("Kaydedilmiş tüm form verilerini (girilen eksikler, tamamlananlar vb.) silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve Excel verinizi ETKİLEMEZ.")) {
+                localStorage.removeItem('fideReportState');
+                alert("Kaydedilmiş form verileri temizlendi. Sayfa yenileniyor.");
+                window.location.reload();
+            }
+        });
+
+        clearExcelBtn.addEventListener('click', () => {
+            if (confirm("Yüklenmiş olan Excel verisini hafızadan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
                 localStorage.removeItem('didePersistenceData');
-                alert("Hafızadaki veriler temizlendi.");
+                alert("Excel verisi temizlendi. Sayfa yenileniyor.");
                 window.location.reload();
             }
         });
@@ -529,16 +560,16 @@
             document.getElementById('store-list').innerHTML = '';
             document.getElementById('store-selection-area').style.display = 'block';
             document.getElementById('clear-storage-btn').style.display = 'inline-flex';
-            document.getElementById('file-name').textContent = "Önceden yüklenmiş veri kullanılıyor.";
+            document.getElementById('clear-excel-btn').style.display = 'inline-flex';
         }
 
         function loadDataFromStorage() {
             const storedDataJSON = localStorage.getItem('didePersistenceData');
             if (!storedDataJSON) return;
             const storedData = JSON.parse(storedDataJSON);
-            const thirtyDaysInMillis = 30 * 24 * 60 * 60 * 1000;
+            const fourteenDaysInMillis = 14 * 24 * 60 * 60 * 1000;
             const now = new Date().getTime();
-            if (now - storedData.timestamp < thirtyDaysInMillis) {
+            if (now - storedData.timestamp < fourteenDaysInMillis) {
                 populateDideState(storedData.data);
             } else {
                 localStorage.removeItem('didePersistenceData');
@@ -563,9 +594,11 @@
                     item.classList.add('selected');
                     selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi };
                     const searchInput = document.getElementById('store-search-input');
-                    searchInput.value = `${store.bayiAdi} (${store.bayiKodu})`;
+                    let shortBayiAdi = store.bayiAdi.length > 20 ? store.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
+                    searchInput.value = `${store.bayiKodu} - ${shortBayiAdi}`;
                     storeListDiv.innerHTML = '';
                     storeListDiv.style.display = 'none';
+                    saveFormState();
                 });
                 storeListDiv.appendChild(item);
             });
@@ -593,13 +626,9 @@
             const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
             if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı.");
 
-            // --- YENİ EKLENEN BÖLÜM BAŞLANGICI ---
-            // Rapor kodunu oluşturmak için tüm form verilerini burada topluyoruz.
-            let reportData = {
-                selectedStore: selectedStore,
-                questions_status: {}
-            };
-            // --- YENİ EKLENEN BÖLÜM SONU ---
+            const reportData = getFormDataForSaving();
+            document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2);
+            document.getElementById('save-section').style.display = 'block';
 
             const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
             const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
@@ -615,30 +644,14 @@
                 const itemDiv = document.getElementById(`fide-item-${q.id}`);
                 const isRemoved = itemDiv ? itemDiv.classList.contains('question-removed') : false;
                 
-                // --- RAPOR KODU İÇİN VERİ TOPLAMA (YENİ) ---
-                const questionData = {
-                    removed: isRemoved,
-                    completed: false,
-                    dynamicInputs: [],
-                    selectedProducts: [],
-                    selectedPops: []
-                };
-                // --- BİTİŞ ---
-
-                if (isRemoved) {
-                    reportData.questions_status[q.id] = questionData; // Kaldırılan soruyu rapora işle ve devam etme
-                    return; 
-                }
+                if (isRemoved) return; 
 
                 const titleContainer = document.querySelector(`#fide-item-${q.id} .fide-title-container`);
                 const isQuestionCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
                 
-                questionData.completed = isQuestionCompleted; // Tamamlanma durumunu rapora işle
-
                 let contentHtml = ''; 
 
                 if (q.type === 'standard') {
-                     questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`); // Dinamik girdileri rapora işle
                     if (!isQuestionCompleted) {
                         const allItems = getCombinedInputs(`fide${q.id}`);
                         const textItems = [], linkItems = [];
@@ -656,11 +669,9 @@
                         const product = productList.find(p => p.id === item.dataset.id);
                         if (product) {
                             productItemsHtml.push(`<li>${product.code} ${product.name}: ${item.dataset.qty} Paket</li>`);
-                            questionData.selectedProducts.push({ id: item.dataset.id, qty: item.dataset.qty }); // Seçili ürünleri rapora işle
                         }
                     });
 
-                    questionData.dynamicInputs = getDynamicInputsForSaving('fide15_pleksi'); // Pleksi girdilerini rapora işle
                     const pleksiItemsHtml = getCombinedInputs('fide15_pleksi').filter(item => !item.completed).map(item => `<li>${item.text}</li>`);
                     
                     if (productItemsHtml.length > 0) contentHtml += '<b><i>Sipariş verilmesi gerekenler:</i></b><ul>' + productItemsHtml.join('') + '</ul>';
@@ -668,13 +679,10 @@
                 
                 } else if (q.type === 'pop_system') {
                     const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
-                    questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value); // Seçili POP'ları rapora işle
                     if (nonExpiredCodes.length > 0) {
                         contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
                     }
                 }
-                
-                reportData.questions_status[q.id] = questionData; // Tüm soru verisini ana rapora ekle
 
                 if (contentHtml !== '' || isQuestionCompleted) {
                     let completedSpan = isQuestionCompleted ? ` <span style="background-color:#33de18; color:#1e293b; font-weight:bold; padding: 2px 8px; border-radius: 4px;">Tamamlandı</span>` : "";
@@ -711,10 +719,6 @@
             draftContainer.className = 'card';
             draftContainer.innerHTML = `<h2><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p><div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
             document.querySelector('.container').insertBefore(draftContainer, document.getElementById('save-section'));
-            
-            // Artık reportData dolu olduğu için bu satır doğru çalışacak
-            document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2); // 2, kodu okunabilir yapar
-            document.getElementById('save-section').style.display = 'block';
         }
         
         function downloadReportCode() {
@@ -743,25 +747,24 @@
             URL.revokeObjectURL(url);
         }
 
-        function loadReport() {
-            const loadCode = document.getElementById('load-code-area').value.trim();
-            if (!loadCode) return alert('Lütfen yüklemek için bir rapor kodu yapıştırın.');
-
+        function loadReport(reportData) {
             try {
-                const reportData = JSON.parse(loadCode);
+                if (!reportData) {
+                    const loadCode = document.getElementById('load-code-area').value.trim();
+                    if (!loadCode) return alert('Lütfen yüklemek için bir rapor kodu yapıştırın.');
+                    reportData = JSON.parse(loadCode);
+                }
                 
-                // Formu temizle
                 buildForm();
 
-                // Bayi bilgisini geri yükle
                 if (reportData.selectedStore) {
                     selectedStore = reportData.selectedStore;
                     const searchInput = document.getElementById('store-search-input');
-                    searchInput.value = `${selectedStore.bayiAdi} (${selectedStore.bayiKodu})`;
+                     let shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
+                    searchInput.value = `${selectedStore.bayiKodu} - ${shortBayiAdi}`;
                     document.getElementById('store-list').style.display = 'none';
                 }
 
-                // Soruların durumlarını geri yükle
                 for (const qId in reportData.questions_status) {
                     const data = reportData.questions_status[qId];
                     const questionItem = document.getElementById(`fide-item-${qId}`);
@@ -779,13 +782,7 @@
                     if (data.dynamicInputs && data.dynamicInputs.length > 0) {
                         const containerId = qId === '15' ? 'fide15_pleksi' : `fide${qId}`;
                         data.dynamicInputs.forEach(inputData => {
-                            addDynamicInput(containerId);
-                            const container = document.getElementById(`sub-items-container-${containerId}`);
-                            const firstInput = container.querySelector('.dynamic-input-item input[type="text"]');
-                            firstInput.value = inputData.text;
-                            if (inputData.completed) {
-                                toggleCompleted(firstInput.nextElementSibling);
-                            }
+                            addDynamicInput(containerId, inputData.text, inputData.completed);
                         });
                     }
 
@@ -803,8 +800,10 @@
                         checkExpiredPopCodes();
                     }
                 }
-                alert('Rapor başarıyla yüklendi!');
-                document.getElementById('load-code-area').value = '';
+                if (!reportData.fromLocalStorage) {
+                    alert('Rapor başarıyla yüklendi!');
+                    document.getElementById('load-code-area').value = '';
+                }
 
             } catch (error) {
                 alert('Geçersiz rapor kodu! Lütfen kodu kontrol edin.');
@@ -812,9 +811,74 @@
             }
         }
 
+        // --- YENİ FONKSİYONLAR: OTOMATİK KAYIT VE YÜKLEME ---
+
+        function getFormDataForSaving() {
+            let reportData = {
+                selectedStore: selectedStore,
+                questions_status: {}
+            };
+             fideQuestions.forEach(q => {
+                const itemDiv = document.getElementById(`fide-item-${q.id}`);
+                const isRemoved = itemDiv ? itemDiv.classList.contains('question-removed') : false;
+                const titleContainer = itemDiv.querySelector('.fide-title-container');
+                const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
+
+                const questionData = {
+                    removed: isRemoved,
+                    completed: isCompleted,
+                    dynamicInputs: [],
+                    selectedProducts: [],
+                    selectedPops: []
+                };
+
+                if (q.type === 'standard') {
+                    questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`);
+                } else if (q.type === 'product_list') {
+                    document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => {
+                        questionData.selectedProducts.push({ id: item.dataset.id, qty: item.dataset.qty });
+                    });
+                    questionData.dynamicInputs = getDynamicInputsForSaving('fide15_pleksi');
+                } else if (q.type === 'pop_system') {
+                    questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+                }
+                
+                reportData.questions_status[q.id] = questionData;
+            });
+            return reportData;
+        }
+
+        function saveFormState() {
+            if (!document.getElementById('form-content').innerHTML) return;
+            const reportData = getFormDataForSaving();
+            localStorage.setItem('fideReportState', JSON.stringify({
+                timestamp: new Date().getTime(),
+                data: reportData
+            }));
+        }
+
+        function loadFormStateFromStorage() {
+            const storedStateJSON = localStorage.getItem('fideReportState');
+            if (!storedStateJSON) return;
+
+            const storedState = JSON.parse(storedStateJSON);
+            const fourteenDaysInMillis = 14 * 24 * 60 * 60 * 1000;
+            const now = new Date().getTime();
+
+            if (now - storedState.timestamp > fourteenDaysInMillis) {
+                localStorage.removeItem('fideReportState');
+                return;
+            }
+            
+            const reportData = storedState.data;
+            reportData.fromLocalStorage = true; // Yükleme mesajını engellemek için
+            loadReport(reportData);
+        }
+
         window.onload = () => {
             buildForm();
             loadDataFromStorage();
+            loadFormStateFromStorage();
         };
     </script>
 </body>
