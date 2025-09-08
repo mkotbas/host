@@ -722,16 +722,25 @@
                 let contentHtml = ''; 
 
                 if (q.type === 'standard') {
-                    if (!isQuestionCompleted) {
-                        const allItems = getCombinedInputs(`fide${q.id}`);
-                        const textItems = [], linkItems = [];
-                        allItems.forEach(item => {
-                            if (!item.completed) { (item.type === 'static' && item.text.includes('<a href')) ? linkItems.push(item) : textItems.push(item); }
-                        });
-                        const sortedItems = textItems.concat(linkItems);
-                        if (sortedItems.length > 0) {
-                            contentHtml = `<ul>${sortedItems.map(item => `<li>${item.text}</li>`).join('')}</ul>`;
-                        }
+                    const allItems = getCombinedInputs(`fide${q.id}`);
+                    const textItems = [], linkItems = [];
+
+                    allItems.forEach(item => {
+                        (item.type === 'static' && item.text.includes('<a href')) ? linkItems.push(item) : textItems.push(item);
+                    });
+
+                    const sortedItems = textItems.concat(linkItems);
+
+                    if (sortedItems.length > 0) {
+                        contentHtml = `<ul>${sortedItems.map(item => {
+                            if (item.completed) {
+                                // YENİ: Üstü çizili yerine "Tamamlandı" etiketi ekleniyor.
+                                const completedSpan = ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; font-size: 9pt; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>`;
+                                return `<li>${item.text}${completedSpan}</li>`;
+                            }
+                            // Normal, tamamlanmamış madde
+                            return `<li>${item.text}</li>`;
+                        }).join('')}</ul>`;
                     }
                 } else if (q.type === 'product_list') {
                     const productItemsHtml = [];
@@ -758,7 +767,13 @@
                 if (contentHtml !== '' || isQuestionCompleted) {
                     let completedSpan = isQuestionCompleted ? ` <span style="background-color:#33de18; color:#1e293b; font-weight:bold; padding: 2px 8px; border-radius: 4px;">Tamamlandı</span>` : "";
                     fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}</p>`;
-                    fideReportHtml += contentHtml;
+                    // Soru "Tamamlandı" olarak işaretlenmişse bile, içeriği (yanında etiketleriyle) gösterilir.
+                    if (!isQuestionCompleted) {
+                         fideReportHtml += contentHtml;
+                    } else if(q.type === 'standard' && contentHtml !== '') {
+                        fideReportHtml += contentHtml;
+                    }
+
                     fideReportHtml += '<p>&nbsp;</p>';
                 }
             });
