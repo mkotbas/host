@@ -192,7 +192,6 @@
             { id: 'p24', code: '8900881600', name: 'FIRSAT BAZASI ARÇELIK' }, 
             { id: 'p25', code: '8909061600', name: 'PLEKSİ A4 APPLE FISO' }, 
             { id: 'p26', code: '9220421600', name: 'PLEKSİ A5 APPLE FISO' },
-            // YENİ EKLENEN GİYİM ÜRÜNLERİ
             { type: 'header', name: 'Kısa Kol Tişörtler' },
             { id: 'p27', code: '9244851100', name: 'DH A KISA KOL TSHIRT XXL' },
             { id: 'p28', code: '9244861100', name: 'DH A KISA KOL TSHIRT XL' },
@@ -278,7 +277,7 @@
                             <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button>
                         </div>
                     `;
-                    questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()">Bitenler</button><button class="btn-primary btn-sm" onclick="openPopEmailDraft()">E-Posta</button></div></div>`;
+                    questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()">E-Posta</button></div></div>`;
                 }
 
                 html += `
@@ -522,9 +521,46 @@
             checkExpiredPopCodes();
             saveFormState();
         }
-        function openPopEmailDraft() {
-             const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
-            if (nonExpiredCodes.length === 0) return alert("E-Posta için geçerli kod seçin.");
+        
+        function openEmailDraft() {
+            const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+            
+            const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
+
+            if (nonExpiredCodes.length === 0) {
+                alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin.");
+                return;
+            }
+
+            const kodSatiri = nonExpiredCodes.join(', ');
+            
+            const emailHTML = `
+                <!DOCTYPE html>
+                <html lang="tr">
+                <head>
+                <meta charset="UTF-8">
+                <title>E-Posta Taslağı</title>
+                <style>
+                    body { font-family: Arial; padding: 20px; background-color: #fff; }
+                    .block { margin-bottom: 15px; }
+                    .label { font-weight: bold; color: #555; display: inline-block; margin-bottom: 8px; }
+                </style>
+                </head>
+                <body>
+                <div class="block"><span class="label">Kime:</span> berkcan_boza@arcelik.com.tr</div>
+                <div class="block"><span class="label">CC:</span> "ugur.dogan@arcelik.com" &lt;ugur.dogan@arcelik.com&gt;; "aykut.demen@arcelik.com.tr" &lt;aykut.demen@arcelik.com.tr&gt;; "Ahmet.Erol2@arcelik.com.tr" &lt;ahmet.erol2@arcelik.com.tr&gt;</div>
+                <div class="block"><span class="label">Konu:</span> (Boş)</div>
+                <div class="block">
+                    <span class="label">İçerik:</span>
+                    <div style="margin-top: 10px;">${kodSatiri}</div>
+                </div>
+                </body>
+                </html>
+            `;
+
+            const emailWindow = window.open('', '_blank');
+            emailWindow.document.write(emailHTML);
+            emailWindow.document.close();
         }
 
         // DİDE EXCEL VE HAFIZA FONKSİYONLARI
@@ -734,11 +770,9 @@
                     if (sortedItems.length > 0) {
                         contentHtml = `<ul>${sortedItems.map(item => {
                             if (item.completed) {
-                                // YENİ: Üstü çizili yerine "Tamamlandı" etiketi ekleniyor.
-                                const completedSpan = ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; font-size: 9pt; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>`;
+                                const completedSpan = ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>`;
                                 return `<li>${item.text}${completedSpan}</li>`;
                             }
-                            // Normal, tamamlanmamış madde
                             return `<li>${item.text}</li>`;
                         }).join('')}</ul>`;
                     }
@@ -754,8 +788,12 @@
 
                     const pleksiItemsHtml = getCombinedInputs('fide15_pleksi').filter(item => !item.completed).map(item => `<li>${item.text}</li>`);
                     
-                    if (productItemsHtml.length > 0) contentHtml += '<b><i>Sipariş verilmesi gerekenler:</i></b><ul>' + productItemsHtml.join('') + '</ul>';
-                    if (pleksiItemsHtml.length > 0) contentHtml += "<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>" + pleksiItemsHtml.join('') + "</ul>";
+                    if (productItemsHtml.length > 0) {
+                        contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
+                    }
+                    if (pleksiItemsHtml.length > 0) {
+                        contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
+                    }
                 
                 } else if (q.type === 'pop_system') {
                     const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
@@ -765,12 +803,18 @@
                 }
 
                 if (contentHtml !== '' || isQuestionCompleted) {
-                    let completedSpan = isQuestionCompleted ? ` <span style="background-color:#33de18; color:#1e293b; font-weight:bold; padding: 2px 8px; border-radius: 4px;">Tamamlandı</span>` : "";
-                    fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}</p>`;
-                    // Soru "Tamamlandı" olarak işaretlenmişse bile, içeriği (yanında etiketleriyle) gösterilir.
-                    if (!isQuestionCompleted) {
-                         fideReportHtml += contentHtml;
-                    } else if(q.type === 'standard' && contentHtml !== '') {
+                    const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
+                    
+                    // *** DEĞİŞTİRİLEN BÖLÜM ***
+                    let emailTag = '';
+                    if (q.id === 16) {
+                        emailTag = ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@berkcan_boza@arcelik.com.tr</span>`;
+                    }
+
+                    fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
+                    
+                    const shouldShowContent = !isQuestionCompleted || (isQuestionCompleted && q.type === 'standard' && contentHtml !== '');
+                    if (shouldShowContent) {
                         fideReportHtml += contentHtml;
                     }
 
@@ -785,25 +829,60 @@
             const thStyle = `border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;`;
             const tdStyle = `border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;`;
             const tdFirstStyle = `border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;`;
-            let tableHtml = `<div style="${tableWrapperStyle}"><table style="${tableStyle}"><thead><tr><th style="${thStyle}">${currentYear}</th>`;
-            for (let m = 1; m <= currentMonth; m++) tableHtml += `<th style="${thStyle}">${monthNames[m] || m}</th>`;
-            tableHtml += `</tr></thead><tbody><tr><td style="${tdFirstStyle}">DiDe</td>`;
-            for (let m = 1; m <= currentMonth; m++) tableHtml += `<td style="${tdStyle}">${storeInfo.scores[m] || '-'}</td>`;
-            tableHtml += `</tr><tr><td style="${tdFirstStyle}">FiDe</td>`;
-            for (let m = 1; m <= currentMonth; m++) tableHtml += `<td style="${tdStyle}">-</td>`;
-            tableHtml += `</tr></tbody></table></div>`;
             
-            const finalEmailBody = greetingHtml + '<p>&nbsp;</p>' + fideReportHtml + tableHtml;
+            let monthHeaders = '';
+            for (let m = 1; m <= currentMonth; m++) {
+                monthHeaders += `<th style="${thStyle}">${monthNames[m] || m}</th>`;
+            }
+
+            let dideScores = '';
+            for (let m = 1; m <= currentMonth; m++) {
+                dideScores += `<td style="${tdStyle}">${storeInfo.scores[m] || '-'}</td>`;
+            }
+            
+            let fideScores = '';
+            for (let m = 1; m <= currentMonth; m++) {
+                fideScores += `<td style="${tdStyle}">-</td>`;
+            }
+
+            const tableHtml = `
+                <div style="${tableWrapperStyle}">
+                    <table style="${tableStyle}">
+                        <thead>
+                            <tr>
+                                <th style="${thStyle}">${currentYear}</th>
+                                ${monthHeaders}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="${tdFirstStyle}">DiDe</td>
+                                ${dideScores}
+                            </tr>
+                            <tr>
+                                <td style="${tdFirstStyle}">FiDe</td>
+                                ${fideScores}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>`;
+            
+            const finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
 
             document.getElementById('form-content').style.display = 'none';
             document.querySelector('.action-button').style.display = 'none';
             document.getElementById('load-section').style.display = 'none';
             const existingDraft = document.getElementById('email-draft-container');
             if (existingDraft) existingDraft.remove();
+
             const draftContainer = document.createElement('div');
             draftContainer.id = 'email-draft-container';
             draftContainer.className = 'card';
-            draftContainer.innerHTML = `<h2><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p><div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
+            draftContainer.innerHTML = `
+                <h2><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2>
+                <p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p>
+                <div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>
+            `;
             document.querySelector('.container').insertBefore(draftContainer, document.getElementById('save-section'));
         }
         
@@ -897,7 +976,7 @@
             }
         }
 
-        // --- YENİ FONKSİYONLAR: OTOMATİK KAYIT VE YÜKLEME ---
+        // --- OTOMATİK KAYIT VE YÜKLEME ---
 
         function getFormDataForSaving() {
             let reportData = {
@@ -957,7 +1036,7 @@
             }
             
             const reportData = storedState.data;
-            reportData.fromLocalStorage = true; // Yükleme mesajını engellemek için
+            reportData.fromLocalStorage = true; 
             loadReport(reportData);
         }
 
