@@ -27,9 +27,9 @@
         .container { max-width: 1000px; margin: 0 auto; }
         .card { background: white; border-radius: 12px; box-shadow: var(--card-shadow); padding: 24px; margin-bottom: 24px; transition: var(--transition); }
         h2 { font-size: 20px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; }
-        button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; }
+        button, .btn-like-label { cursor: pointer; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; }
         button:disabled { background-color: var(--gray); cursor: not-allowed; opacity: 0.7; }
-        button i { margin-right: 8px; }
+        button i, .btn-like-label i { margin-right: 8px; }
         .btn-primary { background-color: var(--primary); color: white; }
         .btn-success { background-color: var(--success); color: white; }
         .btn-danger { background-color: var(--danger); color: white; }
@@ -98,43 +98,55 @@
 <body>
     <div class="container">
         <div class="card" id="dide-upload-card">
-            <h2><i class="fas fa-chart-line"></i> DiDe Puan Entegrasyonu</h2>
+            <h2><i class="fas fa-chart-line"></i> DiDe Puan Entegrasyonu ve Veri Yönetimi</h2>
+            <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+                <i class="fas fa-info-circle"></i> Raporlarınız tarayıcı hafızasında saklanır. Tarayıcı verilerini temizlemek raporların silinmesine neden olabilir. Lütfen düzenli olarak yedek alın.
+            </p>
             <div>
                 <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
                 <div class="file-input-wrapper">
-                    <label for="excel-file-input" class="file-input-label"><i class="fas fa-file-excel"></i> Excel Dosyası Seç</label>
-                    <button id="clear-storage-btn" class="btn-danger btn-sm"><i class="fas fa-eraser"></i> Formu Temizle</button>
-                    <button id="clear-excel-btn" class="btn-danger btn-sm"><i class="fas fa-trash-alt"></i> Excell'i Temizle</button>
-                    <input type="file" id="excel-file-input" accept=".xlsx, .xls">
+                    <label for="excel-file-input" class="file-input-label btn-sm" title="Bayi DiDe puanlarını içeren Excel dosyasını seçmek için tıklayın."><i class="fas fa-file-excel"></i> Excel Seç</label>
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls" style="display: none;">
                     <span id="file-name">Henüz dosya seçilmedi.</span>
+                </div>
+            </div>
+             <div style="margin-top: 20px;">
+                <p><b>2. Adım: Veri Yedekleme ve Geri Yükleme</b></p>
+                 <div class="file-input-wrapper">
+                    <button id="backup-btn" class="btn-primary btn-sm" title="Kaydedilmiş tüm bayi raporlarını tek bir yedek dosyası (.json) olarak bilgisayarınıza indirir."><i class="fas fa-cloud-download-alt"></i> Tüm Raporları Yedekle</button>
+                    <label for="restore-file-input" class="btn-like-label btn-success btn-sm" title="Daha önce aldığınız yedek dosyasını seçerek tüm raporları sisteme geri yükler."><i class="fas fa-cloud-upload-alt"></i> Yedekten Yükle</label>
+                    <input type="file" id="restore-file-input" accept=".json" style="display: none;">
+                    <button id="clear-storage-btn" class="btn-danger btn-sm" title="UYARI: Tarayıcı hafızasındaki tüm bayi raporlarını kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Raporları Sil</button>
+                    <button id="clear-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan Excel verisini tarayıcı hafızasından temizler."><i class="fas fa-trash-alt"></i> Excell'i Sil</button>
                 </div>
             </div>
             <div id="store-selection-area">
                 <hr style="margin: 20px 0;">
-                <p><b>2. Adım: Denetlenecek Bayiyi Arayın ve Seçin</b></p>
+                <p><b>3. Adım: Denetlenecek Bayiyi Arayın ve Seçin</b></p>
+                <button id="new-report-btn" class="btn-warning btn-sm" style="margin-bottom: 10px; width: 100%;" title="Mevcut formu boşaltır ve temiz bir rapor sayfası açar."><i class="fas fa-file"></i> Yeni Rapor / Formu Temizle</button>
                 <input type="text" id="store-search-input" placeholder="Bayi adı veya kodu ile aramaya başlayın...">
                 <div id="store-list"></div>
             </div>
         </div>
         
         <div class="card" id="load-section">
-            <h2><i class="fas fa-download"></i> Önceki Bir Fide Raporunu Yükle</h2>
+            <h2><i class="fas fa-download"></i> Önceki Bir Fide Raporunu Yükle (Manuel)</h2>
             <p style="margin-bottom: 8px;">Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve "Raporu Yükle" düğmesine tıklayın.</p>
             <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..."></textarea>
-            <button class="btn-primary" onclick="loadReport()"><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
+            <button class="btn-primary" onclick="loadReport()" title="Yukarıdaki alana yapıştırılan rapor kodunu forma yükler."><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
         </div>
 
         <div id="form-content"></div>
 
-        <button class="action-button" onclick="generateEmail()">
+        <button class="action-button" onclick="generateEmail()" title="Formdaki tüm verileri kullanarak nihai e-posta taslağını oluşturur ve raporu kaydeder.">
             <i class="fas fa-envelope"></i> E-POSTA TASLAĞI OLUŞTUR
         </button>
 
         <div class="card" id="save-section" style="display: none;">
-            <h2><i class="fas fa-save"></i> SONRAKİ DENETİM İÇİN RAPOR KODU</h2>
-            <p>Bu kodu kopyalayıp bir metin dosyasına kaydedin. Daha sonra yukarıdaki alana yapıştırarak raporu tekrar yükleyebilirsiniz.</p>
+            <h2><i class="fas fa-save"></i> YEDEKLEME İÇİN RAPOR KODU</h2>
+            <p>Bu rapor tarayıcınıza otomatik olarak kaydedildi. İsterseniz bu kodu kopyalayıp harici bir dosyaya yedekleyebilirsiniz.</p>
             <textarea id="save-code-area" readonly></textarea>
-            <button class="btn-success" id="download-report-btn" onclick="downloadReportCode()" style="margin-top: 10px;">
+            <button class="btn-success" id="download-report-btn" onclick="downloadReportCode()" style="margin-top: 10px;" title="Oluşturulan raporun manuel yedek kodunu bir metin dosyası olarak indirir.">
                 <i class="fas fa-download"></i> Rapor Kodunu İndir (.txt)
             </button>
         </div>
@@ -220,6 +232,11 @@
             }
             return 'Paket';
         }
+        
+        function resetForm() {
+            document.getElementById('form-content').innerHTML = '';
+            buildForm();
+        }
 
         function buildForm() {
             const formContainer = document.getElementById('form-content');
@@ -231,24 +248,24 @@
                 if (q.type === 'standard') {
                     questionActionsHTML = `
                         <div class="fide-actions">
-                            <button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button>
-                            <button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button>
-                            <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button>
+                            <button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button>
+                            <button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button>
+                            <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button>
                         </div>
                     `;
                     let staticItemsHTML = '';
                     if (q.staticItems && q.staticItems.length > 0) {
                         q.staticItems.forEach(item => {
-                            staticItemsHTML += `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`;
+                            staticItemsHTML += `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`;
                         });
                     }
                     questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
                 } else if (q.type === 'product_list') {
                      questionActionsHTML = `
                         <div class="fide-actions">
-                            <button class="add-item-btn btn-sm" onclick="addDynamicInput('fide15_pleksi')"><i class="fas fa-plus"></i> Yeni Ekle</button>
-                            <button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button>
-                            <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button>
+                            <button class="add-item-btn btn-sm" onclick="addDynamicInput('fide15_pleksi')" title="Pleksi kullanımıyla ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Ekle</button>
+                            <button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button>
+                            <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button>
                         </div>
                     `;
                     
@@ -269,15 +286,15 @@
                         productOptions += `</optgroup>`;
                     }
 
-                    questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`;
+                    questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`;
                 } else if (q.type === 'pop_system') {
                     questionActionsHTML = `
                         <div class="fide-actions">
-                            <button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button>
-                            <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button>
+                            <button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button>
+                            <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button>
                         </div>
                     `;
-                    questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()">E-Posta</button></div></div>`;
+                    questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
                 }
 
                 html += `
@@ -339,7 +356,7 @@
             newItem.className = 'selected-product-item';
             newItem.dataset.id = product.id;
             newItem.dataset.qty = selectedQty;
-            newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} ${unit}</b></span><button class="delete-item-btn btn-sm" onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`;
+            newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} ${unit}</b></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler." onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`;
             listContainer.appendChild(newItem);
             if (!productId) { select.value = ''; qtyInput.value = '1'; }
             saveFormState();
@@ -418,11 +435,13 @@
             completeButton.className = 'status-btn btn-sm';
             completeButton.innerHTML = '<i class="fas fa-check"></i> Tamamlandı';
             completeButton.onclick = () => toggleCompleted(completeButton);
+            completeButton.title = "Bu eksikliği 'Tamamlandı' olarak işaretler. Geri alınabilir.";
             
             const deleteButton = document.createElement('button');
             deleteButton.className = 'delete-bar btn-danger';
             deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
             deleteButton.onclick = function() { initiateDeleteItem(this); };
+            deleteButton.title = "Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir.";
 
 
             newItem.appendChild(input);
@@ -570,9 +589,9 @@
         fileInput.addEventListener('change', handleFileSelect);
         
         clearStorageBtn.addEventListener('click', () => {
-            if (confirm("Kaydedilmiş tüm form verilerini (girilen eksikler, tamamlananlar vb.) silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve Excel verinizi ETKİLEMEZ.")) {
-                localStorage.removeItem('fideReportState');
-                alert("Kaydedilmiş form verileri temizlendi. Sayfa yenileniyor.");
+            if (confirm("Kaydedilmiş TÜM bayi raporlarını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve Excel verinizi ETKİLEMEZ.")) {
+                localStorage.removeItem('allFideReports');
+                alert("Tüm kaydedilmiş raporlar temizlendi. Sayfa yenileniyor.");
                 window.location.reload();
             }
         });
@@ -681,7 +700,7 @@
                 localStorage.removeItem('didePersistenceData');
             }
         }
-
+        
         function displayStores(stores) {
             const storeListDiv = document.getElementById('store-list');
             storeListDiv.innerHTML = '';
@@ -704,7 +723,8 @@
                     searchInput.value = `${store.bayiKodu} - ${shortBayiAdi}`;
                     storeListDiv.innerHTML = '';
                     storeListDiv.style.display = 'none';
-                    saveFormState();
+                    
+                    loadReportForStore(store.bayiKodu);
                 });
                 storeListDiv.appendChild(item);
             });
@@ -729,6 +749,9 @@
 
         function generateEmail() {
             if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!');
+            
+            saveFormState(); 
+            
             const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
             if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı.");
 
@@ -805,7 +828,6 @@
                 if (contentHtml !== '' || isQuestionCompleted) {
                     const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
                     
-                    // *** DEĞİŞTİRİLEN BÖLÜM ***
                     let emailTag = '';
                     if (q.id === 16) {
                         emailTag = ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@berkcan_boza@arcelik.com.tr</span>`;
@@ -912,15 +934,16 @@
             URL.revokeObjectURL(url);
         }
 
-        function loadReport(reportData) {
+        function loadReport(reportDataFromCode) {
             try {
+                let reportData = reportDataFromCode;
                 if (!reportData) {
                     const loadCode = document.getElementById('load-code-area').value.trim();
                     if (!loadCode) return alert('Lütfen yüklemek için bir rapor kodu yapıştırın.');
                     reportData = JSON.parse(loadCode);
                 }
                 
-                buildForm();
+                resetForm(); 
 
                 if (reportData.selectedStore) {
                     selectedStore = reportData.selectedStore;
@@ -965,7 +988,7 @@
                         checkExpiredPopCodes();
                     }
                 }
-                if (!reportData.fromLocalStorage) {
+                if (!reportDataFromCode) {
                     alert('Rapor başarıyla yüklendi!');
                     document.getElementById('load-code-area').value = '';
                 }
@@ -976,7 +999,13 @@
             }
         }
 
-        // --- OTOMATİK KAYIT VE YÜKLEME ---
+        // --- OTOMATİK KAYIT, YÜKLEME VE YEDEKLEME ---
+
+        function startNewReport() {
+            selectedStore = null;
+            document.getElementById('store-search-input').value = '';
+            resetForm();
+        }
 
         function getFormDataForSaving() {
             let reportData = {
@@ -1014,36 +1043,83 @@
         }
 
         function saveFormState() {
-            if (!document.getElementById('form-content').innerHTML) return;
+            if (!document.getElementById('form-content').innerHTML || !selectedStore) return;
+
+            let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
             const reportData = getFormDataForSaving();
-            localStorage.setItem('fideReportState', JSON.stringify({
+            const storeKey = `store_${selectedStore.bayiKodu}`;
+            allReports[storeKey] = {
                 timestamp: new Date().getTime(),
                 data: reportData
-            }));
+            };
+            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+        }
+        
+        function loadReportForStore(bayiKodu) {
+            const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
+            const storeKey = `store_${bayiKodu}`;
+            
+            if (allReports[storeKey]) {
+                const reportToLoad = allReports[storeKey].data;
+                loadReport(reportToLoad);
+            } else {
+                resetForm();
+            }
         }
 
-        function loadFormStateFromStorage() {
-            const storedStateJSON = localStorage.getItem('fideReportState');
-            if (!storedStateJSON) return;
-
-            const storedState = JSON.parse(storedStateJSON);
-            const fourteenDaysInMillis = 14 * 24 * 60 * 60 * 1000;
-            const now = new Date().getTime();
-
-            if (now - storedState.timestamp > fourteenDaysInMillis) {
-                localStorage.removeItem('fideReportState');
+        function backupAllReports() {
+            const allReports = localStorage.getItem('allFideReports');
+            if (!allReports || Object.keys(JSON.parse(allReports)).length === 0) {
+                alert('Yedeklenecek kayıtlı rapor bulunamadı.');
                 return;
             }
+
+            const blob = new Blob([allReports], { type: 'application/json;charset=utf-8' });
+            const today = new Date().toISOString().slice(0, 10);
+            const filename = `fide_rapor_yedek_${today}.json`;
             
-            const reportData = storedState.data;
-            reportData.fromLocalStorage = true; 
-            loadReport(reportData);
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function handleRestoreUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (confirm("Bu işlem mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz?")) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const restoredData = e.target.result;
+                        JSON.parse(restoredData); 
+                        
+                        localStorage.setItem('allFideReports', restoredData);
+                        alert('Yedek başarıyla geri yüklendi! Sayfa yenileniyor.');
+                        window.location.reload();
+                    } catch (error) {
+                        alert('Geçersiz veya bozuk yedek dosyası! Lütfen doğru dosyayı seçtiğinizden emin olun.');
+                        console.error("Yedek yükleme hatası:", error);
+                    }
+                };
+                reader.readAsText(file);
+            }
+            event.target.value = null; 
         }
 
         window.onload = () => {
             buildForm();
             loadDataFromStorage();
-            loadFormStateFromStorage();
+
+            document.getElementById('backup-btn').addEventListener('click', backupAllReports);
+            document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
+            document.getElementById('new-report-btn').addEventListener('click', startNewReport);
         };
     </script>
 </body>
