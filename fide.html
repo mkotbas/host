@@ -718,6 +718,7 @@
                     document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
                     item.classList.add('selected');
                     selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi };
+                    localStorage.setItem('lastSelectedStoreKodu', store.bayiKodu); // Seçimi kaydet
                     const searchInput = document.getElementById('store-search-input');
                     let shortBayiAdi = store.bayiAdi.length > 20 ? store.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
                     searchInput.value = `${store.bayiKodu} - ${shortBayiAdi}`;
@@ -732,6 +733,7 @@
         
         document.getElementById('store-search-input').addEventListener('keyup', (e) => {
             selectedStore = null; 
+            localStorage.removeItem('lastSelectedStoreKodu'); // Arama yaparken seçimi temizle
             const filter = e.target.value.toLowerCase().trim();
             const storeListDiv = document.getElementById('store-list');
             storeListDiv.style.display = 'block';
@@ -1003,6 +1005,7 @@
 
         function startNewReport() {
             selectedStore = null;
+            localStorage.removeItem('lastSelectedStoreKodu'); // Hafızadaki seçimi temizle
             document.getElementById('store-search-input').value = '';
             resetForm();
         }
@@ -1113,9 +1116,25 @@
             event.target.value = null; 
         }
 
+        function restoreLastSelectedStore() {
+            const lastKodu = localStorage.getItem('lastSelectedStoreKodu');
+            if (!lastKodu || uniqueStores.length === 0) return;
+
+            const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastKodu));
+            if (storeToRestore) {
+                selectedStore = storeToRestore;
+                const searchInput = document.getElementById('store-search-input');
+                let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : storeToRestore.bayiAdi;
+                searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`;
+                document.getElementById('store-list').style.display = 'none';
+                loadReportForStore(storeToRestore.bayiKodu);
+            }
+        }
+
         window.onload = () => {
             buildForm();
             loadDataFromStorage();
+            restoreLastSelectedStore(); // Sayfa yüklendiğinde son bayiyi geri yükle
 
             document.getElementById('backup-btn').addEventListener('click', backupAllReports);
             document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
