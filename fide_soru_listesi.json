@@ -71,7 +71,7 @@
   {
     "id": 13,
     "type": "standard",
-    "title": "Aşağıdaki ürünlere ait fiyat etiketlerinin <u>Marka Basılı Materyal Kılavuzunda (7 nolu sirkü)</u> yer alan \"Fiyat Etiketleri Basım Kılavuzu'na uygun çıkartılmasını rica ederim.",
+    "title": "Aşağıdaki ürünlere ait fiyat etiketlerinin Marka Basılı Materyal Kılavuzunda (7 nolu sirkü) yer alan \"Fiyat Etiketleri Basım Kılavuzu'na uygun çıkartılmasını rica ederim.",
     "staticItems": [
       "<b><u><a href=\"https://drive.google.com/file/d/1yx8Gj53zUzvtyF0vAulr9vzPFw98PEXj/view?usp=drive_link\" target=\"_blank\">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>"
     ]
@@ -93,7 +93,9 @@
   {
     "id": 16,
     "type": "pop_system",
-    "title": "Basılı Materyal Kılavuzu'nda bulunan görsellerin tümü mağazada var mı? Aşağıdaki malzemelerin gönderimini rica ederim."
+    "title": "Basılı Materyal Kılavuzu'nda bulunan görsellerin tümü mağazada var mı? Aşağıdaki malzemelerin gönderimini rica ederim.",
+    "popCodes": [ "100001", "100004", "100005", "100006", "100007", "100009", "100012", "100013", "100014", "100015", "100017", "100021", "100022", "100029", "100030", "100031", "100032", "100034", "100036", "100037", "100040", "100041", "100042", "100043", "100044", "100045", "100046", "100047", "100052", "100054", "100055", "100056", "100060", "100064", "100065", "100068", "100070", "100071", "100072", "100074", "100075", "100076", "100077", "100078", "100080", "100083", "100085", "100087", "100088", "100090", "100094", "100095", "100096", "100097", "100098", "100099", "100100", "100101", "100102", "100103", "100104", "100105", "100106", "100107", "100108" ],
+    "expiredCodes": ["100029", "100030", "100031", "100032", "100036", "100037", "100064", "100065"]
   },
   {
     "id": 17,
@@ -118,4 +120,3 @@
     "title": "Elektronik ürünler stant üzerinde sergileniyor mu?"
   }
 ]
-
