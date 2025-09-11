@@ -76,7 +76,6 @@
     </div>
 
     <script>
-    // Sizin tarafınızdan sağlanan ve güncellenen Firebase yapılandırma bilgileri
     const firebaseConfig = {
       apiKey: "AIzaSyCvUBeaqFSlbLsDd0zkwEoEj0sXet1wVq8",
       authDomain: "fide-denetim-sistemi.firebaseapp.com",
@@ -87,30 +86,24 @@
       appId: "1:733807364443:web:2dd374967cf110cb87f27e"
     };
 
-    // Firebase'i Başlatma
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
     let currentUser = null;
     let allReports = {}; 
 
-    // GLOBAL DEĞİŞKENLER
     let dideData = [], fideData = [], uniqueStores = [], selectedStore = null, fideQuestions = [], popCodes = [], expiredCodes = [], productList = [], expiredExcelFiles = [];
     const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi." }];
     const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
     
-    // --- YARDIMCI FONKSİYONLAR ---
-
     function setStatus(message, type) { 
         const indicator = document.getElementById('status-indicator'); 
         if(indicator) { 
-            indicator.className = type; 
+            indicator.className = 'top-controls-status ' + type; 
             indicator.innerHTML = message; 
         } 
     }
-
-    // --- FIREBASE VERİ YÖNETİMİ ---
-
+    
     function getFormDataForSaving() { 
         let reportData = { selectedStore: selectedStore, questions_status: {} }; 
         fideQuestions.forEach(q => { 
@@ -120,7 +113,6 @@
             const titleContainer = itemDiv.querySelector('.fide-title-container'); 
             const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false; 
             const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] }; 
-            
             if (q.type === 'standard') { 
                 const container = document.getElementById(`sub-items-container-fide${q.id}`); 
                 if(container) { 
@@ -216,8 +208,8 @@
     
     function restoreLastSession() { 
         const lastStoreCode = localStorage.getItem('lastSelectedStoreCode'); 
-        if (lastStoreCode && uniqueStores.length > 0) { 
-            const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode)); 
+        if (lastStoreCode && dideData.length > 0) { 
+             const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode));
             if (storeToRestore) { 
                 selectedStore = storeToRestore; 
                 const searchInput = document.getElementById('store-search-input'); 
@@ -228,31 +220,32 @@
             } 
         } 
     }
-
-    // --- FORM İŞLEVSELLİK FONKSİYONLARI ---
     
     function getUnitForProduct(productName) { const upperCaseName = productName.toUpperCase(); if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; } return 'Paket'; }
     
     function resetForm() { document.getElementById('form-content').innerHTML = ''; buildForm(); }
     
-    function buildForm() { const formContainer = document.getElementById('form-content'); formContainer.innerHTML = ''; let html = ''; fideQuestions.forEach(q => { let questionActionsHTML = ''; let questionContentHTML = ''; if (q.type === 'standard') { questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`; let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join(''); questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`; } else if (q.type === 'product_list') { questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide15_pleksi')"><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`; let productOptions = ''; let currentOptgroup = false; productList.forEach(p => { if (p.type === 'header') { if (currentOptgroup) productOptions += `</optgroup>`; productOptions += `<optgroup label="${p.name}">`; currentOptgroup = true; } else { productOptions += `<option value="${p.id}">${p.code} - ${p.name}</option>`; } }); if (currentOptgroup) productOptions += `</optgroup>`; questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle ilgili notlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`; } else if (q.type === 'pop_system') { questionActionsHTML = `...`; questionContentHTML = `...`; } html += `<div class="fide-item" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`; }); formContainer.innerHTML = html; }
+    function buildForm() { const formContainer = document.getElementById('form-content'); formContainer.innerHTML = ''; let html = ''; fideQuestions.forEach(q => { let questionActionsHTML = ''; let questionContentHTML = ''; if (q.type === 'standard') { questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm btn-primary" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm btn-success" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`; let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join(''); questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`; } else if (q.type === 'product_list') { questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm btn-primary" onclick="addDynamicInput('fide15_pleksi')"><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm btn-success" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`; let productOptions = ''; let currentOptgroup = false; productList.forEach(p => { if (p.type === 'header') { if (currentOptgroup) productOptions += `</optgroup>`; productOptions += `<optgroup label="${p.name}">`; currentOptgroup = true; } else { productOptions += `<option value="${p.id}">${p.code} - ${p.name}</option>`; } }); if (currentOptgroup) productOptions += `</optgroup>`; questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle ilgili notlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`; } html += `<div class="fide-item" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`; }); formContainer.innerHTML = html; }
     
     function initiateDeleteItem(buttonEl) { const itemEl = buttonEl.parentElement; if (itemEl.classList.contains('is-deleting')) { clearTimeout(itemEl.dataset.deleteTimer); itemEl.removeAttribute('data-delete-timer'); itemEl.classList.remove('is-deleting'); buttonEl.querySelector('i').className = 'fas fa-trash'; buttonEl.classList.remove('btn-warning'); buttonEl.classList.add('btn-danger'); } else { itemEl.classList.add('is-deleting'); buttonEl.querySelector('i').className = 'fas fa-undo'; buttonEl.classList.remove('btn-danger'); buttonEl.classList.add('btn-warning'); const timerId = setTimeout(() => { itemEl.remove(); saveFormState(); }, 4000); itemEl.dataset.deleteTimer = timerId; } saveFormState(); }
     
     function addProductToList(productId, quantity) { const select = document.getElementById('product-selector'); const qtyInput = document.getElementById('product-qty'); const selectedProductId = productId || select.value; const selectedQty = quantity || qtyInput.value; if (!selectedProductId || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.'); const product = productList.find(p => p.id === selectedProductId); const listContainer = document.getElementById('selected-products-list'); if (document.querySelector(`.selected-product-item[data-id="${product.id}"]`)) return alert('Bu ürün zaten listede.'); const unit = getUnitForProduct(product.name); const newItem = document.createElement('div'); newItem.className = 'selected-product-item'; newItem.dataset.id = product.id; newItem.dataset.qty = selectedQty; newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} ${unit}</b></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sil" onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`; listContainer.appendChild(newItem); if (!productId) { select.value = ''; qtyInput.value = '1'; } saveFormState(); }
     
-    function toggleCompleted(button) { const input = button.parentElement.querySelector('input[type="text"]'); const isCompleted = input.classList.toggle('completed'); input.readOnly = isCompleted; button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı'; button.classList.toggle('undo', isCompleted); saveFormState(); }
+    function toggleCompleted(button) { const input = button.parentElement.querySelector('input[type="text"]'); const isCompleted = input.classList.toggle('completed'); input.readOnly = isCompleted; button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı'; button.classList.toggle('undo', isCompleted); button.classList.toggle('btn-success', !isCompleted); button.classList.toggle('btn-warning', isCompleted); saveFormState(); }
     
-    function toggleQuestionCompleted(button, id) { const itemDiv = document.getElementById(`fide-item-${id}`); const titleContainer = itemDiv.querySelector('.fide-title-container'); const isCompleted = titleContainer.classList.toggle('question-completed'); button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı'; button.classList.toggle('undo', isCompleted); const inputArea = itemDiv.querySelector('.input-area'); if (inputArea) inputArea.style.display = isCompleted ? 'none' : 'block'; saveFormState(); }
+    function toggleQuestionCompleted(button, id) { const itemDiv = document.getElementById(`fide-item-${id}`); const titleContainer = itemDiv.querySelector('.fide-title-container'); const isCompleted = titleContainer.classList.toggle('question-completed'); button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı'; button.classList.toggle('undo', isCompleted); button.classList.toggle('btn-success', !isCompleted); button.classList.toggle('btn-warning', isCompleted); const inputArea = itemDiv.querySelector('.input-area'); if (inputArea) inputArea.style.display = isCompleted ? 'none' : 'block'; saveFormState(); }
     
     function toggleQuestionRemoved(button, id) { const itemDiv = document.getElementById(`fide-item-${id}`); const isRemoved = itemDiv.classList.toggle('question-removed'); const inputArea = itemDiv.querySelector('.input-area'); if(inputArea) inputArea.style.display = isRemoved ? 'none' : 'block'; button.innerHTML = isRemoved ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar'; button.classList.toggle('btn-danger', !isRemoved); button.classList.toggle('btn-primary', isRemoved); const actions = button.closest('.fide-actions'); if(actions) { actions.querySelectorAll('button:not(.remove-btn)').forEach(b => b.disabled = isRemoved); } saveFormState(); }
     
-    function addDynamicInput(id, value = '', isCompleted = false) { const container = document.getElementById(`sub-items-container-${id}`); if (!container) return; const newItem = document.createElement('div'); newItem.className = 'dynamic-input-item'; newItem.innerHTML = `<input type="text" placeholder="Eksikliği yazın..." value="${value}"><button class="status-btn btn-sm"><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger"><i class="fas fa-trash"></i></button>`; const input = newItem.querySelector('input'); const completeButton = newItem.querySelector('.status-btn'); input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addDynamicInput(id); } }); input.addEventListener('blur', saveFormState); completeButton.onclick = () => toggleCompleted(completeButton); newItem.querySelector('.delete-bar').onclick = function() { initiateDeleteItem(this); }; if(isCompleted) toggleCompleted(completeButton); container.prepend(newItem); if (value === '') input.focus(); saveFormState(); }
-
-    // DİĞER FONKSİYONLAR... (Excel, Email, Soru Yöneticisi vb.)
+    function addDynamicInput(id, value = '', isCompleted = false) { const container = document.getElementById(`sub-items-container-${id}`); if (!container) return; const newItem = document.createElement('div'); newItem.className = 'dynamic-input-item'; newItem.innerHTML = `<input type="text" placeholder="Eksikliği yazın..." value="${value}"><button class="status-btn btn-sm btn-success"><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger"><i class="fas fa-trash"></i></button>`; const input = newItem.querySelector('input'); const completeButton = newItem.querySelector('.status-btn'); input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addDynamicInput(id); } }); input.addEventListener('blur', saveFormState); completeButton.onclick = () => toggleCompleted(completeButton); newItem.querySelector('.delete-bar').onclick = function() { initiateDeleteItem(this); }; if(isCompleted) toggleCompleted(completeButton); container.prepend(newItem); if (value === '') input.focus(); saveFormState(); }
+    
+    // EXCEL İLE İLGİLİ FONKSİYONLAR...
+    // ...
+    // E-POSTA İLE İLGİLİ FONKSİYONLAR...
+    // ...
+    // SORU YÖNETİCİSİ İLE İLGİLİ FONKSİYONLAR...
     // ...
 
-    // --- ANA BAŞLATMA FONKSİYONU ---
     async function initializeApp() {
         try {
             const response = await fetch('https://mkotbas.github.io/host/fide_soru_listesi.json');
@@ -265,16 +258,13 @@
             fideQuestions = fallbackFideQuestions;
             document.getElementById('initialization-error').style.display = 'block';
         }
-
         try {
             await auth.signInAnonymously();
             currentUser = auth.currentUser;
             if (!currentUser) throw new Error("Anonim kullanıcı oluşturulamadı.");
             
-            // Excel ve diğer lokal verileri yükle
-            // loadDideDataFromStorage(); 
-            // loadFideDataFromStorage();
-
+            loadDideDataFromStorage();
+            loadFideDataFromStorage();
             buildForm();
             loadDataFromFirebase();
             setupEventListeners();
@@ -286,28 +276,14 @@
     }
     
     function setupEventListeners() {
-        document.getElementById('clear-all-cloud-data-btn').addEventListener('click', async () => {
-             const dogruSifreHash = 'ZmRlMDAx';
-             const girilenSifre = prompt("DİKKAT! Buluttaki TÜM raporlar kalıcı olarak silinecektir. Devam etmek için şifreyi girin:");
-             if (girilenSifre) {
-                if (btoa(girilenSifre) === dogruSifreHash) {
-                    if (confirm("Şifre doğru. SON ONAY: Buluttaki tüm veriler silinecek. Emin misiniz?")) {
-                        setStatus('<i class="fas fa-sync-alt fa-spin"></i> Siliniyor...', 'connecting');
-                        try {
-                            await db.ref(`users/${currentUser.uid}/allFideReports`).remove();
-                            alert("Buluttaki tüm raporlar başarıyla silindi. Sayfa yenileniyor.");
-                            window.location.reload();
-                        } catch (error) {
-                            alert("Silme işlemi sırasında bir hata oluştu.");
-                            setStatus('<i class="fas fa-exclamation-triangle"></i> Silme Hatası!', 'error');
-                        }
-                    }
-                } else {
-                    alert("Hatalı şifre!");
-                }
-             }
-        });
-        // Diğer butonların event listener'ları buraya eklenecek.
+        document.getElementById('excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'dide'));
+        document.getElementById('fide-excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'fide'));
+        document.getElementById('toggle-manager-btn').addEventListener('click', () => { /* ... */ });
+        document.getElementById('clear-all-cloud-data-btn').addEventListener('click', async () => { /* ... */ });
+        document.getElementById('clear-excel-btn').addEventListener('click', () => { /* ... */ });
+        document.getElementById('clear-fide-excel-btn').addEventListener('click', () => { /* ... */ });
+        document.getElementById('new-report-btn').addEventListener('click', startNewReport);
+        document.getElementById('store-search-input').addEventListener('keyup', (e) => { /* ... */ });
     }
     
     window.onload = initializeApp;
