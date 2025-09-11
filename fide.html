@@ -164,14 +164,14 @@
             padding: 8px;
             margin-top: 5px;
             /* YENİ: Yatay açılma için ayarlar */
-            top: -5px;
-            left: calc(100% + 5px);
+            top: calc(100% + 5px); /* Butonun altından başla */
+            left: 0; /* Butonun soluyla hizala */
             display: flex; /* Butonları yan yana dizer */
             gap: 8px;
             width: max-content; /* İçeriğe göre genişlik */
             opacity: 0;
             transform: scale(0.95);
-            transform-origin: left center;
+            transform-origin: top left; /* Animasyon başlangıç noktası */
             transition: opacity 0.2s ease, transform 0.2s ease;
             pointer-events: none;
         }
@@ -390,6 +390,7 @@
 
             await loadInitialData();
             setupEventListeners();
+            updateFormInteractivity(selectedStore !== null);
         }
 
         async function loadInitialData() {
@@ -1186,6 +1187,7 @@
                     }
                 }
                 if (!reportDataFromCode) { alert('Rapor başarıyla yüklendi!'); document.getElementById('load-code-area').value = ''; }
+                updateFormInteractivity(true);
             } catch (error) { alert('Geçersiz rapor kodu!'); console.error("Rapor yükleme hatası:", error); }
         }
         function startNewReport() {
@@ -1193,6 +1195,7 @@
             document.getElementById('store-search-input').value = '';
             localStorage.removeItem('lastSelectedStoreCode');
             resetForm();
+            updateFormInteractivity(false);
         }
         function getFormDataForSaving() {
             let reportData = { selectedStore: selectedStore, questions_status: {} };
@@ -1407,6 +1410,24 @@
             link.click();
             URL.revokeObjectURL(url);
             alert("Güncellenmiş sorularınız 'fide_soru_listesi.json' olarak indirildi.\n\nLÜTFEN BU DOSYAYI ESKİSİYLE DEĞİŞTİRİP SAYFAYI YENİLEYİN.");
+        }
+        function updateFormInteractivity(enable) {
+            const formContent = document.getElementById('form-content');
+            if (!formContent) return;
+
+            const buttons = formContent.querySelectorAll(
+                '.add-item-btn, .status-btn, .remove-btn, .delete-bar, .delete-item-btn, .product-adder button'
+            );
+            const inputs = formContent.querySelectorAll(
+                '#product-selector, #product-qty'
+            );
+
+            buttons.forEach(btn => {
+                btn.disabled = !enable;
+            });
+            inputs.forEach(input => {
+                input.disabled = !enable;
+            });
         }
     </script>
 </body>
