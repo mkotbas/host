@@ -3,14 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Denetim Formu (Bulut Yedeklemeli)</title>
+    <title>Denetim Formu</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
     <style>
         :root {
             --primary: #008CBA;
@@ -140,7 +135,7 @@
             </div>
 
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
-                <i class="fas fa-info-circle"></i> Raporlarınız hem tarayıcı hafızasında hem de bulutta saklanır. Bulut yedeklemesi için internet bağlantısı gereklidir.
+                <i class="fas fa-info-circle"></i> Raporlarınız artık hem tarayıcı hafızasında saklanır hem de buluta yedeklenir. Düzenli olarak "Tüm Raporları Yedekle" özelliğini kullanmanız yine de tavsiye edilir.
             </p>
             <div>
                 <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
@@ -161,7 +156,7 @@
              <div style="margin-top: 20px;">
                 <p><b>3. Adım: Rapor ve Veri Temizleme</b></p>
                  <div class="file-input-wrapper">
-                    <button id="clear-storage-btn" class="btn-danger btn-sm" title="UYARI: Tarayıcı hafızasındaki ve BULUTTAKİ tüm bayi raporlarını kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Raporları Sil</button>
+                    <button id="clear-storage-btn" class="btn-danger btn-sm" title="UYARI: Tarayıcı hafızasındaki tüm bayi raporlarını kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Raporları Sil</button>
                     <button id="clear-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan DiDe Excel verisini tarayıcı hafızasından temizler."><i class="fas fa-trash-alt"></i> DiDe Excell'i Sil</button>
                     <button id="clear-fide-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan FiDe Excel verisini tarayıcı hafızasından temizler."><i class="fas fa-trash-alt"></i> FiDe Excell'i Sil</button>
                 </div>
@@ -203,47 +198,30 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script>
-        // --- Firebase Entegrasyonu Başlangıcı ---
-        
-        // BİLGİLERİNİZ EKRAN GÖRÜNTÜSÜNDEN ALINARAK GÜNCELLENDİ
+        // <<< BAŞLANGIÇ: FIREBASE ENTEGRASYONU >>>
         const firebaseConfig = {
-          apiKey: "AIzaSyDDwUYn9uSjRyxPycOImQb-OWx12AfQRFU",
-          authDomain: "fide-sistemi.firebaseapp.com",
-          databaseURL: "https://fide-sistemi-default-rtdb.europe-west1.firebasedatabase.app", // Bu adres Firebase konsolundaki Realtime Database sayfanızdan teyit edilebilir.
-          projectId: "fide-sistemi",
-          storageBucket: "fide-sistemi.firebasestorage.app",
-          messagingSenderId: "419642537236",
-          appId: "1:419642537236:web:02eaee1c3511d3af993e01"
+            apiKey: "AIzaSyBzTb9cop8B4k8D8VGRBnojlxvIKoaGcbQ",
+            authDomain: "fideraporuygulamasi.firebaseapp.com",
+            databaseURL: "https://fideraporuygulamasi-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "fideraporuygulamasi",
+            storageBucket: "fideraporuygulamasi.appspot.com",
+            messagingSenderId: "351112274026",
+            appId: "1:351112274026:web:2e7433982f3b4bc747ea13"
         };
-        
-        // Firebase'i başlat
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const database = firebase.database();
-        let userId = null; // Kullanıcı ID'sini saklamak için
 
-        // Oturum açmayı yöneten fonksiyon
-        function manageAuth() {
-          auth.onAuthStateChanged(user => {
-            if (user) {
-              // Kullanıcı oturum açmış (anonim olarak)
-              userId = user.uid;
-              console.log("Firebase'e anonim olarak giriş yapıldı. User ID:", userId);
-              // Oturum açıldıktan sonra son oturumu geri yüklemeyi dene
-              restoreLastSession(); 
-            } else {
-              // Kullanıcı oturum açmamış, anonim olarak giriş yap
-              auth.signInAnonymously().catch(error => {
-                console.error("Anonim giriş hatası:", error);
-                alert("Bulut yedekleme sistemine bağlanılamadı. Lütfen internet bağlantınızı kontrol edin. Raporlar sadece bu tarayıcıya kaydedilecek.");
-                // Giriş başarısız olsa bile yerel oturumu yükle
-                restoreLastSession();
-              });
-            }
-          });
+        // Firebase'i başlat
+        try {
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+            console.log("Firebase başarıyla başlatıldı.");
+        } catch (e) {
+            console.error("Firebase başlatılamadı. Lütfen firebaseConfig bilgilerini kontrol edin.", e);
+            alert("DİKKAT: Firebase bağlantısı kurulamadı. Raporlar sadece bu bilgisayara kaydedilecek. Lütfen 'firebaseConfig' bilgilerini koda eklediğinizden emin olun.");
         }
-        // --- Firebase Entegrasyonu Sonu ---
+        // <<< SON: FIREBASE ENTEGRASYONU >>>
 
 
         // GLOBAL DEĞİŞKENLER
@@ -877,66 +855,71 @@
             });
             return reportData;
         }
-
-        // --- GÜNCELLENEN FONKSİYON ---
         function saveFormState() {
             if (!document.getElementById('form-content').innerHTML || !selectedStore) return;
-            
+
+            // 1. Mevcut Yerel Kayıt (localStorage) - BUNA DOKUNMUYORUZ
             let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
             const reportData = getFormDataForSaving();
             const storeKey = `store_${selectedStore.bayiKodu}`;
-            const dataToSave = { timestamp: new Date().getTime(), data: reportData };
-            allReports[storeKey] = dataToSave;
-            
-            // 1. Yerel hafızaya kaydetme (eskisi gibi devam ediyor)
+            allReports[storeKey] = { timestamp: new Date().getTime(), data: reportData };
             localStorage.setItem('allFideReports', JSON.stringify(allReports));
 
-            // 2. Firebase bulut veritabanına kaydetme
-            if (userId) {
-                const reportRef = database.ref(`userData/${userId}/reports/${storeKey}`);
-                reportRef.set(dataToSave)
-                    .then(() => console.log(`${storeKey} Firebase'e başarıyla kaydedildi.`))
-                    .catch(error => console.error("Firebase'e kaydetme hatası:", error));
+            // 2. YENİ EKLENEN: Firebase'e Kaydetme
+            // 'database' değişkeninin tanımlı olup olmadığını kontrol et
+            if (typeof database !== 'undefined') {
+                const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
+                firebaseStoreRef.set({ timestamp: new Date().getTime(), data: reportData })
+                    .catch(error => {
+                        console.error("Firebase'e yazma hatası:", error);
+                        alert("UYARI: Rapor buluta kaydedilemedi. İnternet bağlantınızı kontrol edin.");
+                    });
             }
         }
 
-        // --- GÜNCELLENEN FONKSİYON ---
-        async function loadReportForStore(bayiKodu) {
+        function loadReportForStore(bayiKodu) {
             const storeKey = `store_${bayiKodu}`;
-            
-            // 1. Öncelik: Firebase'den en güncel veriyi çekmeyi dene
-            if (userId) {
-                const reportRef = database.ref(`userData/${userId}/reports/${storeKey}`);
-                try {
-                    const snapshot = await reportRef.once('value');
-                    const firebaseData = snapshot.val();
 
-                    if (firebaseData) {
-                        console.log(`${storeKey} Firebase'den yüklendi.`);
-                        loadReport(firebaseData.data);
-                        
-                        // Yerel hafızayı da Firebase'den gelen güncel veriyle senkronize et
-                        let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
-                        allReports[storeKey] = firebaseData;
-                        localStorage.setItem('allFideReports', JSON.stringify(allReports));
-                        
-                        return; // Firebase'den yükleme başarılı olduğu için işlemi bitir.
+            // 'database' değişkeninin tanımlı olup olmadığını kontrol et
+            if (typeof database !== 'undefined') {
+                // 1. YENİ: Önce Firebase'den veriyi çekmeyi dene
+                const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
+                firebaseStoreRef.once('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        // Firebase'de veri varsa, onu yükle
+                        console.log("Rapor Firebase'den yüklendi.");
+                        loadReport(snapshot.val().data);
+                    } else {
+                        // Firebase'de veri yoksa, yerel hafızayı (localStorage) kontrol et
+                        console.log("Rapor Firebase'de bulunamadı, yerel hafıza kontrol ediliyor.");
+                        const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
+                        if (allReports[storeKey]) {
+                            loadReport(allReports[storeKey].data);
+                        } else {
+                            resetForm();
+                        }
                     }
-                } catch (error) {
-                    console.error("Firebase'den veri okuma hatası, yerel depoya geçiliyor.", error);
+                }).catch(error => {
+                    console.error("Firebase'den okuma hatası, yerel hafızaya dönülüyor:", error);
+                    // Hata olursa yine yerel hafızayı dene
+                    const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
+                    if (allReports[storeKey]) {
+                        loadReport(allReports[storeKey].data);
+                    } else {
+                        resetForm();
+                    }
+                });
+            } else {
+                // Firebase bağlantısı yoksa doğrudan yerel hafızadan yükle
+                console.log("Firebase bağlantısı yok, yerel hafıza kontrol ediliyor.");
+                const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
+                if (allReports[storeKey]) {
+                    loadReport(allReports[storeKey].data);
+                } else {
+                    resetForm();
                 }
             }
-
-            // 2. Firebase'den veri gelmezse (çevrimdışı, ilk kullanım vb.), yerel hafızadan yükle (eskisi gibi)
-            console.log("Firebase'de veri bulunamadı veya bağlantı yok, yerel depodan yükleniyor.");
-            const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
-            if (allReports[storeKey]) {
-                loadReport(allReports[storeKey].data);
-            } else {
-                resetForm(); // Hiçbir yerde kayıt yoksa formu sıfırla
-            }
         }
-
         function backupAllReports() {
             const allReports = localStorage.getItem('allFideReports');
             if (!allReports || Object.keys(JSON.parse(allReports)).length === 0) return alert('Yedeklenecek kayıtlı rapor bulunamadı.');
@@ -956,7 +939,7 @@
         function handleRestoreUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            if (confirm("Bu işlem mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz? (Bu işlem bulut verilerinizi etkilemez, sadece bu tarayıcıdaki verileri günceller.)")) {
+            if (confirm("Bu işlem mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz?")) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     try {
@@ -1048,7 +1031,6 @@
                     let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : storeToRestore.bayiAdi;
                     searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`;
                     document.getElementById('store-list').style.display = 'none';
-                    // loadReportForStore fonksiyonu artık hem buluttan hem yerelden kontrol ettiği için direkt çağırıyoruz.
                     loadReportForStore(storeToRestore.bayiKodu);
                 }
             }
@@ -1156,11 +1138,7 @@
         
         // ANA BAŞLATMA FONKSİYONU
         async function initializeApp() {
-            // Firebase kimlik doğrulamasını başlat
-            manageAuth();
-
             try {
-                // Soru listesini URL'den çekiyoruz, burası olduğu gibi kalıyor.
                 const response = await fetch('https://mkotbas.github.io/host/fide_soru_listesi.json');
                 if (!response.ok) throw new Error('Dosya bulunamadı veya ağ hatası.');
                 
@@ -1191,9 +1169,8 @@
             }
 
             buildForm();
-            // restoreLastSession çağrısını manageAuth içine taşıdık ki,
-            // kullanıcı ID'si alındıktan sonra çalışsın ve buluttan veri çekebilsin.
-            
+            restoreLastSession(); 
+
             document.getElementById('toggle-manager-btn').addEventListener('click', () => {
                 const manager = document.getElementById('question-manager');
                 const isManagerHidden = manager.style.display === 'none' || manager.style.display === '';
@@ -1239,14 +1216,9 @@
                 if (girilenSifre) { 
                     const girilenSifreHash = btoa(girilenSifre);
                     if (girilenSifreHash === dogruSifreHash) {
-                        if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları hem bu tarayıcıdan hem de BULUTTAN kalıcı olarak silinecektir.")) {
-                            // Hem yereli hem de bulutu temizle
+                        if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları kalıcı olarak silinecektir.")) {
                             localStorage.removeItem('allFideReports');
                             localStorage.removeItem('lastSelectedStoreCode');
-                            if(userId){
-                                const userReportsRef = database.ref(`userData/${userId}/reports`);
-                                userReportsRef.remove();
-                            }
                             alert("Tüm kaydedilmiş raporlar temizlendi. Sayfa yenileniyor.");
                             window.location.reload();
                         }
