@@ -95,7 +95,7 @@
 
         <div class="card" id="dide-upload-card">
             <h2><i class="fas fa-chart-line"></i> Puan Entegrasyonu ve Veri Yönetimi</h2>
-            <div id="excel-expiry-warning" style="display:none;"><p><i class="fas fa-exclamation-triangle"></i> Veri Uyarısı</p><span>Aşağıdaki dosyalar 30 günden eski olduğu için hafızadan silindi...</span><ul id="expired-files-list"></ul></div>
+            <div id="excel-expiry-warning" style="display:none;"><p><i class="fas fa-exclamation-triangle"></i> Veri Uyarısı</p><span>Aşağıdaki dosyalar 30 günden eski...</span><ul id="expired-files-list"></ul></div>
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Raporlarınız artık bulutta saklanıyor. Manuel yedekleme butonları ek güvenlik için korunmuştur.</p>
             <div>
                 <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
@@ -208,11 +208,14 @@
                     localStorage.setItem('allFideReports', JSON.stringify(cloudReports));
                 }
                 
-                loadDideDataFromStorage();
-                loadFideDataFromStorage();
-                buildForm();
-                restoreLastSession();
-                setupEventListeners();
+                let isInitialLoad = !dideData.length;
+                if(isInitialLoad){
+                    loadDideDataFromStorage();
+                    loadFideDataFromStorage();
+                    buildForm();
+                    restoreLastSession();
+                    setupEventListeners();
+                }
 
             }, (errorObject) => {
                 console.error("Firebase okuma hatası:", errorObject);
@@ -222,7 +225,7 @@
         } catch (error) {
             console.error("Firebase Hatası:", error);
             setStatus('<i class="fas fa-exclamation-triangle"></i> Bağlantı Hatası!', 'error');
-            alert("Güvenli bulut bağlantısı kurulamadı. Sistem internetsiz modda (sadece bilgisayar hafızasına kaydederek) devam edecektir.");
+            alert("Güvenli bulut bağlantısı kurulamadı. Sistem internetsiz modda devam edecektir.");
             
             loadDideDataFromStorage();
             loadFideDataFromStorage();
@@ -239,7 +242,7 @@
         document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
         document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
         document.getElementById('new-report-btn').addEventListener('click', startNewReport);
-        document.getElementById('clear-storage-btn').addEventListener('click', () => { const dogruSifreHash = 'ZmRlMDAx'; const girilenSifre = prompt("Bu işlem geri alınamaz. Hem lokaldeki hem de buluttaki tüm raporları kalıcı olarak silmek için şifreyi girin:"); if (girilenSifre) { const girilenSifreHash = btoa(girilenSifre); if (girilenSifreHash === dogruSifreHash) { if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları kalıcı olarak silinecektir.")) { localStorage.removeItem('allFideReports'); localStorage.removeItem('lastSelectedStoreCode'); if(currentUser){ db.ref(`users/${currentUser.uid}/allFideReports`).remove(); } alert("Tüm raporlar temizlendi. Sayfa yenileniyor."); window.location.reload(); } } else { alert("Hatalı şifre! Silme işlemi iptal edildi."); } } });
+        document.getElementById('clear-storage-btn').addEventListener('click', () => { const dogruSifreHash = 'ZmRlMDAx'; const girilenSifre = prompt("Bu işlem geri alınamaz. Hem lokaldeki hem de buluttaki tüm raporları silmek için şifreyi girin:"); if (girilenSifre) { const girilenSifreHash = btoa(girilenSifre); if (girilenSifreHash === dogruSifreHash) { if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları kalıcı olarak silinecektir.")) { localStorage.removeItem('allFideReports'); localStorage.removeItem('lastSelectedStoreCode'); if(currentUser){ db.ref(`users/${currentUser.uid}/allFideReports`).remove(); } alert("Tüm raporlar temizlendi. Sayfa yenileniyor."); window.location.reload(); } } else { alert("Hatalı şifre! Silme işlemi iptal edildi."); } } });
         document.getElementById('clear-excel-btn').addEventListener('click', () => { if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) { localStorage.removeItem('didePersistenceData'); alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor."); window.location.reload(); } });
         document.getElementById('clear-fide-excel-btn').addEventListener('click', () => { if (confirm("Yüklenmiş olan FiDe Excel verisini hafızadan silmek istediğinizden emin misiniz?")) { localStorage.removeItem('fidePersistenceData'); alert("FiDe Excel verisi temizlendi. Sayfa yenileniyor."); window.location.reload(); } });
         document.getElementById('store-search-input').addEventListener('keyup', (e) => { selectedStore = null; const filter = e.target.value.toLowerCase().trim(); const storeListDiv = document.getElementById('store-list'); storeListDiv.style.display = 'block'; if (filter === "") { storeListDiv.innerHTML = ''; return; } const filteredStores = uniqueStores.filter(store => (store.bayiAdi && store.bayiAdi.toLowerCase().includes(filter)) || (store.bayiKodu && String(store.bayiKodu).toLowerCase().includes(filter)) ); displayStores(filteredStores); });
