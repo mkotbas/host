@@ -44,10 +44,16 @@
         .status-btn { background-color: var(--success); color: white; margin-left: 10px; }
         .status-btn.undo { background-color: var(--warning); color: var(--dark); }
         .delete-bar { flex-shrink: 0; width: 32px; border-radius: 0 8px 8px 0; cursor: pointer; align-self: stretch; display: flex; align-items: center; justify-content: center; margin: -12px -12px -12px 15px; padding: 12px 0; }
+        .product-adder { display: flex; gap: 10px; align-items: center; margin: 15px 0; }
+        .product-adder select { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
+        .product-adder input[type="number"] { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
+        .selected-product-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--light); border-radius: 8px; margin-bottom: 8px; }
+        .delete-item-btn { background-color: var(--danger); color: white; margin-left:10px;}
+        .delete-item-btn i { margin-right: 0; }
+        textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; margin-bottom: 16px; }
         .file-input-wrapper { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 1rem; }
         .file-input-wrapper input[type="file"] { display: none; }
         .file-input-label { background-color: var(--primary); color: white; padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; transition: var(--transition); }
-        .file-input-label i { margin-right: 8px; }
         #file-name, #fide-file-name { font-style: italic; color: var(--dark); }
         #store-selection-area { display: none; margin-top: 20px; }
         #store-search-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 16px; }
@@ -59,8 +65,6 @@
         #initialization-error { display: none; color: #b91c1c; background-color: #fee2e2; border: 1px solid #f87171; }
         .top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .backup-controls { display: flex; gap: 8px; flex-wrap: wrap; }
-        
-        /* --- YENİ TOGGLE SWITCH STİLLERİ --- */
         .cloud-toggle-container { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600;}
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -68,6 +72,12 @@
         .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--success); }
         input:checked + .slider:before { transform: translateX(20px); }
+        .manager-item { border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white; }
+        .manager-item-grid { display: grid; grid-template-columns: 80px 1fr 120px; gap: 10px; align-items: center; }
+        .manager-item label { font-weight: 600; display: block; margin-bottom: 5px; font-size: 12px; color: var(--secondary); }
+        .manager-item input, .manager-item select, .manager-item textarea { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 10px; }
+        .manager-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom:20px; border-bottom: 1px solid var(--border); }
+        .manager-item-footer { display: flex; justify-content: flex-end; }
     </style>
 </head>
 <body>
@@ -154,7 +164,7 @@
     // --- GLOBAL DEĞİŞKENLER ---
     let dideData = [], fideData = [], uniqueStores = [], selectedStore = null, fideQuestions = [], popCodes = [], expiredCodes = [], productList = [], expiredExcelFiles = [];
     let isStoreSelected = false;
-    let isCloudSyncEnabled = true; // YENİ: Bulut senkronizasyonunu kontrol eder
+    let isCloudSyncEnabled = true;
     const fallbackFideQuestions = [ { id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi. Lütfen dosyayı kontrol edin." } ];
     const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
@@ -180,7 +190,7 @@
     function loadDideDataFromStorage() { const storedDataJSON = localStorage.getItem('didePersistenceData'); if (!storedDataJSON) return; try { const storedData = JSON.parse(storedDataJSON); if ((new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24) > 30) { localStorage.removeItem('didePersistenceData'); expiredExcelFiles.push('DiDe Puan Excel'); return; } if (storedData.filename) { document.getElementById('file-name').textContent = `Yüklü dosya: ${storedData.filename}`; } populateDideState(storedData.data); } catch (e) { localStorage.removeItem('didePersistenceData'); } }
     function loadFideDataFromStorage() { const storedDataJSON = localStorage.getItem('fidePersistenceData'); if (!storedDataJSON) return; try { const storedData = JSON.parse(storedDataJSON); if ((new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24) > 30) { localStorage.removeItem('fidePersistenceData'); expiredExcelFiles.push('FiDe Puan Excel'); return; } if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Yüklü dosya: ${storedData.filename}`; } populateFideState(storedData.data); } catch(e) { localStorage.removeItem('fidePersistenceData'); } }
     function displayStores(stores) { const storeListDiv = document.getElementById('store-list'); storeListDiv.innerHTML = ''; stores.forEach(store => { const item = document.createElement('div'); item.className = 'store-item'; item.textContent = `${store.bayiAdi} (${store.bayiKodu})`; item.dataset.bayiKodu = store.bayiKodu; item.dataset.bayiAdi = store.bayiAdi; item.addEventListener('click', () => { document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected')); item.classList.add('selected'); selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi }; localStorage.setItem('lastSelectedStoreCode', store.bayiKodu); const searchInput = document.getElementById('store-search-input'); searchInput.value = `${store.bayiKodu} - ${store.bayiAdi}`; storeListDiv.innerHTML = ''; storeListDiv.style.display = 'none'; isStoreSelected = true; loadReportForStore(store.bayiKodu); }); storeListDiv.appendChild(item); }); }
-    function generateEmail() { if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!'); saveFormState(); const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu)); const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu)); if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı."); const reportData = getFormDataForSaving(); document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2); document.getElementById('save-section').style.display = 'block'; /* ... rest of the function */ }
+    function generateEmail() { if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!'); saveFormState(); const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu)); const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu)); if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı."); const reportData = getFormDataForSaving(); document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2); document.getElementById('save-section').style.display = 'block'; /* ... rest of the function ... */ }
     function downloadReportCode() { const reportCode = document.getElementById('save-code-area').value; if (!selectedStore || !reportCode) return alert('İndirilecek rapor kodu bulunamadı.'); const filename = `${selectedStore.bayiKodu} - ${selectedStore.bayiAdi.substring(0, 15).trim()}.txt`; const blob = new Blob([reportCode], { type: 'text/plain;charset=utf-8' }); const link = document.createElement('a'); const url = URL.createObjectURL(blob); link.href = url; link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
     function loadReportForStore(bayiKodu) { const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {}; const storeKey = `store_${bayiKodu}`; if (allReports[storeKey]) loadReport(allReports[storeKey].data); else resetForm(); }
     function loadReport(reportDataFromCode) { try { let reportData = reportDataFromCode; if (!reportData) { const loadCode = document.getElementById('load-code-area').value.trim(); if (!loadCode) return alert('Lütfen yüklenecek kodu yapıştırın.'); reportData = JSON.parse(loadCode); } isStoreSelected = true; resetForm(); if (reportData.selectedStore) { selectedStore = reportData.selectedStore; const searchInput = document.getElementById('store-search-input'); searchInput.value = `${selectedStore.bayiKodu} - ${selectedStore.bayiAdi}`; document.getElementById('store-list').style.display = 'none'; } for (const qId in reportData.questions_status) { const data = reportData.questions_status[qId]; const questionItem = document.getElementById(`fide-item-${qId}`); if (!questionItem) continue; const completeButton = questionItem.querySelector('.fide-actions .status-btn'); const removeButton = questionItem.querySelector('.fide-actions .remove-btn'); if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId); else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId); if (data.dynamicInputs) data.dynamicInputs.forEach(input => addDynamicInput(qId === '15' ? 'fide15_pleksi' : `fide${qId}`, input.text, input.completed)); if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.id, prod.qty)); } if (!reportDataFromCode) { alert('Rapor başarıyla yüklendi!'); document.getElementById('load-code-area').value = ''; } } catch (error) { alert('Geçersiz rapor kodu!'); } }
@@ -226,6 +236,8 @@
             
             db.ref(`users/${currentUser.uid}/allFideReports`).on('value', (snapshot) => {
                 updateCloudStatusText(true);
+                document.getElementById('cloud-toggle').checked = true;
+                isCloudSyncEnabled = true;
                 if (snapshot.exists()) {
                     const cloudReports = snapshot.val();
                     localStorage.setItem('allFideReports', JSON.stringify(cloudReports));
