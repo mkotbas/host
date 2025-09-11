@@ -78,6 +78,11 @@
         .manager-item input, .manager-item select, .manager-item textarea { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 10px; }
         .manager-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom:20px; border-bottom: 1px solid var(--border); }
         .manager-item-footer { display: flex; justify-content: flex-end; }
+        .pop-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 5px; }
+        .checkbox-label { display: flex; align-items: center; padding: 5px; font-size: 14px; cursor: pointer; justify-content: center; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9; }
+        .pop-checkbox { margin-right: 5px; }
+        .pop-button-container { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .warning-message { color: #d32f2f; background-color: #ffebee; border: 1px solid #d32f2f; border-radius: 4px; padding: 10px; margin-top: 10px; text-align: center; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
@@ -168,20 +173,157 @@
     const fallbackFideQuestions = [ { id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi. Lütfen dosyayı kontrol edin." } ];
     const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
-    // --- TÜM FONKSİYONLAR (EKSİKSİZ VE DOĞRU) ---
+    // --- TÜM FONKSİYONLAR ---
     function updateCloudStatusText(isConnected) { const textEl = document.getElementById('cloud-status-text'); if(textEl) { textEl.textContent = isConnected ? 'Bulut Aktif' : 'Bulut Kapalı'; } }
     async function saveDataToFirebase() { if (!currentUser || !isCloudSyncEnabled) return; const allReports = localStorage.getItem('allFideReports'); if (allReports) { try { await db.ref(`users/${currentUser.uid}/allFideReports`).set(JSON.parse(allReports)); } catch (error) { console.error("Firebase'e yazma hatası:", error); alert("Buluta kayıt sırasında hata oluştu!"); } } }
     function saveFormState() { if (!document.getElementById('form-content').innerHTML || !selectedStore) return; let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {}; const reportData = getFormDataForSaving(); const storeKey = `store_${selectedStore.bayiKodu}`; allReports[storeKey] = { timestamp: new Date().getTime(), data: reportData }; localStorage.setItem('allFideReports', JSON.stringify(allReports)); saveDataToFirebase(); }
-    function getFormDataForSaving() { let reportData = { selectedStore: selectedStore, questions_status: {} }; fideQuestions.forEach(q => { const itemDiv = document.getElementById(`fide-item-${q.id}`); if(!itemDiv) return; const isRemoved = itemDiv.classList.contains('question-removed'); const titleContainer = itemDiv.querySelector('.fide-title-container'); const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false; const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] }; if (q.type === 'standard') { const container = document.getElementById(`sub-items-container-fide${q.id}`); if(container) { questionData.dynamicInputs = Array.from(container.querySelectorAll('.dynamic-input-item:not(.is-deleting)')).map(node => ({ text: node.querySelector('input').value.trim(), completed: node.querySelector('input').classList.contains('completed') })).filter(item => item.text); } } else if (q.type === 'product_list') { questionData.selectedProducts = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => ({ id: item.dataset.id, qty: item.dataset.qty })); const pleksiContainer = document.getElementById('sub-items-container-fide15_pleksi'); if(pleksiContainer) { questionData.dynamicInputs = Array.from(pleksiContainer.querySelectorAll('.dynamic-input-item:not(.is-deleting)')).map(node => ({ text: node.querySelector('input').value.trim(), completed: node.querySelector('input').classList.contains('completed') })).filter(item => item.text); } } reportData.questions_status[q.id] = questionData; }); return reportData; }
+    
+    function getFormDataForSaving() {
+        let reportData = { selectedStore: selectedStore, questions_status: {} };
+        fideQuestions.forEach(q => {
+            const itemDiv = document.getElementById(`fide-item-${q.id}`);
+            if(!itemDiv) return;
+            const isRemoved = itemDiv.classList.contains('question-removed');
+            const titleContainer = itemDiv.querySelector('.fide-title-container');
+            const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
+            const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
+            if (q.type === 'standard') {
+                const container = document.getElementById(`sub-items-container-fide${q.id}`);
+                if(container) {
+                    questionData.dynamicInputs = Array.from(container.querySelectorAll('.dynamic-input-item:not(.is-deleting)')).map(node => ({
+                        text: node.querySelector('input').value.trim(),
+                        completed: node.querySelector('input').classList.contains('completed')
+                    })).filter(item => item.text);
+                }
+            } else if (q.type === 'product_list') {
+                questionData.selectedProducts = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => ({ id: item.dataset.id, qty: item.dataset.qty }));
+                const pleksiContainer = document.getElementById('sub-items-container-fide15_pleksi');
+                if(pleksiContainer) {
+                    questionData.dynamicInputs = Array.from(pleksiContainer.querySelectorAll('.dynamic-input-item:not(.is-deleting)')).map(node => ({
+                        text: node.querySelector('input').value.trim(),
+                        completed: node.querySelector('input').classList.contains('completed')
+                    })).filter(item => item.text);
+                }
+            } else if (q.type === 'pop_system') {
+                questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+            }
+            reportData.questions_status[q.id] = questionData;
+        });
+        return reportData;
+    }
+
     function getUnitForProduct(productName) { const upperCaseName = productName.toUpperCase(); if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; } return 'Paket'; }
     function resetForm() { document.getElementById('form-content').innerHTML = ''; buildForm(); }
-    function buildForm() { const formContainer = document.getElementById('form-content'); formContainer.innerHTML = ''; let html = ''; fideQuestions.forEach(q => { const disabledState = isStoreSelected ? '' : 'disabled'; let questionActionsHTML = ''; let questionContentHTML = ''; if (q.type === 'standard') { questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm btn-primary" onclick="addDynamicInput('fide${q.id}')" ${disabledState}><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm btn-success" onclick="toggleQuestionCompleted(this, ${q.id})" ${disabledState}><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" ${disabledState}><i class="fas fa-times-circle"></i> Çıkar</button></div>`; let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" ${disabledState}><i class="fas fa-trash"></i></button></div>`).join(''); questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`; } else if (q.type === 'product_list') { questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm btn-primary" onclick="addDynamicInput('fide15_pleksi')" ${disabledState}><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm btn-success" onclick="toggleQuestionCompleted(this, ${q.id})" ${disabledState}><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" ${disabledState}><i class="fas fa-times-circle"></i> Çıkar</button></div>`; let productOptions = ''; let currentOptgroup = false; productList.forEach(p => { if (p.type === 'header') { if (currentOptgroup) productOptions += `</optgroup>`; productOptions += `<optgroup label="${p.name}">`; currentOptgroup = true; } else { productOptions += `<option value="${p.id}">${p.code} - ${p.name}</option>`; } }); if (currentOptgroup) productOptions += `</optgroup>`; questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector" ${disabledState}><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1" ${disabledState}><button class="btn-success btn-sm" onclick="addProductToList()" ${disabledState}><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle ilgili notlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`; } html += `<div class="fide-item" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`; }); formContainer.innerHTML = html; }
+
+    function buildForm() {
+        const formContainer = document.getElementById('form-content');
+        formContainer.innerHTML = '';
+        let html = '';
+        fideQuestions.forEach(q => {
+            const disabledState = isStoreSelected ? '' : 'disabled';
+            let questionActionsHTML = '';
+            let questionContentHTML = '';
+            if (q.type === 'standard') {
+                questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm btn-primary" onclick="addDynamicInput('fide${q.id}')" ${disabledState}><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm btn-success" onclick="toggleQuestionCompleted(this, ${q.id})" ${disabledState}><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" ${disabledState}><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+                let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" ${disabledState}><i class="fas fa-trash"></i></button></div>`).join('');
+                questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
+            } else if (q.type === 'product_list') {
+                questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm btn-primary" onclick="addDynamicInput('fide15_pleksi')" ${disabledState}><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm btn-success" onclick="toggleQuestionCompleted(this, ${q.id})" ${disabledState}><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" ${disabledState}><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+                let productOptions = '';
+                let currentOptgroup = false;
+                productList.forEach(p => {
+                    if (p.type === 'header') {
+                        if (currentOptgroup) productOptions += `</optgroup>`;
+                        productOptions += `<optgroup label="${p.name}">`;
+                        currentOptgroup = true;
+                    } else {
+                        productOptions += `<option value="${p.id}">${p.code} - ${p.name}</option>`;
+                    }
+                });
+                if (currentOptgroup) productOptions += `</optgroup>`;
+                questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector" ${disabledState}><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1" ${disabledState}><button class="btn-success btn-sm" onclick="addProductToList()" ${disabledState}><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle ilgili notlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`;
+            } else if (q.type === 'pop_system') {
+                 questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+                 questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()">E-Posta</button></div></div>`;
+            }
+
+            html += `<div class="fide-item" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
+        });
+        formContainer.innerHTML = html;
+        if (document.getElementById('popCodesContainer')) initializePopSystem();
+    }
+
     function initiateDeleteItem(buttonEl) { const itemEl = buttonEl.parentElement; if (itemEl.classList.contains('is-deleting')) { clearTimeout(itemEl.dataset.deleteTimer); itemEl.removeAttribute('data-delete-timer'); itemEl.classList.remove('is-deleting'); buttonEl.querySelector('i').className = 'fas fa-trash'; buttonEl.classList.remove('btn-warning'); buttonEl.classList.add('btn-danger'); } else { itemEl.classList.add('is-deleting'); buttonEl.querySelector('i').className = 'fas fa-undo'; buttonEl.classList.remove('btn-danger'); buttonEl.classList.add('btn-warning'); const timerId = setTimeout(() => { itemEl.remove(); saveFormState(); }, 4000); itemEl.dataset.deleteTimer = timerId; } saveFormState(); }
     function addProductToList(productId, quantity) { const select = document.getElementById('product-selector'); const qtyInput = document.getElementById('product-qty'); const selectedProductId = productId || select.value; const selectedQty = quantity || qtyInput.value; if (!selectedProductId || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.'); const product = productList.find(p => p.id === selectedProductId); const listContainer = document.getElementById('selected-products-list'); if (document.querySelector(`.selected-product-item[data-id="${product.id}"]`)) return alert('Bu ürün zaten listede.'); const unit = getUnitForProduct(product.name); const newItem = document.createElement('div'); newItem.className = 'selected-product-item'; newItem.dataset.id = product.id; newItem.dataset.qty = selectedQty; newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} ${unit}</b></span><button class="delete-item-btn btn-sm btn-danger" title="Bu malzemeyi sil" onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`; listContainer.appendChild(newItem); if (!productId) { select.value = ''; qtyInput.value = '1'; } saveFormState(); }
     function toggleCompleted(button) { const input = button.parentElement.querySelector('input[type="text"]'); const isCompleted = input.classList.toggle('completed'); input.readOnly = isCompleted; button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı'; button.classList.toggle('undo', isCompleted); button.classList.toggle('btn-success', !isCompleted); button.classList.toggle('btn-warning', isCompleted); saveFormState(); }
     function toggleQuestionCompleted(button, id) { const itemDiv = document.getElementById(`fide-item-${id}`); const titleContainer = itemDiv.querySelector('.fide-title-container'); const isCompleted = titleContainer.classList.toggle('question-completed'); button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı'; button.classList.toggle('undo', isCompleted); button.classList.toggle('btn-success', !isCompleted); button.classList.toggle('btn-warning', isCompleted); const inputArea = itemDiv.querySelector('.input-area'); if (inputArea) inputArea.style.display = isCompleted ? 'none' : 'block'; saveFormState(); }
     function toggleQuestionRemoved(button, id) { const itemDiv = document.getElementById(`fide-item-${id}`); const isRemoved = itemDiv.classList.toggle('question-removed'); const inputArea = itemDiv.querySelector('.input-area'); if(inputArea) inputArea.style.display = isRemoved ? 'none' : 'block'; button.innerHTML = isRemoved ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar'; button.classList.toggle('btn-danger', !isRemoved); button.classList.toggle('btn-primary', isRemoved); const actions = button.closest('.fide-actions'); if(actions) { actions.querySelectorAll('button:not(.remove-btn)').forEach(b => b.disabled = isRemoved); } saveFormState(); }
     function addDynamicInput(id, value = '', isCompleted = false) { const container = document.getElementById(`sub-items-container-${id}`); if (!container) return; const newItem = document.createElement('div'); newItem.className = 'dynamic-input-item'; newItem.innerHTML = `<input type="text" placeholder="Eksikliği yazın..." value="${value}"><button class="status-btn btn-sm btn-success"><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger"><i class="fas fa-trash"></i></button>`; const input = newItem.querySelector('input'); const completeButton = newItem.querySelector('.status-btn'); input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addDynamicInput(id); } }); input.addEventListener('blur', saveFormState); completeButton.onclick = () => toggleCompleted(completeButton); newItem.querySelector('.delete-bar').onclick = function() { initiateDeleteItem(this); }; if(isCompleted) toggleCompleted(completeButton); container.prepend(newItem); if (value === '') input.focus(); saveFormState(); }
+    
+    // POP SİSTEMİ FONKSİYONLARI (EKLENDİ)
+    function initializePopSystem() {
+        const popCodesContainer = document.getElementById('popCodesContainer');
+        if (!popCodesContainer) return;
+        popCodesContainer.innerHTML = '';
+        popCodes.forEach(code => {
+            const label = document.createElement('label');
+            label.className = 'checkbox-label';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = code;
+            checkbox.className = 'pop-checkbox';
+            checkbox.addEventListener('change', () => {
+                checkExpiredPopCodes();
+                saveFormState();
+            });
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(code));
+            popCodesContainer.appendChild(label);
+        });
+    }
+    function checkExpiredPopCodes() {
+        const warningMessage = document.getElementById('expiredWarning');
+        if (!warningMessage) return;
+        const hasExpired = Array.from(document.querySelectorAll('.pop-checkbox:checked')).some(cb => expiredCodes.includes(cb.value));
+        warningMessage.style.display = hasExpired ? 'block' : 'none';
+    }
+    function copySelectedCodes() {
+        const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+        if (nonExpiredCodes.length === 0) return alert("Kopyalamak için geçerli kod seçin.");
+        navigator.clipboard.writeText(nonExpiredCodes.join(', ')).then(() => alert("Seçilen geçerli kodlar kopyalandı!"));
+    }
+    function clearSelectedCodes() {
+        document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
+        checkExpiredPopCodes();
+        saveFormState();
+    }
+    function selectExpiredCodes() {
+        document.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = expiredCodes.includes(cb.value); });
+        checkExpiredPopCodes();
+        saveFormState();
+    }
+    function openEmailDraft() {
+        const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+        const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
+        if (nonExpiredCodes.length === 0) {
+            alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin.");
+            return;
+        }
+        const kodSatiri = nonExpiredCodes.join(', ');
+        const emailHTML = `
+            <!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>E-Posta Taslağı</title>
+            <style>body { font-family: Arial; padding: 20px; background-color: #fff; } .block { margin-bottom: 15px; } .label { font-weight: bold; color: #555; display: inline-block; margin-bottom: 8px; }</style>
+            </head><body>
+            <div class="block"><span class="label">Kime:</span> berkcan_boza@arcelik.com.tr</div>
+            <div class="block"><span class="label">CC:</span> "ugur.dogan@arcelik.com" &lt;ugur.dogan@arcelik.com.tr&gt;; "aykut.demen@arcelik.com.tr" &lt;aykut.demen@arcelik.com.tr&gt;; "Ahmet.Erol2@arcelik.com.tr" &lt;ahmet.erol2@arcelik.com.tr&gt;</div>
+            <div class="block"><span class="label">Konu:</span> (Boş)</div>
+            <div class="block"><span class="label">İçerik:</span><div style="margin-top: 10px;">${kodSatiri}</div></div>
+            </body></html>`;
+        const emailWindow = window.open('', '_blank');
+        emailWindow.document.write(emailHTML);
+        emailWindow.document.close();
+    }
+
     function handleFileSelect(event, type) { const file = event.target.files[0]; if (!file) return; const filename = file.name; const fileNameSpan = type === 'dide' ? document.getElementById('file-name') : document.getElementById('fide-file-name'); fileNameSpan.textContent = `Yüklü dosya: ${filename}`; const reader = new FileReader(); reader.readAsArrayBuffer(file); reader.onload = function(e) { try { const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, { type: 'array' }); const sheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[sheetName]; const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" }); if (type === 'dide') { processDideExcelData(dataAsArray, true, filename); } else { processFideExcelData(dataAsArray, true, filename); } } catch (error) { alert("Excel dosyası okunurken bir hata oluştu."); console.error("Excel okuma hatası:", error); } }; }
     function processDideExcelData(dataAsArray, saveToStorage, filename) { if (dataAsArray.length < 2) return alert('DiDe Excel dosyası beklenen formatta değil.'); let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu')); if (headerRowIndex === -1) return alert('DiDe Excel dosyasında "Bayi Kodu" bulunamadı.'); const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h); const dataRows = dataAsArray.slice(headerRowIndex + 1); const bayiKoduIndex = headerRow.indexOf('Bayi Kodu'); const bayiIndex = headerRow.indexOf('Bayi'); const bayiYonetmeniIndex = headerRow.indexOf('Bayi Yönetmeni'); if ([bayiKoduIndex, bayiIndex, bayiYonetmeniIndex].includes(-1)) return alert('"Bayi Kodu", "Bayi" veya "Bayi Yönetmeni" sütunlarından biri bulunamadı.'); const processedData = dataRows.map(row => { if (!row[bayiKoduIndex]) return null; const scores = {}; headerRow.forEach((header, index) => { const monthNumber = parseInt(header); if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) { if(row[index] !== null && row[index] !== undefined) scores[monthNumber] = row[index]; } }); return { 'Bayi Kodu': row[bayiKoduIndex], 'Bayi': row[bayiIndex], 'Bayi Yönetmeni': row[bayiYonetmeniIndex], 'scores': scores }; }).filter(d => d); if (saveToStorage) { const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename }; localStorage.setItem('didePersistenceData', JSON.stringify(persistenceData)); alert('DiDe puan dosyası başarıyla işlendi ve 30 günlüğüne hafızaya kaydedildi.'); } populateDideState(processedData); }
     function processFideExcelData(dataAsArray, saveToStorage, filename) { if (dataAsArray.length < 3) return alert('FiDe Excel dosyası beklenen formatta değil.'); const currentYear = new Date().getFullYear(); let yearRowIndex = -1; for(let i = 0; i < dataAsArray.length; i++) { if(dataAsArray[i].some(cell => String(cell).trim() == currentYear)) { yearRowIndex = i; break; } } if (yearRowIndex === -1) return alert(`FiDe Excel dosyasında '${currentYear}' yılını içeren satır bulunamadı.`); const yearRow = dataAsArray[yearRowIndex]; const filledYearRow = []; let lastKnownYear = null; for (const cell of yearRow) { if (cell !== null && cell !== undefined && String(cell).trim() !== "") { lastKnownYear = String(cell).trim(); } filledYearRow.push(lastKnownYear); } let monthRowIndex = yearRowIndex + 1; if (monthRowIndex >= dataAsArray.length) return alert('FiDe Excel dosyasında ay bilgileri bulunamadı.'); const monthRow = dataAsArray[monthRowIndex]; let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu')); if (headerRowIndex === -1) return alert('FiDe Excel dosyasında "Bayi Kodu" bulunamadı.'); const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h); const dataRows = dataAsArray.slice(headerRowIndex + 1); const bayiKoduIndex = headerRow.indexOf('Bayi Kodu'); if (bayiKoduIndex === -1) return alert('FiDe Excel dosyasında "Bayi Kodu" sütunu bulunamadı.'); const processedData = dataRows.map(row => { if (!row[bayiKoduIndex]) return null; const scores = {}; for (let i = 0; i < filledYearRow.length; i++) { if (filledYearRow[i] == currentYear) { const monthNumber = parseInt(monthRow[i]); if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) { if(row[i] !== null && row[i] !== undefined && row[i] !== "") scores[monthNumber] = row[i]; } } } return { 'Bayi Kodu': row[bayiKoduIndex], 'scores': scores }; }).filter(d => d); if (saveToStorage) { const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename }; localStorage.setItem('fidePersistenceData', JSON.stringify(persistenceData)); alert('FiDe puan dosyası başarıyla işlendi ve 30 günlüğüne hafızaya kaydedildi.'); } populateFideState(processedData); }
@@ -190,19 +332,96 @@
     function loadDideDataFromStorage() { const storedDataJSON = localStorage.getItem('didePersistenceData'); if (!storedDataJSON) return; try { const storedData = JSON.parse(storedDataJSON); if ((new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24) > 30) { localStorage.removeItem('didePersistenceData'); return; } if (storedData.filename) { document.getElementById('file-name').textContent = `Yüklü dosya: ${storedData.filename}`; } populateDideState(storedData.data); } catch (e) { localStorage.removeItem('didePersistenceData'); } }
     function loadFideDataFromStorage() { const storedDataJSON = localStorage.getItem('fidePersistenceData'); if (!storedDataJSON) return; try { const storedData = JSON.parse(storedDataJSON); if ((new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24) > 30) { localStorage.removeItem('fidePersistenceData'); return; } if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Yüklü dosya: ${storedData.filename}`; } populateFideState(storedData.data); } catch(e) { localStorage.removeItem('fidePersistenceData'); } }
     function displayStores(stores) { const storeListDiv = document.getElementById('store-list'); storeListDiv.innerHTML = ''; stores.forEach(store => { const item = document.createElement('div'); item.className = 'store-item'; item.textContent = `${store.bayiAdi} (${store.bayiKodu})`; item.dataset.bayiKodu = store.bayiKodu; item.dataset.bayiAdi = store.bayiAdi; item.addEventListener('click', () => { document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected')); item.classList.add('selected'); selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi }; localStorage.setItem('lastSelectedStoreCode', store.bayiKodu); const searchInput = document.getElementById('store-search-input'); searchInput.value = `${store.bayiKodu} - ${store.bayiAdi}`; storeListDiv.innerHTML = ''; storeListDiv.style.display = 'none'; isStoreSelected = true; loadReportForStore(store.bayiKodu); }); storeListDiv.appendChild(item); }); }
-    function generateEmail() { if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!'); saveFormState(); const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu)); const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu)); if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı."); const reportData = getFormDataForSaving(); document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2); document.getElementById('save-section').style.display = 'block'; /* ... rest of the email generation logic ... */ }
+    
+    function generateEmail() {
+        if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!');
+        saveFormState();
+        const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
+        const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
+        if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı.");
+        const reportData = getFormDataForSaving();
+        document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2);
+        document.getElementById('save-section').style.display = 'block';
+        const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
+        const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
+        const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
+        let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
+        let fideReportHtml = "";
+        fideQuestions.forEach(q => {
+            const itemDiv = document.getElementById(`fide-item-${q.id}`);
+            if (!itemDiv || itemDiv.classList.contains('question-removed')) return;
+            const titleContainer = itemDiv.querySelector('.fide-title-container');
+            const isQuestionCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
+            let contentHtml = '';
+            if (q.type === 'standard') {
+                const allItems = getCombinedInputs(`fide${q.id}`);
+                if (allItems.length > 0) {
+                    contentHtml = `<ul>${allItems.map(item => {
+                        if (item.completed) return `<li>${item.text} <span style="background-color:#dcfce7; color:#166534;">Tamamlandı</span></li>`;
+                        return `<li>${item.text}</li>`;
+                    }).join('')}</ul>`;
+                }
+            } else if (q.type === 'product_list') {
+                const productItemsHtml = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => {
+                    const product = productList.find(p => p.id === item.dataset.id);
+                    if(product) {
+                        const unit = getUnitForProduct(product.name);
+                        return `<li>${product.code} ${product.name}: ${item.dataset.qty} ${unit}</li>`;
+                    }
+                }).filter(Boolean);
+                const pleksiItemsHtml = getCombinedInputs('fide15_pleksi').filter(item => !item.completed).map(item => `<li>${item.text}</li>`);
+                if (productItemsHtml.length > 0) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
+                if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle ilgili notlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
+            } else if (q.type === 'pop_system') {
+                const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+                if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
+            }
+            if (contentHtml !== '' || isQuestionCompleted) {
+                const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534;">Tamamlandı</span>` : "";
+                let emailTag = q.id === 16 ? ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@berkcan_boza@arcelik.com.tr</span>` : '';
+                fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
+                if (!isQuestionCompleted) fideReportHtml += contentHtml;
+                fideReportHtml += '<p>&nbsp;</p>';
+            }
+        });
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        let monthHeaders = '';
+        for (let m = 1; m <= currentMonth; m++) monthHeaders += `<th style="border: 1px solid #dddddd; text-align: center; padding: 6px;">${monthNames[m] || m}</th>`;
+        let dideScores = '';
+        for (let m = 1; m <= currentMonth; m++) dideScores += `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px;">${storeInfo.scores[m] || '-'}</td>`;
+        let fideScores = '';
+        for (let m = 1; m <= currentMonth; m++) {
+            const score = (fideStoreInfo && fideStoreInfo.scores && fideStoreInfo.scores[m] !== undefined) ? fideStoreInfo.scores[m] : '-';
+            fideScores += `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px;">${score}</td>`;
+        }
+        const tableHtml = `<table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt;"><thead><tr><th style="border: 1px solid #dddddd; text-align: center; padding: 6px;">${currentYear}</th>${monthHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold;">DiDe</td>${dideScores}</tr><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold;">FiDe</td>${fideScores}</tr></tbody></table>`;
+        const finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
+        document.getElementById('form-content').style.display = 'none';
+        document.querySelector('.action-button').style.display = 'none';
+        document.getElementById('load-section').style.display = 'none';
+        const existingDraft = document.getElementById('email-draft-container');
+        if (existingDraft) existingDraft.remove();
+        const draftContainer = document.createElement('div');
+        draftContainer.id = 'email-draft-container';
+        draftContainer.className = 'card';
+        draftContainer.innerHTML = `<h2><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;">${finalEmailBody}</div>`;
+        document.querySelector('.container').insertBefore(draftContainer, document.getElementById('save-section'));
+    }
+
+    function getCombinedInputs(id) { const container = document.getElementById(`sub-items-container-${id}`); if (!container) return []; const allItems = []; Array.from(container.childNodes).reverse().forEach(node => { if (node.classList && (node.classList.contains('static-item') || node.classList.contains('dynamic-input-item'))) { if(node.classList.contains('is-deleting')) return; let text, completed = false, type = 'dynamic'; if (node.classList.contains('static-item')) { text = node.querySelector('.content').innerHTML; type = 'static'; } else { const input = node.querySelector('input[type="text"]'); text = input.value.trim(); completed = input.classList.contains('completed'); } if (text) allItems.push({ text, completed, type }); } }); return allItems; }
     function downloadReportCode() { const reportCode = document.getElementById('save-code-area').value; if (!selectedStore || !reportCode) return alert('İndirilecek rapor kodu bulunamadı.'); const filename = `${selectedStore.bayiKodu} - ${selectedStore.bayiAdi.substring(0, 15).trim()}.txt`; const blob = new Blob([reportCode], { type: 'text/plain;charset=utf-8' }); const link = document.createElement('a'); const url = URL.createObjectURL(blob); link.href = url; link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
     function loadReportForStore(bayiKodu) { const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {}; const storeKey = `store_${bayiKodu}`; if (allReports[storeKey]) loadReport(allReports[storeKey].data); else resetForm(); }
-    function loadReport(reportDataFromCode) { try { let reportData = reportDataFromCode; if (!reportData) { const loadCode = document.getElementById('load-code-area').value.trim(); if (!loadCode) return alert('Lütfen yüklenecek kodu yapıştırın.'); reportData = JSON.parse(loadCode); } isStoreSelected = true; resetForm(); if (reportData.selectedStore) { selectedStore = reportData.selectedStore; const searchInput = document.getElementById('store-search-input'); searchInput.value = `${selectedStore.bayiKodu} - ${selectedStore.bayiAdi}`; document.getElementById('store-list').style.display = 'none'; } for (const qId in reportData.questions_status) { const data = reportData.questions_status[qId]; const questionItem = document.getElementById(`fide-item-${qId}`); if (!questionItem) continue; const completeButton = questionItem.querySelector('.fide-actions .status-btn'); const removeButton = questionItem.querySelector('.fide-actions .remove-btn'); if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId); else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId); if (data.dynamicInputs) data.dynamicInputs.forEach(input => addDynamicInput(qId === '15' ? 'fide15_pleksi' : `fide${qId}`, input.text, input.completed)); if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.id, prod.qty)); } if (!reportDataFromCode) { alert('Rapor başarıyla yüklendi!'); document.getElementById('load-code-area').value = ''; } } catch (error) { alert('Geçersiz rapor kodu!'); } }
+    function loadReport(reportDataFromCode) { try { let reportData = reportDataFromCode; if (!reportData) { const loadCode = document.getElementById('load-code-area').value.trim(); if (!loadCode) return alert('Lütfen yüklenecek kodu yapıştırın.'); reportData = JSON.parse(loadCode); } isStoreSelected = true; resetForm(); if (reportData.selectedStore) { selectedStore = reportData.selectedStore; const searchInput = document.getElementById('store-search-input'); searchInput.value = `${selectedStore.bayiKodu} - ${selectedStore.bayiAdi}`; document.getElementById('store-list').style.display = 'none'; } for (const qId in reportData.questions_status) { const data = reportData.questions_status[qId]; const questionItem = document.getElementById(`fide-item-${qId}`); if (!questionItem) continue; const completeButton = questionItem.querySelector('.fide-actions .status-btn'); const removeButton = questionItem.querySelector('.fide-actions .remove-btn'); if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId); else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId); if (data.dynamicInputs) data.dynamicInputs.forEach(input => addDynamicInput(qId === '15' ? 'fide15_pleksi' : `fide${qId}`, input.text, input.completed)); if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.id, prod.qty)); if (data.selectedPops) { data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if (cb) cb.checked = true; }); checkExpiredPopCodes(); } } if (!reportDataFromCode) { alert('Rapor başarıyla yüklendi!'); document.getElementById('load-code-area').value = ''; } } catch (error) { alert('Geçersiz rapor kodu!'); console.error(error); } }
     function startNewReport() { selectedStore = null; isStoreSelected = false; document.getElementById('store-search-input').value = ''; localStorage.removeItem('lastSelectedStoreCode'); resetForm(); }
     function backupAllReports() { const allReports = localStorage.getItem('allFideReports'); if (!allReports || Object.keys(JSON.parse(allReports)).length === 0) return alert('Yedeklenecek kayıtlı rapor bulunamadı.'); const blob = new Blob([allReports], { type: 'application/json;charset=utf-8' }); const today = new Date().toISOString().slice(0, 10); const filename = `fide_rapor_yedek_${today}.json`; const link = document.createElement('a'); const url = URL.createObjectURL(blob); link.setAttribute('href', url); link.setAttribute('download', filename); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); }
     function handleRestoreUpload(event) { const file = event.target.files[0]; if (!file) return; if (confirm("Bu işlem mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz?")) { const reader = new FileReader(); reader.onload = function(e) { try { const restoredData = e.target.result; JSON.parse(restoredData); localStorage.setItem('allFideReports', restoredData); if(currentUser && isCloudSyncEnabled) { saveDataToFirebase(); } alert('Yedek başarıyla geri yüklendi! Sayfa yenileniyor.'); window.location.reload(); } catch (error) { alert('Geçersiz veya bozuk yedek dosyası!'); } }; reader.readAsText(file); } event.target.value = null; }
     async function handleMergeUpload(event) { const files = event.target.files; if (!files || files.length < 2) return alert("Lütfen birleştirmek için en az 2 yedek dosyası seçin."); let mergedReports = {}; let fileReadPromises = []; for (const file of files) { const promise = new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); resolve(data); } catch (err) { reject(`'${file.name}' dosyası okunamadı.`); } }; reader.onerror = () => reject(`'${file.name}' dosyası okunurken hata.`); reader.readAsText(file); }); fileReadPromises.push(promise); } try { const allBackupData = await Promise.all(fileReadPromises); allBackupData.forEach(backupData => { for (const storeKey in backupData) { if (Object.hasOwnProperty.call(backupData, storeKey)) { const newReport = backupData[storeKey]; if (!mergedReports[storeKey] || newReport.timestamp > mergedReports[storeKey].timestamp) { mergedReports[storeKey] = newReport; } } } }); const mergedDataStr = JSON.stringify(mergedReports, null, 2); const blob = new Blob([mergedDataStr], { type: 'application/json;charset=utf-8' }); const today = new Date().toISOString().slice(0, 10); const filename = `birlesik_fide_rapor_yedek_${today}.json`; const link = document.createElement('a'); const url = URL.createObjectURL(blob); link.setAttribute('href', url); link.setAttribute('download', filename); document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); alert(`Başarılı! Birleştirilmiş yedek dosyanız '${filename}' adıyla indirildi.`); } catch (error) { alert("Birleştirme hatası:\n" + error); } finally { event.target.value = null; } }
     function restoreLastSession() { const lastStoreCode = localStorage.getItem('lastSelectedStoreCode'); if (lastStoreCode && uniqueStores.length > 0) { const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode)); if (storeToRestore) { selectedStore = storeToRestore; isStoreSelected = true; const searchInput = document.getElementById('store-search-input'); searchInput.value = `${storeToRestore.bayiKodu} - ${storeToRestore.bayiAdi}`; document.getElementById('store-list').style.display = 'none'; loadReportForStore(storeToRestore.bayiKodu); } } }
-    function renderQuestionManager() { const managerList = document.getElementById('manager-list'); managerList.innerHTML = ''; fideQuestions.forEach(q => { const itemDiv = document.createElement('div'); itemDiv.className = 'manager-item'; itemDiv.dataset.id = q.id; let staticItemsText = (q.staticItems || []).join('\n'); const typeOptions = ['standard', 'product_list']; const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join(''); itemDiv.innerHTML = `<div class="manager-item-grid"><div><label>Soru ID</label><input type="number" value="${q.id}" readonly></div><div><label>Soru Başlığı</label><input type="text" value="${q.title}"></div><div><label>Soru Tipi</label><select>${selectOptionsHTML}</select></div></div><div><label>Statik Maddeler (Her satıra bir madde)</label><textarea rows="3">${staticItemsText}</textarea></div><div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button></div>`; managerList.appendChild(itemDiv); });}
-    function addNewQuestionUI() { const managerList = document.getElementById('manager-list'); const existingIds = fideQuestions.map(q => q.id); const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1; const itemDiv = document.createElement('div'); itemDiv.className = 'manager-item'; itemDiv.style.backgroundColor = '#dcfce7'; itemDiv.dataset.id = newId; itemDiv.innerHTML = `<div class="manager-item-grid"><div><label>Soru ID</label><input type="number" value="${newId}"></div><div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div><div><label>Soru Tipi</label><select><option value="standard" selected>standard</option><option value="product_list">product_list</option></select></div></div><div><label>Statik Maddeler (Her satıra bir madde)</label><textarea rows="3"></textarea></div><div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`; managerList.appendChild(itemDiv); itemDiv.querySelector('input[type="text"]').focus(); }
+    function renderQuestionManager() { const managerList = document.getElementById('manager-list'); managerList.innerHTML = ''; fideQuestions.forEach(q => { const itemDiv = document.createElement('div'); itemDiv.className = 'manager-item'; itemDiv.dataset.id = q.id; let staticItemsText = (q.staticItems || []).join('\n'); const typeOptions = ['standard', 'product_list', 'pop_system']; const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join(''); itemDiv.innerHTML = `<div class="manager-item-grid"><div><label>Soru ID</label><input type="number" value="${q.id}" readonly></div><div><label>Soru Başlığı</label><input type="text" value="${q.title}"></div><div><label>Soru Tipi</label><select>${selectOptionsHTML}</select></div></div><div><label>Statik Maddeler (Her satıra bir madde)</label><textarea rows="3">${staticItemsText}</textarea></div><div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button></div>`; managerList.appendChild(itemDiv); });}
+    function addNewQuestionUI() { const managerList = document.getElementById('manager-list'); const existingIds = fideQuestions.map(q => q.id); const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1; const itemDiv = document.createElement('div'); itemDiv.className = 'manager-item'; itemDiv.style.backgroundColor = '#dcfce7'; itemDiv.dataset.id = newId; itemDiv.innerHTML = `<div class="manager-item-grid"><div><label>Soru ID</label><input type="number" value="${newId}"></div><div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div><div><label>Soru Tipi</label><select><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div></div><div><label>Statik Maddeler (Her satıra bir madde)</label><textarea rows="3"></textarea></div><div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`; managerList.appendChild(itemDiv); itemDiv.querySelector('input[type="text"]').focus(); }
     function deleteQuestionUI(id) { if (confirm(`FiDe ${id} sorusunu silmek istediğinizden emin misiniz?`)) { const itemToDelete = document.querySelector(`.manager-item[data-id="${id}"]`); if(itemToDelete) { itemToDelete.style.display = 'none'; itemToDelete.classList.add('to-be-deleted'); } } }
-    function saveQuestions() { const managerList = document.getElementById('manager-list'); const newQuestions = []; const ids = new Set(); const items = managerList.querySelectorAll('.manager-item'); for (const item of items) { if (item.classList.contains('to-be-deleted')) continue; const id = parseInt(item.querySelectorAll('input')[0].value); const title = item.querySelectorAll('input')[1].value.trim(); const type = item.querySelector('select').value; const staticItemsText = item.querySelector('textarea').value; if (!id || !title) { alert(`ID veya Başlık boş olamaz.`); return; } if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer.`); return; } ids.add(id); const staticItems = staticItemsText.split('\n').map(s => s.trim()).filter(s => s); const newQuestion = { id, title, type }; if (staticItems.length > 0) newQuestion.staticItems = staticItems; newQuestions.push(newQuestion); } newQuestions.sort((a, b) => a.id - b.id); const finalJsonData = { questions: newQuestions, productList: productList }; const dataStr = JSON.stringify(finalJsonData, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.download = 'fide_soru_listesi.json'; link.href = url; link.click(); URL.revokeObjectURL(url); alert("Güncellenmiş sorularınız 'fide_soru_listesi.json' olarak indirildi."); }
+    function saveQuestions() { const managerList = document.getElementById('manager-list'); const newQuestions = []; const ids = new Set(); const items = managerList.querySelectorAll('.manager-item'); for (const item of items) { if (item.classList.contains('to-be-deleted')) continue; const id = parseInt(item.querySelectorAll('input')[0].value); const title = item.querySelectorAll('input')[1].value.trim(); const type = item.querySelector('select').value; const staticItemsText = item.querySelector('textarea').value; if (!id || !title) { alert(`ID veya Başlık boş olamaz.`); return; } if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer.`); return; } ids.add(id); const staticItems = staticItemsText.split('\n').map(s => s.trim()).filter(s => s); const newQuestion = { id, title, type }; if (staticItems.length > 0) newQuestion.staticItems = staticItems; if (type === 'pop_system') { const originalPopQuestion = fideQuestions.find(q => q.type === 'pop_system'); newQuestion.popCodes = popCodes || (originalPopQuestion ? originalPopQuestion.popCodes : []); newQuestion.expiredCodes = expiredCodes || (originalPopQuestion ? originalPopQuestion.expiredCodes : []); } newQuestions.push(newQuestion); } newQuestions.sort((a, b) => a.id - b.id); const finalJsonData = { questions: newQuestions, productList: productList }; const dataStr = JSON.stringify(finalJsonData, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.download = 'fide_soru_listesi.json'; link.href = url; link.click(); URL.revokeObjectURL(url); alert("Güncellenmiş sorularınız 'fide_soru_listesi.json' olarak indirildi."); }
 
     async function initializeApp() {
         let isUiInitialized = false;
@@ -222,6 +441,11 @@
                 const jsonData = await response.json();
                 fideQuestions = jsonData.questions || [];
                 productList = jsonData.productList || [];
+                const popSystemQuestion = fideQuestions.find(q => q.type === 'pop_system');
+                if (popSystemQuestion) {
+                    popCodes = popSystemQuestion.popCodes || [];
+                    expiredCodes = popSystemQuestion.expiredCodes || [];
+                }
             } else { throw new Error('Soru dosyası alınamadı'); }
         } catch (error) {
             console.error("Soru dosyası yüklenemedi:", error);
@@ -268,7 +492,7 @@
         document.getElementById('clear-excel-btn').addEventListener('click', () => { if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan silmek istediğinizden emin misiniz?")) { localStorage.removeItem('didePersistenceData'); alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor."); window.location.reload(); } });
         document.getElementById('clear-fide-excel-btn').addEventListener('click', () => { if (confirm("Yüklenmiş olan FiDe Excel verisini hafızadan silmek istediğinizden emin misiniz?")) { localStorage.removeItem('fidePersistenceData'); alert("FiDe Excel verisi temizlendi. Sayfa yenileniyor."); window.location.reload(); } });
         document.getElementById('store-search-input').addEventListener('keyup', (e) => { selectedStore = null; isStoreSelected = false; buildForm(); const filter = e.target.value.toLowerCase().trim(); const storeListDiv = document.getElementById('store-list'); storeListDiv.style.display = 'block'; if (filter === "") { storeListDiv.innerHTML = ''; return; } const filteredStores = uniqueStores.filter(store => (store.bayiAdi && store.bayiAdi.toLowerCase().includes(filter)) || (store.bayiKodu && String(store.bayiKodu).toLowerCase().includes(filter)) ); displayStores(filteredStores); });
-        document.getElementById('toggle-manager-btn').addEventListener('click', () => { const manager = document.getElementById('question-manager'); const mainCards = [document.getElementById('dide-upload-card'), document.getElementById('load-section'), document.getElementById('form-content'), document.querySelector('.action-button')]; const isHidden = manager.style.display === 'none' || manager.style.display === ''; if(isHidden) { const pass = prompt("Şifre:"); if(btoa(pass) === 'ZmRlMDAx'){ renderQuestionManager(); manager.style.display = 'block'; mainCards.forEach(c => c.style.display = 'none'); } else { alert("Hatalı şifre"); } } else { manager.style.display = 'none'; mainCards.forEach(c => c.style.display = ''); } });
+        document.getElementById('toggle-manager-btn').addEventListener('click', () => { const manager = document.getElementById('question-manager'); const mainCards = [document.getElementById('dide-upload-card'), document.getElementById('load-section'), document.getElementById('form-content'), document.querySelector('.action-button')]; const isHidden = manager.style.display === 'none' || manager.style.display === ''; if(isHidden) { const pass = prompt("Şifre:"); if(btoa(pass) === 'ZmRlMDAx'){ renderQuestionManager(); manager.style.display = 'block'; mainCards.forEach(c => { if(c) c.style.display = 'none'; }); } else { alert("Hatalı şifre"); } } else { manager.style.display = 'none'; mainCards.forEach(c => { if(c) c.style.display = ''; }); } });
         document.getElementById('cloud-toggle').addEventListener('change', (e) => { isCloudSyncEnabled = e.target.checked; updateCloudStatusText(isCloudSyncEnabled); if(isCloudSyncEnabled) { saveDataToFirebase(); } });
     }
     
