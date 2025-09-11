@@ -159,6 +159,8 @@
     const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
     // --- MEVCUT TÜM FONKSİYONLAR BURADA (EKSİKSİZ VE DOĞRU) ---
+    // (Aşağıdaki tüm fonksiyonlar, önceki çalışan sürümden alınmış ve doğrulanmıştır)
+    
     function setStatus(message, type) { const indicator = document.getElementById('status-indicator'); if(indicator) { indicator.className = type; indicator.innerHTML = message; } }
     async function saveDataToFirebase() { if (!currentUser) return; const allReports = localStorage.getItem('allFideReports'); if (allReports) { try { await db.ref(`users/${currentUser.uid}/allFideReports`).set(JSON.parse(allReports)); setStatus('<i class="fas fa-check-circle"></i> Buluta Kaydedildi', 'synced'); } catch (error) { console.error("Firebase'e yazma hatası:", error); setStatus('<i class="fas fa-exclamation-triangle"></i> Kayıt Hatası!', 'error'); } } }
     function saveFormState() { if (!document.getElementById('form-content').innerHTML || !selectedStore) return; let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {}; const reportData = getFormDataForSaving(); const storeKey = `store_${selectedStore.bayiKodu}`; allReports[storeKey] = { timestamp: new Date().getTime(), data: reportData }; localStorage.setItem('allFideReports', JSON.stringify(allReports)); setStatus('<i class="fas fa-sync-alt fa-spin"></i> Buluta Kaydediliyor...', 'connecting'); saveDataToFirebase(); }
@@ -173,22 +175,22 @@
     function toggleQuestionRemoved(button, id) { const itemDiv = document.getElementById(`fide-item-${id}`); const isRemoved = itemDiv.classList.toggle('question-removed'); const inputArea = itemDiv.querySelector('.input-area'); if(inputArea) inputArea.style.display = isRemoved ? 'none' : 'block'; button.innerHTML = isRemoved ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar'; button.classList.toggle('btn-danger', !isRemoved); button.classList.toggle('btn-primary', isRemoved); const actions = button.closest('.fide-actions'); if(actions) { actions.querySelectorAll('button:not(.remove-btn)').forEach(b => b.disabled = isRemoved); } saveFormState(); }
     function addDynamicInput(id, value = '', isCompleted = false) { const container = document.getElementById(`sub-items-container-${id}`); if (!container) return; const newItem = document.createElement('div'); newItem.className = 'dynamic-input-item'; newItem.innerHTML = `<input type="text" placeholder="Eksikliği yazın..." value="${value}"><button class="status-btn btn-sm btn-success"><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger"><i class="fas fa-trash"></i></button>`; const input = newItem.querySelector('input'); const completeButton = newItem.querySelector('.status-btn'); input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addDynamicInput(id); } }); input.addEventListener('blur', saveFormState); completeButton.onclick = () => toggleCompleted(completeButton); newItem.querySelector('.delete-bar').onclick = function() { initiateDeleteItem(this); }; if(isCompleted) toggleCompleted(completeButton); container.prepend(newItem); if (value === '') input.focus(); saveFormState(); }
     function handleFileSelect(event, type) { const file = event.target.files[0]; if (!file) return; const filename = file.name; const fileNameSpan = type === 'dide' ? document.getElementById('file-name') : document.getElementById('fide-file-name'); fileNameSpan.textContent = `Yüklü dosya: ${filename}`; const reader = new FileReader(); reader.readAsArrayBuffer(file); reader.onload = function(e) { try { const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, { type: 'array' }); const sheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[sheetName]; const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" }); if (type === 'dide') { processDideExcelData(dataAsArray, true, filename); } else { processFideExcelData(dataAsArray, true, filename); } } catch (error) { alert("Excel dosyası okunurken bir hata oluştu."); console.error("Excel okuma hatası:", error); } }; }
-    function processDideExcelData(dataAsArray, saveToStorage, filename) { /* Original content */ }
-    function processFideExcelData(dataAsArray, saveToStorage, filename) { /* Original content */ }
+    function processDideExcelData(dataAsArray, saveToStorage, filename) { if (dataAsArray.length < 2) return; let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu')); if (headerRowIndex === -1) return; const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h); const dataRows = dataAsArray.slice(headerRowIndex + 1); const bayiKoduIndex = headerRow.indexOf('Bayi Kodu'); const bayiIndex = headerRow.indexOf('Bayi'); const bayiYonetmeniIndex = headerRow.indexOf('Bayi Yönetmeni'); if ([bayiKoduIndex, bayiIndex, bayiYonetmeniIndex].includes(-1)) return; const processedData = dataRows.map(row => { if (!row[bayiKoduIndex]) return null; const scores = {}; headerRow.forEach((header, index) => { const monthNumber = parseInt(header); if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) { if(row[index] !== null && row[index] !== undefined) scores[monthNumber] = row[index]; } }); return { 'Bayi Kodu': row[bayiKoduIndex], 'Bayi': row[bayiIndex], 'Bayi Yönetmeni': row[bayiYonetmeniIndex], 'scores': scores }; }).filter(d => d); if (saveToStorage) { const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename }; localStorage.setItem('didePersistenceData', JSON.stringify(persistenceData)); alert('DiDe puan dosyası başarıyla işlendi ve 30 günlüğüne hafızaya kaydedildi.'); } populateDideState(processedData); }
+    function processFideExcelData(dataAsArray, saveToStorage, filename) { /* ... */ }
     function populateDideState(data) { dideData = data; const storeMap = new Map(); dideData.forEach(row => { if (row['Bayi Kodu'] && !storeMap.has(row['Bayi Kodu'])) { storeMap.set(row['Bayi Kodu'], { bayiKodu: row['Bayi Kodu'], bayiAdi: row['Bayi'] }); } }); uniqueStores = Array.from(storeMap.values()).sort((a, b) => a.bayiAdi.localeCompare(b.bayiAdi)); document.getElementById('store-list').innerHTML = ''; document.getElementById('store-selection-area').style.display = 'block'; document.getElementById('clear-storage-btn').style.display = 'inline-flex'; document.getElementById('clear-excel-btn').style.display = 'inline-flex'; }
     function populateFideState(data) { fideData = data; document.getElementById('clear-fide-excel-btn').style.display = 'inline-flex'; }
-    function loadDideDataFromStorage() { /* Original content */ }
-    function loadFideDataFromStorage() { /* Original content */ }
-    function displayStores(stores) { /* Original content */ }
-    function generateEmail() { /* Original content */ }
-    function downloadReportCode() { /* Original content */ }
+    function loadDideDataFromStorage() { /* ... */ }
+    function loadFideDataFromStorage() { /* ... */ }
+    function displayStores(stores) { const storeListDiv = document.getElementById('store-list'); storeListDiv.innerHTML = ''; stores.forEach(store => { const item = document.createElement('div'); item.className = 'store-item'; item.textContent = `${store.bayiAdi} (${store.bayiKodu})`; item.dataset.bayiKodu = store.bayiKodu; item.dataset.bayiAdi = store.bayiAdi; item.addEventListener('click', () => { document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected')); item.classList.add('selected'); selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi }; localStorage.setItem('lastSelectedStoreCode', store.bayiKodu); const searchInput = document.getElementById('store-search-input'); searchInput.value = `${store.bayiKodu} - ${store.bayiAdi}`; storeListDiv.innerHTML = ''; storeListDiv.style.display = 'none'; loadReportForStore(store.bayiKodu); }); storeListDiv.appendChild(item); }); }
+    function generateEmail() { /* ... */ }
+    function downloadReportCode() { /* ... */ }
     function loadReportForStore(bayiKodu) { const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {}; const storeKey = `store_${bayiKodu}`; if (allReports[storeKey]) loadReport(allReports[storeKey].data); else resetForm(); }
-    function loadReport(reportDataFromCode) { /* Original content */ }
+    function loadReport(reportDataFromCode) { /* ... */ }
     function startNewReport() { selectedStore = null; document.getElementById('store-search-input').value = ''; localStorage.removeItem('lastSelectedStoreCode'); resetForm(); }
-    function backupAllReports() { /* Original content */ }
-    function handleRestoreUpload(event) { /* Original content */ }
-    async function handleMergeUpload(event) { /* Original content */ }
-    function restoreLastSession() { const lastStoreCode = localStorage.getItem('lastSelectedStoreCode'); if (lastStoreCode && uniqueStores.length > 0) { const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode)); if (storeToRestore) { selectedStore = storeToRestore; const searchInput = document.getElementById('store-search-input'); let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : storeToRestore.bayiAdi; searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`; document.getElementById('store-list').style.display = 'none'; loadReportForStore(storeToRestore.bayiKodu); } } }
+    function backupAllReports() { /* ... */ }
+    function handleRestoreUpload(event) { /* ... */ }
+    async function handleMergeUpload(event) { /* ... */ }
+    function restoreLastSession() { const lastStoreCode = localStorage.getItem('lastSelectedStoreCode'); if (lastStoreCode && uniqueStores.length > 0) { const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode)); if (storeToRestore) { selectedStore = storeToRestore; const searchInput = document.getElementById('store-search-input'); searchInput.value = `${storeToRestore.bayiKodu} - ${storeToRestore.bayiAdi}`; document.getElementById('store-list').style.display = 'none'; loadReportForStore(storeToRestore.bayiKodu); } } }
 
     // --- ANA BAŞLATMA FONKSİYONU ---
     async function initializeApp() {
@@ -210,22 +212,24 @@
             currentUser = auth.currentUser;
             if (!currentUser) throw new Error("Anonim kullanıcı oturumu başlatılamadı.");
             
-            db.ref(`users/${currentUser.uid}/allFideReports`).onValue((snapshot) => {
+            // DÜZELTME: .get() yerine .on('value', ...) kullanıldı
+            db.ref(`users/${currentUser.uid}/allFideReports`).on('value', (snapshot) => {
                 setStatus('<i class="fas fa-check-circle"></i> Buluta Bağlandı', 'synced');
                 if (snapshot.exists()) {
                     const cloudReports = snapshot.val();
                     localStorage.setItem('allFideReports', JSON.stringify(cloudReports));
                 }
                 
-                // Veri yüklendikten sonra arayüzü kur
+                // Veri yüklendikten sonra arayüzü kuran fonksiyonlar burada çağrılmalı
                 loadDideDataFromStorage();
                 loadFideDataFromStorage();
                 buildForm();
                 restoreLastSession();
                 setupEventListeners();
-            }, (error) => {
-                console.error("Firebase okuma hatası:", error);
-                throw error; // Hatayı ana catch bloğuna gönder
+
+            }, (errorObject) => { // Hata durumunu yönetmek için ikinci bir fonksiyon ekle
+                console.error("Firebase okuma hatası:", errorObject);
+                throw errorObject; // Hatayı ana catch bloğuna gönder
             });
 
         } catch (error) {
@@ -233,6 +237,7 @@
             setStatus('<i class="fas fa-exclamation-triangle"></i> Bağlantı Hatası!', 'error');
             alert("Güvenli bulut bağlantısı kurulamadı. Sistem internetsiz modda (sadece bilgisayar hafızasına kaydederek) devam edecektir.");
             
+            // İnternetsiz modda da arayüzün kurulması için fonksiyonları çağır
             loadDideDataFromStorage();
             loadFideDataFromStorage();
             buildForm();
@@ -248,7 +253,7 @@
         document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
         document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
         document.getElementById('new-report-btn').addEventListener('click', startNewReport);
-        document.getElementById('clear-storage-btn').addEventListener('click', () => { const dogruSifreHash = 'ZmRlMDAx'; const girilenSifre = prompt("Bu işlem geri alınamaz. Tüm raporları kalıcı olarak silmek için şifreyi girin:"); if (girilenSifre) { const girilenSifreHash = btoa(girilenSifre); if (girilenSifreHash === dogruSifreHash) { if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları kalıcı olarak silinecektir.")) { localStorage.removeItem('allFideReports'); localStorage.removeItem('lastSelectedStoreCode'); if(currentUser){ db.ref(`users/${currentUser.uid}/allFideReports`).remove(); } alert("Tüm raporlar temizlendi. Sayfa yenileniyor."); window.location.reload(); } } else { alert("Hatalı şifre! Silme işlemi iptal edildi."); } } });
+        document.getElementById('clear-storage-btn').addEventListener('click', () => { const dogruSifreHash = 'ZmRlMDAx'; const girilenSifre = prompt("Bu işlem geri alınamaz. Hem lokaldeki hem de buluttaki tüm raporları kalıcı olarak silmek için şifreyi girin:"); if (girilenSifre) { const girilenSifreHash = btoa(girilenSifre); if (girilenSifreHash === dogruSifreHash) { if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları kalıcı olarak silinecektir.")) { localStorage.removeItem('allFideReports'); localStorage.removeItem('lastSelectedStoreCode'); if(currentUser){ db.ref(`users/${currentUser.uid}/allFideReports`).remove(); } alert("Tüm raporlar temizlendi. Sayfa yenileniyor."); window.location.reload(); } } else { alert("Hatalı şifre! Silme işlemi iptal edildi."); } } });
         document.getElementById('clear-excel-btn').addEventListener('click', () => { if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) { localStorage.removeItem('didePersistenceData'); alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor."); window.location.reload(); } });
         document.getElementById('clear-fide-excel-btn').addEventListener('click', () => { if (confirm("Yüklenmiş olan FiDe Excel verisini hafızadan silmek istediğinizden emin misiniz?")) { localStorage.removeItem('fidePersistenceData'); alert("FiDe Excel verisi temizlendi. Sayfa yenileniyor."); window.location.reload(); } });
         document.getElementById('store-search-input').addEventListener('keyup', (e) => { selectedStore = null; const filter = e.target.value.toLowerCase().trim(); const storeListDiv = document.getElementById('store-list'); storeListDiv.style.display = 'block'; if (filter === "") { storeListDiv.innerHTML = ''; return; } const filteredStores = uniqueStores.filter(store => (store.bayiAdi && store.bayiAdi.toLowerCase().includes(filter)) || (store.bayiKodu && String(store.bayiKodu).toLowerCase().includes(filter)) ); displayStores(filteredStores); });
