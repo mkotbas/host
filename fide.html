@@ -67,6 +67,9 @@
         .pop-checkbox { margin-right: 5px; }
         .pop-button-container { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
         .warning-message { color: #d32f2f; background-color: #ffebee; border: 1px solid #d32f2f; border-radius: 4px; padding: 10px; margin-top: 10px; text-align: center; font-weight: bold; display: none; }
+        #excel-expiry-warning { display: none; color: #b91c1c; background-color: #fee2e2; border: 1px solid #f87171; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        #excel-expiry-warning p { margin: 0 0 10px 0; font-weight: bold; }
+        #excel-expiry-warning ul { margin: 0; padding-left: 20px; }
         #email-draft-area ul { list-style-type: disc; margin: 16px 0; padding-left: 40px; }
         #email-draft-area li { margin-bottom: 10px; padding-left: 8px; }
         #email-draft-area p { margin-bottom: 1em; }
@@ -83,41 +86,34 @@
         .store-item { padding: 10px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; }
         .store-item:hover { background-color: #f1f5f9; }
         .store-item.selected { background-color: var(--success); color: white; font-weight: bold; }
-        .dide-table { width: 100%; border-collapse: collapse; margin-top: 25px; font-size: 14px; }
-        .dide-table th, .dide-table td { border: 1px solid #dddddd; text-align: left; padding: 8px; }
-        .dide-table th { background-color: #f2f2f2; font-weight: bold; }
-        .dide-table td { text-align: center; }
-        .dide-table td:first-child { text-align: left; font-weight: bold; }
         #clear-storage-btn, #clear-excel-btn, #clear-fide-excel-btn { display: none; }
-        .orphaned-data-card { background-color: #fffbe6; border: 2px dashed var(--warning); padding: 20px; margin-bottom: 24px; border-radius: 12px; }
-        .orphaned-data-card h3 { color: #d97706; font-size: 18px; margin-bottom: 15px; }
-        .orphaned-data-card .data-block { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #fde68a; }
-        .orphaned-data-card .data-block:last-child { border-bottom: none; }
-        .orphaned-data-card p { font-weight: bold; font-size: 15px; }
-        .orphaned-data-card ul { list-style-position: inside; padding-left: 10px; margin-top: 5px; }
-        .orphaned-data-card li { background-color: #fefce8; padding: 5px; border-radius: 4px; margin-bottom: 5px; }
-        #question-manager { display: none; background-color: #fefce8; border: 2px dashed #f59e0b; }
-        .manager-item { border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white; }
-        .manager-item label { font-weight: 600; display: block; margin-bottom: 5px; font-size: 12px; color: var(--secondary); }
-        .manager-item input, .manager-item select, .manager-item textarea { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 10px; }
-        .manager-item-grid { display: grid; grid-template-columns: 80px 1fr 120px; gap: 10px; }
-        .manager-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom:20px; border-bottom: 1px solid var(--border); }
-        .manager-item-footer { display: flex; justify-content: flex-end; }
         #initialization-error { display: none; color: #b91c1c; background-color: #fee2e2; border: 1px solid #f87171; }
+        .top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .backup-controls { display: flex; gap: 8px; flex-wrap: wrap; }
 
         @media (max-width: 768px) {
             .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .top-controls { flex-direction: column; align-items: stretch; }
+            .backup-controls, #toggle-manager-btn { width: 100%; }
+            .backup-controls > * { flex-grow: 1; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
-            <button id="toggle-manager-btn" class="btn-warning btn-sm"><i class="fas fa-edit"></i> Soru Yöneticisini Aç/Kapat</button>
+        <div class="top-controls">
+            <div class="backup-controls">
+                <button id="backup-btn" class="btn-primary btn-sm" title="Kaydedilmiş tüm bayi raporlarını tek bir yedek dosyası (.json) olarak bilgisayarınıza indirir."><i class="fas fa-cloud-download-alt"></i> Tüm Raporları Yedekle</button>
+                <label for="restore-file-input" class="btn-like-label btn-success btn-sm" title="Daha önce aldığınız yedek dosyasını seçerek tüm raporları sisteme geri yükler."><i class="fas fa-cloud-upload-alt"></i> Yedekten Yükle</label>
+                <input type="file" id="restore-file-input" accept=".json" style="display: none;">
+                <label for="merge-file-input" class="btn-like-label btn-warning btn-sm" title="Birden fazla yedek dosyasını seçerek tek bir güncel yedek dosyası oluşturur."><i class="fas fa-compress-arrows-alt"></i> Yedekleri Birleştir</label>
+                <input type="file" id="merge-file-input" accept=".json" style="display: none;" multiple>
+            </div>
+            <button id="toggle-manager-btn" class="btn-warning btn-sm"><i class="fas fa-edit"></i> Soru Yöneticisi</button>
         </div>
 
-        <div class="card" id="question-manager">
+        <div class="card" id="question-manager" style="display: none;">
             <h2><i class="fas fa-cogs"></i> FiDe Soru Yöneticisi</h2>
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
                 <i class="fas fa-info-circle"></i> Buradan FİDE sorularını düzenleyin. <b>Kaydet</b> tuşuna bastığınızda size <b>"fide_soru_listesi.json"</b> adında bir dosya indirilecek. Bu dosyayı mevcut olanla değiştirin ve sayfayı yenileyin.
@@ -131,6 +127,13 @@
 
         <div class="card" id="dide-upload-card">
             <h2><i class="fas fa-chart-line"></i> Puan Entegrasyonu ve Veri Yönetimi</h2>
+            
+            <div id="excel-expiry-warning">
+                <p><i class="fas fa-exclamation-triangle"></i> Veri Uyarısı</p>
+                <span>Aşağıdaki dosyalar 30 günden eski olduğu için hafızadan silindi. Lütfen güncel versiyonlarını tekrar yükleyin:</span>
+                <ul id="expired-files-list"></ul>
+            </div>
+
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
                 <i class="fas fa-info-circle"></i> Raporlarınız tarayıcı hafızasında saklanır. Tarayıcı verilerini temizlemek raporların silinmesine neden olabilir. Lütfen düzenli olarak yedek alın.
             </p>
@@ -151,11 +154,8 @@
                 </div>
             </div>
              <div style="margin-top: 20px;">
-                <p><b>3. Adım: Veri Yedekleme ve Geri Yükleme</b></p>
+                <p><b>3. Adım: Rapor ve Veri Temizleme</b></p>
                  <div class="file-input-wrapper">
-                    <button id="backup-btn" class="btn-primary btn-sm" title="Kaydedilmiş tüm bayi raporlarını tek bir yedek dosyası (.json) olarak bilgisayarınıza indirir."><i class="fas fa-cloud-download-alt"></i> Tüm Raporları Yedekle</button>
-                    <label for="restore-file-input" class="btn-like-label btn-success btn-sm" title="Daha önce aldığınız yedek dosyasını seçerek tüm raporları sisteme geri yükler."><i class="fas fa-cloud-upload-alt"></i> Yedekten Yükle</label>
-                    <input type="file" id="restore-file-input" accept=".json" style="display: none;">
                     <button id="clear-storage-btn" class="btn-danger btn-sm" title="UYARI: Tarayıcı hafızasındaki tüm bayi raporlarını kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Raporları Sil</button>
                     <button id="clear-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan DiDe Excel verisini tarayıcı hafızasından temizler."><i class="fas fa-trash-alt"></i> DiDe Excell'i Sil</button>
                     <button id="clear-fide-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan FiDe Excel verisini tarayıcı hafızasından temizler."><i class="fas fa-trash-alt"></i> FiDe Excell'i Sil</button>
@@ -208,6 +208,7 @@
         let popCodes = [];
         let expiredCodes = [];
         let productList = [];
+        let expiredExcelFiles = []; // Süresi dolan dosyaları takip etmek için
 
         const fallbackFideQuestions = [
             { id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi. Lütfen dosyayı kontrol edin." }
@@ -473,9 +474,9 @@
         function handleFileSelect(event, type) {
             const file = event.target.files[0];
             if (!file) return;
-
+            const filename = file.name;
             const fileNameSpan = type === 'dide' ? document.getElementById('file-name') : document.getElementById('fide-file-name');
-            fileNameSpan.textContent = `Seçilen dosya: ${file.name}`;
+            fileNameSpan.textContent = `Yüklü dosya: ${filename}`;
             
             const reader = new FileReader();
             reader.readAsArrayBuffer(file);
@@ -487,9 +488,9 @@
                     const worksheet = workbook.Sheets[sheetName];
                     const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
                     if (type === 'dide') {
-                        processDideExcelData(dataAsArray, true);
+                        processDideExcelData(dataAsArray, true, filename);
                     } else {
-                        processFideExcelData(dataAsArray, true);
+                        processFideExcelData(dataAsArray, true, filename);
                     }
                 } catch (error) {
                     alert("Excel dosyası okunurken bir hata oluştu. Dosya formatı bozuk olabilir.");
@@ -497,7 +498,7 @@
                 }
             };
         }
-        function processDideExcelData(dataAsArray, saveToStorage = false) {
+        function processDideExcelData(dataAsArray, saveToStorage = false, filename = '') {
             if (dataAsArray.length < 2) return alert('DiDe Excel dosyası beklenen formatta değil (en az 2 satır gerekli).');
             let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
             if (headerRowIndex === -1) return alert('DiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
@@ -519,13 +520,17 @@
                 return { 'Bayi Kodu': row[bayiKoduIndex], 'Bayi': row[bayiIndex], 'Bayi Yönetmeni': row[bayiYonetmeniIndex], 'scores': scores };
             }).filter(d => d);
             if (saveToStorage) {
-                const persistenceData = { timestamp: new Date().getTime(), data: processedData };
+                const persistenceData = { 
+                    timestamp: new Date().getTime(), 
+                    data: processedData,
+                    filename: filename 
+                };
                 localStorage.setItem('didePersistenceData', JSON.stringify(persistenceData));
-                alert('DiDe puan dosyası başarıyla işlendi ve hafızaya kaydedildi.');
+                alert('DiDe puan dosyası başarıyla işlendi ve 30 günlüğüne hafızaya kaydedildi.');
             }
             populateDideState(processedData);
         }
-        function processFideExcelData(dataAsArray, saveToStorage = false) {
+        function processFideExcelData(dataAsArray, saveToStorage = false, filename = '') {
             if (dataAsArray.length < 3) return alert('FiDe Excel dosyası beklenen formatta değil (en az 3 satır gerekli).');
             const currentYear = new Date().getFullYear();
             let yearRowIndex = -1;
@@ -574,9 +579,13 @@
             }).filter(d => d);
 
             if (saveToStorage) {
-                const persistenceData = { timestamp: new Date().getTime(), data: processedData };
+                const persistenceData = { 
+                    timestamp: new Date().getTime(), 
+                    data: processedData,
+                    filename: filename 
+                };
                 localStorage.setItem('fidePersistenceData', JSON.stringify(persistenceData));
-                 alert('FiDe puan dosyası başarıyla işlendi ve hafızaya kaydedildi.');
+                 alert('FiDe puan dosyası başarıyla işlendi ve 30 günlüğüne hafızaya kaydedildi.');
             }
             populateFideState(processedData);
         }
@@ -603,6 +612,15 @@
             if (!storedDataJSON) return;
             try {
                 const storedData = JSON.parse(storedDataJSON);
+                const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+                if (ageInDays > 30) {
+                    localStorage.removeItem('didePersistenceData');
+                    expiredExcelFiles.push('DiDe Puan Excel');
+                    return;
+                }
+                if (storedData.filename) {
+                    document.getElementById('file-name').textContent = `Yüklü dosya: ${storedData.filename}`;
+                }
                 populateDideState(storedData.data);
             } catch (e) { localStorage.removeItem('didePersistenceData'); }
         }
@@ -611,6 +629,15 @@
             if (!storedDataJSON) return;
             try {
                 const storedData = JSON.parse(storedDataJSON);
+                const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+                if (ageInDays > 30) {
+                    localStorage.removeItem('fidePersistenceData');
+                    expiredExcelFiles.push('FiDe Puan Excel');
+                    return;
+                }
+                if (storedData.filename) {
+                    document.getElementById('fide-file-name').textContent = `Yüklü dosya: ${storedData.filename}`;
+                }
                 populateFideState(storedData.data);
             } catch(e) { localStorage.removeItem('fidePersistenceData'); }
         }
@@ -854,6 +881,70 @@
             }
             event.target.value = null; 
         }
+        async function handleMergeUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length < 2) {
+                alert("Lütfen birleştirmek için en az 2 yedek dosyası seçin.");
+                return;
+            }
+
+            let mergedReports = {};
+            let fileReadPromises = [];
+
+            for (const file of files) {
+                const promise = new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            resolve(data);
+                        } catch (err) {
+                            reject(`'${file.name}' dosyası okunamadı. Geçerli bir yedek dosyası olmayabilir.`);
+                        }
+                    };
+                    reader.onerror = () => reject(`'${file.name}' dosyası okunurken bir hata oluştu.`);
+                    reader.readAsText(file);
+                });
+                fileReadPromises.push(promise);
+            }
+
+            try {
+                const allBackupData = await Promise.all(fileReadPromises);
+                
+                allBackupData.forEach(backupData => {
+                    for (const storeKey in backupData) {
+                        if (Object.hasOwnProperty.call(backupData, storeKey)) {
+                            const newReport = backupData[storeKey];
+                            if (!mergedReports[storeKey] || newReport.timestamp > mergedReports[storeKey].timestamp) {
+                                mergedReports[storeKey] = newReport;
+                            }
+                        }
+                    }
+                });
+
+                const mergedDataStr = JSON.stringify(mergedReports, null, 2);
+                const blob = new Blob([mergedDataStr], { type: 'application/json;charset=utf-8' });
+                const today = new Date().toISOString().slice(0, 10);
+                const filename = `birlesik_fide_rapor_yedek_${today}.json`;
+                
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                alert(`Başarılı! ${Object.keys(mergedReports).length} adet güncel raporu içeren birleştirilmiş yedek dosyanız '${filename}' adıyla indirildi.`);
+
+            } catch (error) {
+                alert("Birleştirme sırasında bir hata oluştu:\n" + error);
+                console.error("Yedek birleştirme hatası:", error);
+            } finally {
+                event.target.value = null; 
+            }
+        }
         function restoreLastSession() {
             const lastStoreCode = localStorage.getItem('lastSelectedStoreCode');
             if (lastStoreCode && uniqueStores.length > 0) {
@@ -991,9 +1082,17 @@
                 document.getElementById('initialization-error').style.display = 'block';
             }
             
-            buildForm();
             loadDideDataFromStorage();
             loadFideDataFromStorage();
+
+            if (expiredExcelFiles.length > 0) {
+                const warningDiv = document.getElementById('excel-expiry-warning');
+                const list = document.getElementById('expired-files-list');
+                list.innerHTML = expiredExcelFiles.map(file => `<li>${file}</li>`).join('');
+                warningDiv.style.display = 'block';
+            }
+
+            buildForm();
             restoreLastSession(); 
 
             document.getElementById('toggle-manager-btn').addEventListener('click', () => {
@@ -1031,14 +1130,25 @@
 
             document.getElementById('backup-btn').addEventListener('click', backupAllReports);
             document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
+            document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
             document.getElementById('new-report-btn').addEventListener('click', startNewReport);
             
             document.getElementById('clear-storage-btn').addEventListener('click', () => {
-                if (confirm("Kaydedilmiş TÜM bayi raporlarını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve Excel verinizi ETKİLEMEZ.")) {
-                    localStorage.removeItem('allFideReports');
-                    localStorage.removeItem('lastSelectedStoreCode');
-                    alert("Tüm kaydedilmiş raporlar temizlendi. Sayfa yenileniyor.");
-                    window.location.reload();
+                const dogruSifreHash = 'ZmRlMDAx';
+                const girilenSifre = prompt("Bu işlem geri alınamaz. Tüm raporları kalıcı olarak silmek için lütfen şifreyi girin:");
+
+                if (girilenSifre) { 
+                    const girilenSifreHash = btoa(girilenSifre);
+                    if (girilenSifreHash === dogruSifreHash) {
+                        if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları kalıcı olarak silinecektir.")) {
+                            localStorage.removeItem('allFideReports');
+                            localStorage.removeItem('lastSelectedStoreCode');
+                            alert("Tüm kaydedilmiş raporlar temizlendi. Sayfa yenileniyor.");
+                            window.location.reload();
+                        }
+                    } else {
+                        alert("Hatalı şifre! Silme işlemi iptal edildi.");
+                    }
                 }
             });
             document.getElementById('clear-excel-btn').addEventListener('click', () => {
