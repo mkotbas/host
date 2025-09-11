@@ -99,19 +99,160 @@
     const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi." }];
     const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
     
-    // --- BU NOKTADAN SONRAKİ KODLARIN TAMAMI ÖNCEKİ CEVAPTAKİ GİBİ ÇALIŞIR ---
-    // --- HİÇBİR DEĞİŞİKLİK YAPMANIZA GEREK YOKTUR ---
-    function setStatus(message, type) { const indicator = document.getElementById('status-indicator'); if(indicator) { indicator.className = type; indicator.innerHTML = message; } }
-    function getFormDataForSaving() { let reportData = { selectedStore: selectedStore, questions_status: {} }; fideQuestions.forEach(q => { const itemDiv = document.getElementById(`fide-item-${q.id}`); if(!itemDiv) return; const isRemoved = itemDiv.classList.contains('question-removed'); const titleContainer = itemDiv.querySelector('.fide-title-container'); const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false; const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] }; if (q.type === 'standard') { const container = document.getElementById(`sub-items-container-fide${q.id}`); if(container) { questionData.dynamicInputs = Array.from(container.querySelectorAll('.dynamic-input-item:not(.is-deleting)')).map(node => ({ text: node.querySelector('input').value.trim(), completed: node.querySelector('input').classList.contains('completed') })).filter(item => item.text); } } else if (q.type === 'product_list') { questionData.selectedProducts = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => ({ id: item.dataset.id, qty: item.dataset.qty })); const pleksiContainer = document.getElementById('sub-items-container-fide15_pleksi'); if(pleksiContainer) { questionData.dynamicInputs = Array.from(pleksiContainer.querySelectorAll('.dynamic-input-item:not(.is-deleting)')).map(node => ({ text: node.querySelector('input').value.trim(), completed: node.querySelector('input').classList.contains('completed') })).filter(item => item.text); } } else if (q.type === 'pop_system') { questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value); } reportData.questions_status[q.id] = questionData; }); return reportData; }
-    function saveFormState() { if (!document.getElementById('form-content').innerHTML || !selectedStore) return; setStatus('<i class="fas fa-sync-alt fa-spin"></i> Kaydediliyor...', 'connecting'); const reportData = getFormDataForSaving(); const storeKey = `store_${selectedStore.bayiKodu}`; allReports[storeKey] = { timestamp: firebase.database.ServerValue.TIMESTAMP, data: reportData }; saveDataToFirebase(allReports); }
-    async function saveDataToFirebase(data) { if (!currentUser) { setStatus('<i class="fas fa-exclamation-triangle"></i> Bağlantı Yok', 'error'); return; } try { await db.ref(`users/${currentUser.uid}/allFideReports`).set(data); setStatus('<i class="fas fa-check-circle"></i> Buluta Kaydedildi', 'synced'); } catch (error) { console.error("Firebase'e yazma hatası:", error); setStatus('<i class="fas fa-exclamation-triangle"></i> Kayıt Hatası!', 'error'); alert("Veriler buluta kaydedilemedi. İnternet bağlantınızı kontrol edin."); } }
-    function loadDataFromFirebase() { setStatus('<i class="fas fa-cloud-download-alt"></i> Veriler Yükleniyor...', 'connecting'); db.ref(`users/${currentUser.uid}/allFideReports`).get().then((snapshot) => { if (snapshot.exists()) { allReports = snapshot.val(); } else { allReports = {}; } setStatus('<i class="fas fa-check-circle"></i> Veriler Yüklendi', 'synced'); restoreLastSession(); }).catch((error) => { console.error("Firebase'den okuma hatası:", error); setStatus('<i class="fas fa-exclamation-triangle"></i> Yükleme Hatası!', 'error'); alert("Buluttan veriler alınamadı. İnternet bağlantınızı kontrol edin."); }); }
-    function loadReportForStore(bayiKodu) { const storeKey = `store_${bayiKodu}`; if (allReports && allReports[storeKey]) { loadReport(allReports[storeKey].data); } else { resetForm(); } }
-    function loadReport(reportData) { resetForm(); if (reportData.selectedStore) { selectedStore = reportData.selectedStore; localStorage.setItem('lastSelectedStoreCode', selectedStore.bayiKodu); const searchInput = document.getElementById('store-search-input'); let shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi; searchInput.value = `${selectedStore.bayiKodu} - ${shortBayiAdi}`; document.getElementById('store-list').style.display = 'none'; } for (const qId in reportData.questions_status) { const data = reportData.questions_status[qId]; const questionItem = document.getElementById(`fide-item-${qId}`); if (!questionItem) continue; const completeButton = questionItem.querySelector('.fide-actions .status-btn'); const removeButton = questionItem.querySelector('.fide-actions .remove-btn'); if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId); else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId); if (data.dynamicInputs) data.dynamicInputs.forEach(input => addDynamicInput(qId === '15' ? 'fide15_pleksi' : `fide${qId}`, input.text, input.completed)); if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.id, prod.qty)); if (data.selectedPops) { data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; }); } } }
-    function restoreLastSession() { const lastStoreCode = localStorage.getItem('lastSelectedStoreCode'); if (lastStoreCode && uniqueStores.length > 0) { const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode)); if (storeToRestore) { selectedStore = storeToRestore; const searchInput = document.getElementById('store-search-input'); let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : storeToRestore.bayiAdi; searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`; document.getElementById('store-list').style.display = 'none'; loadReportForStore(storeToRestore.bayiKodu); } } }
-    // Diğer tüm yardımcı fonksiyonlar (Excel, Soru Yöneticisi, Form elemanları vb.) buraya gelecek...
-    // Bu fonksiyonların içeriği önceki cevaplarla aynıdır ve kodun çalışması için gereklidir.
+    // --- YARDIMCI FONKSİYONLAR ---
+
+    function setStatus(message, type) { 
+        const indicator = document.getElementById('status-indicator'); 
+        if(indicator) { 
+            indicator.className = type; 
+            indicator.innerHTML = message; 
+        } 
+    }
+
+    // --- FIREBASE VERİ YÖNETİMİ ---
+
+    function getFormDataForSaving() { 
+        let reportData = { selectedStore: selectedStore, questions_status: {} }; 
+        fideQuestions.forEach(q => { 
+            const itemDiv = document.getElementById(`fide-item-${q.id}`); 
+            if(!itemDiv) return; 
+            const isRemoved = itemDiv.classList.contains('question-removed'); 
+            const titleContainer = itemDiv.querySelector('.fide-title-container'); 
+            const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false; 
+            const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] }; 
+            
+            if (q.type === 'standard') { 
+                const container = document.getElementById(`sub-items-container-fide${q.id}`); 
+                if(container) { 
+                    questionData.dynamicInputs = Array.from(container.querySelectorAll('.dynamic-input-item:not(.is-deleting)')).map(node => ({ text: node.querySelector('input').value.trim(), completed: node.querySelector('input').classList.contains('completed') })).filter(item => item.text); 
+                } 
+            } else if (q.type === 'product_list') { 
+                questionData.selectedProducts = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => ({ id: item.dataset.id, qty: item.dataset.qty })); 
+                const pleksiContainer = document.getElementById('sub-items-container-fide15_pleksi'); 
+                if(pleksiContainer) { 
+                    questionData.dynamicInputs = Array.from(pleksiContainer.querySelectorAll('.dynamic-input-item:not(.is-deleting)')).map(node => ({ text: node.querySelector('input').value.trim(), completed: node.querySelector('input').classList.contains('completed') })).filter(item => item.text); 
+                } 
+            } else if (q.type === 'pop_system') { 
+                questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value); 
+            } 
+            reportData.questions_status[q.id] = questionData; 
+        }); 
+        return reportData; 
+    }
+    
+    function saveFormState() { 
+        if (!document.getElementById('form-content').innerHTML || !selectedStore) return; 
+        setStatus('<i class="fas fa-sync-alt fa-spin"></i> Kaydediliyor...', 'connecting'); 
+        const reportData = getFormDataForSaving(); 
+        const storeKey = `store_${selectedStore.bayiKodu}`; 
+        allReports[storeKey] = { timestamp: firebase.database.ServerValue.TIMESTAMP, data: reportData }; 
+        saveDataToFirebase(allReports); 
+    }
+    
+    async function saveDataToFirebase(data) { 
+        if (!currentUser) { 
+            setStatus('<i class="fas fa-exclamation-triangle"></i> Bağlantı Yok', 'error'); 
+            return; 
+        } 
+        try { 
+            await db.ref(`users/${currentUser.uid}/allFideReports`).set(data); 
+            setStatus('<i class="fas fa-check-circle"></i> Buluta Kaydedildi', 'synced'); 
+        } catch (error) { 
+            console.error("Firebase'e yazma hatası:", error); 
+            setStatus('<i class="fas fa-exclamation-triangle"></i> Kayıt Hatası!', 'error'); 
+            alert("Veriler buluta kaydedilemedi. İnternet bağlantınızı kontrol edin."); 
+        } 
+    }
+    
+    function loadDataFromFirebase() { 
+        setStatus('<i class="fas fa-cloud-download-alt"></i> Veriler Yükleniyor...', 'connecting'); 
+        db.ref(`users/${currentUser.uid}/allFideReports`).get().then((snapshot) => { 
+            if (snapshot.exists()) { 
+                allReports = snapshot.val(); 
+            } else { 
+                allReports = {}; 
+            } 
+            setStatus('<i class="fas fa-check-circle"></i> Veriler Yüklendi', 'synced'); 
+            restoreLastSession(); 
+        }).catch((error) => { 
+            console.error("Firebase'den okuma hatası:", error); 
+            setStatus('<i class="fas fa-exclamation-triangle"></i> Yükleme Hatası!', 'error'); 
+            alert("Buluttan veriler alınamadı. İnternet bağlantınızı kontrol edin."); 
+        }); 
+    }
+    
+    function loadReportForStore(bayiKodu) { 
+        const storeKey = `store_${bayiKodu}`; 
+        if (allReports && allReports[storeKey]) { 
+            loadReport(allReports[storeKey].data); 
+        } else { 
+            resetForm(); 
+        } 
+    }
+
+    function loadReport(reportData) { 
+        resetForm(); 
+        if (reportData.selectedStore) { 
+            selectedStore = reportData.selectedStore; 
+            localStorage.setItem('lastSelectedStoreCode', selectedStore.bayiKodu); 
+            const searchInput = document.getElementById('store-search-input'); 
+            let shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi; 
+            searchInput.value = `${selectedStore.bayiKodu} - ${shortBayiAdi}`; 
+            document.getElementById('store-list').style.display = 'none'; 
+        } 
+        for (const qId in reportData.questions_status) { 
+            const data = reportData.questions_status[qId]; 
+            const questionItem = document.getElementById(`fide-item-${qId}`); 
+            if (!questionItem) continue; 
+            const completeButton = questionItem.querySelector('.fide-actions .status-btn'); 
+            const removeButton = questionItem.querySelector('.fide-actions .remove-btn'); 
+            if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId); 
+            else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId); 
+            if (data.dynamicInputs) data.dynamicInputs.forEach(input => addDynamicInput(qId === '15' ? 'fide15_pleksi' : `fide${qId}`, input.text, input.completed)); 
+            if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.id, prod.qty)); 
+            if (data.selectedPops) { data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; }); } 
+        } 
+    }
+    
+    function restoreLastSession() { 
+        const lastStoreCode = localStorage.getItem('lastSelectedStoreCode'); 
+        if (lastStoreCode && uniqueStores.length > 0) { 
+            const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode)); 
+            if (storeToRestore) { 
+                selectedStore = storeToRestore; 
+                const searchInput = document.getElementById('store-search-input'); 
+                let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : storeToRestore.bayiAdi; 
+                searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`; 
+                document.getElementById('store-list').style.display = 'none'; 
+                loadReportForStore(storeToRestore.bayiKodu); 
+            } 
+        } 
+    }
+
+    // --- FORM İŞLEVSELLİK FONKSİYONLARI ---
+    
+    function getUnitForProduct(productName) { const upperCaseName = productName.toUpperCase(); if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; } return 'Paket'; }
+    
+    function resetForm() { document.getElementById('form-content').innerHTML = ''; buildForm(); }
+    
+    function buildForm() { const formContainer = document.getElementById('form-content'); formContainer.innerHTML = ''; let html = ''; fideQuestions.forEach(q => { let questionActionsHTML = ''; let questionContentHTML = ''; if (q.type === 'standard') { questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`; let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join(''); questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`; } else if (q.type === 'product_list') { questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide15_pleksi')"><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`; let productOptions = ''; let currentOptgroup = false; productList.forEach(p => { if (p.type === 'header') { if (currentOptgroup) productOptions += `</optgroup>`; productOptions += `<optgroup label="${p.name}">`; currentOptgroup = true; } else { productOptions += `<option value="${p.id}">${p.code} - ${p.name}</option>`; } }); if (currentOptgroup) productOptions += `</optgroup>`; questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle ilgili notlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`; } else if (q.type === 'pop_system') { questionActionsHTML = `...`; questionContentHTML = `...`; } html += `<div class="fide-item" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`; }); formContainer.innerHTML = html; }
+    
+    function initiateDeleteItem(buttonEl) { const itemEl = buttonEl.parentElement; if (itemEl.classList.contains('is-deleting')) { clearTimeout(itemEl.dataset.deleteTimer); itemEl.removeAttribute('data-delete-timer'); itemEl.classList.remove('is-deleting'); buttonEl.querySelector('i').className = 'fas fa-trash'; buttonEl.classList.remove('btn-warning'); buttonEl.classList.add('btn-danger'); } else { itemEl.classList.add('is-deleting'); buttonEl.querySelector('i').className = 'fas fa-undo'; buttonEl.classList.remove('btn-danger'); buttonEl.classList.add('btn-warning'); const timerId = setTimeout(() => { itemEl.remove(); saveFormState(); }, 4000); itemEl.dataset.deleteTimer = timerId; } saveFormState(); }
+    
+    function addProductToList(productId, quantity) { const select = document.getElementById('product-selector'); const qtyInput = document.getElementById('product-qty'); const selectedProductId = productId || select.value; const selectedQty = quantity || qtyInput.value; if (!selectedProductId || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.'); const product = productList.find(p => p.id === selectedProductId); const listContainer = document.getElementById('selected-products-list'); if (document.querySelector(`.selected-product-item[data-id="${product.id}"]`)) return alert('Bu ürün zaten listede.'); const unit = getUnitForProduct(product.name); const newItem = document.createElement('div'); newItem.className = 'selected-product-item'; newItem.dataset.id = product.id; newItem.dataset.qty = selectedQty; newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} ${unit}</b></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sil" onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`; listContainer.appendChild(newItem); if (!productId) { select.value = ''; qtyInput.value = '1'; } saveFormState(); }
+    
+    function toggleCompleted(button) { const input = button.parentElement.querySelector('input[type="text"]'); const isCompleted = input.classList.toggle('completed'); input.readOnly = isCompleted; button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı'; button.classList.toggle('undo', isCompleted); saveFormState(); }
+    
+    function toggleQuestionCompleted(button, id) { const itemDiv = document.getElementById(`fide-item-${id}`); const titleContainer = itemDiv.querySelector('.fide-title-container'); const isCompleted = titleContainer.classList.toggle('question-completed'); button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı'; button.classList.toggle('undo', isCompleted); const inputArea = itemDiv.querySelector('.input-area'); if (inputArea) inputArea.style.display = isCompleted ? 'none' : 'block'; saveFormState(); }
+    
+    function toggleQuestionRemoved(button, id) { const itemDiv = document.getElementById(`fide-item-${id}`); const isRemoved = itemDiv.classList.toggle('question-removed'); const inputArea = itemDiv.querySelector('.input-area'); if(inputArea) inputArea.style.display = isRemoved ? 'none' : 'block'; button.innerHTML = isRemoved ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar'; button.classList.toggle('btn-danger', !isRemoved); button.classList.toggle('btn-primary', isRemoved); const actions = button.closest('.fide-actions'); if(actions) { actions.querySelectorAll('button:not(.remove-btn)').forEach(b => b.disabled = isRemoved); } saveFormState(); }
+    
+    function addDynamicInput(id, value = '', isCompleted = false) { const container = document.getElementById(`sub-items-container-${id}`); if (!container) return; const newItem = document.createElement('div'); newItem.className = 'dynamic-input-item'; newItem.innerHTML = `<input type="text" placeholder="Eksikliği yazın..." value="${value}"><button class="status-btn btn-sm"><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger"><i class="fas fa-trash"></i></button>`; const input = newItem.querySelector('input'); const completeButton = newItem.querySelector('.status-btn'); input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addDynamicInput(id); } }); input.addEventListener('blur', saveFormState); completeButton.onclick = () => toggleCompleted(completeButton); newItem.querySelector('.delete-bar').onclick = function() { initiateDeleteItem(this); }; if(isCompleted) toggleCompleted(completeButton); container.prepend(newItem); if (value === '') input.focus(); saveFormState(); }
+
+    // DİĞER FONKSİYONLAR... (Excel, Email, Soru Yöneticisi vb.)
     // ...
+
+    // --- ANA BAŞLATMA FONKSİYONU ---
     async function initializeApp() {
         try {
             const response = await fetch('https://mkotbas.github.io/host/fide_soru_listesi.json');
@@ -124,22 +265,18 @@
             fideQuestions = fallbackFideQuestions;
             document.getElementById('initialization-error').style.display = 'block';
         }
+
         try {
             await auth.signInAnonymously();
             currentUser = auth.currentUser;
             if (!currentUser) throw new Error("Anonim kullanıcı oluşturulamadı.");
             
-            // Excel verileri hala lokalde saklandığı için bu fonksiyonlar kalıyor
-            //loadDideDataFromStorage(); 
-            //loadFideDataFromStorage();
-            if (expiredExcelFiles.length > 0) {
-                const warningDiv = document.getElementById('excel-expiry-warning');
-                warningDiv.querySelector('ul').innerHTML = expiredExcelFiles.map(f => `<li>${f}</li>`).join('');
-                warningDiv.style.display = 'block';
-            }
-            
+            // Excel ve diğer lokal verileri yükle
+            // loadDideDataFromStorage(); 
+            // loadFideDataFromStorage();
+
             buildForm();
-            loadDataFromFirebase(); // Raporları localStorage yerine Firebase'den yükle
+            loadDataFromFirebase();
             setupEventListeners();
         } catch (error) {
             console.error("Firebase Hatası:", error);
@@ -147,6 +284,7 @@
             alert("Güvenli bulut bağlantısı kurulamadı. Lütfen sayfayı yenileyin ve internet bağlantınızı kontrol edin.");
         }
     }
+    
     function setupEventListeners() {
         document.getElementById('clear-all-cloud-data-btn').addEventListener('click', async () => {
              const dogruSifreHash = 'ZmRlMDAx';
@@ -169,8 +307,9 @@
                 }
              }
         });
-        // Diğer event listener'lar (Excel silme, yeni rapor vb.) eklenebilir
+        // Diğer butonların event listener'ları buraya eklenecek.
     }
+    
     window.onload = initializeApp;
     </script>
 </body>
