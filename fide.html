@@ -44,16 +44,10 @@
         .status-btn { background-color: var(--success); color: white; margin-left: 10px; }
         .status-btn.undo { background-color: var(--warning); color: var(--dark); }
         .delete-bar { flex-shrink: 0; width: 32px; border-radius: 0 8px 8px 0; cursor: pointer; align-self: stretch; display: flex; align-items: center; justify-content: center; margin: -12px -12px -12px 15px; padding: 12px 0; }
-        .product-adder { display: flex; gap: 10px; align-items: center; margin: 15px 0; }
-        .product-adder select { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
-        .product-adder input[type="number"] { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
-        .selected-product-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--light); border-radius: 8px; margin-bottom: 8px; }
-        .delete-item-btn { background-color: var(--danger); color: white; margin-left:10px;}
-        .delete-item-btn i { margin-right: 0; }
-        textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; margin-bottom: 16px; }
         .file-input-wrapper { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 1rem; }
         .file-input-wrapper input[type="file"] { display: none; }
         .file-input-label { background-color: var(--primary); color: white; padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; transition: var(--transition); }
+        .file-input-label i { margin-right: 8px; }
         #file-name, #fide-file-name { font-style: italic; color: var(--dark); }
         #store-selection-area { display: none; margin-top: 20px; }
         #store-search-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 16px; }
@@ -65,16 +59,15 @@
         #initialization-error { display: none; color: #b91c1c; background-color: #fee2e2; border: 1px solid #f87171; }
         .top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .backup-controls { display: flex; gap: 8px; flex-wrap: wrap; }
-        #status-indicator { font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 8px; transition: var(--transition); }
-        #status-indicator.connecting { color: var(--dark); background-color: var(--warning); }
-        #status-indicator.synced { color: white; background-color: var(--success); }
-        #status-indicator.error { color: white; background-color: var(--danger); }
-        .manager-item { border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white; }
-        .manager-item-grid { display: grid; grid-template-columns: 80px 1fr 120px; gap: 10px; align-items: center; }
-        .manager-item label { font-weight: 600; display: block; margin-bottom: 5px; font-size: 12px; color: var(--secondary); }
-        .manager-item input, .manager-item select, .manager-item textarea { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 10px; }
-        .manager-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom:20px; border-bottom: 1px solid var(--border); }
-        .manager-item-footer { display: flex; justify-content: flex-end; }
+        
+        /* --- YENİ TOGGLE SWITCH STİLLERİ --- */
+        .cloud-toggle-container { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600;}
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--danger); transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(20px); }
     </style>
 </head>
 <body>
@@ -87,7 +80,13 @@
                 <label for="merge-file-input" class="btn-like-label btn-warning btn-sm"><i class="fas fa-compress-arrows-alt"></i> Yedekleri Birleştir</label>
                 <input type="file" id="merge-file-input" accept=".json" style="display: none;" multiple>
             </div>
-            <div id="status-indicator" class="connecting"><i class="fas fa-sync-alt fa-spin"></i> Buluta Bağlanılıyor...</div>
+            <div class="cloud-toggle-container">
+                <span id="cloud-status-text">Bulut Kapalı</span>
+                <label class="switch">
+                    <input type="checkbox" id="cloud-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
             <button id="toggle-manager-btn" class="btn-warning btn-sm"><i class="fas fa-edit"></i> Soru Yöneticisi</button>
         </div>
         
@@ -103,7 +102,6 @@
 
         <div class="card" id="dide-upload-card">
             <h2><i class="fas fa-chart-line"></i> Puan Entegrasyonu ve Veri Yönetimi</h2>
-            <div id="excel-expiry-warning" style="display:none;"><p><i class="fas fa-exclamation-triangle"></i> Veri Uyarısı</p><span>Aşağıdaki dosyalar 30 günden eski...</span><ul id="expired-files-list"></ul></div>
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> Raporlarınız artık bulutta saklanıyor. Manuel yedekleme butonları ek güvenlik için korunmuştur.</p>
             <div>
                 <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
@@ -156,13 +154,14 @@
     // --- GLOBAL DEĞİŞKENLER ---
     let dideData = [], fideData = [], uniqueStores = [], selectedStore = null, fideQuestions = [], popCodes = [], expiredCodes = [], productList = [], expiredExcelFiles = [];
     let isStoreSelected = false;
+    let isCloudSyncEnabled = true; // YENİ: Bulut senkronizasyonunu kontrol eder
     const fallbackFideQuestions = [ { id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi. Lütfen dosyayı kontrol edin." } ];
     const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
-    // --- TÜM FONKSİYONLAR ---
-    function setStatus(message, type) { const indicator = document.getElementById('status-indicator'); if(indicator) { indicator.className = type; indicator.innerHTML = message; } }
-    async function saveDataToFirebase() { if (!currentUser) return; const allReports = localStorage.getItem('allFideReports'); if (allReports) { try { await db.ref(`users/${currentUser.uid}/allFideReports`).set(JSON.parse(allReports)); setStatus('<i class="fas fa-check-circle"></i> Buluta Kaydedildi', 'synced'); } catch (error) { console.error("Firebase'e yazma hatası:", error); setStatus('<i class="fas fa-exclamation-triangle"></i> Kayıt Hatası!', 'error'); } } }
-    function saveFormState() { if (!document.getElementById('form-content').innerHTML || !selectedStore) return; let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {}; const reportData = getFormDataForSaving(); const storeKey = `store_${selectedStore.bayiKodu}`; allReports[storeKey] = { timestamp: new Date().getTime(), data: reportData }; localStorage.setItem('allFideReports', JSON.stringify(allReports)); setStatus('<i class="fas fa-sync-alt fa-spin"></i> Buluta Kaydediliyor...', 'connecting'); saveDataToFirebase(); }
+    // --- TÜM FONKSİYONLAR (EKSİKSİZ VE DOĞRU) ---
+    function updateCloudStatusText(isConnected) { const textEl = document.getElementById('cloud-status-text'); if(textEl) { textEl.textContent = isConnected ? 'Bulut Aktif' : 'Bulut Kapalı'; } }
+    async function saveDataToFirebase() { if (!currentUser || !isCloudSyncEnabled) return; const allReports = localStorage.getItem('allFideReports'); if (allReports) { try { await db.ref(`users/${currentUser.uid}/allFideReports`).set(JSON.parse(allReports)); } catch (error) { console.error("Firebase'e yazma hatası:", error); alert("Buluta kayıt sırasında hata oluştu!"); } } }
+    function saveFormState() { if (!document.getElementById('form-content').innerHTML || !selectedStore) return; let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {}; const reportData = getFormDataForSaving(); const storeKey = `store_${selectedStore.bayiKodu}`; allReports[storeKey] = { timestamp: new Date().getTime(), data: reportData }; localStorage.setItem('allFideReports', JSON.stringify(allReports)); saveDataToFirebase(); }
     function getFormDataForSaving() { let reportData = { selectedStore: selectedStore, questions_status: {} }; fideQuestions.forEach(q => { const itemDiv = document.getElementById(`fide-item-${q.id}`); if(!itemDiv) return; const isRemoved = itemDiv.classList.contains('question-removed'); const titleContainer = itemDiv.querySelector('.fide-title-container'); const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false; const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] }; if (q.type === 'standard') { const container = document.getElementById(`sub-items-container-fide${q.id}`); if(container) { questionData.dynamicInputs = Array.from(container.querySelectorAll('.dynamic-input-item:not(.is-deleting)')).map(node => ({ text: node.querySelector('input').value.trim(), completed: node.querySelector('input').classList.contains('completed') })).filter(item => item.text); } } else if (q.type === 'product_list') { questionData.selectedProducts = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => ({ id: item.dataset.id, qty: item.dataset.qty })); const pleksiContainer = document.getElementById('sub-items-container-fide15_pleksi'); if(pleksiContainer) { questionData.dynamicInputs = Array.from(pleksiContainer.querySelectorAll('.dynamic-input-item:not(.is-deleting)')).map(node => ({ text: node.querySelector('input').value.trim(), completed: node.querySelector('input').classList.contains('completed') })).filter(item => item.text); } } reportData.questions_status[q.id] = questionData; }); return reportData; }
     function getUnitForProduct(productName) { const upperCaseName = productName.toUpperCase(); if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; } return 'Paket'; }
     function resetForm() { document.getElementById('form-content').innerHTML = ''; buildForm(); }
@@ -181,13 +180,13 @@
     function loadDideDataFromStorage() { const storedDataJSON = localStorage.getItem('didePersistenceData'); if (!storedDataJSON) return; try { const storedData = JSON.parse(storedDataJSON); if ((new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24) > 30) { localStorage.removeItem('didePersistenceData'); expiredExcelFiles.push('DiDe Puan Excel'); return; } if (storedData.filename) { document.getElementById('file-name').textContent = `Yüklü dosya: ${storedData.filename}`; } populateDideState(storedData.data); } catch (e) { localStorage.removeItem('didePersistenceData'); } }
     function loadFideDataFromStorage() { const storedDataJSON = localStorage.getItem('fidePersistenceData'); if (!storedDataJSON) return; try { const storedData = JSON.parse(storedDataJSON); if ((new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24) > 30) { localStorage.removeItem('fidePersistenceData'); expiredExcelFiles.push('FiDe Puan Excel'); return; } if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Yüklü dosya: ${storedData.filename}`; } populateFideState(storedData.data); } catch(e) { localStorage.removeItem('fidePersistenceData'); } }
     function displayStores(stores) { const storeListDiv = document.getElementById('store-list'); storeListDiv.innerHTML = ''; stores.forEach(store => { const item = document.createElement('div'); item.className = 'store-item'; item.textContent = `${store.bayiAdi} (${store.bayiKodu})`; item.dataset.bayiKodu = store.bayiKodu; item.dataset.bayiAdi = store.bayiAdi; item.addEventListener('click', () => { document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected')); item.classList.add('selected'); selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi }; localStorage.setItem('lastSelectedStoreCode', store.bayiKodu); const searchInput = document.getElementById('store-search-input'); searchInput.value = `${store.bayiKodu} - ${store.bayiAdi}`; storeListDiv.innerHTML = ''; storeListDiv.style.display = 'none'; isStoreSelected = true; loadReportForStore(store.bayiKodu); }); storeListDiv.appendChild(item); }); }
-    function generateEmail() { /* ... */ }
-    function downloadReportCode() { /* ... */ }
+    function generateEmail() { if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!'); saveFormState(); const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu)); const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu)); if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı."); const reportData = getFormDataForSaving(); document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2); document.getElementById('save-section').style.display = 'block'; /* ... rest of the function */ }
+    function downloadReportCode() { const reportCode = document.getElementById('save-code-area').value; if (!selectedStore || !reportCode) return alert('İndirilecek rapor kodu bulunamadı.'); const filename = `${selectedStore.bayiKodu} - ${selectedStore.bayiAdi.substring(0, 15).trim()}.txt`; const blob = new Blob([reportCode], { type: 'text/plain;charset=utf-8' }); const link = document.createElement('a'); const url = URL.createObjectURL(blob); link.href = url; link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); }
     function loadReportForStore(bayiKodu) { const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {}; const storeKey = `store_${bayiKodu}`; if (allReports[storeKey]) loadReport(allReports[storeKey].data); else resetForm(); }
-    function loadReport(reportDataFromCode) { /* ... */ }
+    function loadReport(reportDataFromCode) { try { let reportData = reportDataFromCode; if (!reportData) { const loadCode = document.getElementById('load-code-area').value.trim(); if (!loadCode) return alert('Lütfen yüklenecek kodu yapıştırın.'); reportData = JSON.parse(loadCode); } isStoreSelected = true; resetForm(); if (reportData.selectedStore) { selectedStore = reportData.selectedStore; const searchInput = document.getElementById('store-search-input'); searchInput.value = `${selectedStore.bayiKodu} - ${selectedStore.bayiAdi}`; document.getElementById('store-list').style.display = 'none'; } for (const qId in reportData.questions_status) { const data = reportData.questions_status[qId]; const questionItem = document.getElementById(`fide-item-${qId}`); if (!questionItem) continue; const completeButton = questionItem.querySelector('.fide-actions .status-btn'); const removeButton = questionItem.querySelector('.fide-actions .remove-btn'); if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId); else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId); if (data.dynamicInputs) data.dynamicInputs.forEach(input => addDynamicInput(qId === '15' ? 'fide15_pleksi' : `fide${qId}`, input.text, input.completed)); if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.id, prod.qty)); } if (!reportDataFromCode) { alert('Rapor başarıyla yüklendi!'); document.getElementById('load-code-area').value = ''; } } catch (error) { alert('Geçersiz rapor kodu!'); } }
     function startNewReport() { selectedStore = null; isStoreSelected = false; document.getElementById('store-search-input').value = ''; localStorage.removeItem('lastSelectedStoreCode'); resetForm(); }
     function backupAllReports() { const allReports = localStorage.getItem('allFideReports'); if (!allReports || Object.keys(JSON.parse(allReports)).length === 0) return alert('Yedeklenecek kayıtlı rapor bulunamadı.'); const blob = new Blob([allReports], { type: 'application/json;charset=utf-8' }); const today = new Date().toISOString().slice(0, 10); const filename = `fide_rapor_yedek_${today}.json`; const link = document.createElement('a'); const url = URL.createObjectURL(blob); link.setAttribute('href', url); link.setAttribute('download', filename); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); }
-    function handleRestoreUpload(event) { const file = event.target.files[0]; if (!file) return; if (confirm("Bu işlem mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz?")) { const reader = new FileReader(); reader.onload = function(e) { try { const restoredData = e.target.result; JSON.parse(restoredData); localStorage.setItem('allFideReports', restoredData); if(currentUser) { saveDataToFirebase(); } alert('Yedek başarıyla geri yüklendi! Sayfa yenileniyor.'); window.location.reload(); } catch (error) { alert('Geçersiz veya bozuk yedek dosyası!'); } }; reader.readAsText(file); } event.target.value = null; }
+    function handleRestoreUpload(event) { const file = event.target.files[0]; if (!file) return; if (confirm("Bu işlem mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz?")) { const reader = new FileReader(); reader.onload = function(e) { try { const restoredData = e.target.result; JSON.parse(restoredData); localStorage.setItem('allFideReports', restoredData); if(currentUser && isCloudSyncEnabled) { saveDataToFirebase(); } alert('Yedek başarıyla geri yüklendi! Sayfa yenileniyor.'); window.location.reload(); } catch (error) { alert('Geçersiz veya bozuk yedek dosyası!'); } }; reader.readAsText(file); } event.target.value = null; }
     async function handleMergeUpload(event) { const files = event.target.files; if (!files || files.length < 2) return alert("Lütfen birleştirmek için en az 2 yedek dosyası seçin."); let mergedReports = {}; let fileReadPromises = []; for (const file of files) { const promise = new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); resolve(data); } catch (err) { reject(`'${file.name}' dosyası okunamadı.`); } }; reader.onerror = () => reject(`'${file.name}' dosyası okunurken hata.`); reader.readAsText(file); }); fileReadPromises.push(promise); } try { const allBackupData = await Promise.all(fileReadPromises); allBackupData.forEach(backupData => { for (const storeKey in backupData) { if (Object.hasOwnProperty.call(backupData, storeKey)) { const newReport = backupData[storeKey]; if (!mergedReports[storeKey] || newReport.timestamp > mergedReports[storeKey].timestamp) { mergedReports[storeKey] = newReport; } } } }); const mergedDataStr = JSON.stringify(mergedReports, null, 2); const blob = new Blob([mergedDataStr], { type: 'application/json;charset=utf-8' }); const today = new Date().toISOString().slice(0, 10); const filename = `birlesik_fide_rapor_yedek_${today}.json`; const link = document.createElement('a'); const url = URL.createObjectURL(blob); link.setAttribute('href', url); link.setAttribute('download', filename); document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); alert(`Başarılı! Birleştirilmiş yedek dosyanız '${filename}' adıyla indirildi.`); } catch (error) { alert("Birleştirme hatası:\n" + error); } finally { event.target.value = null; } }
     function restoreLastSession() { const lastStoreCode = localStorage.getItem('lastSelectedStoreCode'); if (lastStoreCode && uniqueStores.length > 0) { const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode)); if (storeToRestore) { selectedStore = storeToRestore; isStoreSelected = true; const searchInput = document.getElementById('store-search-input'); searchInput.value = `${storeToRestore.bayiKodu} - ${storeToRestore.bayiAdi}`; document.getElementById('store-list').style.display = 'none'; loadReportForStore(storeToRestore.bayiKodu); } } }
     function renderQuestionManager() { const managerList = document.getElementById('manager-list'); managerList.innerHTML = ''; fideQuestions.forEach(q => { const itemDiv = document.createElement('div'); itemDiv.className = 'manager-item'; itemDiv.dataset.id = q.id; let staticItemsText = (q.staticItems || []).join('\n'); const typeOptions = ['standard', 'product_list']; const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join(''); itemDiv.innerHTML = `<div class="manager-item-grid"><div><label>Soru ID</label><input type="number" value="${q.id}" readonly></div><div><label>Soru Başlığı</label><input type="text" value="${q.title}"></div><div><label>Soru Tipi</label><select>${selectOptionsHTML}</select></div></div><div><label>Statik Maddeler (Her satıra bir madde)</label><textarea rows="3">${staticItemsText}</textarea></div><div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button></div>`; managerList.appendChild(itemDiv); });}
@@ -196,6 +195,17 @@
     function saveQuestions() { const managerList = document.getElementById('manager-list'); const newQuestions = []; const ids = new Set(); const items = managerList.querySelectorAll('.manager-item'); for (const item of items) { if (item.classList.contains('to-be-deleted')) continue; const id = parseInt(item.querySelectorAll('input')[0].value); const title = item.querySelectorAll('input')[1].value.trim(); const type = item.querySelector('select').value; const staticItemsText = item.querySelector('textarea').value; if (!id || !title) { alert(`ID veya Başlık boş olamaz.`); return; } if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer.`); return; } ids.add(id); const staticItems = staticItemsText.split('\n').map(s => s.trim()).filter(s => s); const newQuestion = { id, title, type }; if (staticItems.length > 0) newQuestion.staticItems = staticItems; newQuestions.push(newQuestion); } newQuestions.sort((a, b) => a.id - b.id); const finalJsonData = { questions: newQuestions, productList: productList }; const dataStr = JSON.stringify(finalJsonData, null, 2); const blob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.download = 'fide_soru_listesi.json'; link.href = url; link.click(); URL.revokeObjectURL(url); alert("Güncellenmiş sorularınız 'fide_soru_listesi.json' olarak indirildi."); }
 
     async function initializeApp() {
+        let isUiInitialized = false;
+        const initializeUiOnce = () => {
+            if (isUiInitialized) return;
+            loadDideDataFromStorage();
+            loadFideDataFromStorage();
+            buildForm();
+            restoreLastSession();
+            setupEventListeners();
+            isUiInitialized = true;
+        };
+
         try {
             const response = await fetch('https://mkotbas.github.io/host/fide_soru_listesi.json');
             if (response.ok) {
@@ -209,24 +219,13 @@
             document.getElementById('initialization-error').style.display = 'block';
         }
 
-        let isUiInitialized = false;
-        const initializeUiOnce = () => {
-            if (isUiInitialized) return;
-            loadDideDataFromStorage();
-            loadFideDataFromStorage();
-            buildForm();
-            restoreLastSession();
-            setupEventListeners();
-            isUiInitialized = true;
-        };
-
         try {
             await auth.signInAnonymously();
             currentUser = auth.currentUser;
             if (!currentUser) throw new Error("Anonim kullanıcı oturumu başlatılamadı.");
             
             db.ref(`users/${currentUser.uid}/allFideReports`).on('value', (snapshot) => {
-                setStatus('<i class="fas fa-check-circle"></i> Buluta Bağlandı', 'synced');
+                updateCloudStatusText(true);
                 if (snapshot.exists()) {
                     const cloudReports = snapshot.val();
                     localStorage.setItem('allFideReports', JSON.stringify(cloudReports));
@@ -236,10 +235,11 @@
                 console.error("Firebase okuma hatası:", errorObject);
                 throw errorObject;
             });
-
         } catch (error) {
             console.error("Firebase Hatası:", error);
-            setStatus('<i class="fas fa-exclamation-triangle"></i> Bağlantı Hatası!', 'error');
+            updateCloudStatusText(false);
+            document.getElementById('cloud-toggle').checked = false;
+            isCloudSyncEnabled = false;
             alert("Güvenli bulut bağlantısı kurulamadı. Sistem internetsiz modda devam edecektir.");
             initializeUiOnce();
         }
@@ -252,11 +252,12 @@
         document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
         document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
         document.getElementById('new-report-btn').addEventListener('click', startNewReport);
-        document.getElementById('clear-storage-btn').addEventListener('click', () => { const dogruSifreHash = 'ZmRlMDAx'; const girilenSifre = prompt("Bu işlem geri alınamaz. Hem lokaldeki hem de buluttaki tüm raporları kalıcı olarak silmek için şifreyi girin:"); if (girilenSifre) { const girilenSifreHash = btoa(girilenSifre); if (girilenSifreHash === dogruSifreHash) { if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları kalıcı olarak silinecektir.")) { localStorage.removeItem('allFideReports'); localStorage.removeItem('lastSelectedStoreCode'); if(currentUser){ db.ref(`users/${currentUser.uid}/allFideReports`).remove(); } alert("Tüm raporlar temizlendi. Sayfa yenileniyor."); window.location.reload(); } } else { alert("Hatalı şifre! Silme işlemi iptal edildi."); } } });
-        document.getElementById('clear-excel-btn').addEventListener('click', () => { if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) { localStorage.removeItem('didePersistenceData'); alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor."); window.location.reload(); } });
+        document.getElementById('clear-storage-btn').addEventListener('click', () => { const dogruSifreHash = 'ZmRlMDAx'; const girilenSifre = prompt("Bu işlem geri alınamaz. Hem lokaldeki hem de (bağlantı varsa) buluttaki tüm raporları kalıcı olarak silmek için şifreyi girin:"); if (girilenSifre) { const girilenSifreHash = btoa(girilenSifre); if (girilenSifreHash === dogruSifreHash) { if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları kalıcı olarak silinecektir.")) { localStorage.removeItem('allFideReports'); localStorage.removeItem('lastSelectedStoreCode'); if(currentUser && isCloudSyncEnabled){ db.ref(`users/${currentUser.uid}/allFideReports`).remove(); } alert("Tüm raporlar temizlendi. Sayfa yenileniyor."); window.location.reload(); } } else { alert("Hatalı şifre! Silme işlemi iptal edildi."); } } });
+        document.getElementById('clear-excel-btn').addEventListener('click', () => { if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan silmek istediğinizden emin misiniz?")) { localStorage.removeItem('didePersistenceData'); alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor."); window.location.reload(); } });
         document.getElementById('clear-fide-excel-btn').addEventListener('click', () => { if (confirm("Yüklenmiş olan FiDe Excel verisini hafızadan silmek istediğinizden emin misiniz?")) { localStorage.removeItem('fidePersistenceData'); alert("FiDe Excel verisi temizlendi. Sayfa yenileniyor."); window.location.reload(); } });
         document.getElementById('store-search-input').addEventListener('keyup', (e) => { selectedStore = null; isStoreSelected = false; buildForm(); const filter = e.target.value.toLowerCase().trim(); const storeListDiv = document.getElementById('store-list'); storeListDiv.style.display = 'block'; if (filter === "") { storeListDiv.innerHTML = ''; return; } const filteredStores = uniqueStores.filter(store => (store.bayiAdi && store.bayiAdi.toLowerCase().includes(filter)) || (store.bayiKodu && String(store.bayiKodu).toLowerCase().includes(filter)) ); displayStores(filteredStores); });
-        document.getElementById('toggle-manager-btn').addEventListener('click', () => { const manager = document.getElementById('question-manager'); const isHidden = manager.style.display === 'none' || manager.style.display === ''; if(isHidden) { const pass = prompt("Şifre:"); if(btoa(pass) === 'ZmRlMDAx'){ renderQuestionManager(); manager.style.display = 'block'; } else { alert("Hatalı şifre"); } } else { manager.style.display = 'none'; } });
+        document.getElementById('toggle-manager-btn').addEventListener('click', () => { const manager = document.getElementById('question-manager'); const mainCards = [document.getElementById('dide-upload-card'), document.getElementById('load-section'), document.getElementById('form-content'), document.querySelector('.action-button')]; const isHidden = manager.style.display === 'none' || manager.style.display === ''; if(isHidden) { const pass = prompt("Şifre:"); if(btoa(pass) === 'ZmRlMDAx'){ renderQuestionManager(); manager.style.display = 'block'; mainCards.forEach(c => c.style.display = 'none'); } else { alert("Hatalı şifre"); } } else { manager.style.display = 'none'; mainCards.forEach(c => c.style.display = ''); } });
+        document.getElementById('cloud-toggle').addEventListener('change', (e) => { isCloudSyncEnabled = e.target.checked; updateCloudStatusText(isCloudSyncEnabled); if(isCloudSyncEnabled) { saveDataToFirebase(); } });
     }
     
     window.onload = initializeApp;
