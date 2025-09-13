@@ -207,35 +207,27 @@
         }
 
         .dropdown-container {
-            position: relative;
             display: inline-block;
         }
         .dropdown-menu {
-            display: none;
-            position: absolute;
             background-color: #fff;
             box-shadow: var(--card-shadow);
             border: 1px solid var(--border);
             border-radius: 8px;
-            z-index: 10;
-            padding: 8px;
-            margin-top: 5px;
-            top: calc(100% + 5px); 
-            left: 0; 
-            display: flex; 
+            padding: 0;
+            display: flex;
             gap: 8px;
-            width: max-content; 
+            width: max-content;
+            overflow: hidden;
+            max-height: 0;
             opacity: 0;
-            transform: scale(0.95);
-            transform-origin: top left; 
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            pointer-events: none;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease, padding 0.3s ease, margin-top 0.3s ease;
         }
         .dropdown-menu.show {
-            display: flex;
             opacity: 1;
-            transform: scale(1);
-            pointer-events: auto;
+            max-height: 100px; /* İçerikten daha büyük bir değer olmalı */
+            padding: 8px;
+            margin-top: 5px;
         }
         #backup-menu-btn i.fa-caret-down {
              margin-left: 8px;
@@ -300,11 +292,8 @@
             .manager-item-grid { grid-template-columns: 1fr; align-items: stretch; }
             .archive-switch-container { align-items: flex-start; }
             .dropdown-menu {
-                left: 0;
-                top: calc(100% + 5px);
                 flex-direction: column;
                 width: 100%;
-                transform-origin: top center;
             }
             .manager-actions { flex-direction: column; align-items: stretch; }
             .manager-view-controls, .manager-main-actions { width: 100%; justify-content: center;}
@@ -356,7 +345,11 @@
         </div>
 
         <div class="card" id="question-manager" style="display: none;">
-            <h2><i class="fas fa-cogs"></i> FiDe Soru Yöneticisi</h2>
+            <h2>
+                <a href="#" onclick="event.preventDefault(); closeManager();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
+                    <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i> FiDe Soru Yöneticisi
+                </a>
+            </h2>
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
                 <i class="fas fa-info-circle"></i> Buradan FİDE sorularını düzenleyin. <b>Kaydet</b> tuşuna bastığınızda size <b>"fide_soru_listesi.json"</b> adında bir dosya indirilecek. Bu dosyayı mevcut olanla değiştirin ve sayfayı yenileyin.
             </p>
@@ -366,10 +359,11 @@
                     <button id="view-archived-btn" class="btn-warning btn-sm"><i class="fas fa-archive"></i> Arşivlenmiş Sorular</button>
                 </div>
                 <div class="manager-main-actions">
-                    <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Yeni Soru Ekle</button>
-                    <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenlemeyi Aç</button>
-                    <button id="save-questions-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Değişiklikleri Kaydet</button>
-                    <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Tüm Arşivi Sil</button>
+                    <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Soru Ekle</button>
+                    <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenle</button>
+                    <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Arşivi Sil</button>
+                    <button id="restore-all-archived-btn" class="btn-success btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları aktif hale getirir."><i class="fas fa-undo"></i> Arşivi Geri Yükle</button>
+                    <button id="save-questions-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Kaydet</button>
                 </div>
             </div>
             <div id="manager-list"></div>
@@ -555,6 +549,24 @@
             statusSwitch.classList.toggle('disconnected', !isOnline);
             statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
         }
+        
+        function closeManager() {
+            document.getElementById('question-manager').style.display = 'none';
+            document.getElementById('dide-upload-card').style.display = '';
+            document.getElementById('load-section').style.display = '';
+            
+            const emailDraft = document.getElementById('email-draft-container');
+            const saveSection = document.getElementById('save-section');
+
+            if (emailDraft) {
+                emailDraft.style.display = 'block';
+                if(saveSection) saveSection.style.display = 'block';
+            } else {
+                document.getElementById('form-content').style.display = '';
+                document.querySelector('.action-button').style.display = '';
+                if(saveSection) saveSection.style.display = 'none';
+            }
+        }
 
         function setupEventListeners() {
             document.getElementById('excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'dide'));
@@ -651,7 +663,8 @@
                 if (authControls && !authControls.contains(event.target)) {
                     loginPopup.style.display = 'none';
                 }
-                if (backupMenuBtn && !backupMenuBtn.contains(event.target)) {
+                const dropdownContainer = document.querySelector('.dropdown-container');
+                if (dropdownContainer && !dropdownContainer.contains(event.target)) {
                     backupDropdown.classList.remove('show');
                     backupMenuBtn.classList.remove('open');
                 }
@@ -666,6 +679,12 @@
                     if (girilenSifre) {
                         const girilenSifreHash = btoa(girilenSifre);
                         if (girilenSifreHash === dogruSifreHash) {
+                            const emailDraft = document.getElementById('email-draft-container');
+                            if(emailDraft) emailDraft.style.display = 'none';
+
+                            const saveSection = document.getElementById('save-section');
+                            if(saveSection) saveSection.style.display = 'none';
+
                             manager.style.display = 'block';
                             document.getElementById('dide-upload-card').style.display = 'none';
                             document.getElementById('load-section').style.display = 'none';
@@ -677,11 +696,7 @@
                         }
                     }
                 } else {
-                    manager.style.display = 'none';
-                    document.getElementById('dide-upload-card').style.display = '';
-                    document.getElementById('load-section').style.display = '';
-                    document.getElementById('form-content').style.display = '';
-                    document.querySelector('.action-button').style.display = '';
+                    closeManager();
                 }
             });
             
@@ -696,6 +711,7 @@
             document.getElementById('add-new-question-btn').addEventListener('click', addNewQuestionUI);
             document.getElementById('save-questions-btn').addEventListener('click', saveQuestions);
             document.getElementById('delete-all-archived-btn').addEventListener('click', deleteAllArchivedQuestions);
+            document.getElementById('restore-all-archived-btn').addEventListener('click', restoreAllArchivedQuestions);
             
             document.getElementById('unlock-ids-btn').addEventListener('click', () => {
                 const dogruSifreHash = 'ZmRlMDAx';
@@ -1553,12 +1569,14 @@
             const viewArchivedBtn = document.getElementById('view-archived-btn');
             const addNewBtn = document.getElementById('add-new-question-btn');
             const deleteAllArchivedBtn = document.getElementById('delete-all-archived-btn');
+            const restoreAllArchivedBtn = document.getElementById('restore-all-archived-btn');
 
             viewActiveBtn.classList.toggle('active', currentManagerView === 'active');
             viewArchivedBtn.classList.toggle('active', currentManagerView === 'archived');
             
             addNewBtn.style.display = currentManagerView === 'active' ? 'inline-flex' : 'none';
             deleteAllArchivedBtn.style.display = currentManagerView === 'archived' ? 'inline-flex' : 'none';
+            restoreAllArchivedBtn.style.display = currentManagerView === 'archived' ? 'inline-flex' : 'none';
 
             const items = document.querySelectorAll('#manager-list .manager-item');
             let visibleItemCount = 0;
@@ -1571,6 +1589,7 @@
 
             if (currentManagerView === 'archived') {
                 deleteAllArchivedBtn.disabled = visibleItemCount === 0;
+                restoreAllArchivedBtn.disabled = visibleItemCount === 0;
             }
         }
 
@@ -1618,6 +1637,22 @@
             itemDiv.querySelector('input[type="text"]').focus();
         }
         
+        function restoreAllArchivedQuestions() {
+            const itemsToRestore = document.querySelectorAll('#manager-list .manager-item:not(.hidden-question)');
+            if (itemsToRestore.length === 0) {
+                alert("Aktif edilecek arşivlenmiş soru bulunamadı.");
+                return;
+            }
+            if (confirm(`Arşivdeki ${itemsToRestore.length} sorunun tümünü aktif hale getirmek istediğinizden emin misiniz?`)) {
+                itemsToRestore.forEach(item => {
+                    const checkbox = item.querySelector('.archive-checkbox');
+                    if (checkbox) checkbox.checked = false;
+                });
+                filterManagerView();
+                alert("Arşivlenmiş tüm sorular aktif hale getirildi. Değişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna tıklayın.");
+            }
+        }
+        
         function deleteAllArchivedQuestions() {
             const itemsToDelete = document.querySelectorAll('#manager-list .manager-item:not(.hidden-question)');
             if (itemsToDelete.length === 0) {
@@ -1634,7 +1669,7 @@
                     }, 500);
                 });
                  document.getElementById('delete-all-archived-btn').disabled = true;
-                 alert("Arşivlenmiş sorular silinmek üzere işaretlendi. Değişiklikleri kalıcı hale getirmek için 'Değişiklikleri Kaydet' butonuna tıklayın.");
+                 alert("Arşivlenmiş sorular silinmek üzere işaretlendi. Değişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna tıklayın.");
             }
         }
 
