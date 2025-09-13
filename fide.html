@@ -38,6 +38,10 @@
         .action-button { width: 100%; padding: 12px; font-size: 15px; margin: 10px 0 30px; border-radius: 10px; background-color: var(--primary); color: white; }
         .fide-item { margin-bottom: 28px; padding: 20px; border-radius: 12px; background-color: white; box-shadow: var(--card-shadow); transition: var(--transition); }
         .fide-item.question-removed { opacity: 0.6; background-color: #fafafa; }
+        .fide-item.archived-item { border: 2px dashed var(--warning); background-color: #fffbeb; }
+        .fide-item.archived-item .fide-title-container p { color: var(--warning); }
+        .fide-item.archived-item .fide-title-container p::after { content: '(Arşivlenmiş Soru)'; font-weight: bold; font-size: 10px; color: white; background-color: var(--warning); padding: 2px 6px; border-radius: 10px; margin-left: 10px; }
+        
         .fide-title-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px;}
         .fide-title-container p { font-weight: 600; margin: 0; flex-grow: 1; font-size: 16px; color: var(--dark); }
         .fide-title-container.question-completed p { color: var(--success); text-decoration: line-through; }
@@ -131,8 +135,10 @@
             padding: 20px; margin-bottom: 20px;
         }
         .manager-item-grid {
-            display: grid; grid-template-columns: 100px 1fr 150px;
-            gap: 15px; margin-bottom: 15px;
+            display: grid; 
+            /* YENİ: Arşiv anahtarı için 4. bir sütun eklendi */
+            grid-template-columns: 80px 1fr 140px 100px; 
+            gap: 15px; margin-bottom: 15px; align-items: flex-end;
         }
         .manager-item-grid div { display: flex; flex-direction: column; }
         .manager-item label {
@@ -163,15 +169,14 @@
             z-index: 10;
             padding: 8px;
             margin-top: 5px;
-            /* YENİ: Yatay açılma için ayarlar */
-            top: calc(100% + 5px); /* Butonun altından başla */
-            left: 0; /* Butonun soluyla hizala */
-            display: flex; /* Butonları yan yana dizer */
+            top: calc(100% + 5px); 
+            left: 0; 
+            display: flex; 
             gap: 8px;
-            width: max-content; /* İçeriğe göre genişlik */
+            width: max-content; 
             opacity: 0;
             transform: scale(0.95);
-            transform-origin: top left; /* Animasyon başlangıç noktası */
+            transform-origin: top left; 
             transition: opacity 0.2s ease, transform 0.2s ease;
             pointer-events: none;
         }
@@ -188,6 +193,53 @@
         #backup-menu-btn.open i.fa-caret-down {
             transform: rotate(180deg);
         }
+        
+        /* YENİ: Soru Yöneticisi için Arşivleme Anahtarı Stilleri */
+        .archive-switch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--warning);
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
 
         @media (max-width: 768px) {
             .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -195,7 +247,8 @@
             .backup-controls { width: 100%; }
             .right-controls { width: 100%; justify-content: space-between; }
             .backup-controls > * { flex-grow: 1; }
-            .manager-item-grid { grid-template-columns: 1fr; }
+            .manager-item-grid { grid-template-columns: 1fr; align-items: stretch; } /* Mobil için tek sütun */
+            .archive-switch-container { align-items: flex-start; }
             .dropdown-menu {
                 left: 0;
                 top: calc(100% + 5px);
@@ -656,41 +709,53 @@
             return 'Paket';
         }
         function resetForm() { document.getElementById('form-content').innerHTML = ''; buildForm(); }
+        
+        function generateQuestionHtml(q) {
+            let questionActionsHTML = '';
+            let questionContentHTML = '';
+            let isArchivedClass = q.isArchived ? 'archived-item' : ''; 
+
+            if (q.type === 'standard') {
+                questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+                let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`).join('');
+                questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
+            } else if (q.type === 'product_list') {
+                questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide15_pleksi')" title="Pleksi kullanımıyla ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+                let productOptions = '';
+                let currentOptgroup = false;
+                productList.forEach(p => {
+                    if (p.type === 'header') {
+                        if (currentOptgroup) productOptions += `</optgroup>`;
+                        productOptions += `<optgroup label="${p.name}">`;
+                        currentOptgroup = true;
+                    } else {
+                        productOptions += `<option value="${p.id}">${p.code} - ${p.name}</option>`;
+                    }
+                });
+                if (currentOptgroup) productOptions += `</optgroup>`;
+                questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`;
+            } else if (q.type === 'pop_system') {
+                questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+                questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
+            }
+            
+            return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
+        }
+        
         function buildForm() {
             const formContainer = document.getElementById('form-content');
             formContainer.innerHTML = '';
             let html = '';
             fideQuestions.forEach(q => {
-                let questionActionsHTML = '';
-                let questionContentHTML = '';
-                if (q.type === 'standard') {
-                    questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-                    let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`).join('');
-                    questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
-                } else if (q.type === 'product_list') {
-                     questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide15_pleksi')" title="Pleksi kullanımıyla ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-                    let productOptions = '';
-                    let currentOptgroup = false;
-                    productList.forEach(p => {
-                        if (p.type === 'header') {
-                            if (currentOptgroup) productOptions += `</optgroup>`;
-                            productOptions += `<optgroup label="${p.name}">`;
-                            currentOptgroup = true;
-                        } else {
-                            productOptions += `<option value="${p.id}">${p.code} - ${p.name}</option>`;
-                        }
-                    });
-                    if (currentOptgroup) productOptions += `</optgroup>`;
-                    questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide15_pleksi"></div></div>`;
-                } else if (q.type === 'pop_system') {
-                    questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-                    questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
+                if (q.isArchived) {
+                    return; 
                 }
-                html += `<div class="fide-item" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
+                html += generateQuestionHtml(q);
             });
             formContainer.innerHTML = html;
             if (document.getElementById('popCodesContainer')) initializePopSystem();
         }
+
         function initiateDeleteItem(buttonEl) {
             const itemEl = buttonEl.parentElement;
             if (itemEl.classList.contains('is-deleting')) {
@@ -1155,6 +1220,7 @@
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         }
+        
         function loadReport(reportDataFromCode) {
             try {
                 let reportData = reportDataFromCode;
@@ -1171,10 +1237,24 @@
                     searchInput.value = `${selectedStore.bayiKodu} - ${shortBayiAdi}`;
                     document.getElementById('store-list').style.display = 'none';
                 }
+                
+                const formContainer = document.getElementById('form-content');
+
                 for (const qId in reportData.questions_status) {
-                    const data = reportData.questions_status[qId];
-                    const questionItem = document.getElementById(`fide-item-${qId}`);
+                    let questionItem = document.getElementById(`fide-item-${qId}`);
+
+                    if (!questionItem) {
+                        const archivedQuestion = fideQuestions.find(q => String(q.id) === String(qId));
+                        if (archivedQuestion && archivedQuestion.isArchived) {
+                            const questionHtml = generateQuestionHtml(archivedQuestion);
+                            formContainer.insertAdjacentHTML('beforeend', questionHtml);
+                            questionItem = document.getElementById(`fide-item-${qId}`);
+                        }
+                    }
+                    
                     if (!questionItem) continue;
+
+                    const data = reportData.questions_status[qId];
                     const completeButton = questionItem.querySelector('.fide-actions .status-btn');
                     const removeButton = questionItem.querySelector('.fide-actions .remove-btn');
                     if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId);
@@ -1190,6 +1270,7 @@
                 updateFormInteractivity(true);
             } catch (error) { alert('Geçersiz rapor kodu!'); console.error("Rapor yükleme hatası:", error); }
         }
+
         function startNewReport() {
             selectedStore = null;
             document.getElementById('store-search-input').value = '';
@@ -1202,14 +1283,23 @@
              fideQuestions.forEach(q => {
                 const itemDiv = document.getElementById(`fide-item-${q.id}`);
                 const isRemoved = itemDiv ? itemDiv.classList.contains('question-removed') : false;
-                const titleContainer = itemDiv.querySelector('.fide-title-container');
+                const titleContainer = itemDiv ? itemDiv.querySelector('.fide-title-container') : null;
                 const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
+                
+                if (!itemDiv && q.isArchived) {
+                    return; 
+                }
+
                 const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
-                if (q.type === 'standard') questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`);
-                else if (q.type === 'product_list') {
-                    document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => questionData.selectedProducts.push({ id: item.dataset.id, qty: item.dataset.qty }));
-                    questionData.dynamicInputs = getDynamicInputsForSaving('fide15_pleksi');
-                } else if (q.type === 'pop_system') questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+
+                if (itemDiv) {
+                    if (q.type === 'standard') questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`);
+                    else if (q.type === 'product_list') {
+                        document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => questionData.selectedProducts.push({ id: item.dataset.id, qty: item.dataset.qty }));
+                        questionData.dynamicInputs = getDynamicInputsForSaving('fide15_pleksi');
+                    } else if (q.type === 'pop_system') questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+                }
+
                 reportData.questions_status[q.id] = questionData;
             });
             return reportData;
@@ -1319,6 +1409,8 @@
                 }
             }
         }
+        
+        // --- GÜNCELLENEN renderQuestionManager FONKSİYONU ---
         function renderQuestionManager() {
             const managerList = document.getElementById('manager-list');
             managerList.innerHTML = '';
@@ -1329,17 +1421,28 @@
                 let staticItemsText = (q.staticItems || []).join('\n');
                 const typeOptions = ['standard', 'product_list', 'pop_system'];
                 const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join('');
+                const isArchivedChecked = q.isArchived ? 'checked' : ''; // Arşiv durumunu kontrol et
+
                 itemDiv.innerHTML = `
                     <div class="manager-item-grid">
                         <div><label>Soru ID</label><input type="number" value="${q.id}"></div>
                         <div><label>Soru Başlığı</label><input type="text" value="${q.title}"></div>
                         <div><label>Soru Tipi</label><select>${selectOptionsHTML}</select></div>
+                        <div class="archive-switch-container">
+                            <label>Arşivle</label>
+                            <label class="switch">
+                                <input type="checkbox" class="archive-checkbox" ${isArchivedChecked}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
                     </div>
                     <div><label>Statik Maddeler (Her satıra bir madde)</label><textarea>${staticItemsText}</textarea></div>
                     <div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button></div>`;
                 managerList.appendChild(itemDiv);
             });
         }
+
+        // --- GÜNCELLENEN addNewQuestionUI FONKSİYONU ---
         function addNewQuestionUI() {
             const managerList = document.getElementById('manager-list');
             const existingIds = fideQuestions.map(q => q.id);
@@ -1353,12 +1456,20 @@
                     <div><label>Soru ID</label><input type="number" value="${newId}"></div>
                     <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
                     <div><label>Soru Tipi</label><select><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
+                    <div class="archive-switch-container">
+                        <label>Arşivle</label>
+                        <label class="switch">
+                            <input type="checkbox" class="archive-checkbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
                 <div><label>Statik Maddeler (Her satıra bir madde)</label><textarea placeholder="Her satıra bir statik madde gelecek şekilde yazın..."></textarea></div>
                 <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
             managerList.appendChild(itemDiv);
             itemDiv.querySelector('input[type="text"]').focus();
         }
+
         function deleteQuestionUI(id) {
             if (confirm(`FiDe ${id} sorusunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
                 const itemToDelete = document.querySelector(`.manager-item[data-id="${id}"]`);
@@ -1372,6 +1483,8 @@
                 }
             }
         }
+        
+        // --- GÜNCELLENEN saveQuestions FONKSİYONU ---
         function saveQuestions() {
             const managerList = document.getElementById('manager-list');
             const newQuestions = [];
@@ -1383,12 +1496,22 @@
                 const title = item.querySelectorAll('input')[1].value.trim();
                 const type = item.querySelector('select').value;
                 const staticItemsText = item.querySelector('textarea').value;
+                const isArchived = item.querySelector('.archive-checkbox').checked; // Arşiv anahtarının durumunu al
+
                 if (!id || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
                 if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılamaz.`); return; }
                 ids.add(id);
                 const staticItems = staticItemsText.split('\n').map(s => s.trim()).filter(s => s);
+                
                 const newQuestion = { id, title, type };
+
                 if (staticItems.length > 0) newQuestion.staticItems = staticItems;
+                
+                // Eğer anahtar açıksa, isArchived: true özelliğini ekle
+                if (isArchived) {
+                    newQuestion.isArchived = true;
+                }
+
                 if (type === 'pop_system') {
                     const originalPopQuestion = fideQuestions.find(q => q.type === 'pop_system');
                     newQuestion.popCodes = popCodes || (originalPopQuestion ? originalPopQuestion.popCodes : []);
@@ -1411,6 +1534,7 @@
             URL.revokeObjectURL(url);
             alert("Güncellenmiş sorularınız 'fide_soru_listesi.json' olarak indirildi.\n\nLÜTFEN BU DOSYAYI ESKİSİYLE DEĞİŞTİRİP SAYFAYI YENİLEYİN.");
         }
+
         function updateFormInteractivity(enable) {
             const formContent = document.getElementById('form-content');
             if (!formContent) return;
