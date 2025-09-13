@@ -134,9 +134,9 @@
             background-color: var(--light); border: 1px solid var(--border); border-radius: 12px;
             padding: 20px; margin-bottom: 20px;
         }
+        .manager-item.hidden-question { display: none; }
         .manager-item-grid {
             display: grid; 
-            /* YENİ: Arşiv anahtarı için 4. bir sütun eklendi */
             grid-template-columns: 80px 1fr 140px 100px; 
             gap: 15px; margin-bottom: 15px; align-items: flex-end;
         }
@@ -144,16 +144,62 @@
         .manager-item label {
             font-size: 12px; font-weight: 600; color: var(--secondary); margin-bottom: 5px;
         }
-        .manager-item input, .manager-item select, .manager-item textarea {
+        .manager-item input, .manager-item select {
             width: 100%; padding: 10px; border: 1px solid var(--border);
             border-radius: 6px; font-size: 14px; font-family: inherit;
         }
-        .manager-item textarea { resize: vertical; min-height: 80px; }
         .manager-item-footer {
             margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);
             display: flex; justify-content: flex-end;
         }
-        .manager-actions { margin-bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .manager-actions { margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .manager-view-controls { display: flex; gap: 10px; }
+        .manager-view-controls button:not(.active) { background-color: var(--light); color: var(--dark); opacity: 0.7; }
+        .manager-main-actions { display: flex; gap: 10px; }
+        
+        .editor-toolbar {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 0;
+            background-color: #f1f5f9;
+            padding: 5px;
+            border-radius: 6px 6px 0 0;
+            border: 1px solid var(--border);
+            border-bottom: none;
+        }
+        .editor-toolbar button {
+            background: #fff;
+            color: var(--dark);
+            border: 1px solid var(--border);
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            font-size: 14px;
+        }
+        .editor-toolbar button:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .editor-toolbar button i { margin: 0; }
+        
+        .editable-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 0 0 6px 6px;
+            font-family: inherit;
+            font-size: 14px;
+            min-height: 80px;
+            resize: vertical;
+            overflow: auto;
+            background-color: white;
+            line-height: 1.6;
+        }
+        .editable-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 140, 186, 0.2);
+        }
 
         .dropdown-container {
             position: relative;
@@ -194,7 +240,6 @@
             transform: rotate(180deg);
         }
         
-        /* YENİ: Soru Yöneticisi için Arşivleme Anahtarı Stilleri */
         .archive-switch-container {
             display: flex;
             flex-direction: column;
@@ -247,7 +292,7 @@
             .backup-controls { width: 100%; }
             .right-controls { width: 100%; justify-content: space-between; }
             .backup-controls > * { flex-grow: 1; }
-            .manager-item-grid { grid-template-columns: 1fr; align-items: stretch; } /* Mobil için tek sütun */
+            .manager-item-grid { grid-template-columns: 1fr; align-items: stretch; }
             .archive-switch-container { align-items: flex-start; }
             .dropdown-menu {
                 left: 0;
@@ -256,6 +301,9 @@
                 width: 100%;
                 transform-origin: top center;
             }
+            .manager-actions { flex-direction: column; align-items: stretch; }
+            .manager-view-controls, .manager-main-actions { width: 100%; }
+            .manager-view-controls button, .manager-main-actions button { flex-grow: 1; justify-content: center; }
         }
     </style>
 </head>
@@ -308,8 +356,15 @@
                 <i class="fas fa-info-circle"></i> Buradan FİDE sorularını düzenleyin. <b>Kaydet</b> tuşuna bastığınızda size <b>"fide_soru_listesi.json"</b> adında bir dosya indirilecek. Bu dosyayı mevcut olanla değiştirin ve sayfayı yenileyin.
             </p>
             <div class="manager-actions">
-                <button onclick="saveQuestions()" class="btn-success"><i class="fas fa-save"></i> Değişiklikleri Kaydet ve Dosyayı İndir</button>
-                <button onclick="addNewQuestionUI()" class="btn-primary"><i class="fas fa-plus"></i> Yeni Soru Ekle</button>
+                <div class="manager-view-controls">
+                    <button id="view-active-btn" class="btn-primary btn-sm active"><i class="fas fa-check-circle"></i> Aktif Sorular</button>
+                    <button id="view-archived-btn" class="btn-warning btn-sm"><i class="fas fa-archive"></i> Arşivlenmiş Sorular</button>
+                </div>
+                <div class="manager-main-actions">
+                    <button id="save-questions-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Değişiklikleri Kaydet</button>
+                    <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Yeni Soru Ekle</button>
+                    <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Tüm Arşivi Sil</button>
+                </div>
             </div>
             <div id="manager-list"></div>
         </div>
@@ -415,28 +470,27 @@
         const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi." }];
         const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
         let isFirebaseConnected = false;
+        let currentManagerView = 'active'; // 'active' veya 'archived'
 
         // --- Ana Uygulama Mantığı ---
         window.onload = initializeApp;
 
         async function initializeApp() {
             await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-            const uploadBtn = document.getElementById('upload-backup-to-cloud-btn');
-
             auth.onAuthStateChanged(user => {
                 const loginToggleBtn = document.getElementById('login-toggle-btn');
                 const logoutBtn = document.getElementById('logout-btn');
                 const loginPopup = document.getElementById('login-popup');
-                
+                const uploadBtn = document.getElementById('upload-backup-to-cloud-btn');
                 if (user) {
                     loginToggleBtn.style.display = 'none';
                     logoutBtn.style.display = 'inline-flex';
                     loginPopup.style.display = 'none';
-                    uploadBtn.disabled = false;
+                    if (uploadBtn) uploadBtn.disabled = false;
                 } else {
                     loginToggleBtn.style.display = 'inline-flex';
                     logoutBtn.style.display = 'none';
-                    uploadBtn.disabled = true;
+                    if (uploadBtn) uploadBtn.disabled = true;
                 }
                 updateConnectionIndicator(); 
             });
@@ -448,7 +502,7 @@
 
         async function loadInitialData() {
             try {
-                const response = await fetch('https://mkotbas.github.io/host/fide_soru_listesi.json');
+                const response = await fetch(`https://mkotbas.github.io/host/fide_soru_listesi.json?v=${new Date().getTime()}`);
                 if (!response.ok) throw new Error('Soru dosyası bulunamadı.');
                 const jsonData = await response.json();
                 fideQuestions = jsonData.questions || [];
@@ -497,98 +551,12 @@
         }
 
         function setupEventListeners() {
-            const loginToggleBtn = document.getElementById('login-toggle-btn');
-            const logoutBtn = document.getElementById('logout-btn');
-            const loginPopup = document.getElementById('login-popup');
-            const loginSubmitBtn = document.getElementById('login-submit-btn');
-            const uploadBackupBtn = document.getElementById('upload-backup-to-cloud-btn');
-            const backupMenuBtn = document.getElementById('backup-menu-btn');
-            const backupDropdown = document.getElementById('backup-dropdown');
-            const restoreBtn = document.getElementById('restore-from-backup-btn');
-            const mergeBtn = document.getElementById('merge-backups-btn');
-
-            backupMenuBtn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                backupDropdown.classList.toggle('show');
-                backupMenuBtn.classList.toggle('open');
-            });
-
-            restoreBtn.addEventListener('click', () => document.getElementById('restore-file-input').click());
-            mergeBtn.addEventListener('click', () => document.getElementById('merge-file-input').click());
-
-            loginToggleBtn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
-            });
-
-            logoutBtn.addEventListener('click', () => { auth.signOut(); });
-
-            loginSubmitBtn.addEventListener('click', () => {
-                const email = document.getElementById('email-input').value;
-                const password = document.getElementById('password-input').value;
-                const errorDiv = document.getElementById('login-error');
-                errorDiv.textContent = '';
-
-                if (!email || !password) {
-                    errorDiv.textContent = 'Lütfen tüm alanları doldurun.';
-                    return;
-                }
-
-                auth.signInWithEmailAndPassword(email, password)
-                    .then(() => { loginPopup.style.display = 'none'; })
-                    .catch(error => { errorDiv.textContent = 'E-posta veya şifre hatalı.'; });
-            });
-            
-            uploadBackupBtn.addEventListener('click', uploadLocalBackupToCloud);
-
-            window.addEventListener('click', function(event) {
-                const authControls = document.getElementById('auth-controls');
-                if (authControls && !authControls.contains(event.target)) {
-                    loginPopup.style.display = 'none';
-                }
-                if (!backupMenuBtn.contains(event.target)) {
-                    backupDropdown.classList.remove('show');
-                    backupMenuBtn.classList.remove('open');
-                }
-            });
-
-            document.getElementById('toggle-manager-btn').addEventListener('click', () => {
-                const manager = document.getElementById('question-manager');
-                const isManagerHidden = manager.style.display === 'none' || manager.style.display === '';
-
-                if (isManagerHidden) {
-                    const dogruSifreHash = 'ZmRlMDAx';
-                    const girilenSifre = prompt("Lütfen Soru Yöneticisi şifresini girin:");
-
-                    if (girilenSifre) {
-                        const girilenSifreHash = btoa(girilenSifre);
-                        if (girilenSifreHash === dogruSifreHash) {
-                            manager.style.display = 'block';
-                            document.getElementById('dide-upload-card').style.display = 'none';
-                            document.getElementById('load-section').style.display = 'none';
-                            document.getElementById('form-content').style.display = 'none';
-                            document.querySelector('.action-button').style.display = 'none';
-                            renderQuestionManager();
-                        } else {
-                            alert("Hatalı şifre!");
-                        }
-                    }
-                } else {
-                    manager.style.display = 'none';
-                    document.getElementById('dide-upload-card').style.display = '';
-                    document.getElementById('load-section').style.display = '';
-                    document.getElementById('form-content').style.display = '';
-                    document.querySelector('.action-button').style.display = '';
-                }
-            });
-
             document.getElementById('excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'dide'));
             document.getElementById('fide-excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'fide'));
             document.getElementById('backup-btn').addEventListener('click', backupAllReports);
             document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
             document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
             document.getElementById('new-report-btn').addEventListener('click', startNewReport);
-            
             document.getElementById('clear-storage-btn').addEventListener('click', () => {
                 const dogruSifreHash = 'ZmRlMDAx';
                 const girilenSifre = prompt("Bu işlem geri alınamaz. Tüm raporları kalıcı olarak silmek için lütfen şifreyi girin:");
@@ -621,8 +589,7 @@
                     window.location.reload();
                 }
             });
-            
-             document.getElementById('store-search-input').addEventListener('keyup', (e) => {
+            document.getElementById('store-search-input').addEventListener('keyup', (e) => {
                 selectedStore = null; 
                 const filter = e.target.value.toLowerCase().trim();
                 const storeListDiv = document.getElementById('store-list');
@@ -637,18 +604,96 @@
                 );
                 displayStores(filteredStores);
             });
+            
+            const loginToggleBtn = document.getElementById('login-toggle-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const loginPopup = document.getElementById('login-popup');
+            const loginSubmitBtn = document.getElementById('login-submit-btn');
+            const uploadBackupBtn = document.getElementById('upload-backup-to-cloud-btn');
+            const backupMenuBtn = document.getElementById('backup-menu-btn');
+            const backupDropdown = document.getElementById('backup-dropdown');
+            const restoreBtn = document.getElementById('restore-from-backup-btn');
+            const mergeBtn = document.getElementById('merge-backups-btn');
+
+            backupMenuBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                backupDropdown.classList.toggle('show');
+                backupMenuBtn.classList.toggle('open');
+            });
+            restoreBtn.addEventListener('click', () => document.getElementById('restore-file-input').click());
+            mergeBtn.addEventListener('click', () => document.getElementById('merge-file-input').click());
+            loginToggleBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
+            });
+            logoutBtn.addEventListener('click', () => { auth.signOut(); });
+            loginSubmitBtn.addEventListener('click', () => {
+                const email = document.getElementById('email-input').value;
+                const password = document.getElementById('password-input').value;
+                const errorDiv = document.getElementById('login-error');
+                errorDiv.textContent = '';
+                if (!email || !password) { errorDiv.textContent = 'Lütfen tüm alanları doldurun.'; return; }
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(() => { loginPopup.style.display = 'none'; })
+                    .catch(error => { errorDiv.textContent = 'E-posta veya şifre hatalı.'; });
+            });
+            uploadBackupBtn.addEventListener('click', uploadLocalBackupToCloud);
+            window.addEventListener('click', function(event) {
+                const authControls = document.getElementById('auth-controls');
+                if (authControls && !authControls.contains(event.target)) {
+                    loginPopup.style.display = 'none';
+                }
+                if (backupMenuBtn && !backupMenuBtn.contains(event.target)) {
+                    backupDropdown.classList.remove('show');
+                    backupMenuBtn.classList.remove('open');
+                }
+            });
+
+            document.getElementById('toggle-manager-btn').addEventListener('click', () => {
+                const manager = document.getElementById('question-manager');
+                const isManagerHidden = manager.style.display === 'none' || manager.style.display === '';
+                if (isManagerHidden) {
+                    const dogruSifreHash = 'ZmRlMDAx';
+                    const girilenSifre = prompt("Lütfen Soru Yöneticisi şifresini girin:");
+                    if (girilenSifre) {
+                        const girilenSifreHash = btoa(girilenSifre);
+                        if (girilenSifreHash === dogruSifreHash) {
+                            manager.style.display = 'block';
+                            document.getElementById('dide-upload-card').style.display = 'none';
+                            document.getElementById('load-section').style.display = 'none';
+                            document.getElementById('form-content').style.display = 'none';
+                            document.querySelector('.action-button').style.display = 'none';
+                            renderQuestionManager();
+                        } else {
+                            alert("Hatalı şifre!");
+                        }
+                    }
+                } else {
+                    manager.style.display = 'none';
+                    document.getElementById('dide-upload-card').style.display = '';
+                    document.getElementById('load-section').style.display = '';
+                    document.getElementById('form-content').style.display = '';
+                    document.querySelector('.action-button').style.display = '';
+                }
+            });
+            
+            document.getElementById('view-active-btn').addEventListener('click', () => {
+                currentManagerView = 'active';
+                filterManagerView();
+            });
+            document.getElementById('view-archived-btn').addEventListener('click', () => {
+                currentManagerView = 'archived';
+                filterManagerView();
+            });
+            document.getElementById('add-new-question-btn').addEventListener('click', addNewQuestionUI);
+            document.getElementById('save-questions-btn').addEventListener('click', saveQuestions);
+            document.getElementById('delete-all-archived-btn').addEventListener('click', deleteAllArchivedQuestions);
         }
         
         function uploadLocalBackupToCloud() {
-            if (!auth.currentUser) {
-                alert("Bu işlem için önce sisteme giriş yapmalısınız.");
-                return;
-            }
+            if (!auth.currentUser) { alert("Bu işlem için önce sisteme giriş yapmalısınız."); return; }
             const localDataString = localStorage.getItem('allFideReports');
-            if (!localDataString) {
-                alert("Buluta yüklenecek yerel bir yedek bulunamadı.");
-                return;
-            }
+            if (!localDataString) { alert("Buluta yüklenecek yerel bir yedek bulunamadı."); return; }
             const confirmation = confirm("DİKKAT! Bu işlem, buluttaki mevcut tüm raporların üzerine yazacaktır. Tarayıcı hafızanızdaki yedek buluta yüklenecektir. Emin misiniz?");
             if (confirmation) {
                 try {
@@ -656,20 +701,11 @@
                     const firebaseRef = database.ref('allFideReports');
                     
                     firebaseRef.set(localData)
-                        .then(() => {
-                            alert("Yerel yedek başarıyla buluta yüklendi! Sayfanın yenilenmesi önerilir.");
-                        })
-                        .catch(error => {
-                            alert("Buluta yükleme sırasında bir hata oluştu: " + error.message);
-                            console.error("Firebase'e yazma hatası:", error);
-                        });
-                } catch (error) {
-                    alert("Yerel yedek verisi okunurken bir hata oluştu. Yedek dosyası bozuk olabilir.");
-                    console.error("JSON parse hatası:", error);
-                }
+                        .then(() => { alert("Yerel yedek başarıyla buluta yüklendi! Sayfanın yenilenmesi önerilir."); })
+                        .catch(error => { alert("Buluta yükleme sırasında bir hata oluştu: " + error.message); console.error("Firebase'e yazma hatası:", error); });
+                } catch (error) { alert("Yerel yedek verisi okunurken bir hata oluştu. Yedek dosyası bozuk olabilir."); console.error("JSON parse hatası:", error); }
             }
         }
-        
         function saveFormState() {
             if (!document.getElementById('form-content').innerHTML || !selectedStore) return;
             let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
@@ -738,7 +774,6 @@
                 questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
                 questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
             }
-            
             return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
         }
         
@@ -747,15 +782,12 @@
             formContainer.innerHTML = '';
             let html = '';
             fideQuestions.forEach(q => {
-                if (q.isArchived) {
-                    return; 
-                }
+                if (q.isArchived) { return; }
                 html += generateQuestionHtml(q);
             });
             formContainer.innerHTML = html;
             if (document.getElementById('popCodesContainer')) initializePopSystem();
         }
-
         function initiateDeleteItem(buttonEl) {
             const itemEl = buttonEl.parentElement;
             if (itemEl.classList.contains('is-deleting')) {
@@ -1220,7 +1252,6 @@
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
         }
-        
         function loadReport(reportDataFromCode) {
             try {
                 let reportData = reportDataFromCode;
@@ -1270,7 +1301,6 @@
                 updateFormInteractivity(true);
             } catch (error) { alert('Geçersiz rapor kodu!'); console.error("Rapor yükleme hatası:", error); }
         }
-
         function startNewReport() {
             selectedStore = null;
             document.getElementById('store-search-input').value = '';
@@ -1286,9 +1316,7 @@
                 const titleContainer = itemDiv ? itemDiv.querySelector('.fide-title-container') : null;
                 const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
                 
-                if (!itemDiv && q.isArchived) {
-                    return; 
-                }
+                if (!itemDiv && q.isArchived) { return; }
 
                 const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
 
@@ -1299,7 +1327,6 @@
                         questionData.dynamicInputs = getDynamicInputsForSaving('fide15_pleksi');
                     } else if (q.type === 'pop_system') questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
                 }
-
                 reportData.questions_status[q.id] = questionData;
             });
             return reportData;
@@ -1343,10 +1370,7 @@
         }
         async function handleMergeUpload(event) {
             const files = event.target.files;
-            if (!files || files.length < 2) {
-                alert("Lütfen birleştirmek için en az 2 yedek dosyası seçin.");
-                return;
-            }
+            if (!files || files.length < 2) { alert("Lütfen birleştirmek için en az 2 yedek dosyası seçin."); return; }
             let mergedReports = {};
             let fileReadPromises = [];
             for (const file of files) {
@@ -1410,18 +1434,59 @@
             }
         }
         
-        // --- GÜNCELLENEN renderQuestionManager FONKSİYONU ---
+        // --- YENİ ve GÜNCELLENMİŞ Soru Yöneticisi Fonksiyonları ---
+
+        function formatText(buttonEl, command) {
+            const editor = buttonEl.closest('.manager-item').querySelector('.editable-textarea');
+            editor.focus();
+
+            if (command === 'link') {
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return;
+                const anchorNode = selection.anchorNode;
+                const linkElement = anchorNode.nodeType === 3 ? anchorNode.parentNode.closest('a') : anchorNode.closest('a');
+
+                if (linkElement) {
+                    const currentUrl = linkElement.getAttribute('href');
+                    const newUrl = prompt("Köprüyü düzenleyin veya kaldırmak için bu alanı boş bırakın:", currentUrl);
+                    
+                    if (newUrl === null) { // Kullanıcı iptal etti
+                        return;
+                    } else if (newUrl === "") { // Kullanıcı köprüyü kaldırmak istedi
+                        linkElement.outerHTML = linkElement.innerHTML;
+                    } else { // Kullanıcı köprüyü güncelledi
+                        linkElement.href = newUrl;
+                    }
+                } else {
+                     if (selection.toString().length === 0) {
+                        alert("Lütfen köprüye dönüştürmek istediğiniz metni seçin.");
+                        return;
+                    }
+                    const url = prompt("Lütfen köprü için URL girin:", "https://");
+                    if (url) {
+                        document.execCommand('createLink', false, url);
+                        const newLink = selection.anchorNode.parentNode.closest('a');
+                        if (newLink) {
+                            newLink.target = '_blank';
+                        }
+                    }
+                }
+            } else {
+                 document.execCommand(command, false, null);
+            }
+        }
+
         function renderQuestionManager() {
             const managerList = document.getElementById('manager-list');
             managerList.innerHTML = '';
-            fideQuestions.forEach(q => {
+            fideQuestions.sort((a, b) => a.id - b.id).forEach(q => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'manager-item';
                 itemDiv.dataset.id = q.id;
-                let staticItemsText = (q.staticItems || []).join('\n');
+                let staticItemsHtml = (q.staticItems || []).join('<br>'); 
                 const typeOptions = ['standard', 'product_list', 'pop_system'];
                 const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join('');
-                const isArchivedChecked = q.isArchived ? 'checked' : ''; // Arşiv durumunu kontrol et
+                const isArchivedChecked = q.isArchived ? 'checked' : '';
 
                 itemDiv.innerHTML = `
                     <div class="manager-item-grid">
@@ -1431,22 +1496,62 @@
                         <div class="archive-switch-container">
                             <label>Arşivle</label>
                             <label class="switch">
-                                <input type="checkbox" class="archive-checkbox" ${isArchivedChecked}>
+                                <input type="checkbox" class="archive-checkbox" ${isArchivedChecked} onchange="filterManagerView()">
                                 <span class="slider"></span>
                             </label>
                         </div>
                     </div>
-                    <div><label>Statik Maddeler (Her satıra bir madde)</label><textarea>${staticItemsText}</textarea></div>
+                    <div>
+                        <label>Statik Maddeler</label>
+                        <div class="editor-toolbar">
+                           <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
+                           <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
+                           <button onclick="formatText(this, 'underline')" title="Altı Çizili"><i class="fas fa-underline"></i></button>
+                           <button onclick="formatText(this, 'link')" title="Köprü Ekle/Düzenle/Kaldır"><i class="fas fa-link"></i></button>
+                        </div>
+                        <div class="editable-textarea" contenteditable="true">${staticItemsHtml}</div>
+                    </div>
                     <div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button></div>`;
                 managerList.appendChild(itemDiv);
             });
+            filterManagerView(); 
         }
 
-        // --- GÜNCELLENEN addNewQuestionUI FONKSİYONU ---
+        function filterManagerView() {
+            const viewActiveBtn = document.getElementById('view-active-btn');
+            const viewArchivedBtn = document.getElementById('view-archived-btn');
+            const addNewBtn = document.getElementById('add-new-question-btn');
+            const deleteAllArchivedBtn = document.getElementById('delete-all-archived-btn');
+
+            viewActiveBtn.classList.toggle('active', currentManagerView === 'active');
+            viewArchivedBtn.classList.toggle('active', currentManagerView === 'archived');
+            
+            addNewBtn.style.display = currentManagerView === 'active' ? 'inline-flex' : 'none';
+            deleteAllArchivedBtn.style.display = currentManagerView === 'archived' ? 'inline-flex' : 'none';
+
+            const items = document.querySelectorAll('#manager-list .manager-item');
+            let visibleItemCount = 0;
+            items.forEach(item => {
+                const isArchived = item.querySelector('.archive-checkbox').checked;
+                const shouldBeVisible = (currentManagerView === 'active' && !isArchived) || (currentManagerView === 'archived' && isArchived);
+                item.classList.toggle('hidden-question', !shouldBeVisible);
+                if(shouldBeVisible) visibleItemCount++;
+            });
+
+            if (currentManagerView === 'archived') {
+                deleteAllArchivedBtn.disabled = visibleItemCount === 0;
+            }
+        }
+
         function addNewQuestionUI() {
+            if (currentManagerView !== 'active') {
+                alert("Yeni soru eklemek için 'Aktif Sorular' görünümünde olmalısınız.");
+                return;
+            }
             const managerList = document.getElementById('manager-list');
-            const existingIds = fideQuestions.map(q => q.id);
+            const existingIds = Array.from(managerList.querySelectorAll('.manager-item')).map(item => parseInt(item.dataset.id));
             const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+            
             const itemDiv = document.createElement('div');
             itemDiv.className = 'manager-item';
             itemDiv.style.backgroundColor = '#dcfce7';
@@ -1459,19 +1564,48 @@
                     <div class="archive-switch-container">
                         <label>Arşivle</label>
                         <label class="switch">
-                            <input type="checkbox" class="archive-checkbox">
+                            <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
                             <span class="slider"></span>
                         </label>
                     </div>
                 </div>
-                <div><label>Statik Maddeler (Her satıra bir madde)</label><textarea placeholder="Her satıra bir statik madde gelecek şekilde yazın..."></textarea></div>
+                <div>
+                    <label>Statik Maddeler</label>
+                    <div class="editor-toolbar">
+                       <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
+                       <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
+                       <button onclick="formatText(this, 'underline')" title="Altı Çizili"><i class="fas fa-underline"></i></button>
+                       <button onclick="formatText(this, 'link')" title="Köprü Ekle/Düzenle/Kaldır"><i class="fas fa-link"></i></button>
+                    </div>
+                    <div class="editable-textarea" contenteditable="true"></div>
+                </div>
                 <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
             managerList.appendChild(itemDiv);
             itemDiv.querySelector('input[type="text"]').focus();
         }
+        
+        function deleteAllArchivedQuestions() {
+            const itemsToDelete = document.querySelectorAll('#manager-list .manager-item:not(.hidden-question)');
+            if (itemsToDelete.length === 0) {
+                alert("Silinecek arşivlenmiş soru bulunamadı.");
+                return;
+            }
+            if (confirm(`Arşivdeki ${itemsToDelete.length} sorunun tümünü kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+                itemsToDelete.forEach(item => {
+                     item.style.transition = 'opacity 0.5s ease';
+                    item.style.opacity = '0';
+                    setTimeout(() => {
+                        item.style.display = 'none';
+                        item.classList.add('to-be-deleted');
+                    }, 500);
+                });
+                 document.getElementById('delete-all-archived-btn').disabled = true;
+                 alert("Arşivlenmiş sorular silinmek üzere işaretlendi. Değişiklikleri kalıcı hale getirmek için 'Değişiklikleri Kaydet' butonuna tıklayın.");
+            }
+        }
 
         function deleteQuestionUI(id) {
-            if (confirm(`FiDe ${id} sorusunu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
                 const itemToDelete = document.querySelector(`.manager-item[data-id="${id}"]`);
                 if(itemToDelete) {
                     itemToDelete.style.transition = 'opacity 0.5s ease';
@@ -1484,33 +1618,28 @@
             }
         }
         
-        // --- GÜNCELLENEN saveQuestions FONKSİYONU ---
         function saveQuestions() {
-            const managerList = document.getElementById('manager-list');
             const newQuestions = [];
             const ids = new Set();
-            const items = managerList.querySelectorAll('.manager-item');
+            const items = document.querySelectorAll('#manager-list .manager-item');
+            
             for (const item of items) {
                 if (item.classList.contains('to-be-deleted')) continue;
+
                 const id = parseInt(item.querySelectorAll('input')[0].value);
                 const title = item.querySelectorAll('input')[1].value.trim();
                 const type = item.querySelector('select').value;
-                const staticItemsText = item.querySelector('textarea').value;
-                const isArchived = item.querySelector('.archive-checkbox').checked; // Arşiv anahtarının durumunu al
+                const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
+                const isArchived = item.querySelector('.archive-checkbox').checked;
 
                 if (!id || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
                 if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılamaz.`); return; }
                 ids.add(id);
-                const staticItems = staticItemsText.split('\n').map(s => s.trim()).filter(s => s);
-                
-                const newQuestion = { id, title, type };
 
+                const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
+                const newQuestion = { id, title, type };
                 if (staticItems.length > 0) newQuestion.staticItems = staticItems;
-                
-                // Eğer anahtar açıksa, isArchived: true özelliğini ekle
-                if (isArchived) {
-                    newQuestion.isArchived = true;
-                }
+                if (isArchived) newQuestion.isArchived = true;
 
                 if (type === 'pop_system') {
                     const originalPopQuestion = fideQuestions.find(q => q.type === 'pop_system');
@@ -1519,7 +1648,7 @@
                 }
                 newQuestions.push(newQuestion);
             }
-            newQuestions.sort((a, b) => a.id - b.id);
+
             const finalJsonData = {
                 questions: newQuestions,
                 productList: productList
