@@ -148,6 +148,11 @@
             width: 100%; padding: 10px; border: 1px solid var(--border);
             border-radius: 6px; font-size: 14px; font-family: inherit;
         }
+        .manager-item input:disabled {
+            background-color: var(--border);
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
         .manager-item-footer {
             margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);
             display: flex; justify-content: flex-end;
@@ -155,7 +160,7 @@
         .manager-actions { margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .manager-view-controls { display: flex; gap: 10px; }
         .manager-view-controls button:not(.active) { background-color: var(--light); color: var(--dark); opacity: 0.7; }
-        .manager-main-actions { display: flex; gap: 10px; }
+        .manager-main-actions { display: flex; gap: 10px; flex-wrap: wrap;}
         
         .editor-toolbar {
             display: flex;
@@ -302,7 +307,7 @@
                 transform-origin: top center;
             }
             .manager-actions { flex-direction: column; align-items: stretch; }
-            .manager-view-controls, .manager-main-actions { width: 100%; }
+            .manager-view-controls, .manager-main-actions { width: 100%; justify-content: center;}
             .manager-view-controls button, .manager-main-actions button { flex-grow: 1; justify-content: center; }
         }
     </style>
@@ -361,8 +366,9 @@
                     <button id="view-archived-btn" class="btn-warning btn-sm"><i class="fas fa-archive"></i> Arşivlenmiş Sorular</button>
                 </div>
                 <div class="manager-main-actions">
-                    <button id="save-questions-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Değişiklikleri Kaydet</button>
                     <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Yeni Soru Ekle</button>
+                    <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenlemeyi Aç</button>
+                    <button id="save-questions-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Değişiklikleri Kaydet</button>
                     <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Tüm Arşivi Sil</button>
                 </div>
             </div>
@@ -690,6 +696,26 @@
             document.getElementById('add-new-question-btn').addEventListener('click', addNewQuestionUI);
             document.getElementById('save-questions-btn').addEventListener('click', saveQuestions);
             document.getElementById('delete-all-archived-btn').addEventListener('click', deleteAllArchivedQuestions);
+            
+            document.getElementById('unlock-ids-btn').addEventListener('click', () => {
+                const dogruSifreHash = 'ZmRlMDAx';
+                const girilenSifre = prompt("ID alanlarını düzenlemeye açmak için lütfen yönetici şifresini tekrar girin:");
+                if (girilenSifre) {
+                    const girilenSifreHash = btoa(girilenSifre);
+                    if (girilenSifreHash === dogruSifreHash) {
+                        const idInputs = document.querySelectorAll('.manager-id-input');
+                        idInputs.forEach(input => {
+                            input.disabled = false;
+                        });
+                        const unlockBtn = document.getElementById('unlock-ids-btn');
+                        unlockBtn.disabled = true;
+                        unlockBtn.innerHTML = '<i class="fas fa-lock-open"></i> ID Alanları Düzenlenebilir';
+                        alert('Soru ID alanları artık düzenlenebilir.');
+                    } else {
+                        alert('Hatalı şifre!');
+                    }
+                }
+            });
         }
         
         function uploadLocalBackupToCloud() {
@@ -1492,7 +1518,10 @@
 
                 itemDiv.innerHTML = `
                     <div class="manager-item-grid">
-                        <div><label>Soru ID</label><input type="number" value="${q.id}"></div>
+                        <div>
+                            <label>Soru ID</label>
+                            <input type="number" class="manager-id-input" value="${q.id}" disabled title="ID değiştirmek veri bütünlüğünü bozabilir. Düzenlemek için şifre gerekir.">
+                        </div>
                         <div><label>Soru Başlığı</label><input type="text" value="${q.title}"></div>
                         <div><label>Soru Tipi</label><select>${selectOptionsHTML}</select></div>
                         <div class="archive-switch-container">
@@ -1551,7 +1580,7 @@
                 return;
             }
             const managerList = document.getElementById('manager-list');
-            const existingIds = Array.from(managerList.querySelectorAll('.manager-item')).map(item => parseInt(item.dataset.id));
+            const existingIds = Array.from(managerList.querySelectorAll('.manager-item')).map(item => parseInt(item.querySelector('input[type="number"]').value));
             const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
             
             const itemDiv = document.createElement('div');
@@ -1560,7 +1589,10 @@
             itemDiv.dataset.id = newId;
             itemDiv.innerHTML = `
                 <div class="manager-item-grid">
-                    <div><label>Soru ID</label><input type="number" value="${newId}"></div>
+                    <div>
+                        <label>Soru ID</label>
+                        <input type="number" value="${newId}">
+                    </div>
                     <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
                     <div><label>Soru Tipi</label><select><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
                     <div class="archive-switch-container">
@@ -1628,8 +1660,8 @@
             for (const item of items) {
                 if (item.classList.contains('to-be-deleted')) continue;
 
-                const id = parseInt(item.querySelectorAll('input')[0].value);
-                const title = item.querySelectorAll('input')[1].value.trim();
+                const id = parseInt(item.querySelectorAll('input[type="number"]')[0].value);
+                const title = item.querySelectorAll('input[type="text"]')[0].value.trim();
                 const type = item.querySelector('select').value;
                 const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
                 const isArchived = item.querySelector('.archive-checkbox').checked;
