@@ -1367,6 +1367,7 @@
             } else {
                 container.appendChild(row);
             }
+            return row;
         }
 
         function addProductRow(container, product = {}, targetElement = null) {
@@ -1383,6 +1384,7 @@
             } else {
                 container.appendChild(row);
             }
+            return row;
         }
         
         function parseAndAddProducts() {
@@ -1419,9 +1421,8 @@
                         code: parts[0].trim(),
                         name: parts[1].trim()
                     };
-                    addProductRow(editor, product, targetElement);
-                    const allRowsCurrent = editor.querySelectorAll('.category-manager-row, .product-manager-row');
-                    targetElement = allRowsCurrent[Array.from(allRowsCurrent).indexOf(targetElement) + 1] || allRowsCurrent[allRowsCurrent.length - 1];
+                    const newRow = addProductRow(editor, product, targetElement);
+                    targetElement = newRow;
                     addedCount++;
                 }
             });
@@ -1429,7 +1430,8 @@
             if (addedCount > 0) {
                 alert(`${addedCount} adet ürün başarıyla eklendi!`);
                 textarea.value = '';
-                if (!document.getElementById('detailed-editor-panel').classList.contains('open')) {
+                const panel = document.getElementById('detailed-editor-panel');
+                if (!panel.classList.contains('open')) {
                     document.getElementById('toggle-detailed-editor-btn').click();
                 }
             } else {
