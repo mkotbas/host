@@ -1353,7 +1353,6 @@
             }
         }
         
-        // *** DÜZELTİLMİŞ FONKSİYON ***
         function parseAndAddProducts() {
             const container = document.querySelector('.product-list-manager:not([style*="display: none"])');
             if (!container) return; 
@@ -1368,17 +1367,16 @@
             const lines = text.split('\n');
             let addedCount = 0;
             
-            let insertionPoint = null; 
-
+            let targetElement = null;
             if (selectedCategoryName !== '__end') {
                 const allRows = Array.from(editor.querySelectorAll('.category-manager-row, .product-manager-row'));
                 const categoryIndex = allRows.findIndex(row => row.dataset.type === 'category' && row.querySelector('input').value === selectedCategoryName);
 
                 if (categoryIndex > -1) {
-                    insertionPoint = allRows[categoryIndex]; 
+                    targetElement = allRows[categoryIndex]; 
                     for (let i = categoryIndex + 1; i < allRows.length; i++) {
                         if (allRows[i].dataset.type === 'category') break; 
-                        insertionPoint = allRows[i];
+                        targetElement = allRows[i];
                     }
                 }
             }
@@ -1386,19 +1384,13 @@
             lines.forEach(line => {
                 if (!line.trim()) return;
                 const parts = line.split(/\t|,/);
-                if (parts.length >= 2) {
+                if (parts.length === 2) {
                     const product = {
                         code: parts[0].trim(),
                         name: parts[1].trim()
                     };
-                    const newRow = createProductRow(product);
-                    
-                    if (insertionPoint && insertionPoint.parentNode) {
-                        insertionPoint.parentNode.insertBefore(newRow, insertionPoint.nextSibling);
-                    } else {
-                        editor.appendChild(newRow);
-                    }
-                    insertionPoint = newRow; 
+                    const newRow = addProductRow(editor, product, targetElement);
+                    targetElement = newRow; 
                     addedCount++;
                 }
             });
@@ -1411,31 +1403,11 @@
                     document.getElementById('toggle-detailed-editor-btn').click();
                 }
             } else {
-                alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu[TAB veya virgül]Ürün Adı).");
+                alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu[TAB]Ürün Adı).");
             }
         }
-        
-        // *** YARDIMCI FONKSİYON (YENİ) ***
-        function createProductRow(product = {}) {
-            const row = document.createElement('div');
-            row.className = 'product-manager-row';
-            row.dataset.type = 'product';
-            row.innerHTML = `
-                <input type="text" class="product-code" placeholder="Stok Kodu" value="${product.code || ''}">
-                <input type="text" class="product-name" placeholder="Ürün Adı" value="${product.name || ''}">
-                <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
-            `;
-            return row;
-        }
 
-        // *** DÜZELTİLMİŞ FONKSİYON ***
-        function addProductRow(container, product = {}) {
-            const newRow = createProductRow(product);
-            container.appendChild(newRow);
-            return newRow;
-        }
-
-        function addCategoryRow(container, category = {}) {
+        function addCategoryRow(container, category = {}, targetElement = null) {
             const row = document.createElement('div');
             row.className = 'category-manager-row';
             row.dataset.type = 'category';
@@ -1444,7 +1416,29 @@
                 <input type="text" placeholder="Kategori Adı" value="${category.name || ''}">
                 <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
             `;
-            container.appendChild(row);
+            if (targetElement) {
+                container.insertBefore(row, targetElement.nextSibling);
+            } else {
+                container.appendChild(row);
+            }
+            return row;
+        }
+
+        function addProductRow(container, product = {}, targetElement = null) {
+            const row = document.createElement('div');
+            row.className = 'product-manager-row';
+            row.dataset.type = 'product';
+            row.innerHTML = `
+                <input type="text" class="product-code" placeholder="Stok Kodu" value="${product.code || ''}">
+                <input type="text" class="product-name" placeholder="Ürün Adı" value="${product.name || ''}">
+                <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+            `;
+            
+            if (targetElement) {
+                container.insertBefore(row, targetElement.nextSibling);
+            } else {
+                container.appendChild(row);
+            }
             return row;
         }
 
