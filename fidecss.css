@@ -291,10 +291,10 @@ input:checked + .slider:before {
         align-items: stretch;
     }
     .backup-controls {
-        order: 2; /* Buton grubunu aşağıya alır */
+        order: 2;
     }
     .right-controls {
-        order: 1; /* Bağlantı ve giriş grubunu yukarıya alır */
+        order: 1;
     }
     .backup-controls,
     .right-controls {
@@ -302,16 +302,16 @@ input:checked + .slider:before {
         flex-direction: column;
         width: 100%;
         gap: 8px;
-        align-items: stretch; /* İçeriklerin tam genişlikte olmasını sağlar */
+        align-items: stretch;
     }
     .dropdown-container,
     .dropdown-container > button,
     #auth-controls,
     #auth-controls > button {
-        width: 100%; /* İç içe olan butonların da tam genişlik olmasını sağlar */
+        width: 100%;
     }
     #connection-status-container {
-        margin: 0 auto; /* Bağlantı durumu kutusunu ortalar */
+        margin: 0 auto;
         width: auto;
     }
     /* --- BİTİŞ --- */
@@ -337,5 +337,10 @@ input:checked + .slider:before {
     }
     .product-adder input[type="number"] {
         width: 100%;
+    }
+    
+    /* --- YEDEKLEME MENÜSÜ YÜKSEKLİK DÜZELTMESİ --- */
+    .dropdown-menu.show {
+        max-height: 250px; /* Mobil dikey menü için yüksekliği artır */
     }
 }
