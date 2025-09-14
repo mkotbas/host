@@ -285,21 +285,34 @@ input:checked + .slider:before {
 @media (max-width: 768px) {
     .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
     
-    /* --- MOBİL ÜST KONTROL GÜNCELLEMESİ --- */
+    /* --- MOBİL ÜST KONTROL YENİ DÜZEN --- */
     .top-controls {
         flex-direction: column;
         align-items: stretch;
     }
+    .backup-controls {
+        order: 2; /* Buton grubunu aşağıya alır */
+    }
+    .right-controls {
+        order: 1; /* Bağlantı ve giriş grubunu yukarıya alır */
+    }
     .backup-controls,
     .right-controls {
-        width: 100%;
         display: flex;
-        gap: 8px; 
-        /* align-items: stretch; varsayılan olduğu için yazmaya gerek yok, bu sayede yükseklikleri eşitlenir */
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+        align-items: stretch; /* İçeriklerin tam genişlikte olmasını sağlar */
     }
-    .backup-controls > *,
-    .right-controls > * {
-        flex: 1; /* Bu tek satır, elemanların genişliği eşit paylaşmasını ve esnemesini sağlar */
+    .dropdown-container,
+    .dropdown-container > button,
+    #auth-controls,
+    #auth-controls > button {
+        width: 100%; /* İç içe olan butonların da tam genişlik olmasını sağlar */
+    }
+    #connection-status-container {
+        margin: 0 auto; /* Bağlantı durumu kutusunu ortalar */
+        width: auto;
     }
     /* --- BİTİŞ --- */
 
@@ -315,14 +328,14 @@ input:checked + .slider:before {
 
     /* --- MOBİL ÜRÜN SEÇİM ALANI GÜNCELLEMESİ --- */
     .product-adder {
-        flex-direction: column; /* Öğeleri dikey olarak (alt alta) sırala */
-        align-items: stretch;   /* Öğeleri konteyner genişliğine yay */
+        flex-direction: column;
+        align-items: stretch;
     }
     .product-adder select {
-        width: 100%; /* Açılır menünün tam genişlikte olmasını sağlar */
-        white-space: normal; /* Uzun malzeme isimlerinin taşmasını önler */
+        width: 100%;
+        white-space: normal;
     }
     .product-adder input[type="number"] {
-        width: 100%; /* Adet kutusunun da tam genişlikte olmasını sağla */
+        width: 100%;
     }
 }
