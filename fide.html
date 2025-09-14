@@ -1203,11 +1203,11 @@
                     const currentUrl = linkElement.getAttribute('href');
                     const newUrl = prompt("Köprüyü düzenleyin veya kaldırmak için bu alanı boş bırakın:", currentUrl);
                     
-                    if (newUrl === null) { // Kullanıcı iptal etti
+                    if (newUrl === null) {
                         return;
-                    } else if (newUrl === "") { // Kullanıcı köprüyü kaldırmak istedi
+                    } else if (newUrl === "") {
                         linkElement.outerHTML = linkElement.innerHTML;
-                    } else { // Kullanıcı köprüyü güncelledi
+                    } else {
                         linkElement.href = newUrl;
                     }
                 } else {
@@ -1219,9 +1219,7 @@
                     if (url) {
                         document.execCommand('createLink', false, url);
                         const newLink = selection.anchorNode.parentNode.closest('a');
-                        if (newLink) {
-                            newLink.target = '_blank';
-                        }
+                        if (newLink) newLink.target = '_blank';
                     }
                 }
             } else {
@@ -1248,7 +1246,7 @@
                             <input type="number" class="manager-id-input" value="${q.id}" disabled title="ID değiştirmek veri bütünlüğünü bozabilir. Düzenlemek için şifre gerekir.">
                         </div>
                         <div><label>Soru Başlığı</label><input type="text" value="${q.title}"></div>
-                        <div><label>Soru Tipi</label><select>${selectOptionsHTML}</select></div>
+                        <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)">${selectOptionsHTML}</select></div>
                         <div class="archive-switch-container">
                             <label>Arşivle</label>
                             <label class="switch">
@@ -1258,7 +1256,7 @@
                         </div>
                     </div>
                     <div>
-                        <label>Statik Maddeler</label>
+                        <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
                         <div class="editor-toolbar">
                            <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
                            <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
@@ -1267,11 +1265,78 @@
                         </div>
                         <div class="editable-textarea" contenteditable="true">${staticItemsHtml}</div>
                     </div>
+                    <div class="product-list-manager" style="display: none;"></div>
                     <div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button></div>`;
                 managerList.appendChild(itemDiv);
+
+                // Soru tipi product_list ise ürün yöneticisini başlangıçta göster
+                if(q.type === 'product_list') {
+                    toggleProductManager(itemDiv.querySelector('select'));
+                }
             });
             filterManagerView(); 
         }
+
+        function toggleProductManager(selectElement) {
+            const managerItem = selectElement.closest('.manager-item');
+            const productManagerContainer = managerItem.querySelector('.product-list-manager');
+            if (selectElement.value === 'product_list') {
+                productManagerContainer.style.display = 'block';
+                renderProductManagerUI(productManagerContainer);
+            } else {
+                productManagerContainer.style.display = 'none';
+                productManagerContainer.innerHTML = '';
+            }
+        }
+
+        function renderProductManagerUI(container) {
+            container.innerHTML = `
+                <h4><i class="fas fa-boxes"></i> Ürün Listesi Yöneticisi</h4>
+                <p class="product-manager-info">
+                    <i class="fas fa-info-circle"></i> Bu liste tüm "product_list" tipi sorular için ortaktır. Burada yapacağınız değişiklikler tüm listeyi etkiler.
+                </p>
+                <div class="product-manager-actions">
+                    <button class="btn-primary btn-sm" onclick="addCategoryRow(this.parentElement.nextElementSibling)"><i class="fas fa-tags"></i> Kategori Ekle</button>
+                    <button class="btn-success btn-sm" onclick="addProductRow(this.parentElement.nextElementSibling)"><i class="fas fa-box"></i> Ürün Ekle</button>
+                </div>
+                <div class="product-list-editor"></div>
+            `;
+            
+            const editor = container.querySelector('.product-list-editor');
+            productList.forEach(item => {
+                if(item.type === 'header') {
+                    addCategoryRow(editor, item);
+                } else {
+                    addProductRow(editor, item);
+                }
+            });
+        }
+        
+        function addCategoryRow(container, category = {}) {
+            const row = document.createElement('div');
+            row.className = 'category-manager-row';
+            row.dataset.type = 'category';
+            row.innerHTML = `
+                <i class="fas fa-tag"></i>
+                <input type="text" placeholder="Kategori Adı" value="${category.name || ''}">
+                <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+            `;
+            container.appendChild(row);
+        }
+
+        function addProductRow(container, product = {}) {
+            const row = document.createElement('div');
+            row.className = 'product-manager-row';
+            row.dataset.type = 'product';
+            row.innerHTML = `
+                <input type="text" class="product-id" placeholder="ID (orn: urun001)" value="${product.id || ''}">
+                <input type="text" class="product-code" placeholder="Kod (orn: U-001)" value="${product.code || ''}">
+                <input type="text" class="product-name" placeholder="Ürün Adı" value="${product.name || ''}">
+                <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+            `;
+            container.appendChild(row);
+        }
+
 
         function filterManagerView() {
             const viewActiveBtn = document.getElementById('view-active-btn');
@@ -1322,7 +1387,7 @@
                         <input type="number" value="${newId}">
                     </div>
                     <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
-                    <div><label>Soru Tipi</label><select><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
+                    <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
                     <div class="archive-switch-container">
                         <label>Arşivle</label>
                         <label class="switch">
@@ -1332,7 +1397,7 @@
                     </div>
                 </div>
                 <div>
-                    <label>Statik Maddeler</label>
+                    <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
                     <div class="editor-toolbar">
                        <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
                        <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
@@ -1341,6 +1406,7 @@
                     </div>
                     <div class="editable-textarea" contenteditable="true"></div>
                 </div>
+                <div class="product-list-manager" style="display: none;"></div>
                 <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
             managerList.appendChild(itemDiv);
             itemDiv.querySelector('input[type="text"]').focus();
@@ -1397,6 +1463,32 @@
         }
         
         function saveQuestions() {
+            // Önce Ürün Listesini Güncelle
+            const newProductList = [];
+            const activeProductManager = document.querySelector('.product-list-manager:not([style*="display: none"])');
+            
+            if (activeProductManager) {
+                const rows = activeProductManager.querySelectorAll('.category-manager-row, .product-manager-row');
+                rows.forEach(row => {
+                    if (row.dataset.type === 'category') {
+                        const name = row.querySelector('input').value.trim();
+                        if (name) newProductList.push({ type: 'header', name });
+                    } else if (row.dataset.type === 'product') {
+                        const id = row.querySelector('.product-id').value.trim();
+                        const code = row.querySelector('.product-code').value.trim();
+                        const name = row.querySelector('.product-name').value.trim();
+                        if (id && code && name) newProductList.push({ id, code, name });
+                    }
+                });
+            }
+            
+            // Global productList değişkenini en güncel haliyle değiştir
+            // Eğer aktif bir product manager yoksa, mevcut listeyi koru
+            if (newProductList.length > 0 || activeProductManager) {
+                productList = newProductList;
+            }
+
+            // Şimdi Soruları Kaydet
             const newQuestions = [];
             const ids = new Set();
             const items = document.querySelectorAll('#manager-list .manager-item');
@@ -1416,7 +1508,7 @@
 
                 const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
                 const newQuestion = { id, title, type };
-                if (staticItems.length > 0) newQuestion.staticItems = staticItems;
+                if (staticItems.length > 0 && type !== 'product_list') newQuestion.staticItems = staticItems;
                 if (isArchived) newQuestion.isArchived = true;
 
                 if (type === 'pop_system') {
@@ -1429,7 +1521,7 @@
 
             const finalJsonData = {
                 questions: newQuestions,
-                productList: productList
+                productList: productList // Güncellenmiş ürün listesini buraya ekle
             };
             const dataStr = JSON.stringify(finalJsonData, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
@@ -1439,8 +1531,9 @@
             link.href = url;
             link.click();
             URL.revokeObjectURL(url);
-            alert("Güncellenmiş sorularınız 'fide_soru_listesi.json' olarak indirildi.\n\nLÜTFEN BU DOSYAYI ESKİSİYLE DEĞİŞTİRİP SAYFAYI YENİLEYİN.");
+            alert("Güncellenmiş sorularınız ve ürün listeniz 'fide_soru_listesi.json' olarak indirildi.\n\nLÜTFEN BU DOSYAYI ESKİSİYLE DEĞİŞTİRİP SAYFAYI YENİLEYİN.");
         }
+
 
         function updateFormInteractivity(enable) {
             const formContent = document.getElementById('form-content');

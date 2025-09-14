@@ -32,7 +32,6 @@ button i, .btn-like-label i { margin-right: 8px; }
 .fide-item.archived-item { border: 2px dashed var(--warning); background-color: #fffbeb; }
 .fide-item.archived-item .fide-title-container p { color: var(--warning); }
 .fide-item.archived-item .fide-title-container p::after { content: '(Arşivlenmiş Soru)'; font-weight: bold; font-size: 10px; color: white; background-color: var(--warning); padding: 2px 6px; border-radius: 10px; margin-left: 10px; }
-
 .fide-title-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px;}
 .fide-title-container p { font-weight: 600; margin: 0; flex-grow: 1; font-size: 16px; color: var(--dark); }
 .fide-title-container.question-completed p { color: var(--success); text-decoration: line-through; }
@@ -205,6 +204,71 @@ textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-r
     box-shadow: 0 0 0 2px rgba(0, 140, 186, 0.2);
 }
 
+/* --- YENİ EKLENEN ÜRÜN YÖNETİCİSİ STİLLERİ --- */
+.product-list-manager {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--primary);
+    background-color: #f0f9ff;
+}
+.product-list-manager h4 {
+    color: var(--primary-dark);
+    margin: 0 0 10px 0;
+}
+.product-manager-info {
+    font-size: 12px;
+    color: var(--secondary);
+    margin-bottom: 15px;
+    padding: 8px;
+    background-color: #e0f2fe;
+    border-radius: 6px;
+    border-left: 4px solid var(--primary);
+}
+.product-manager-info i { margin-right: 5px; }
+.product-manager-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.product-list-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.category-manager-row, .product-manager-row {
+    display: grid;
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    border-radius: 6px;
+}
+.category-manager-row {
+    grid-template-columns: 20px 1fr 40px;
+    background-color: #e0e7ff;
+    font-weight: bold;
+}
+.category-manager-row i { color: var(--primary); }
+.product-manager-row {
+    grid-template-columns: 1fr 1fr 2fr 40px;
+    background-color: #fff;
+    border: 1px solid var(--border);
+}
+.category-manager-row input, .product-manager-row input {
+    padding: 8px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+.product-manager-row button, .category-manager-row button {
+    padding: 6px 0;
+    width: 100%;
+}
+.product-manager-row button i, .category-manager-row button i {
+    margin: 0;
+}
+/* --- STİL BİTİŞ --- */
+
 .dropdown-container {
     display: inline-block;
 }
@@ -285,7 +349,6 @@ input:checked + .slider:before {
 @media (max-width: 768px) {
     .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
     
-    /* --- MOBİL ÜST KONTROL YENİ DÜZEN --- */
     .top-controls {
         flex-direction: column;
         align-items: stretch;
@@ -314,7 +377,6 @@ input:checked + .slider:before {
         margin: 0 auto;
         width: auto;
     }
-    /* --- BİTİŞ --- */
 
     .manager-item-grid { grid-template-columns: 1fr; align-items: stretch; }
     .archive-switch-container { align-items: flex-start; }
@@ -326,7 +388,6 @@ input:checked + .slider:before {
     .manager-view-controls, .manager-main-actions { width: 100%; justify-content: center;}
     .manager-view-controls button, .manager-main-actions button { flex-grow: 1; justify-content: center; }
 
-    /* --- MOBİL ÜRÜN SEÇİM ALANI GÜNCELLEMESİ --- */
     .product-adder {
         flex-direction: column;
         align-items: stretch;
@@ -339,8 +400,22 @@ input:checked + .slider:before {
         width: 100%;
     }
     
-    /* --- YEDEKLEME MENÜSÜ YÜKSEKLİK DÜZELTMESİ --- */
     .dropdown-menu.show {
-        max-height: 250px; /* Mobil dikey menü için yüksekliği artır */
+        max-height: 250px;
+    }
+
+    /* Mobil için ürün yöneticisi düzenlemesi */
+    .product-manager-row {
+        grid-template-columns: 1fr;
+    }
+    .product-manager-row button {
+        grid-row: 4;
+    }
+    .category-manager-row {
+        grid-template-columns: 20px 1fr;
+    }
+     .category-manager-row button {
+        grid-column: 1 / span 2;
+        margin-top: 5px;
     }
 }
