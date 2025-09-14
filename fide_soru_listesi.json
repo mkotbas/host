@@ -55,7 +55,7 @@
       "title": "Yeni Kampanya şablonu A4 veya A5 olarak kullanılıyor mu?",
       "type": "standard",
       "staticItems": [
-        "ABS > 29 numaralı Föy'de bulunan kampanya şablonlarının kullanımını rica ederim.",
+        "ABS &gt; 29 numaralı Föy'de bulunan kampanya şablonlarının kullanımını rica ederim.",
         "<b><u><a href=\"https://drive.google.com/file/d/1sStAyhgjr_n1w7FTtmItsyPsGWLK-jtg/view?usp=drive_link\" target=\"_blank\">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>"
       ]
     },
@@ -198,132 +198,106 @@
   ],
   "productList": [
     {
-      "id": "p1",
       "code": "8905981600",
       "name": "PLEKSİ A5 AYAKLI"
     },
     {
-      "id": "p2",
       "code": "9244421600",
       "name": "PLEKSİ A5 MIKNATISLI"
     },
     {
-      "id": "p3",
       "code": "9224601600",
       "name": "ANKASTRE SET ETİKETLİK"
     },
     {
-      "id": "p4",
       "code": "9224121100",
       "name": "PLEKSİ A5 VANTUZLU"
     },
     {
-      "id": "p5",
       "code": "8936801600",
       "name": "PLEKSİ A6 AYAKLI"
     },
     {
-      "id": "p6",
       "code": "9224291600",
       "name": "PLEKSİ YATAY FİYAT ETİKET TUTUCU VELCRO"
     },
     {
-      "id": "p7",
       "code": "9224381600",
       "name": "PLEKSİ YATAY FİYAT ETİKETİ VANTUZLU"
     },
     {
-      "id": "p8",
       "code": "9245571600",
       "name": "Askılı ÇKM Etiketlik"
     },
     {
-      "id": "p9",
       "code": "8905291600",
       "name": "KILÇIK-KEA ETİKETLİK"
     },
     {
-      "id": "p10",
       "code": "9220161600",
       "name": "PLEKSİ KEA ETİKETLİK"
     },
     {
-      "id": "p11",
       "code": "9220451600",
       "name": "PLEKSİ A4 AYAKLI"
     },
     {
-      "id": "p12",
       "code": "9224131600",
       "name": "PLEKSİ ENERJİ ETİKETİ VANTUZLU 85X170"
     },
     {
-      "id": "p13",
       "code": "9224141600",
       "name": "PLEKSİ ENERJİ ETİKETİ VANTUZLU 102X201"
     },
     {
-      "id": "p14",
       "code": "9245771600",
       "name": "MIKNATISLI ENERJİ ETİKETLİK 102X201"
     },
     {
-      "id": "p15",
       "code": "8908661600",
       "name": "ENERJİ ETİKETİ STANDI"
     },
     {
-      "id": "p16",
       "code": "8938521100",
       "name": "TUTUCU-B1 POSTER İÇ MEKAN"
     },
     {
-      "id": "p17",
       "code": "8905801600",
       "name": "TUTUCU-B1 POSTER DIŞ"
     },
     {
-      "id": "p18",
       "code": "9224311600",
       "name": "TUTUCU - B1 POSTER A AYAKLI"
     },
     {
-      "id": "p19",
       "code": "8939031100",
       "name": "TUTUCU-SAÇ MAŞASI"
     },
     {
-      "id": "p20",
       "code": "8909981600",
       "name": "TUTUCU (KATLI) - SAÇ MAŞASI"
     },
     {
-      "id": "p21",
       "code": "8939051100",
       "name": "TUTUCU-FÖN MAKİNESİ"
     },
     {
-      "id": "p22",
       "code": "8906591600",
       "name": "TUTUCU-TRAŞ MAKİNESİ"
     },
     {
-      "id": "p23",
       "code": "8906601600",
       "name": "TUTUCU-KULAKLIK"
     },
     {
-      "id": "p24",
       "code": "8900881600",
       "name": "FIRSAT BAZASI ARÇELIK"
     },
     {
-      "id": "p25",
       "code": "8909061600",
       "name": "PLEKSİ A4 APPLE FISO"
     },
     {
-      "id": "p26",
       "code": "9220421600",
       "name": "PLEKSİ A5 APPLE FISO"
     },
@@ -332,27 +306,22 @@
       "name": "Kısa Kol Tişörtler"
     },
     {
-      "id": "p27",
       "code": "9244851100",
       "name": "DH A KISA KOL TSHIRT XXL"
     },
     {
-      "id": "p28",
       "code": "9244861100",
       "name": "DH A KISA KOL TSHIRT XL"
     },
     {
-      "id": "p29",
       "code": "9244871100",
       "name": "DH A KISA KOL TSHIRT L"
     },
     {
-      "id": "p30",
       "code": "9244881100",
       "name": "DH A KISA KOL TSHIRT M"
     },
     {
-      "id": "p31",
       "code": "9244891100",
       "name": "DH A KISA KOL TSHIRT S"
     },
@@ -361,12 +330,10 @@
       "name": "Uzun Kol Tişörtler"
     },
     {
-      "id": "p32",
       "code": "9244831100",
       "name": "DH A UZUN KOL TSHIRT XL"
     },
     {
-      "id": "p33",
       "code": "9244841100",
       "name": "DH A UZUN KOL TSHIRT L"
     },
@@ -375,17 +342,14 @@
       "name": "Hırka Polar"
     },
     {
-      "id": "p34",
       "code": "9244901100",
       "name": "DH A HIRKA XL"
     },
     {
-      "id": "p35",
       "code": "9244911100",
       "name": "DH A HIRKA L"
     },
     {
-      "id": "p36",
       "code": "9244921100",
       "name": "DH A HIRKA M"
     }
