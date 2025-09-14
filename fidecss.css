@@ -51,7 +51,17 @@ button i, .btn-like-label i { margin-right: 8px; }
 .static-item.is-deleting .content, .dynamic-input-item.is-deleting input { text-decoration: line-through; opacity: 0.5; }
 .dynamic-input-item.is-deleting .status-btn { pointer-events: none; opacity: 0.5; }
 .product-adder { display: flex; gap: 10px; align-items: center; margin: 15px 0; }
-.product-adder select { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
+.product-adder select {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    /* YENİ EKLENEN KOD BAŞLANGICI */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* YENİ EKLENEN KOD SONU */
+}
 .product-adder input[type="number"] { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
 .selected-product-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--light); border-radius: 8px; margin-bottom: 8px; }
 .delete-item-btn { background-color: var(--danger); color: white; margin-left:10px;}
@@ -109,7 +119,7 @@ textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-r
 }
 #connection-status-switch {
     width: 44px; height: 24px; border-radius: 12px; position: relative; cursor: default;
-    transition: background-color 0.4s ease;
+    transition: background-color: 0.4s ease;
 }
 #connection-status-switch .thumb {
     width: 20px; height: 20px; background: white; border-radius: 50%;
@@ -290,7 +300,6 @@ input:checked + .slider:before {
     .manager-view-controls, .manager-main-actions { width: 100%; justify-content: center;}
     .manager-view-controls button, .manager-main-actions button { flex-grow: 1; justify-content: center; }
 
-    /* YENİ EKLENEN MOBİL UYUMLULUK KODU */
     .product-adder {
         flex-wrap: wrap;
     }
