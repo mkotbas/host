@@ -289,4 +289,15 @@ input:checked + .slider:before {
     .manager-actions { flex-direction: column; align-items: stretch; }
     .manager-view-controls, .manager-main-actions { width: 100%; justify-content: center;}
     .manager-view-controls button, .manager-main-actions button { flex-grow: 1; justify-content: center; }
+
+    /* YENİ EKLENEN MOBİL UYUMLULUK KODU */
+    .product-adder {
+        flex-wrap: wrap;
+    }
+    .product-adder select {
+        flex-basis: 100%;
+    }
+    .product-adder input[type="number"] {
+        flex-grow: 1;
+    }
 }
