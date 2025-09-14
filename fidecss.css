@@ -284,10 +284,28 @@ input:checked + .slider:before {
 
 @media (max-width: 768px) {
     .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .top-controls { flex-direction: column; align-items: stretch; }
-    .backup-controls { width: 100%; }
-    .right-controls { width: 100%; justify-content: space-between; }
-    .backup-controls > * { flex-grow: 1; }
+    
+    /* --- MOBİL ÜST KONTROL GÜNCELLEMESİ --- */
+    .top-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .backup-controls,
+    .right-controls {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .backup-controls > *,
+    .right-controls > * {
+        flex-grow: 1;
+        flex-basis: 0; /* Eşit dağılım için eklendi */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    /* --- BİTİŞ --- */
+
     .manager-item-grid { grid-template-columns: 1fr; align-items: stretch; }
     .archive-switch-container { align-items: flex-start; }
     .dropdown-menu {
@@ -299,10 +317,13 @@ input:checked + .slider:before {
     .manager-view-controls button, .manager-main-actions button { flex-grow: 1; justify-content: center; }
 
     /* --- MOBİL ÜRÜN SEÇİM ALANI GÜNCELLEMESİ --- */
-    /* Önceki flex-wrap kuralı silindi ve bu daha net olan kural eklendi */
     .product-adder {
         flex-direction: column; /* Öğeleri dikey olarak (alt alta) sırala */
         align-items: stretch;   /* Öğeleri konteyner genişliğine yay */
+    }
+    .product-adder select {
+        width: 100%; /* Açılır menünün tam genişlikte olmasını sağlar */
+        white-space: normal; /* Uzun malzeme isimlerinin taşmasını önler */
     }
     .product-adder input[type="number"] {
         width: 100%; /* Adet kutusunun da tam genişlikte olmasını sağla */
