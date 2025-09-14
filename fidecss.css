@@ -238,24 +238,30 @@ textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-r
     flex-direction: column;
     gap: 8px;
 }
+
 .category-manager-row, .product-manager-row {
     display: grid;
     gap: 10px;
     align-items: center;
     padding: 8px;
     border-radius: 6px;
+    cursor: grab; /* Sürükleme imleci */
+    transition: background-color 0.2s ease;
 }
+
 .category-manager-row {
-    grid-template-columns: 20px 1fr 40px;
+    grid-template-columns: 20px 20px 1fr 40px;
     background-color: #e0e7ff;
     font-weight: bold;
 }
-.category-manager-row i { color: var(--primary); }
+.category-manager-row .category-icon { color: var(--primary); }
+
 .product-manager-row {
-    grid-template-columns: 1fr 2fr 40px;
+    grid-template-columns: 20px 1fr 2fr 40px;
     background-color: #fff;
     border: 1px solid var(--border);
 }
+
 .category-manager-row input, .product-manager-row input {
     padding: 8px;
     font-size: 13px;
@@ -269,6 +275,17 @@ textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-r
 .product-manager-row button i, .category-manager-row button i {
     margin: 0;
 }
+.drag-handle {
+    color: var(--gray);
+    cursor: grab;
+}
+/* YENİ: Sürükleme stilleri */
+.product-manager-row.dragging,
+.category-manager-row.dragging {
+    opacity: 0.5;
+    background: #c7d2fe;
+}
+
 
 /* Toplu Ekleme Alanı Stilleri */
 .bulk-add-container {
@@ -323,8 +340,8 @@ textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-r
     opacity: 0;
 }
 #detailed-editor-panel.open {
-    max-height: 600px; /* Değişiklik: Yükseklik 600px ile sınırlandırıldı */
-    overflow-y: auto;   /* Değişiklik: Dikey kaydırma çubuğu eklendi */
+    max-height: 600px; 
+    overflow-y: auto;  
     opacity: 1;
     transition: max-height 0.5s ease-in, opacity 0.5s ease-in;
 }
@@ -465,16 +482,20 @@ input:checked + .slider:before {
     }
 
     .product-manager-row {
-        grid-template-columns: 1fr;
-    }
-    .product-manager-row button {
-        grid-row: 3;
-    }
-    .category-manager-row {
         grid-template-columns: 20px 1fr;
     }
-     .category-manager-row button {
+    .product-manager-row input.product-name {
+        grid-column: 2;
+    }
+    .product-manager-row button {
         grid-column: 1 / span 2;
+        margin-top: 5px;
+    }
+    .category-manager-row {
+        grid-template-columns: 20px 20px 1fr;
+    }
+     .category-manager-row button {
+        grid-column: 1 / span 3;
         margin-top: 5px;
     }
     .bulk-add-controls {

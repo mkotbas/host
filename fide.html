@@ -1341,6 +1341,7 @@
                     addProductRow(editor, item);
                 }
             });
+             setupProductManagerDragDrop(editor);
         }
         
         function toggleDetailedEditor(button) {
@@ -1417,8 +1418,10 @@
             const row = document.createElement('div');
             row.className = 'category-manager-row';
             row.dataset.type = 'category';
+            row.draggable = true;
             row.innerHTML = `
-                <i class="fas fa-tag"></i>
+                <i class="fas fa-grip-vertical drag-handle" title="Sıralamak için sürükleyin"></i>
+                <i class="fas fa-tag category-icon"></i>
                 <input type="text" placeholder="Kategori Adı" value="${category.name || ''}">
                 <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
             `;
@@ -1434,7 +1437,9 @@
             const row = document.createElement('div');
             row.className = 'product-manager-row';
             row.dataset.type = 'product';
+            row.draggable = true;
             row.innerHTML = `
+                <i class="fas fa-grip-vertical drag-handle" title="Sıralamak için sürükleyin"></i>
                 <input type="text" class="product-code" placeholder="Stok Kodu" value="${product.code || ''}">
                 <input type="text" class="product-name" placeholder="Ürün Adı" value="${product.name || ''}">
                 <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
@@ -1447,6 +1452,54 @@
             }
             return row;
         }
+        
+        // YENİ: Sürükle-Bırak Fonksiyonları
+        function setupProductManagerDragDrop(container) {
+            let draggingElement = null;
+
+            container.addEventListener('dragstart', e => {
+                draggingElement = e.target;
+                // Tarayıcının sürükleme gölgesini daha hızlı oluşturması için kısa bir gecikme
+                setTimeout(() => {
+                    e.target.classList.add('dragging');
+                }, 0);
+            });
+
+            container.addEventListener('dragend', e => {
+                if (draggingElement) {
+                    draggingElement.classList.remove('dragging');
+                    draggingElement = null;
+                }
+            });
+
+            container.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const currentlyDragged = document.querySelector('.dragging');
+                if (currentlyDragged) {
+                    if (afterElement == null) {
+                        container.appendChild(currentlyDragged);
+                    } else {
+                        container.insertBefore(currentlyDragged, afterElement);
+                    }
+                }
+            });
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('[draggable="true"]:not(.dragging)')];
+
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+        }
+
 
         function filterManagerView() {
             const viewActiveBtn = document.getElementById('view-active-btn');
