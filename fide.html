@@ -1312,10 +1312,10 @@
                 
                 <div class="bulk-add-container">
                     <h5><i class="fas fa-paste"></i> Toplu Ürün Ekle</h5>
-                    <p class="bulk-add-info">Her satıra bir ürün gelecek şekilde yapıştırın. Sütunları (Stok Kodu, Ürün Adı) <strong>TAB</strong> veya <strong>virgül (,)</strong> ile ayırın.</p>
+                    <p class="bulk-add-info">Her satıra bir ürün gelecek şekilde yapıştırın. Stok Kodu ile Ürün Adı arasına bir <strong>BOŞLUK</strong> bırakmanız yeterlidir (Örn: 123456 Enerji Etiketi).</p>
                     <div class="bulk-add-controls">
                         <select id="bulk-add-category-select" title="Ürünlerin hangi kategori altına ekleneceğini seçin.">${categoryOptions}</select>
-                        <textarea id="bulk-product-input" placeholder="88001	Siyah T-Shirt\n88002	Mavi Kot Pantolon..."></textarea>
+                        <textarea id="bulk-product-input" placeholder="88001 Siyah T-Shirt\n88002 Mavi Kot Pantolon..."></textarea>
                     </div>
                     <button class="btn-success btn-sm" onclick="parseAndAddProducts()"><i class="fas fa-plus-circle"></i> Yapıştırılanları Listeye Ekle</button>
                 </div>
@@ -1382,16 +1382,22 @@
             }
 
             lines.forEach(line => {
-                if (!line.trim()) return;
-                const parts = line.split(/\t|,/);
-                if (parts.length === 2) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return;
+
+                const firstSpaceIndex = trimmedLine.indexOf(' ');
+
+                if (firstSpaceIndex > 0 && firstSpaceIndex < trimmedLine.length - 1) {
                     const product = {
-                        code: parts[0].trim(),
-                        name: parts[1].trim()
+                        code: trimmedLine.substring(0, firstSpaceIndex).trim(),
+                        name: trimmedLine.substring(firstSpaceIndex + 1).trim()
                     };
-                    const newRow = addProductRow(editor, product, targetElement);
-                    targetElement = newRow; 
-                    addedCount++;
+                    
+                    if (product.code && product.name) {
+                        const newRow = addProductRow(editor, product, targetElement);
+                        targetElement = newRow; 
+                        addedCount++;
+                    }
                 }
             });
 
@@ -1403,7 +1409,7 @@
                     document.getElementById('toggle-detailed-editor-btn').click();
                 }
             } else {
-                alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu[TAB]Ürün Adı).");
+                alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu BOŞLUK Ürün Adı).");
             }
         }
 
