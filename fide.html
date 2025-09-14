@@ -518,7 +518,6 @@
                         productOptions += `<optgroup label="${p.name}">`;
                         currentOptgroup = true;
                     } else {
-                        // DEĞİŞİKLİK: value kısmında artık p.id yerine p.code kullanılıyor
                         productOptions += `<option value="${p.code}">${p.code} - ${p.name}</option>`;
                     }
                 });
@@ -562,7 +561,6 @@
             saveFormState();
         }
 
-        // DEĞİŞİKLİK: Fonksiyon artık id yerine code ile çalışıyor
         function addProductToList(productCode, quantity) {
             const select = document.getElementById('product-selector');
             const qtyInput = document.getElementById('product-qty');
@@ -579,7 +577,7 @@
             const unit = getUnitForProduct(product.name);
             const newItem = document.createElement('div');
             newItem.className = 'selected-product-item';
-            newItem.dataset.code = product.code; // id yerine code
+            newItem.dataset.code = product.code;
             newItem.dataset.qty = selectedQty;
             newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} ${unit}</b></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler." onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`;
             listContainer.appendChild(newItem);
@@ -954,7 +952,6 @@
                     }
                 } else if (q.type === 'product_list') {
                     const productItemsHtml = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => {
-                        // DEĞİŞİKLİK: Artık ürünü id yerine code ile buluyoruz
                         const product = productList.find(p => p.code === item.dataset.code);
                         if(product) { const unit = getUnitForProduct(product.name); return `<li>${product.code} ${product.name}: ${item.dataset.qty} ${unit}</li>`; }
                     }).filter(Boolean);
@@ -1055,7 +1052,6 @@
                     else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId);
                     if (data.dynamicInputs) data.dynamicInputs.forEach(input => addDynamicInput(qId === '15' ? 'fide15_pleksi' : `fide${qId}`, input.text, input.completed));
                     
-                    // DEĞİŞİKLİK: Rapor yüklenirken artık id yerine code kullanılıyor
                     if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty)); 
                     
                     if (data.selectedPops) {
@@ -1089,7 +1085,6 @@
                 if (itemDiv) {
                     if (q.type === 'standard') questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`);
                     else if (q.type === 'product_list') {
-                        // DEĞİŞİKLİK: Rapor kaydedilirken artık id yerine code kullanılıyor
                         document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => questionData.selectedProducts.push({ code: item.dataset.code, qty: item.dataset.qty }));
                         questionData.dynamicInputs = getDynamicInputsForSaving('fide15_pleksi');
                     } else if (q.type === 'pop_system') questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
@@ -1312,24 +1307,30 @@
             container.innerHTML = `
                 <h4><i class="fas fa-boxes"></i> Ürün Listesi Yöneticisi</h4>
                 <p class="product-manager-info">
-                    <i class="fas fa-info-circle"></i> Bu liste tüm "product_list" tipi sorular için ortaktır. Burada yapacağınız değişiklikler tüm listeyi etkiler.
+                    <i class="fas fa-info-circle"></i> Bu liste tüm "product_list" tipi sorular için ortaktır. Değişiklikleriniz tüm listeyi etkiler.
                 </p>
                 
                 <div class="bulk-add-container">
-                    <h5><i class="fas fa-paste"></i> Toplu Ürün Ekle (Kopyala-Yapıştır)</h5>
+                    <h5><i class="fas fa-paste"></i> Toplu Ürün Ekle</h5>
                     <p class="bulk-add-info">Her satıra bir ürün gelecek şekilde yapıştırın. Sütunları (Stok Kodu, Ürün Adı) <strong>TAB</strong> veya <strong>virgül (,)</strong> ile ayırın.</p>
                     <div class="bulk-add-controls">
-                        <select id="bulk-add-category-select">${categoryOptions}</select>
+                        <select id="bulk-add-category-select" title="Ürünlerin hangi kategori altına ekleneceğini seçin.">${categoryOptions}</select>
                         <textarea id="bulk-product-input" placeholder="88001	Siyah T-Shirt\n88002	Mavi Kot Pantolon..."></textarea>
                     </div>
                     <button class="btn-success btn-sm" onclick="parseAndAddProducts()"><i class="fas fa-plus-circle"></i> Yapıştırılanları Listeye Ekle</button>
                 </div>
 
-                <div class="product-manager-actions">
-                    <button class="btn-primary btn-sm" onclick="addCategoryRow(this.parentElement.nextElementSibling)"><i class="fas fa-tags"></i> Kategori Ekle</button>
-                    <button class="btn-success btn-sm" onclick="addProductRow(this.parentElement.nextElementSibling)"><i class="fas fa-box"></i> Ürün Ekle</button>
+                <button id="toggle-detailed-editor-btn" class="btn-sm" onclick="toggleDetailedEditor(this)">
+                    <i class="fas fa-edit"></i> Detaylı Liste Editörünü Göster
+                </button>
+
+                <div id="detailed-editor-panel">
+                    <div class="product-manager-actions">
+                        <button class="btn-primary btn-sm" onclick="addCategoryRow(this.closest('#detailed-editor-panel').querySelector('.product-list-editor'))"><i class="fas fa-tags"></i> Kategori Ekle</button>
+                        <button class="btn-success btn-sm" onclick="addProductRow(this.closest('#detailed-editor-panel').querySelector('.product-list-editor'))"><i class="fas fa-box"></i> Ürün Ekle</button>
+                    </div>
+                    <div class="product-list-editor"></div>
                 </div>
-                <div class="product-list-editor"></div>
             `;
             
             const editor = container.querySelector('.product-list-editor');
@@ -1342,6 +1343,16 @@
             });
         }
         
+        function toggleDetailedEditor(button) {
+            const panel = document.getElementById('detailed-editor-panel');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                button.innerHTML = '<i class="fas fa-eye-slash"></i> Detaylı Liste Editörünü Gizle';
+            } else {
+                button.innerHTML = '<i class="fas fa-edit"></i> Detaylı Liste Editörünü Göster';
+            }
+        }
+
         function addCategoryRow(container, category = {}, targetElement = null) {
             const row = document.createElement('div');
             row.className = 'category-manager-row';
@@ -1367,7 +1378,7 @@
                 <input type="text" class="product-name" placeholder="Ürün Adı" value="${product.name || ''}">
                 <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
             `;
-            if (targetElement) {
+             if (targetElement && targetElement.nextSibling) {
                 container.insertBefore(row, targetElement.nextSibling);
             } else {
                 container.appendChild(row);
@@ -1375,9 +1386,10 @@
         }
         
         function parseAndAddProducts() {
-            const textarea = document.getElementById('bulk-product-input');
-            const editor = textarea.closest('.product-list-manager').querySelector('.product-list-editor');
-            const categorySelect = document.getElementById('bulk-add-category-select');
+            const container = document.querySelector('.product-list-manager');
+            const textarea = container.querySelector('#bulk-product-input');
+            const editor = container.querySelector('.product-list-editor');
+            const categorySelect = container.querySelector('#bulk-add-category-select');
             const selectedCategoryName = categorySelect.value;
             const text = textarea.value.trim();
             if (!text) return;
@@ -1387,34 +1399,29 @@
             
             let targetElement = null;
             if (selectedCategoryName !== '__end') {
-                const allRows = editor.querySelectorAll('.category-manager-row, .product-manager-row');
-                for (let i = 0; i < allRows.length; i++) {
-                    const row = allRows[i];
-                    if (row.dataset.type === 'category' && row.querySelector('input').value === selectedCategoryName) {
-                        // Kategorinin altındaki son ürünü bul
-                        let lastProductInCat = row;
-                        for (let j = i + 1; j < allRows.length; j++) {
-                           if (allRows[j].dataset.type === 'category') break;
-                           lastProductInCat = allRows[j];
-                        }
-                        targetElement = lastProductInCat;
-                        break;
+                const allRows = Array.from(editor.querySelectorAll('.category-manager-row, .product-manager-row'));
+                const categoryIndex = allRows.findIndex(row => row.dataset.type === 'category' && row.querySelector('input').value === selectedCategoryName);
+
+                if (categoryIndex > -1) {
+                    targetElement = allRows[categoryIndex];
+                    for (let i = categoryIndex + 1; i < allRows.length; i++) {
+                        if (allRows[i].dataset.type === 'category') break;
+                        targetElement = allRows[i];
                     }
                 }
             }
 
-
             lines.forEach(line => {
                 if (!line.trim()) return;
-                const parts = line.split(/\t|,/); // TAB veya virgül ile ayır
+                const parts = line.split(/\t|,/);
                 if (parts.length === 2) {
                     const product = {
                         code: parts[0].trim(),
                         name: parts[1].trim()
                     };
                     addProductRow(editor, product, targetElement);
-                    // Bir sonraki elemanın bir öncekinin altına eklenmesi için hedefi güncelle
-                    targetElement = editor.querySelector('.product-manager-row:last-of-type');
+                    const allRowsCurrent = editor.querySelectorAll('.category-manager-row, .product-manager-row');
+                    targetElement = allRowsCurrent[Array.from(allRowsCurrent).indexOf(targetElement) + 1] || allRowsCurrent[allRowsCurrent.length - 1];
                     addedCount++;
                 }
             });
@@ -1422,6 +1429,9 @@
             if (addedCount > 0) {
                 alert(`${addedCount} adet ürün başarıyla eklendi!`);
                 textarea.value = '';
+                if (!document.getElementById('detailed-editor-panel').classList.contains('open')) {
+                    document.getElementById('toggle-detailed-editor-btn').click();
+                }
             } else {
                 alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu[TAB]Ürün Adı).");
             }
@@ -1463,7 +1473,7 @@
                 return;
             }
             const managerList = document.getElementById('manager-list');
-            const existingIds = Array.from(managerList.querySelectorAll('.manager-item')).map(item => parseInt(item.querySelector('input[type="number"]').value));
+            const existingIds = Array.from(managerList.querySelectorAll('.manager-item')).map(item => parseInt(item.querySelector('.manager-id-input').value));
             const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
             
             const itemDiv = document.createElement('div');
@@ -1474,7 +1484,7 @@
                 <div class="manager-item-grid">
                     <div>
                         <label>Soru ID</label>
-                        <input type="number" value="${newId}">
+                        <input type="number" class="manager-id-input" value="${newId}">
                     </div>
                     <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
                     <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
@@ -1553,7 +1563,6 @@
         }
         
         function saveQuestions() {
-            // Önce Ürün Listesini Güncelle
             const newProductList = [];
             const activeProductManager = document.querySelector('.product-list-manager:not([style*="display: none"])');
             
@@ -1575,7 +1584,6 @@
                 productList = newProductList;
             }
 
-            // Şimdi Soruları Kaydet
             const newQuestions = [];
             const ids = new Set();
             const items = document.querySelectorAll('#manager-list .manager-item');
@@ -1583,13 +1591,13 @@
             for (const item of items) {
                 if (item.classList.contains('to-be-deleted')) continue;
 
-                const id = parseInt(item.querySelectorAll('input[type="number"].manager-id-input')[0].value);
-                const title = item.querySelectorAll('input[type="text"]')[0].value.trim();
+                const id = parseInt(item.querySelector('.manager-id-input').value);
+                const title = item.querySelector('input[type="text"]').value.trim();
                 const type = item.querySelector('select').value;
                 const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
                 const isArchived = item.querySelector('.archive-checkbox').checked;
 
-                if (!id || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
+                if (!id && id !== 0 || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
                 if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılamaz.`); return; }
                 ids.add(id);
 
