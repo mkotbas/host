@@ -242,24 +242,12 @@
       "name": "PLEKSİ A4 AYAKLI"
     },
     {
-      "code": "9224131600",
-      "name": "PLEKSİ ENERJİ ETİKETİ VANTUZLU 85X170"
-    },
-    {
-      "code": "9224141600",
-      "name": "PLEKSİ ENERJİ ETİKETİ VANTUZLU 102X201"
-    },
-    {
-      "code": "9245771600",
-      "name": "MIKNATISLI ENERJİ ETİKETLİK 102X201"
-    },
-    {
-      "code": "8908661600",
-      "name": "ENERJİ ETİKETİ STANDI"
-    },
-    {
       "code": "8938521100",
       "name": "TUTUCU-B1 POSTER İÇ MEKAN"
+    },
+    {
+      "code": "8900881600",
+      "name": "FIRSAT BAZASI ARÇELIK"
     },
     {
       "code": "8905801600",
@@ -282,16 +270,12 @@
       "name": "TUTUCU-FÖN MAKİNESİ"
     },
     {
-      "code": "8906591600",
-      "name": "TUTUCU-TRAŞ MAKİNESİ"
-    },
-    {
       "code": "8906601600",
       "name": "TUTUCU-KULAKLIK"
     },
     {
-      "code": "8900881600",
-      "name": "FIRSAT BAZASI ARÇELIK"
+      "code": "8906591600",
+      "name": "TUTUCU-TRAŞ MAKİNESİ"
     },
     {
       "code": "8909061600",
@@ -300,6 +284,26 @@
     {
       "code": "9220421600",
       "name": "PLEKSİ A5 APPLE FISO"
+    },
+    {
+      "type": "header",
+      "name": "Enerji Etiketleri"
+    },
+    {
+      "code": "8908661600",
+      "name": "ENERJİ ETİKETİ STANDI"
+    },
+    {
+      "code": "9224131600",
+      "name": "PLEKSİ ENERJİ ETİKETİ VANTUZLU 85X170"
+    },
+    {
+      "code": "9245771600",
+      "name": "MIKNATISLI ENERJİ ETİKETLİK 102X201"
+    },
+    {
+      "code": "9224141600",
+      "name": "PLEKSİ ENERJİ ETİKETİ VANTUZLU 102X201"
     },
     {
       "type": "header",
