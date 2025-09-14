@@ -294,15 +294,12 @@ input:checked + .slider:before {
     .right-controls {
         width: 100%;
         display: flex;
-        gap: 8px;
+        gap: 8px; 
+        /* align-items: stretch; varsayılan olduğu için yazmaya gerek yok, bu sayede yükseklikleri eşitlenir */
     }
     .backup-controls > *,
     .right-controls > * {
-        flex-grow: 1;
-        flex-basis: 0; /* Eşit dağılım için eklendi */
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        flex: 1; /* Bu tek satır, elemanların genişliği eşit paylaşmasını ve esnemesini sağlar */
     }
     /* --- BİTİŞ --- */
 
