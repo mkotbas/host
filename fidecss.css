@@ -216,7 +216,7 @@ textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-r
 }
 .dropdown-menu.show {
     opacity: 1;
-    max-height: 100px; /* İçerikten daha büyük bir değer olmalı */
+    max-height: 100px;
     padding: 8px;
     margin-top: 5px;
 }
