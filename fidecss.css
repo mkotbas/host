@@ -56,11 +56,9 @@ button i, .btn-like-label i { margin-right: 8px; }
     padding: 10px;
     border: 1px solid var(--border);
     border-radius: 6px;
-    /* YENİ EKLENEN KOD BAŞLANGICI */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* YENİ EKLENEN KOD SONU */
 }
 .product-adder input[type="number"] { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
 .selected-product-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--light); border-radius: 8px; margin-bottom: 8px; }
@@ -300,13 +298,13 @@ input:checked + .slider:before {
     .manager-view-controls, .manager-main-actions { width: 100%; justify-content: center;}
     .manager-view-controls button, .manager-main-actions button { flex-grow: 1; justify-content: center; }
 
+    /* --- MOBİL ÜRÜN SEÇİM ALANI GÜNCELLEMESİ --- */
+    /* Önceki flex-wrap kuralı silindi ve bu daha net olan kural eklendi */
     .product-adder {
-        flex-wrap: wrap;
-    }
-    .product-adder select {
-        flex-basis: 100%;
+        flex-direction: column; /* Öğeleri dikey olarak (alt alta) sırala */
+        align-items: stretch;   /* Öğeleri konteyner genişliğine yay */
     }
     .product-adder input[type="number"] {
-        flex-grow: 1;
+        width: 100%; /* Adet kutusunun da tam genişlikte olmasını sağla */
     }
 }
