@@ -518,7 +518,8 @@
                         productOptions += `<optgroup label="${p.name}">`;
                         currentOptgroup = true;
                     } else {
-                        productOptions += `<option value="${p.id}">${p.code} - ${p.name}</option>`;
+                        // DEĞİŞİKLİK: value kısmında artık p.id yerine p.code kullanılıyor
+                        productOptions += `<option value="${p.code}">${p.code} - ${p.name}</option>`;
                     }
                 });
                 if (currentOptgroup) productOptions += `</optgroup>`;
@@ -560,25 +561,33 @@
             }
             saveFormState();
         }
-        function addProductToList(productId, quantity) {
+
+        // DEĞİŞİKLİK: Fonksiyon artık id yerine code ile çalışıyor
+        function addProductToList(productCode, quantity) {
             const select = document.getElementById('product-selector');
             const qtyInput = document.getElementById('product-qty');
-            const selectedProductId = productId || select.value;
+            const selectedProductCode = productCode || select.value;
             const selectedQty = quantity || qtyInput.value;
-            if (!selectedProductId || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.');
-            const product = productList.find(p => p.id === selectedProductId);
+            if (!selectedProductCode || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.');
+            
+            const product = productList.find(p => p.code === selectedProductCode);
+            if (!product) { console.error("Ürün bulunamadı: ", selectedProductCode); return; }
+
             const listContainer = document.getElementById('selected-products-list');
-            if (document.querySelector(`.selected-product-item[data-id="${product.id}"]`)) return alert('Bu ürün zaten listede.');
+            if (document.querySelector(`.selected-product-item[data-code="${product.code}"]`)) return alert('Bu ürün zaten listede.');
+            
             const unit = getUnitForProduct(product.name);
             const newItem = document.createElement('div');
             newItem.className = 'selected-product-item';
-            newItem.dataset.id = product.id;
+            newItem.dataset.code = product.code; // id yerine code
             newItem.dataset.qty = selectedQty;
             newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} ${unit}</b></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler." onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`;
             listContainer.appendChild(newItem);
-            if (!productId) { select.value = ''; qtyInput.value = '1'; }
+            
+            if (!productCode) { select.value = ''; qtyInput.value = '1'; }
             saveFormState();
         }
+
         function toggleCompleted(button) {
             const input = button.parentElement.querySelector('input[type="text"]');
             const isCompleted = input.classList.toggle('completed');
@@ -945,7 +954,8 @@
                     }
                 } else if (q.type === 'product_list') {
                     const productItemsHtml = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => {
-                        const product = productList.find(p => p.id === item.dataset.id);
+                        // DEĞİŞİKLİK: Artık ürünü id yerine code ile buluyoruz
+                        const product = productList.find(p => p.code === item.dataset.code);
                         if(product) { const unit = getUnitForProduct(product.name); return `<li>${product.code} ${product.name}: ${item.dataset.qty} ${unit}</li>`; }
                     }).filter(Boolean);
                     const pleksiItemsHtml = getCombinedInputs('fide15_pleksi').filter(item => !item.completed).map(item => `<li>${item.text}</li>`);
@@ -1044,7 +1054,10 @@
                     if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId);
                     else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId);
                     if (data.dynamicInputs) data.dynamicInputs.forEach(input => addDynamicInput(qId === '15' ? 'fide15_pleksi' : `fide${qId}`, input.text, input.completed));
-                    if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.id, prod.qty));
+                    
+                    // DEĞİŞİKLİK: Rapor yüklenirken artık id yerine code kullanılıyor
+                    if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty)); 
+                    
                     if (data.selectedPops) {
                         data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
                         checkExpiredPopCodes();
@@ -1076,7 +1089,8 @@
                 if (itemDiv) {
                     if (q.type === 'standard') questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`);
                     else if (q.type === 'product_list') {
-                        document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => questionData.selectedProducts.push({ id: item.dataset.id, qty: item.dataset.qty }));
+                        // DEĞİŞİKLİK: Rapor kaydedilirken artık id yerine code kullanılıyor
+                        document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => questionData.selectedProducts.push({ code: item.dataset.code, qty: item.dataset.qty }));
                         questionData.dynamicInputs = getDynamicInputsForSaving('fide15_pleksi');
                     } else if (q.type === 'pop_system') questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
                 }
@@ -1269,7 +1283,6 @@
                     <div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button></div>`;
                 managerList.appendChild(itemDiv);
 
-                // Soru tipi product_list ise ürün yöneticisini başlangıçta göster
                 if(q.type === 'product_list') {
                     toggleProductManager(itemDiv.querySelector('select'));
                 }
@@ -1290,11 +1303,28 @@
         }
 
         function renderProductManagerUI(container) {
+            const categories = productList.filter(p => p.type === 'header');
+            let categoryOptions = '<option value="__end">Ana Liste (Sona Ekle)</option>';
+            categories.forEach(cat => {
+                categoryOptions += `<option value="${cat.name}">${cat.name}</option>`;
+            });
+
             container.innerHTML = `
                 <h4><i class="fas fa-boxes"></i> Ürün Listesi Yöneticisi</h4>
                 <p class="product-manager-info">
                     <i class="fas fa-info-circle"></i> Bu liste tüm "product_list" tipi sorular için ortaktır. Burada yapacağınız değişiklikler tüm listeyi etkiler.
                 </p>
+                
+                <div class="bulk-add-container">
+                    <h5><i class="fas fa-paste"></i> Toplu Ürün Ekle (Kopyala-Yapıştır)</h5>
+                    <p class="bulk-add-info">Her satıra bir ürün gelecek şekilde yapıştırın. Sütunları (Stok Kodu, Ürün Adı) <strong>TAB</strong> veya <strong>virgül (,)</strong> ile ayırın.</p>
+                    <div class="bulk-add-controls">
+                        <select id="bulk-add-category-select">${categoryOptions}</select>
+                        <textarea id="bulk-product-input" placeholder="88001	Siyah T-Shirt\n88002	Mavi Kot Pantolon..."></textarea>
+                    </div>
+                    <button class="btn-success btn-sm" onclick="parseAndAddProducts()"><i class="fas fa-plus-circle"></i> Yapıştırılanları Listeye Ekle</button>
+                </div>
+
                 <div class="product-manager-actions">
                     <button class="btn-primary btn-sm" onclick="addCategoryRow(this.parentElement.nextElementSibling)"><i class="fas fa-tags"></i> Kategori Ekle</button>
                     <button class="btn-success btn-sm" onclick="addProductRow(this.parentElement.nextElementSibling)"><i class="fas fa-box"></i> Ürün Ekle</button>
@@ -1312,7 +1342,7 @@
             });
         }
         
-        function addCategoryRow(container, category = {}) {
+        function addCategoryRow(container, category = {}, targetElement = null) {
             const row = document.createElement('div');
             row.className = 'category-manager-row';
             row.dataset.type = 'category';
@@ -1321,20 +1351,80 @@
                 <input type="text" placeholder="Kategori Adı" value="${category.name || ''}">
                 <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
             `;
-            container.appendChild(row);
+            if (targetElement) {
+                container.insertBefore(row, targetElement.nextSibling);
+            } else {
+                container.appendChild(row);
+            }
         }
 
-        function addProductRow(container, product = {}) {
+        function addProductRow(container, product = {}, targetElement = null) {
             const row = document.createElement('div');
             row.className = 'product-manager-row';
             row.dataset.type = 'product';
             row.innerHTML = `
-                <input type="text" class="product-id" placeholder="ID (orn: urun001)" value="${product.id || ''}">
-                <input type="text" class="product-code" placeholder="Kod (orn: U-001)" value="${product.code || ''}">
+                <input type="text" class="product-code" placeholder="Stok Kodu" value="${product.code || ''}">
                 <input type="text" class="product-name" placeholder="Ürün Adı" value="${product.name || ''}">
                 <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
             `;
-            container.appendChild(row);
+            if (targetElement) {
+                container.insertBefore(row, targetElement.nextSibling);
+            } else {
+                container.appendChild(row);
+            }
+        }
+        
+        function parseAndAddProducts() {
+            const textarea = document.getElementById('bulk-product-input');
+            const editor = textarea.closest('.product-list-manager').querySelector('.product-list-editor');
+            const categorySelect = document.getElementById('bulk-add-category-select');
+            const selectedCategoryName = categorySelect.value;
+            const text = textarea.value.trim();
+            if (!text) return;
+
+            const lines = text.split('\n');
+            let addedCount = 0;
+            
+            let targetElement = null;
+            if (selectedCategoryName !== '__end') {
+                const allRows = editor.querySelectorAll('.category-manager-row, .product-manager-row');
+                for (let i = 0; i < allRows.length; i++) {
+                    const row = allRows[i];
+                    if (row.dataset.type === 'category' && row.querySelector('input').value === selectedCategoryName) {
+                        // Kategorinin altındaki son ürünü bul
+                        let lastProductInCat = row;
+                        for (let j = i + 1; j < allRows.length; j++) {
+                           if (allRows[j].dataset.type === 'category') break;
+                           lastProductInCat = allRows[j];
+                        }
+                        targetElement = lastProductInCat;
+                        break;
+                    }
+                }
+            }
+
+
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                const parts = line.split(/\t|,/); // TAB veya virgül ile ayır
+                if (parts.length === 2) {
+                    const product = {
+                        code: parts[0].trim(),
+                        name: parts[1].trim()
+                    };
+                    addProductRow(editor, product, targetElement);
+                    // Bir sonraki elemanın bir öncekinin altına eklenmesi için hedefi güncelle
+                    targetElement = editor.querySelector('.product-manager-row:last-of-type');
+                    addedCount++;
+                }
+            });
+
+            if (addedCount > 0) {
+                alert(`${addedCount} adet ürün başarıyla eklendi!`);
+                textarea.value = '';
+            } else {
+                alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu[TAB]Ürün Adı).");
+            }
         }
 
 
@@ -1474,16 +1564,13 @@
                         const name = row.querySelector('input').value.trim();
                         if (name) newProductList.push({ type: 'header', name });
                     } else if (row.dataset.type === 'product') {
-                        const id = row.querySelector('.product-id').value.trim();
                         const code = row.querySelector('.product-code').value.trim();
                         const name = row.querySelector('.product-name').value.trim();
-                        if (id && code && name) newProductList.push({ id, code, name });
+                        if (code && name) newProductList.push({ code, name });
                     }
                 });
             }
             
-            // Global productList değişkenini en güncel haliyle değiştir
-            // Eğer aktif bir product manager yoksa, mevcut listeyi koru
             if (newProductList.length > 0 || activeProductManager) {
                 productList = newProductList;
             }
@@ -1496,7 +1583,7 @@
             for (const item of items) {
                 if (item.classList.contains('to-be-deleted')) continue;
 
-                const id = parseInt(item.querySelectorAll('input[type="number"]')[0].value);
+                const id = parseInt(item.querySelectorAll('input[type="number"].manager-id-input')[0].value);
                 const title = item.querySelectorAll('input[type="text"]')[0].value.trim();
                 const type = item.querySelector('select').value;
                 const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
@@ -1521,7 +1608,7 @@
 
             const finalJsonData = {
                 questions: newQuestions,
-                productList: productList // Güncellenmiş ürün listesini buraya ekle
+                productList: productList
             };
             const dataStr = JSON.stringify(finalJsonData, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });

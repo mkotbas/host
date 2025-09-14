@@ -204,7 +204,7 @@ textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-r
     box-shadow: 0 0 0 2px rgba(0, 140, 186, 0.2);
 }
 
-/* --- YENİ EKLENEN ÜRÜN YÖNETİCİSİ STİLLERİ --- */
+/* --- Soru Yöneticisi - Ürün Listesi Editörü --- */
 .product-list-manager {
     margin-top: 20px;
     padding: 15px;
@@ -230,6 +230,8 @@ textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-r
     display: flex;
     gap: 10px;
     margin-bottom: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #cce9f5;
 }
 .product-list-editor {
     display: flex;
@@ -250,7 +252,7 @@ textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-r
 }
 .category-manager-row i { color: var(--primary); }
 .product-manager-row {
-    grid-template-columns: 1fr 1fr 2fr 40px;
+    grid-template-columns: 1fr 2fr 40px; /* ID alanı kaldırıldı */
     background-color: #fff;
     border: 1px solid var(--border);
 }
@@ -266,6 +268,40 @@ textarea { width: 100%; padding: 16px; border: 1px solid var(--border); border-r
 }
 .product-manager-row button i, .category-manager-row button i {
     margin: 0;
+}
+
+/* Toplu Ekleme Alanı Stilleri */
+.bulk-add-container {
+    padding: 15px;
+    background-color: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.bulk-add-container h5 { margin: 0 0 10px 0; }
+.bulk-add-info {
+    font-size: 12px;
+    color: var(--secondary);
+    margin-bottom: 10px;
+}
+.bulk-add-controls {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+#bulk-add-category-select {
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+.bulk-add-container textarea {
+    min-height: 100px;
+    resize: vertical;
+    margin-bottom: 0;
 }
 /* --- STİL BİTİŞ --- */
 
@@ -404,12 +440,11 @@ input:checked + .slider:before {
         max-height: 250px;
     }
 
-    /* Mobil için ürün yöneticisi düzenlemesi */
     .product-manager-row {
         grid-template-columns: 1fr;
     }
     .product-manager-row button {
-        grid-row: 4;
+        grid-row: 3;
     }
     .category-manager-row {
         grid-template-columns: 20px 1fr;
@@ -417,5 +452,8 @@ input:checked + .slider:before {
      .category-manager-row button {
         grid-column: 1 / span 2;
         margin-top: 5px;
+    }
+    .bulk-add-controls {
+        grid-template-columns: 1fr;
     }
 }
