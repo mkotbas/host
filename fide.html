@@ -32,7 +32,7 @@
                 </div>
             </div>
             <div class="right-controls">
-                <div id="connection-status-container" title="Bulut senkronizasyon durumunu görmek için tıklayın">
+                <div id="connection-status-container">
                     <div id="connection-status-switch" class="disconnected">
                         <div class="thumb"></div>
                     </div>
@@ -150,45 +150,6 @@
 
     </div>
 
-    <div id="cloud-status-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h2><i class="fas fa-cloud-upload-alt"></i> Anlık Bulut Durumu</h2>
-            <div class="status-grid">
-                <div class="status-item">
-                    <span class="status-label">Genel Bağlantı:</span>
-                    <span id="status-connection" class="status-value loading">Yükleniyor...</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">DiDe Excel Dosyası:</span>
-                    <span id="status-dide-file" class="status-value loading">Yükleniyor...</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">DiDe Yüklenme Tarihi:</span>
-                    <span id="status-dide-timestamp" class="status-value loading">Yükleniyor...</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">FiDe Excel Dosyası:</span>
-                    <span id="status-fide-file" class="status-value loading">Yükleniyor...</span>
-                </div>
-                 <div class="status-item">
-                    <span class="status-label">FiDe Yüklenme Tarihi:</span>
-                    <span id="status-fide-timestamp" class="status-value loading">Yükleniyor...</span>
-                </div>
-                <hr>
-                 <div class="status-item">
-                    <span class="status-label">Mevcut Rapor Kaydı:</span>
-                    <span id="status-current-report" class="status-value loading">Yükleniyor...</span>
-                </div>
-                 <div class="status-item">
-                    <span class="status-label">Buluttaki Toplam Rapor:</span>
-                    <span id="status-total-reports" class="status-value loading">Yükleniyor...</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
@@ -225,7 +186,7 @@
 
         async function initializeApp() {
             await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-            auth.onAuthStateChanged(async user => {
+            auth.onAuthStateChanged(async user => { // async eklendi
                 const loginToggleBtn = document.getElementById('login-toggle-btn');
                 const logoutBtn = document.getElementById('logout-btn');
                 const loginPopup = document.getElementById('login-popup');
@@ -241,6 +202,7 @@
                     if (uploadBtn) uploadBtn.disabled = true;
                 }
                 updateConnectionIndicator();
+                // GÜNCELLEME: Kullanıcı durumu değiştiğinde Excel verilerini yeniden yükle
                 await loadInitialData();
                 setupEventListeners();
                 updateFormInteractivity(selectedStore !== null);
@@ -272,7 +234,8 @@
                     updateConnectionIndicator();
                 });
             }
-            
+
+            // GÜNCELLEME: Veri yükleme mantığı değişti. Önce bulut, sonra yerel.
             await loadExcelData();
 
             if (expiredExcelFiles.length > 0) {
@@ -286,12 +249,14 @@
             restoreLastSession();
         }
         
+        // YENİ FONKSİYON: Excel verilerini buluttan veya yerelden yükler
         async function loadExcelData() {
             const user = auth.currentUser;
             let dideLoaded = false;
             let fideLoaded = false;
 
             if (user && database) {
+                // DiDe verisini buluttan çekmeyi dene
                 const dideRef = database.ref('excelData/dide');
                 const dideSnapshot = await dideRef.once('value');
                 if (dideSnapshot.exists()) {
@@ -304,6 +269,7 @@
                     }
                 }
 
+                // FiDe verisini buluttan çekmeyi dene
                 const fideRef = database.ref('excelData/fide');
                 const fideSnapshot = await fideRef.once('value');
                 if (fideSnapshot.exists()) {
@@ -317,6 +283,7 @@
                 }
             }
 
+            // Eğer buluttan yüklenemediyse, yerel hafızayı kontrol et
             if (!dideLoaded) loadDideDataFromStorage();
             if (!fideLoaded) loadFideDataFromStorage();
         }
@@ -350,13 +317,9 @@
         }
 
         function setupEventListeners() {
+            // Event listener'lar artık sadece bir kere atanmalı, initializeApp içinde çağrılacak.
             if (document.body.dataset.listenersAttached) return;
             document.body.dataset.listenersAttached = 'true';
-
-            document.getElementById('connection-status-container').addEventListener('click', showCloudStatus);
-            const modal = document.getElementById('cloud-status-modal');
-            modal.querySelector('.close-btn').addEventListener('click', () => modal.style.display = 'none');
-            window.addEventListener('click', (event) => { if (event.target == modal) { modal.style.display = 'none'; } });
 
             document.getElementById('excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'dide'));
             document.getElementById('fide-excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'fide'));
@@ -535,116 +498,6 @@
             });
         }
         
-        function formatTimestamp(ts) {
-            if (!ts) return '-';
-            const date = new Date(ts);
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-            return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
-        }
-
-        async function showCloudStatus() {
-            const modal = document.getElementById('cloud-status-modal');
-            modal.style.display = 'block';
-
-            const statusConnection = document.getElementById('status-connection');
-            const statusDideFile = document.getElementById('status-dide-file');
-            const statusDideTs = document.getElementById('status-dide-timestamp');
-            const statusFideFile = document.getElementById('status-fide-file');
-            const statusFideTs = document.getElementById('status-fide-timestamp');
-            const statusCurrentReport = document.getElementById('status-current-report');
-            const statusTotalReports = document.getElementById('status-total-reports');
-            
-            const allFields = [statusConnection, statusDideFile, statusDideTs, statusFideFile, statusFideTs, statusCurrentReport, statusTotalReports];
-            allFields.forEach(field => {
-                field.textContent = 'Yükleniyor...';
-                field.className = 'status-value loading';
-            });
-
-            const user = auth.currentUser;
-            const isConnected = isFirebaseConnected && user;
-
-            statusConnection.textContent = isConnected ? 'Bağlı' : 'Bağlı Değil';
-            statusConnection.classList.toggle('success', isConnected);
-            statusConnection.classList.toggle('error', !isConnected);
-
-            if (!isConnected) {
-                allFields.slice(1).forEach(field => {
-                    field.textContent = 'Giriş yapılmadı';
-                    field.className = 'status-value error';
-                });
-                return;
-            }
-
-            try {
-                const dideRef = database.ref('excelData/dide');
-                const dideSnapshot = await dideRef.once('value');
-                if (dideSnapshot.exists()) {
-                    const data = dideSnapshot.val();
-                    statusDideFile.textContent = data.filename || 'İsimsiz Dosya';
-                    statusDideFile.className = 'status-value success';
-                    statusDideTs.textContent = formatTimestamp(data.timestamp);
-                    statusDideTs.className = 'status-value';
-                } else {
-                    statusDideFile.textContent = 'Bulutta veri yok';
-                    statusDideFile.className = 'status-value not-found';
-                    statusDideTs.textContent = '-';
-                    statusDideTs.className = 'status-value not-found';
-                }
-            } catch(e) { statusDideFile.textContent = 'Hata oluştu'; statusDideFile.className = 'status-value error'; }
-
-            try {
-                const fideRef = database.ref('excelData/fide');
-                const fideSnapshot = await fideRef.once('value');
-                if (fideSnapshot.exists()) {
-                    const data = fideSnapshot.val();
-                    statusFideFile.textContent = data.filename || 'İsimsiz Dosya';
-                    statusFideFile.className = 'status-value success';
-                    statusFideTs.textContent = formatTimestamp(data.timestamp);
-                    statusFideTs.className = 'status-value';
-                } else {
-                    statusFideFile.textContent = 'Bulutta veri yok';
-                    statusFideFile.className = 'status-value not-found';
-                    statusFideTs.textContent = '-';
-                    statusFideTs.className = 'status-value not-found';
-                }
-            } catch(e) { statusFideFile.textContent = 'Hata oluştu'; statusFideFile.className = 'status-value error'; }
-
-            if (selectedStore) {
-                 try {
-                    const reportRef = database.ref(`allFideReports/store_${selectedStore.bayiKodu}`);
-                    const reportSnapshot = await reportRef.once('value');
-                    if(reportSnapshot.exists()){
-                        const data = reportSnapshot.val();
-                        statusCurrentReport.textContent = `En son ${formatTimestamp(data.timestamp)} tarihinde kaydedildi.`;
-                        statusCurrentReport.className = 'status-value';
-                    } else {
-                        statusCurrentReport.textContent = 'Bu bayi için bulutta kayıt yok';
-                        statusCurrentReport.className = 'status-value not-found';
-                    }
-                } catch(e) { statusCurrentReport.textContent = 'Hata oluştu'; statusCurrentReport.className = 'status-value error'; }
-            } else {
-                statusCurrentReport.textContent = 'Henüz bayi seçilmedi';
-                statusCurrentReport.className = 'status-value not-found';
-            }
-
-            try {
-                const allReportsRef = database.ref('allFideReports');
-                const allReportsSnapshot = await allReportsRef.once('value');
-                if (allReportsSnapshot.exists()) {
-                    statusTotalReports.textContent = `${allReportsSnapshot.numChildren()} adet`;
-                    statusTotalReports.className = 'status-value';
-                } else {
-                    statusTotalReports.textContent = '0 adet';
-                    statusTotalReports.className = 'status-value';
-                }
-            } catch(e) { statusTotalReports.textContent = 'Hata oluştu'; statusTotalReports.className = 'status-value error'; }
-        }
-
         function uploadLocalBackupToCloud() {
             if (!auth.currentUser) { alert("Bu işlem için önce sisteme giriş yapmalısınız."); return; }
             const localDataString = localStorage.getItem('allFideReports');
@@ -700,10 +553,12 @@
             return 'Paket';
         }
         function resetForm() { document.getElementById('form-content').innerHTML = ''; buildForm(); }
+        
         function generateQuestionHtml(q) {
             let questionActionsHTML = '';
             let questionContentHTML = '';
             let isArchivedClass = q.isArchived ? 'archived-item' : ''; 
+
             if (q.type === 'standard') {
                 questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
                 let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`).join('');
@@ -729,6 +584,7 @@
             }
             return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
         }
+        
         function buildForm() {
             const formContainer = document.getElementById('form-content');
             formContainer.innerHTML = '';
@@ -759,16 +615,20 @@
             }
             saveFormState();
         }
+
         function addProductToList(productCode, quantity) {
             const select = document.getElementById('product-selector');
             const qtyInput = document.getElementById('product-qty');
             const selectedProductCode = productCode || select.value;
             const selectedQty = quantity || qtyInput.value;
             if (!selectedProductCode || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.');
+            
             const product = productList.find(p => p.code === selectedProductCode);
             if (!product) { console.error("Ürün bulunamadı: ", selectedProductCode); return; }
+
             const listContainer = document.getElementById('selected-products-list');
             if (document.querySelector(`.selected-product-item[data-code="${product.code}"]`)) return alert('Bu ürün zaten listede.');
+            
             const unit = getUnitForProduct(product.name);
             const newItem = document.createElement('div');
             newItem.className = 'selected-product-item';
@@ -776,9 +636,11 @@
             newItem.dataset.qty = selectedQty;
             newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} ${unit}</b></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler." onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`;
             listContainer.appendChild(newItem);
+            
             if (!productCode) { select.value = ''; qtyInput.value = '1'; }
             saveFormState();
         }
+
         function toggleCompleted(button) {
             const input = button.parentElement.querySelector('input[type="text"]');
             const isCompleted = input.classList.toggle('completed');
@@ -986,6 +848,7 @@
             if (saveToStorage) {
                 const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
                 localStorage.setItem('didePersistenceData', JSON.stringify(persistenceData));
+                // GÜNCELLEME: Firebase'e de kaydet
                 if (auth.currentUser && database) {
                     database.ref('excelData/dide').set(persistenceData);
                 }
@@ -1037,6 +900,7 @@
             if (saveToStorage) {
                 const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
                 localStorage.setItem('fidePersistenceData', JSON.stringify(persistenceData));
+                 // GÜNCELLEME: Firebase'e de kaydet
                 if (auth.currentUser && database) {
                     database.ref('excelData/fide').set(persistenceData);
                 }
@@ -1227,9 +1091,12 @@
                     searchInput.value = `${selectedStore.bayiKodu} - ${shortBayiAdi}`;
                     document.getElementById('store-list').style.display = 'none';
                 }
+                
                 const formContainer = document.getElementById('form-content');
+
                 for (const qId in reportData.questions_status) {
                     let questionItem = document.getElementById(`fide-item-${qId}`);
+
                     if (!questionItem) {
                         const archivedQuestion = fideQuestions.find(q => String(q.id) === String(qId));
                         if (archivedQuestion && archivedQuestion.isArchived) {
@@ -1238,14 +1105,18 @@
                             questionItem = document.getElementById(`fide-item-${qId}`);
                         }
                     }
+                    
                     if (!questionItem) continue;
+
                     const data = reportData.questions_status[qId];
                     const completeButton = questionItem.querySelector('.fide-actions .status-btn');
                     const removeButton = questionItem.querySelector('.fide-actions .remove-btn');
                     if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId);
                     else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId);
                     if (data.dynamicInputs) data.dynamicInputs.forEach(input => addDynamicInput(qId === '15' ? 'fide15_pleksi' : `fide${qId}`, input.text, input.completed));
+                    
                     if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty)); 
+                    
                     if (data.selectedPops) {
                         data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
                         checkExpiredPopCodes();
@@ -1269,8 +1140,11 @@
                 const isRemoved = itemDiv ? itemDiv.classList.contains('question-removed') : false;
                 const titleContainer = itemDiv ? itemDiv.querySelector('.fide-title-container') : null;
                 const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
+                
                 if (!itemDiv && q.isArchived) { return; }
+
                 const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
+
                 if (itemDiv) {
                     if (q.type === 'standard') questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`);
                     else if (q.type === 'product_list') {
@@ -1384,22 +1258,35 @@
                 }
             }
         }
+        
+        // --- YENİ ve GÜNCELLENMİŞ Soru Yöneticisi Fonksiyonları ---
+
         function formatText(buttonEl, command) {
             const editor = buttonEl.closest('.manager-item').querySelector('.editable-textarea');
             editor.focus();
+
             if (command === 'link') {
                 const selection = window.getSelection();
                 if (!selection.rangeCount) return;
                 const anchorNode = selection.anchorNode;
                 const linkElement = anchorNode.nodeType === 3 ? anchorNode.parentNode.closest('a') : anchorNode.closest('a');
+
                 if (linkElement) {
                     const currentUrl = linkElement.getAttribute('href');
                     const newUrl = prompt("Köprüyü düzenleyin veya kaldırmak için bu alanı boş bırakın:", currentUrl);
-                    if (newUrl === null) { return; } 
-                    else if (newUrl === "") { linkElement.outerHTML = linkElement.innerHTML; } 
-                    else { linkElement.href = newUrl; }
+                    
+                    if (newUrl === null) {
+                        return;
+                    } else if (newUrl === "") {
+                        linkElement.outerHTML = linkElement.innerHTML;
+                    } else {
+                        linkElement.href = newUrl;
+                    }
                 } else {
-                     if (selection.toString().length === 0) { alert("Lütfen köprüye dönüştürmek istediğiniz metni seçin."); return; }
+                     if (selection.toString().length === 0) {
+                        alert("Lütfen köprüye dönüştürmek istediğiniz metni seçin.");
+                        return;
+                    }
                     const url = prompt("Lütfen köprü için URL girin:", "https://");
                     if (url) {
                         document.execCommand('createLink', false, url);
@@ -1407,8 +1294,11 @@
                         if (newLink) newLink.target = '_blank';
                     }
                 }
-            } else { document.execCommand(command, false, null); }
+            } else {
+                 document.execCommand(command, false, null);
+            }
         }
+
         function renderQuestionManager() {
             const managerList = document.getElementById('manager-list');
             managerList.innerHTML = '';
@@ -1420,12 +1310,22 @@
                 const typeOptions = ['standard', 'product_list', 'pop_system'];
                 const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join('');
                 const isArchivedChecked = q.isArchived ? 'checked' : '';
+
                 itemDiv.innerHTML = `
                     <div class="manager-item-grid">
-                        <div><label>Soru ID</label><input type="number" class="manager-id-input" value="${q.id}" disabled title="ID değiştirmek veri bütünlüğünü bozabilir. Düzenlemek için şifre gerekir."></div>
+                        <div>
+                            <label>Soru ID</label>
+                            <input type="number" class="manager-id-input" value="${q.id}" disabled title="ID değiştirmek veri bütünlüğünü bozabilir. Düzenlemek için şifre gerekir.">
+                        </div>
                         <div><label>Soru Başlığı</label><input type="text" value="${q.title}"></div>
                         <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)">${selectOptionsHTML}</select></div>
-                        <div class="archive-switch-container"><label>Arşivle</label><label class="switch"><input type="checkbox" class="archive-checkbox" ${isArchivedChecked} onchange="filterManagerView()"><span class="slider"></span></label></div>
+                        <div class="archive-switch-container">
+                            <label>Arşivle</label>
+                            <label class="switch">
+                                <input type="checkbox" class="archive-checkbox" ${isArchivedChecked} onchange="filterManagerView()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
                     </div>
                     <div>
                         <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
@@ -1440,10 +1340,14 @@
                     <div class="product-list-manager" style="display: none;"></div>
                     <div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button></div>`;
                 managerList.appendChild(itemDiv);
-                if(q.type === 'product_list') { toggleProductManager(itemDiv.querySelector('select')); }
+
+                if(q.type === 'product_list') {
+                    toggleProductManager(itemDiv.querySelector('select'));
+                }
             });
             filterManagerView(); 
         }
+
         function toggleProductManager(selectElement) {
             const managerItem = selectElement.closest('.manager-item');
             const productManagerContainer = managerItem.querySelector('.product-list-manager');
@@ -1455,13 +1359,20 @@
                 productManagerContainer.innerHTML = '';
             }
         }
+
         function renderProductManagerUI(container) {
             const categories = productList.filter(p => p.type === 'header');
             let categoryOptions = '<option value="__end">Ana Liste (Sona Ekle)</option>';
-            categories.forEach(cat => { categoryOptions += `<option value="${cat.name}">${cat.name}</option>`; });
+            categories.forEach(cat => {
+                categoryOptions += `<option value="${cat.name}">${cat.name}</option>`;
+            });
+
             container.innerHTML = `
                 <h4><i class="fas fa-boxes"></i> Ürün Listesi Yöneticisi</h4>
-                <p class="product-manager-info"><i class="fas fa-info-circle"></i> Bu liste tüm "product_list" tipi sorular için ortaktır. Değişiklikleriniz tüm listeyi etkiler.</p>
+                <p class="product-manager-info">
+                    <i class="fas fa-info-circle"></i> Bu liste tüm "product_list" tipi sorular için ortaktır. Değişiklikleriniz tüm listeyi etkiler.
+                </p>
+                
                 <div class="bulk-add-container">
                     <h5><i class="fas fa-paste"></i> Toplu Ürün Ekle</h5>
                     <p class="bulk-add-info">Her satıra bir ürün gelecek şekilde yapıştırın. Stok Kodu ile Ürün Adı arasına bir <strong>BOŞLUK</strong> bırakmanız yeterlidir (Örn: 123456 Enerji Etiketi).</p>
@@ -1471,21 +1382,31 @@
                     </div>
                     <button class="btn-success btn-sm" onclick="parseAndAddProducts()"><i class="fas fa-plus-circle"></i> Yapıştırılanları Listeye Ekle</button>
                 </div>
-                <button id="toggle-detailed-editor-btn" class="btn-sm" onclick="toggleDetailedEditor(this)"><i class="fas fa-edit"></i> Detaylı Liste Editörünü Göster</button>
+
+                <button id="toggle-detailed-editor-btn" class="btn-sm" onclick="toggleDetailedEditor(this)">
+                    <i class="fas fa-edit"></i> Detaylı Liste Editörünü Göster
+                </button>
+
                 <div id="detailed-editor-panel">
                     <div class="product-manager-actions">
                         <button class="btn-primary btn-sm" onclick="addCategoryRow(this.closest('#detailed-editor-panel').querySelector('.product-list-editor'))"><i class="fas fa-tags"></i> Kategori Ekle</button>
                         <button class="btn-success btn-sm" onclick="addProductRow(this.closest('#detailed-editor-panel').querySelector('.product-list-editor'))"><i class="fas fa-box"></i> Ürün Ekle</button>
                     </div>
                     <div class="product-list-editor"></div>
-                </div>`;
+                </div>
+            `;
+            
             const editor = container.querySelector('.product-list-editor');
             productList.forEach(item => {
-                if(item.type === 'header') { addCategoryRow(editor, item); } 
-                else { addProductRow(editor, item); }
+                if(item.type === 'header') {
+                    addCategoryRow(editor, item);
+                } else {
+                    addProductRow(editor, item);
+                }
             });
              setupProductManagerDragDrop(editor);
         }
+        
         function toggleDetailedEditor(button) {
             const panel = document.getElementById('detailed-editor-panel');
             panel.classList.toggle('open');
@@ -1495,21 +1416,26 @@
                 button.innerHTML = '<i class="fas fa-edit"></i> Detaylı Liste Editörünü Göster';
             }
         }
+        
         function parseAndAddProducts() {
             const container = document.querySelector('.product-list-manager:not([style*="display: none"])');
             if (!container) return; 
+
             const textarea = container.querySelector('#bulk-product-input');
             const editor = container.querySelector('.product-list-editor');
             const categorySelect = container.querySelector('#bulk-add-category-select');
             const selectedCategoryName = categorySelect.value;
             const text = textarea.value.trim();
             if (!text) return;
+
             const lines = text.split('\n');
             let addedCount = 0;
+            
             let targetElement = null;
             if (selectedCategoryName !== '__end') {
                 const allRows = Array.from(editor.querySelectorAll('.category-manager-row, .product-manager-row'));
                 const categoryIndex = allRows.findIndex(row => row.dataset.type === 'category' && row.querySelector('input').value === selectedCategoryName);
+
                 if (categoryIndex > -1) {
                     targetElement = allRows[categoryIndex]; 
                     for (let i = categoryIndex + 1; i < allRows.length; i++) {
@@ -1518,12 +1444,19 @@
                     }
                 }
             }
+
             lines.forEach(line => {
                 const trimmedLine = line.trim();
                 if (!trimmedLine) return;
+
                 const firstSpaceIndex = trimmedLine.indexOf(' ');
+
                 if (firstSpaceIndex > 0 && firstSpaceIndex < trimmedLine.length - 1) {
-                    const product = { code: trimmedLine.substring(0, firstSpaceIndex).trim(), name: trimmedLine.substring(firstSpaceIndex + 1).trim() };
+                    const product = {
+                        code: trimmedLine.substring(0, firstSpaceIndex).trim(),
+                        name: trimmedLine.substring(firstSpaceIndex + 1).trim()
+                    };
+                    
                     if (product.code && product.name) {
                         const newRow = addProductRow(editor, product, targetElement);
                         targetElement = newRow; 
@@ -1531,75 +1464,120 @@
                     }
                 }
             });
+
             if (addedCount > 0) {
                 alert(`${addedCount} adet ürün başarıyla eklendi!`);
                 textarea.value = '';
                 const panel = document.getElementById('detailed-editor-panel');
-                if (panel && !panel.classList.contains('open')) { document.getElementById('toggle-detailed-editor-btn').click(); }
-            } else { alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu BOŞLUK Ürün Adı)."); }
+                if (panel && !panel.classList.contains('open')) {
+                    document.getElementById('toggle-detailed-editor-btn').click();
+                }
+            } else {
+                alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu BOŞLUK Ürün Adı).");
+            }
         }
+
         function addCategoryRow(container, category = {}, targetElement = null) {
             const row = document.createElement('div');
             row.className = 'category-manager-row';
             row.dataset.type = 'category';
             row.draggable = true;
-            row.innerHTML = `<i class="fas fa-grip-vertical drag-handle" title="Sıralamak için sürükleyin"></i><i class="fas fa-tag category-icon"></i><input type="text" placeholder="Kategori Adı" value="${category.name || ''}"><button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>`;
-            if (targetElement) { container.insertBefore(row, targetElement.nextSibling); } 
-            else { container.appendChild(row); }
+            row.innerHTML = `
+                <i class="fas fa-grip-vertical drag-handle" title="Sıralamak için sürükleyin"></i>
+                <i class="fas fa-tag category-icon"></i>
+                <input type="text" placeholder="Kategori Adı" value="${category.name || ''}">
+                <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+            `;
+            if (targetElement) {
+                container.insertBefore(row, targetElement.nextSibling);
+            } else {
+                container.appendChild(row);
+            }
             return row;
         }
+
         function addProductRow(container, product = {}, targetElement = null) {
             const row = document.createElement('div');
             row.className = 'product-manager-row';
             row.dataset.type = 'product';
             row.draggable = true;
-            row.innerHTML = `<i class="fas fa-grip-vertical drag-handle" title="Sıralamak için sürükleyin"></i><input type="text" class="product-code" placeholder="Stok Kodu" value="${product.code || ''}"><input type="text" class="product-name" placeholder="Ürün Adı" value="${product.name || ''}"><button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>`;
-            if (targetElement) { container.insertBefore(row, targetElement.nextSibling); } 
-            else { container.appendChild(row); }
+            row.innerHTML = `
+                <i class="fas fa-grip-vertical drag-handle" title="Sıralamak için sürükleyin"></i>
+                <input type="text" class="product-code" placeholder="Stok Kodu" value="${product.code || ''}">
+                <input type="text" class="product-name" placeholder="Ürün Adı" value="${product.name || ''}">
+                <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+            `;
+            
+            if (targetElement) {
+                container.insertBefore(row, targetElement.nextSibling);
+            } else {
+                container.appendChild(row);
+            }
             return row;
         }
+        
+        // YENİ: Sürükle-Bırak Fonksiyonları
         function setupProductManagerDragDrop(container) {
             let draggingElement = null;
+
             container.addEventListener('dragstart', e => {
                 draggingElement = e.target;
-                setTimeout(() => { e.target.classList.add('dragging'); }, 0);
+                // Tarayıcının sürükleme gölgesini daha hızlı oluşturması için kısa bir gecikme
+                setTimeout(() => {
+                    e.target.classList.add('dragging');
+                }, 0);
             });
+
             container.addEventListener('dragend', e => {
                 if (draggingElement) {
                     draggingElement.classList.remove('dragging');
                     draggingElement = null;
                 }
             });
+
             container.addEventListener('dragover', e => {
                 e.preventDefault();
                 const afterElement = getDragAfterElement(container, e.clientY);
                 const currentlyDragged = document.querySelector('.dragging');
                 if (currentlyDragged) {
-                    if (afterElement == null) { container.appendChild(currentlyDragged); } 
-                    else { container.insertBefore(currentlyDragged, afterElement); }
+                    if (afterElement == null) {
+                        container.appendChild(currentlyDragged);
+                    } else {
+                        container.insertBefore(currentlyDragged, afterElement);
+                    }
                 }
             });
+
             function getDragAfterElement(container, y) {
                 const draggableElements = [...container.querySelectorAll('[draggable="true"]:not(.dragging)')];
+
                 return draggableElements.reduce((closest, child) => {
                     const box = child.getBoundingClientRect();
                     const offset = y - box.top - box.height / 2;
-                    if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
-                    else { return closest; }
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
                 }, { offset: Number.NEGATIVE_INFINITY }).element;
             }
         }
+
+
         function filterManagerView() {
             const viewActiveBtn = document.getElementById('view-active-btn');
             const viewArchivedBtn = document.getElementById('view-archived-btn');
             const addNewBtn = document.getElementById('add-new-question-btn');
             const deleteAllArchivedBtn = document.getElementById('delete-all-archived-btn');
             const restoreAllArchivedBtn = document.getElementById('restore-all-archived-btn');
+
             viewActiveBtn.classList.toggle('active', currentManagerView === 'active');
             viewArchivedBtn.classList.toggle('active', currentManagerView === 'archived');
+            
             addNewBtn.style.display = currentManagerView === 'active' ? 'inline-flex' : 'none';
             deleteAllArchivedBtn.style.display = currentManagerView === 'archived' ? 'inline-flex' : 'none';
             restoreAllArchivedBtn.style.display = currentManagerView === 'archived' ? 'inline-flex' : 'none';
+
             const items = document.querySelectorAll('#manager-list .manager-item');
             let visibleItemCount = 0;
             items.forEach(item => {
@@ -1608,26 +1586,41 @@
                 item.classList.toggle('hidden-question', !shouldBeVisible);
                 if(shouldBeVisible) visibleItemCount++;
             });
+
             if (currentManagerView === 'archived') {
                 deleteAllArchivedBtn.disabled = visibleItemCount === 0;
                 restoreAllArchivedBtn.disabled = visibleItemCount === 0;
             }
         }
+
         function addNewQuestionUI() {
-            if (currentManagerView !== 'active') { alert("Yeni soru eklemek için 'Aktif Sorular' görünümünde olmalısınız."); return; }
+            if (currentManagerView !== 'active') {
+                alert("Yeni soru eklemek için 'Aktif Sorular' görünümünde olmalısınız.");
+                return;
+            }
             const managerList = document.getElementById('manager-list');
             const existingIds = Array.from(managerList.querySelectorAll('.manager-item')).map(item => parseInt(item.querySelector('.manager-id-input').value));
             const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+            
             const itemDiv = document.createElement('div');
             itemDiv.className = 'manager-item';
             itemDiv.style.backgroundColor = '#dcfce7';
             itemDiv.dataset.id = newId;
             itemDiv.innerHTML = `
                 <div class="manager-item-grid">
-                    <div><label>Soru ID</label><input type="number" class="manager-id-input" value="${newId}"></div>
+                    <div>
+                        <label>Soru ID</label>
+                        <input type="number" class="manager-id-input" value="${newId}">
+                    </div>
                     <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
                     <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
-                    <div class="archive-switch-container"><label>Arşivle</label><label class="switch"><input type="checkbox" class="archive-checkbox" onchange="filterManagerView()"><span class="slider"></span></label></div>
+                    <div class="archive-switch-container">
+                        <label>Arşivle</label>
+                        <label class="switch">
+                            <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
                 <div>
                     <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
@@ -1636,16 +1629,21 @@
                        <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
                        <button onclick="formatText(this, 'underline')" title="Altı Çizili"><i class="fas fa-underline"></i></button>
                        <button onclick="formatText(this, 'link')" title="Köprü Ekle/Düzenle/Kaldır"><i class="fas fa-link"></i></button>
-                    </div><div class="editable-textarea" contenteditable="true"></div>
+                    </div>
+                    <div class="editable-textarea" contenteditable="true"></div>
                 </div>
                 <div class="product-list-manager" style="display: none;"></div>
                 <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
             managerList.appendChild(itemDiv);
             itemDiv.querySelector('input[type="text"]').focus();
         }
+        
         function restoreAllArchivedQuestions() {
             const itemsToRestore = document.querySelectorAll('#manager-list .manager-item:not(.hidden-question)');
-            if (itemsToRestore.length === 0) { alert("Aktif edilecek arşivlenmiş soru bulunamadı."); return; }
+            if (itemsToRestore.length === 0) {
+                alert("Aktif edilecek arşivlenmiş soru bulunamadı.");
+                return;
+            }
             if (confirm(`Arşivdeki ${itemsToRestore.length} sorunun tümünü aktif hale getirmek istediğinizden emin misiniz?`)) {
                 itemsToRestore.forEach(item => {
                     const checkbox = item.querySelector('.archive-checkbox');
@@ -1655,32 +1653,45 @@
                 alert("Arşivlenmiş tüm sorular aktif hale getirildi. Değişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna tıklayın.");
             }
         }
+        
         function deleteAllArchivedQuestions() {
             const itemsToDelete = document.querySelectorAll('#manager-list .manager-item:not(.hidden-question)');
-            if (itemsToDelete.length === 0) { alert("Silinecek arşivlenmiş soru bulunamadı."); return; }
+            if (itemsToDelete.length === 0) {
+                alert("Silinecek arşivlenmiş soru bulunamadı.");
+                return;
+            }
             if (confirm(`Arşivdeki ${itemsToDelete.length} sorunun tümünü kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
                 itemsToDelete.forEach(item => {
                      item.style.transition = 'opacity 0.5s ease';
                     item.style.opacity = '0';
-                    setTimeout(() => { item.style.display = 'none'; item.classList.add('to-be-deleted'); }, 500);
+                    setTimeout(() => {
+                        item.style.display = 'none';
+                        item.classList.add('to-be-deleted');
+                    }, 500);
                 });
                  document.getElementById('delete-all-archived-btn').disabled = true;
                  alert("Arşivlenmiş sorular silinmek üzere işaretlendi. Değişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna tıklayın.");
             }
         }
+
         function deleteQuestionUI(id) {
             if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
                 const itemToDelete = document.querySelector(`.manager-item[data-id="${id}"]`);
                 if(itemToDelete) {
                     itemToDelete.style.transition = 'opacity 0.5s ease';
                     itemToDelete.style.opacity = '0';
-                    setTimeout(() => { itemToDelete.style.display = 'none'; itemToDelete.classList.add('to-be-deleted'); }, 500);
+                    setTimeout(() => {
+                        itemToDelete.style.display = 'none';
+                        itemToDelete.classList.add('to-be-deleted');
+                    }, 500);
                 }
             }
         }
+        
         function saveQuestions() {
             const newProductList = [];
             const activeProductManager = document.querySelector('.product-list-manager:not([style*="display: none"])');
+            
             if (activeProductManager) {
                 const rows = activeProductManager.querySelectorAll('.category-manager-row, .product-manager-row');
                 rows.forEach(row => {
@@ -1694,24 +1705,33 @@
                     }
                 });
             }
-            if (newProductList.length > 0 || activeProductManager) { productList = newProductList; }
+            
+            if (newProductList.length > 0 || activeProductManager) {
+                productList = newProductList;
+            }
+
             const newQuestions = [];
             const ids = new Set();
             const items = document.querySelectorAll('#manager-list .manager-item');
+            
             for (const item of items) {
                 if (item.classList.contains('to-be-deleted')) continue;
+
                 const id = parseInt(item.querySelector('.manager-id-input').value);
                 const title = item.querySelector('input[type="text"]').value.trim();
                 const type = item.querySelector('select').value;
                 const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
                 const isArchived = item.querySelector('.archive-checkbox').checked;
+
                 if (!id && id !== 0 || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
                 if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılamaz.`); return; }
                 ids.add(id);
+
                 const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
                 const newQuestion = { id, title, type };
                 if (staticItems.length > 0 && type !== 'product_list') newQuestion.staticItems = staticItems;
                 if (isArchived) newQuestion.isArchived = true;
+
                 if (type === 'pop_system') {
                     const originalPopQuestion = fideQuestions.find(q => q.type === 'pop_system');
                     newQuestion.popCodes = popCodes || (originalPopQuestion ? originalPopQuestion.popCodes : []);
@@ -1719,7 +1739,11 @@
                 }
                 newQuestions.push(newQuestion);
             }
-            const finalJsonData = { questions: newQuestions, productList: productList };
+
+            const finalJsonData = {
+                questions: newQuestions,
+                productList: productList
+            };
             const dataStr = JSON.stringify(finalJsonData, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -1730,13 +1754,25 @@
             URL.revokeObjectURL(url);
             alert("Güncellenmiş sorularınız ve ürün listeniz 'fide_soru_listesi.json' olarak indirildi.\n\nLÜTFEN BU DOSYAYI ESKİSİYLE DEĞİŞTİRİP SAYFAYI YENİLEYİN.");
         }
+
+
         function updateFormInteractivity(enable) {
             const formContent = document.getElementById('form-content');
             if (!formContent) return;
-            const buttons = formContent.querySelectorAll('.add-item-btn, .status-btn, .remove-btn, .delete-bar, .delete-item-btn, .product-adder button');
-            const inputs = formContent.querySelectorAll('#product-selector, #product-qty');
-            buttons.forEach(btn => { btn.disabled = !enable; });
-            inputs.forEach(input => { input.disabled = !enable; });
+
+            const buttons = formContent.querySelectorAll(
+                '.add-item-btn, .status-btn, .remove-btn, .delete-bar, .delete-item-btn, .product-adder button'
+            );
+            const inputs = formContent.querySelectorAll(
+                '#product-selector, #product-qty'
+            );
+
+            buttons.forEach(btn => {
+                btn.disabled = !enable;
+            });
+            inputs.forEach(input => {
+                input.disabled = !enable;
+            });
         }
     </script>
 </body>
