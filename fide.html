@@ -353,7 +353,6 @@
             if (document.body.dataset.listenersAttached) return;
             document.body.dataset.listenersAttached = 'true';
 
-            // YENİ: Bulut durum penceresi için olay dinleyicileri
             document.getElementById('connection-status-container').addEventListener('click', showCloudStatus);
             const modal = document.getElementById('cloud-status-modal');
             modal.querySelector('.close-btn').addEventListener('click', () => modal.style.display = 'none');
@@ -536,7 +535,6 @@
             });
         }
         
-        // --- YENİ: Bulut Durum Penceresi Fonksiyonları ---
         function formatTimestamp(ts) {
             if (!ts) return '-';
             const date = new Date(ts);
@@ -582,7 +580,6 @@
                 return;
             }
 
-            // DiDe Excel verisi kontrolü
             try {
                 const dideRef = database.ref('excelData/dide');
                 const dideSnapshot = await dideRef.once('value');
@@ -600,7 +597,6 @@
                 }
             } catch(e) { statusDideFile.textContent = 'Hata oluştu'; statusDideFile.className = 'status-value error'; }
 
-            // FiDe Excel verisi kontrolü
             try {
                 const fideRef = database.ref('excelData/fide');
                 const fideSnapshot = await fideRef.once('value');
@@ -618,7 +614,6 @@
                 }
             } catch(e) { statusFideFile.textContent = 'Hata oluştu'; statusFideFile.className = 'status-value error'; }
 
-            // Mevcut Rapor durumu
             if (selectedStore) {
                  try {
                     const reportRef = database.ref(`allFideReports/store_${selectedStore.bayiKodu}`);
@@ -637,7 +632,6 @@
                 statusCurrentReport.className = 'status-value not-found';
             }
 
-            // Toplam rapor sayısı
             try {
                 const allReportsRef = database.ref('allFideReports');
                 const allReportsSnapshot = await allReportsRef.once('value');
@@ -651,7 +645,6 @@
             } catch(e) { statusTotalReports.textContent = 'Hata oluştu'; statusTotalReports.className = 'status-value error'; }
         }
 
-        // --- Mevcut Fonksiyonlar (Değişiklik Yok) ---
         function uploadLocalBackupToCloud() {
             if (!auth.currentUser) { alert("Bu işlem için önce sisteme giriş yapmalısınız."); return; }
             const localDataString = localStorage.getItem('allFideReports');
