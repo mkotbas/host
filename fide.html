@@ -597,11 +597,11 @@
         function toggleQuestionCompleted(button, id) {
             const itemDiv = document.getElementById(`fide-item-${id}`);
             const titleContainer = itemDiv.querySelector('.fide-title-container');
-            const isCompleted = titleContainer.classList.toggle('question-completed');
-            button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
-            button.classList.toggle('undo', isCompleted);
+            const isQuestionCompleted = titleContainer.classList.toggle('question-completed');
+            button.innerHTML = isQuestionCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
+            button.classList.toggle('undo', isQuestionCompleted);
             const inputArea = itemDiv.querySelector('.input-area');
-            if (inputArea) inputArea.style.display = isCompleted ? 'none' : 'block';
+            if (inputArea) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
             saveFormState();
         }
         function toggleQuestionRemoved(button, id) {
@@ -957,7 +957,7 @@
                     }).filter(Boolean);
                     const pleksiItemsHtml = getCombinedInputs('fide15_pleksi').filter(item => !item.completed).map(item => `<li>${item.text}</li>`);
                     if (productItemsHtml.length > 0) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
-                    if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler...:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
+                    if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
                 } else if (q.type === 'pop_system') {
                     const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
                     if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
