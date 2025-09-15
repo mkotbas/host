@@ -108,8 +108,8 @@
                 <p><b>3. Adım: Rapor ve Veri Temizleme</b></p>
                  <div class="file-input-wrapper">
                     <button id="clear-storage-btn" class="btn-danger btn-sm" title="UYARI: Tarayıcı hafızasındaki tüm uygulama verilerini (raporlar, Excel'ler vb.) kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Uygulama Verilerini Sil</button>
-                    <button id="clear-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan DiDe Excel verisini tarayıcı hafızasından temizler."><i class="fas fa-trash-alt"></i> DiDe Excell'i Sil</button>
-                    <button id="clear-fide-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan FiDe Excel verisini tarayıcı hafızasından temizler."><i class="fas fa-trash-alt"></i> FiDe Excell'i Sil</button>
+                    <button id="clear-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan DiDe Excel verisini tarayıcı hafızasından ve buluttan temizler."><i class="fas fa-trash-alt"></i> DiDe Excell'i Sil</button>
+                    <button id="clear-fide-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan FiDe Excel verisini tarayıcı hafızasından ve buluttan temizler."><i class="fas fa-trash-alt"></i> FiDe Excell'i Sil</button>
                 </div>
             </div>
             <div id="store-selection-area">
@@ -186,7 +186,7 @@
 
         async function initializeApp() {
             await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-            auth.onAuthStateChanged(user => {
+            auth.onAuthStateChanged(async user => { // async eklendi
                 const loginToggleBtn = document.getElementById('login-toggle-btn');
                 const logoutBtn = document.getElementById('logout-btn');
                 const loginPopup = document.getElementById('login-popup');
@@ -201,12 +201,12 @@
                     logoutBtn.style.display = 'none';
                     if (uploadBtn) uploadBtn.disabled = true;
                 }
-                updateConnectionIndicator(); 
+                updateConnectionIndicator();
+                // GÜNCELLEME: Kullanıcı durumu değiştiğinde Excel verilerini yeniden yükle
+                await loadInitialData();
+                setupEventListeners();
+                updateFormInteractivity(selectedStore !== null);
             });
-
-            await loadInitialData();
-            setupEventListeners();
-            updateFormInteractivity(selectedStore !== null);
         }
 
         async function loadInitialData() {
@@ -234,9 +234,9 @@
                     updateConnectionIndicator();
                 });
             }
-            
-            loadDideDataFromStorage();
-            loadFideDataFromStorage();
+
+            // GÜNCELLEME: Veri yükleme mantığı değişti. Önce bulut, sonra yerel.
+            await loadExcelData();
 
             if (expiredExcelFiles.length > 0) {
                 const warningDiv = document.getElementById('excel-expiry-warning');
@@ -247,6 +247,45 @@
 
             buildForm();
             restoreLastSession();
+        }
+        
+        // YENİ FONKSİYON: Excel verilerini buluttan veya yerelden yükler
+        async function loadExcelData() {
+            const user = auth.currentUser;
+            let dideLoaded = false;
+            let fideLoaded = false;
+
+            if (user && database) {
+                // DiDe verisini buluttan çekmeyi dene
+                const dideRef = database.ref('excelData/dide');
+                const dideSnapshot = await dideRef.once('value');
+                if (dideSnapshot.exists()) {
+                    const storedData = dideSnapshot.val();
+                    const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+                    if (ageInDays <= 30) {
+                        if (storedData.filename) { document.getElementById('file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
+                        populateDideState(storedData.data);
+                        dideLoaded = true;
+                    }
+                }
+
+                // FiDe verisini buluttan çekmeyi dene
+                const fideRef = database.ref('excelData/fide');
+                const fideSnapshot = await fideRef.once('value');
+                if (fideSnapshot.exists()) {
+                    const storedData = fideSnapshot.val();
+                    const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+                    if (ageInDays <= 30) {
+                        if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
+                        populateFideState(storedData.data);
+                        fideLoaded = true;
+                    }
+                }
+            }
+
+            // Eğer buluttan yüklenemediyse, yerel hafızayı kontrol et
+            if (!dideLoaded) loadDideDataFromStorage();
+            if (!fideLoaded) loadFideDataFromStorage();
         }
 
         function updateConnectionIndicator() {
@@ -278,6 +317,10 @@
         }
 
         function setupEventListeners() {
+            // Event listener'lar artık sadece bir kere atanmalı, initializeApp içinde çağrılacak.
+            if (document.body.dataset.listenersAttached) return;
+            document.body.dataset.listenersAttached = 'true';
+
             document.getElementById('excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'dide'));
             document.getElementById('fide-excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'fide'));
             document.getElementById('backup-btn').addEventListener('click', backupAllReports);
@@ -291,11 +334,17 @@
                 if (girilenSifre) { 
                     const girilenSifreHash = btoa(girilenSifre);
                     if (girilenSifreHash === dogruSifreHash) {
-                        if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları, yüklenmiş Excel dosyaları ve son oturum bilgileri dahil olmak üzere tarayıcıda saklanan BÜTÜN uygulama verileri kalıcı olarak silinecektir.")) {
+                        if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları, yüklenmiş Excel dosyaları ve son oturum bilgileri dahil olmak üzere tarayıcıda ve bulutta saklanan BÜTÜN uygulama verileri kalıcı olarak silinecektir.")) {
                             localStorage.removeItem('allFideReports');
                             localStorage.removeItem('lastSelectedStoreCode');
                             localStorage.removeItem('didePersistenceData');
                             localStorage.removeItem('fidePersistenceData');
+                            
+                            if(auth.currentUser && database){
+                                database.ref('allFideReports').remove();
+                                database.ref('excelData').remove();
+                            }
+                            
                             alert("Tüm uygulama verileri başarıyla temizlendi. Sayfa yenileniyor.");
                             window.location.reload();
                         }
@@ -305,15 +354,21 @@
                 }
             });
             document.getElementById('clear-excel-btn').addEventListener('click', () => {
-                if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+                if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
                     localStorage.removeItem('didePersistenceData');
+                    if(auth.currentUser && database) {
+                        database.ref('excelData/dide').remove();
+                    }
                     alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor.");
                     window.location.reload();
                 }
             });
              document.getElementById('clear-fide-excel-btn').addEventListener('click', () => {
-                if (confirm("Yüklenmiş olan FiDe Excel verisini hafızadan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+                if (confirm("Yüklenmiş olan FiDe Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
                     localStorage.removeItem('fidePersistenceData');
+                    if(auth.currentUser && database) {
+                        database.ref('excelData/fide').remove();
+                    }
                     alert("FiDe Excel verisi temizlendi. Sayfa yenileniyor.");
                     window.location.reload();
                 }
@@ -355,7 +410,7 @@
                 event.stopPropagation();
                 loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
             });
-            logoutBtn.addEventListener('click', () => { auth.signOut(); });
+            logoutBtn.addEventListener('click', () => { auth.signOut(); window.location.reload(); });
             loginSubmitBtn.addEventListener('click', () => {
                 const email = document.getElementById('email-input').value;
                 const password = document.getElementById('password-input').value;
@@ -793,7 +848,11 @@
             if (saveToStorage) {
                 const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
                 localStorage.setItem('didePersistenceData', JSON.stringify(persistenceData));
-                alert('DiDe puan dosyası başarıyla işlendi ve 30 günlüğüne hafızaya kaydedildi.');
+                // GÜNCELLEME: Firebase'e de kaydet
+                if (auth.currentUser && database) {
+                    database.ref('excelData/dide').set(persistenceData);
+                }
+                alert('DiDe puan dosyası başarıyla işlendi, tarayıcıya ve buluta kaydedildi.');
             }
             populateDideState(processedData);
         }
@@ -841,7 +900,11 @@
             if (saveToStorage) {
                 const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
                 localStorage.setItem('fidePersistenceData', JSON.stringify(persistenceData));
-                alert('FiDe puan dosyası başarıyla işlendi ve 30 günlüğüne hafızaya kaydedildi.');
+                 // GÜNCELLEME: Firebase'e de kaydet
+                if (auth.currentUser && database) {
+                    database.ref('excelData/fide').set(persistenceData);
+                }
+                alert('FiDe puan dosyası başarıyla işlendi, tarayıcıya ve buluta kaydedildi.');
             }
             populateFideState(processedData);
         }
@@ -874,7 +937,7 @@
                     expiredExcelFiles.push('DiDe Puan Excel');
                     return;
                 }
-                if (storedData.filename) { document.getElementById('file-name').textContent = `Yüklü dosya: ${storedData.filename}`; }
+                if (storedData.filename) { document.getElementById('file-name').textContent = `Yerel hafızadan yüklendi: ${storedData.filename}`; }
                 populateDideState(storedData.data);
             } catch (e) { localStorage.removeItem('didePersistenceData'); }
         }
@@ -889,7 +952,7 @@
                     expiredExcelFiles.push('FiDe Puan Excel');
                     return;
                 }
-                if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Yüklü dosya: ${storedData.filename}`; }
+                if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Yerel hafızadan yüklendi: ${storedData.filename}`; }
                 populateFideState(storedData.data);
             } catch(e) { localStorage.removeItem('fidePersistenceData'); }
         }
