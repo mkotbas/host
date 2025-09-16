@@ -211,7 +211,20 @@
         let dideData = [], fideData = [], uniqueStores = [], selectedStore = null;
         let fideQuestions = [], popCodes = [], expiredCodes = [], productList = [], expiredExcelFiles = [];
         let migrationMap = {}; 
-        const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi." }];
+        const fallbackFideQuestions = [
+            { id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi." },
+            // YENİ EKLENEN SORU
+            { 
+              "id": 18, 
+              "type": "standard", 
+              "title": "Styling Kullanılıyor mu? (11. sirkü)",
+              "staticItems": [
+                "Mağaza içerisinde sıcak bir ev atmosferi sunarak şıklık katmak, ürünlerin çekiciliğini artırmak ve mağazada geçirilen süreyi uzata",
+                "Mağaza içerisinde sıcak bir ev atmosferi sunarak şıklık katmak, ürünlerin çekiciliğini artırmak ve mağazada geçirilen süreyi uzatarak satışa katkı sağlamak amacıyla hazırlanan 11 no'lu Styling Kılavuzu'nu inceleyebilir ve sipariş verebilirsiniz.",
+                "<a href='https://tr.sharepoint.com/sites/KanalGelistirme/Paylalan%20Belgeler/Forms/AllItems.aspx?id=%2Fsites%2FKanalGelistirme%2FPaylalan%20Belgeler%2FSTYLI%CC%87NG%20KILAVUZU%2Epdf&parent=%2Fsites%2FKanalGelistirme%2FPaylalan%20Belgeler' target='_blank'>SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a>"
+              ]
+            }
+        ];
         const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
         let isFirebaseConnected = false;
         let currentManagerView = 'active'; 
@@ -282,7 +295,10 @@
                 }
             } catch (error) {
                 console.error("Soru dosyası yüklenemedi:", error);
-                fideQuestions = fallbackFideQuestions;
+                // Harici JSON yüklenemezse, fallbackFideQuestions'ı kullan
+                const existingErrorQuestion = fallbackFideQuestions.find(q => q.id === 0);
+                const otherQuestions = fallbackFideQuestions.filter(q => q.id !== 0);
+                fideQuestions = [existingErrorQuestion, ...otherQuestions];
                 document.getElementById('initialization-error').style.display = 'block';
             }
 
@@ -606,8 +622,9 @@
                     const questionInfo = fideQuestions.find(q => String(q.id) === qId);
                     if (!questionInfo) return;
 
+                    // **GÜNCELLEME:** Statik maddelerdeki her türlü boşluğu standart boşluğa çevir.
                     const normalizedStaticItems = (questionInfo.staticItems || []).map(s => 
-                        s.trim().replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').toLowerCase()
+                        s.trim().replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').toLowerCase()
                     );
                     const questionTitle = questionInfo.title.toLowerCase();
 
@@ -616,12 +633,12 @@
                         .filter(line => {
                             if (line === '' || line.includes('Tamamlandı')) return false;
                             
-                            const lowerLine = line.toLowerCase();
+                            // **GÜNCELLEME:** E-postadan gelen satırdaki her türlü boşluğu da standart boşluğa çevir.
+                            const lowerLine = line.trim().replace(/\s+/g, ' ').toLowerCase();
                             
-                            if (lowerLine.includes(questionTitle) || lowerLine.includes('rica ederim')) return false;
+                            if (questionTitle.includes(lowerLine) || lowerLine.includes('rica ederim')) return false;
                             if (lowerLine.includes('sirküyü i̇ncelemek') || lowerLine.includes('örnek fotoğraf')) return false;
 
-                            // **GÜNCELLEME:** Eğer satır, o sorunun bilinen statik maddelerinden biriyse, onu filtrele.
                             if (normalizedStaticItems.includes(lowerLine)) {
                                 return false;
                             }
@@ -800,7 +817,7 @@
             const formContainer = document.getElementById('form-content');
             formContainer.innerHTML = '';
             let html = '';
-            fideQuestions.forEach(q => {
+            fideQuestions.sort((a,b) => a.id - b.id).forEach(q => {
                 if (q.isArchived) { return; }
                 html += generateQuestionHtml(q);
             });
@@ -1205,7 +1222,7 @@
             const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
             let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
             let fideReportHtml = "";
-            fideQuestions.forEach(q => {
+            fideQuestions.sort((a,b) => a.id - b.id).forEach(q => {
                 const itemDiv = document.getElementById(`fide-item-${q.id}`);
                 if (!itemDiv || itemDiv.classList.contains('question-removed')) return;
                 const titleContainer = itemDiv.querySelector('.fide-title-container');
@@ -1478,7 +1495,7 @@
                 if (storeToRestore) {
                     selectedStore = storeToRestore;
                     const searchInput = document.getElementById('store-search-input');
-                    let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
+                    let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : storeToRestore.bayiAdi;
                     searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`;
                     document.getElementById('store-list').style.display = 'none';
                     loadReportForStore(storeToRestore.bayiKodu);
