@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
-    <link rel="stylesheet" href="https://mkotbas.github.io/host/fidecss.css">
+    <link rel="stylesheet" href="fidecss.css">
 
 </head>
 <body>
@@ -82,7 +82,7 @@
                     <div class="modal-header">
                          <h3><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</h3>
                         <p>
-                            Soru ID'sini değiştirdiğinizde, eski raporlardaki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
+                            Soru ID'sini değiştirdiğinizde, eski yedeklerdeki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
                         </p>
                     </div>
                     <div class="modal-body">
@@ -145,21 +145,12 @@
                 <div id="store-list"></div>
             </div>
         </div>
-
-        <div class="card" id="load-options-card" style="display: flex; gap: 20px; flex-wrap: wrap;">
-            <div class="load-option-box" style="flex: 1 1 45%;">
-                <h2 style="font-size: 16px; border-bottom: none; margin-bottom: 15px;"><i class="fas fa-download"></i> Rapor Kodu ile Yükle</h2>
-                <p style="font-size: 14px; color: var(--secondary); margin-bottom: 10px;">Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve düğmeye tıklayın.</p>
-                <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..." style="width: 100%; min-height: 120px;"></textarea>
-                <button class="btn-primary" onclick="loadReport()" style="width: 100%;"><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
-            </div>
-            
-            <div class="load-option-box" style="flex: 1 1 45%;">
-                <h2 style="font-size: 16px; border-bottom: none; margin-bottom: 15px;"><i class="fas fa-envelope-open-text"></i> E-Posta Taslağından Yükle</h2>
-                <p style="font-size: 14px; color: var(--secondary); margin-bottom: 10px;">Bir bayi raporu e-postasının içeriğini bu alana yapıştırın ve butona basarak formu doldurun.</p>
-                <textarea id="email-report-area" placeholder="Rapor e-postasının içeriğini bu alana yapıştırın..." style="width: 100%; min-height: 120px;"></textarea>
-                <button class="btn-primary" onclick="loadReportFromEmail()" style="width: 100%;"><i class="fas fa-check-circle"></i> E-Posta ile Yükle</button>
-            </div>
+        
+        <div class="card" id="load-section">
+            <h2><i class="fas fa-download"></i> Önceki Bir Fide Raporunu Yükle (Manuel)</h2>
+            <p style="margin-bottom: 8px;">Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve "Raporu Yükle" düğmesine tıklayın.</p>
+            <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..."></textarea>
+            <button class="btn-primary" onclick="loadReport()" title="Yukarıdaki alana yapıştırılan rapor kodunu forma yükler."><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
         </div>
 
         <div class="card" id="initialization-error">
@@ -211,20 +202,7 @@
         let dideData = [], fideData = [], uniqueStores = [], selectedStore = null;
         let fideQuestions = [], popCodes = [], expiredCodes = [], productList = [], expiredExcelFiles = [];
         let migrationMap = {}; 
-        const fallbackFideQuestions = [
-            { id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi." },
-            // YENİ EKLENEN SORU
-            { 
-              "id": 18, 
-              "type": "standard", 
-              "title": "Styling Kullanılıyor mu? (11. sirkü)",
-              "staticItems": [
-                "Mağaza içerisinde sıcak bir ev atmosferi sunarak şıklık katmak, ürünlerin çekiciliğini artırmak ve mağazada geçirilen süreyi uzata",
-                "Mağaza içerisinde sıcak bir ev atmosferi sunarak şıklık katmak, ürünlerin çekiciliğini artırmak ve mağazada geçirilen süreyi uzatarak satışa katkı sağlamak amacıyla hazırlanan 11 no'lu Styling Kılavuzu'nu inceleyebilir ve sipariş verebilirsiniz.",
-                "<a href='https://tr.sharepoint.com/sites/KanalGelistirme/Paylalan%20Belgeler/Forms/AllItems.aspx?id=%2Fsites%2FKanalGelistirme%2FPaylalan%20Belgeler%2FSTYLI%CC%87NG%20KILAVUZU%2Epdf&parent=%2Fsites%2FKanalGelistirme%2FPaylalan%20Belgeler' target='_blank'>SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a>"
-              ]
-            }
-        ];
+        const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi." }];
         const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
         let isFirebaseConnected = false;
         let currentManagerView = 'active'; 
@@ -295,10 +273,7 @@
                 }
             } catch (error) {
                 console.error("Soru dosyası yüklenemedi:", error);
-                // Harici JSON yüklenemezse, fallbackFideQuestions'ı kullan
-                const existingErrorQuestion = fallbackFideQuestions.find(q => q.id === 0);
-                const otherQuestions = fallbackFideQuestions.filter(q => q.id !== 0);
-                fideQuestions = [existingErrorQuestion, ...otherQuestions];
+                fideQuestions = fallbackFideQuestions;
                 document.getElementById('initialization-error').style.display = 'block';
             }
 
@@ -371,7 +346,7 @@
         function closeManager() {
             document.getElementById('question-manager').style.display = 'none';
             document.getElementById('dide-upload-card').style.display = '';
-            document.getElementById('load-options-card').style.display = 'flex';
+            document.getElementById('load-section').style.display = '';
             
             const emailDraft = document.getElementById('email-draft-container');
             const saveSection = document.getElementById('save-section');
@@ -518,7 +493,7 @@
 
                             manager.style.display = 'block';
                             document.getElementById('dide-upload-card').style.display = 'none';
-                            document.getElementById('load-options-card').style.display = 'none';
+                            document.getElementById('load-section').style.display = 'none';
                             document.getElementById('form-content').style.display = 'none';
                             document.querySelector('.action-button').style.display = 'none';
                             renderQuestionManager();
@@ -572,96 +547,6 @@
                 document.getElementById('migration-manager-overlay').style.display = 'none';
             });
             document.getElementById('add-migration-btn').addEventListener('click', addMigrationMapping);
-        }
-        
-        function loadReportFromEmail() {
-            if (!selectedStore) {
-                alert('Lütfen e-posta içeriğini yüklemeden önce denetlenecek bayiyi seçin!');
-                return;
-            }
-            
-            const emailContent = document.getElementById('email-report-area').value;
-            if (!emailContent) {
-                alert('Lütfen e-posta içeriğini yapıştırın.');
-                return;
-            }
-        
-            const cleanContent = emailContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-            const lines = cleanContent.split('\n');
-            const questions = {};
-            let currentId = null;
-            let buffer = '';
-            
-            lines.forEach(line => {
-                const trimmedLine = line.trim();
-                const match = trimmedLine.match(/^FiDe (\d+)\./);
-        
-                if (match) {
-                    if (currentId !== null && buffer.trim() !== '') {
-                        questions[currentId] = buffer.trim();
-                    }
-                    currentId = match[1];
-                    buffer = trimmedLine + '\n';
-                } else if (currentId !== null) {
-                    buffer += trimmedLine + '\n';
-                }
-            });
-        
-            if (currentId !== null && buffer.trim() !== '') {
-                questions[currentId] = buffer.trim();
-            }
-        
-            resetForm(); 
-            const formQuestions = document.querySelectorAll('.fide-item');
-            
-            formQuestions.forEach(qElement => {
-                const qId = qElement.id.replace('fide-item-', '');
-                const questionData = questions[qId];
-                
-                if (questionData) {
-                    const questionInfo = fideQuestions.find(q => String(q.id) === qId);
-                    if (!questionInfo) return;
-
-                    // **GÜNCELLEME:** Statik maddelerdeki her türlü boşluğu standart boşluğa çevir.
-                    const normalizedStaticItems = (questionInfo.staticItems || []).map(s => 
-                        s.trim().replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').toLowerCase()
-                    );
-                    const questionTitle = questionInfo.title.toLowerCase();
-
-                    const dynamicItems = questionData.split('\n')
-                        .map(line => line.replace(/^(\*|\-|•)\s*/, '').trim())
-                        .filter(line => {
-                            if (line === '' || line.includes('Tamamlandı')) return false;
-                            
-                            // **GÜNCELLEME:** E-postadan gelen satırdaki her türlü boşluğu da standart boşluğa çevir.
-                            const lowerLine = line.trim().replace(/\s+/g, ' ').toLowerCase();
-                            
-                            if (questionTitle.includes(lowerLine) || lowerLine.includes('rica ederim')) return false;
-                            if (lowerLine.includes('sirküyü i̇ncelemek') || lowerLine.includes('örnek fotoğraf')) return false;
-
-                            if (normalizedStaticItems.includes(lowerLine)) {
-                                return false;
-                            }
-
-                            return true; 
-                        });
-
-                    const containerId = (questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
-                    
-                    dynamicItems.forEach(item => {
-                        addDynamicInput(containerId, item, false);
-                    });
-
-                } else {
-                    const removeButton = qElement.querySelector('.remove-btn');
-                    if (removeButton && !qElement.classList.contains('question-removed')) {
-                        toggleQuestionRemoved(removeButton, qId);
-                    }
-                }
-            });
-        
-            saveFormState();
-            alert('E-posta içeriği başarıyla işlenerek forma aktarıldı. Tamamlandı olarak işaretlenmesi gerekenleri manuel olarak güncelleyebilirsiniz.');
         }
 
         function renderMigrationManagerUI() {
@@ -817,7 +702,7 @@
             const formContainer = document.getElementById('form-content');
             formContainer.innerHTML = '';
             let html = '';
-            fideQuestions.sort((a,b) => a.id - b.id).forEach(q => {
+            fideQuestions.forEach(q => {
                 if (q.isArchived) { return; }
                 html += generateQuestionHtml(q);
             });
@@ -1222,7 +1107,7 @@
             const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
             let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
             let fideReportHtml = "";
-            fideQuestions.sort((a,b) => a.id - b.id).forEach(q => {
+            fideQuestions.forEach(q => {
                 const itemDiv = document.getElementById(`fide-item-${q.id}`);
                 if (!itemDiv || itemDiv.classList.contains('question-removed')) return;
                 const titleContainer = itemDiv.querySelector('.fide-title-container');
@@ -1274,7 +1159,7 @@
             const finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
             document.getElementById('form-content').style.display = 'none';
             document.querySelector('.action-button').style.display = 'none';
-            document.getElementById('load-options-card').style.display = 'none';
+            document.getElementById('load-section').style.display = 'none';
             const existingDraft = document.getElementById('email-draft-container');
             if (existingDraft) existingDraft.remove();
             const draftContainer = document.createElement('div');
@@ -1799,7 +1684,7 @@
                     } else {
                         return closest;
                     }
-                    }, { offset: Number.NEGATIVE_INFINITY }).element;
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
             }
         }
 
@@ -1848,32 +1733,32 @@
             itemDiv.dataset.id = newId;
             itemDiv.innerHTML = `
                 <div class="manager-item-grid">
-                        <div>
-                            <label>Soru ID</label>
-                            <input type="number" class="manager-id-input" value="${newId}">
-                        </div>
-                        <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
-                        <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
-                        <div class="archive-switch-container">
-                            <label>Arşivle</label>
-                            <label class="switch">
-                                <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                    </div>
                     <div>
-                        <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
-                        <div class="editor-toolbar">
-                           <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
-                           <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
-                           <button onclick="formatText(this, 'underline')" title="Altı Çizili"><i class="fas fa-underline"></i></button>
-                           <button onclick="formatText(this, 'link')" title="Köprü Ekle/Düzenle/Kaldır"><i class="fas fa-link"></i></button>
-                        </div>
-                        <div class="editable-textarea" contenteditable="true"></div>
+                        <label>Soru ID</label>
+                        <input type="number" class="manager-id-input" value="${newId}">
                     </div>
-                    <div class="product-list-manager" style="display: none;"></div>
-                    <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
+                    <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
+                    <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
+                    <div class="archive-switch-container">
+                        <label>Arşivle</label>
+                        <label class="switch">
+                            <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
+                    <div class="editor-toolbar">
+                       <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
+                       <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
+                       <button onclick="formatText(this, 'underline')" title="Altı Çizili"><i class="fas fa-underline"></i></button>
+                       <button onclick="formatText(this, 'link')" title="Köprü Ekle/Düzenle/Kaldır"><i class="fas fa-link"></i></button>
+                    </div>
+                    <div class="editable-textarea" contenteditable="true"></div>
+                </div>
+                <div class="product-list-manager" style="display: none;"></div>
+                <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
             managerList.appendChild(itemDiv);
             itemDiv.querySelector('input[type="text"]').focus();
         }
@@ -1915,14 +1800,14 @@
         }
 
         function deleteQuestionUI(id) {
-            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz?`)) {
+            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
                 const itemToDelete = document.querySelector(`.manager-item[data-id="${id}"]`);
                 if(itemToDelete) {
                     itemToDelete.style.transition = 'opacity 0.5s ease';
                     itemToDelete.style.opacity = '0';
                     setTimeout(() => {
                         itemToDelete.style.display = 'none';
-                        item.classList.add('to-be-deleted');
+                        itemToDelete.classList.add('to-be-deleted');
                     }, 500);
                 }
             }
