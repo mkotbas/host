@@ -33,7 +33,7 @@
             </div>
             <div class="right-controls">
                 <div id="connection-status-container">
-                    <div class="connected">
+                    <div id="connection-status-switch" class="disconnected">
                         <div class="thumb"></div>
                     </div>
                     <span id="connection-status-text">Bağlı Değil</span>
@@ -51,14 +51,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="card" style="margin-bottom: 20px;">
-            <h3>Geçmiş Raporu Yükleme</h3>
-            <textarea id="email-content-area" rows="5" placeholder="Geçmiş e-posta içeriğini buraya yapıştırın..."></textarea>
-            <button id="load-email-btn" class="btn-success" style="width: 100%; margin-top: 10px;">
-                <i class="fas fa-upload"></i> E-Postadan Formu Doldur
-            </button>
         </div>
 
         <div class="card" id="question-manager" style="display: none;">
@@ -90,7 +82,7 @@
                     <div class="modal-header">
                          <h3><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</h3>
                         <p>
-                            Soru ID'sini değiştirdiğinizde, eski raporlardaki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
+                            Soru ID'sini değiştirdiğinizde, eski yedeklerdeki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
                         </p>
                     </div>
                     <div class="modal-body">
@@ -156,9 +148,19 @@
         
         <div class="card" id="load-section">
             <h2><i class="fas fa-download"></i> Önceki Bir Fide Raporunu Yükle (Manuel)</h2>
-            <p style="margin-bottom: 8px;">Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve "Raporu Yükle" düğmesine tıklayın.</p>
+            <p>Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve "Raporu Yükle" düğmesine tıklayın.</p>
             <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..."></textarea>
             <button class="btn-primary" onclick="loadReport()" title="Yukarıdaki alana yapıştırılan rapor kodunu forma yükler."><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
+        </div>
+        
+        <div class="card" id="email-load-section">
+            <h2><i class="fas fa-envelope-open-text"></i> E-Posta Taslağından Rapor Yükle</h2>
+            <p>Bir bayi raporu e-postasının içeriğini bu alana yapıştırın ve butona basarak formu doldurun.</p>
+            <textarea id="email-report-area" placeholder="Rapor e-postasının içeriğini bu alana yapıştırın..."></textarea>
+            <button class="btn-primary" onclick="loadReportFromEmail()" title="Yapıştırılan e-posta içeriğini okuyarak formu doldurur."><i class="fas fa-check-circle"></i> E-Posta ile Yükle</button>
+            <p style="font-size: 12px; color: var(--secondary); margin-top: 15px;">
+                <i class="fas fa-info-circle"></i> Bu özellik sadece "eksiklik" maddelerini otomatik girer. Tamamlandı veya diğer durumlar manuel ayarlanmalıdır.
+            </p>
         </div>
 
         <div class="card" id="initialization-error">
@@ -355,6 +357,7 @@
             document.getElementById('question-manager').style.display = 'none';
             document.getElementById('dide-upload-card').style.display = '';
             document.getElementById('load-section').style.display = '';
+            document.getElementById('email-load-section').style.display = '';
             
             const emailDraft = document.getElementById('email-draft-container');
             const saveSection = document.getElementById('save-section');
@@ -381,7 +384,7 @@
             document.getElementById('new-report-btn').addEventListener('click', startNewReport);
             document.getElementById('clear-storage-btn').addEventListener('click', () => {
                 const dogruSifreHash = 'ZmRlMDAx';
-                const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini (raporlar, Excel'ler vb.) kalıcı olarak silmek için lütfen şifreyi girin:");
+                const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
 
                 if (girilenSifre) { 
                     const girilenSifreHash = btoa(girilenSifre);
@@ -502,6 +505,7 @@
                             manager.style.display = 'block';
                             document.getElementById('dide-upload-card').style.display = 'none';
                             document.getElementById('load-section').style.display = 'none';
+                            document.getElementById('email-load-section').style.display = 'none';
                             document.getElementById('form-content').style.display = 'none';
                             document.querySelector('.action-button').style.display = 'none';
                             renderQuestionManager();
@@ -555,6 +559,70 @@
                 document.getElementById('migration-manager-overlay').style.display = 'none';
             });
             document.getElementById('add-migration-btn').addEventListener('click', addMigrationMapping);
+        }
+        
+        function loadReportFromEmail() {
+            if (!selectedStore) {
+                alert('Lütfen e-posta içeriğini yüklemeden önce denetlenecek bayiyi seçin!');
+                return;
+            }
+            
+            const emailContent = document.getElementById('email-report-area').value;
+            if (!emailContent) {
+                alert('Lütfen e-posta içeriğini yapıştırın.');
+                return;
+            }
+
+            const lines = emailContent.split('\n');
+            const newReportData = {};
+            let currentQuestionId = null;
+
+            lines.forEach(line => {
+                let trimmedLine = line.trim();
+                
+                // HTML etiketlerini ve &nbsp; gibi ifadeleri temizle
+                trimmedLine = trimmedLine.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
+
+                // "FiDe XX." başlıklarını bul
+                const match = trimmedLine.match(/FiDe (\d+)\./);
+                if (match) {
+                    currentQuestionId = match[1];
+                    if (!newReportData[currentQuestionId]) {
+                        newReportData[currentQuestionId] = { dynamicInputs: [] };
+                    }
+                } else if (currentQuestionId !== null) {
+                    // Madde imlerini ve boşlukları temizleyerek eksiklikleri al
+                    const itemMatch = trimmedLine.match(/^(\*|\-|•)\s*(.+)/);
+                    if (itemMatch) {
+                        const itemText = itemMatch[2].trim();
+                        // "Tamamlandı" ibaresini içeren satırları atla
+                        if (!itemText.includes('Tamamlandı') && itemText !== '' && itemText !== 'Sipariş verilmesi gerekenler:' && itemText !== 'Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:') {
+                            newReportData[currentQuestionId].dynamicInputs.push({ text: itemText, completed: false });
+                        }
+                    }
+                }
+            });
+
+            // Formu mevcut verilere göre sıfırla ve doldur
+            resetForm(); 
+            for (const qId in newReportData) {
+                const questionData = newReportData[qId];
+                const questionDiv = document.getElementById(`fide-item-${qId}`);
+                if (!questionDiv) {
+                    console.warn(`FiDe ${qId} sorusu formda bulunamadı, atlanıyor.`);
+                    continue;
+                }
+                
+                const questionInfo = fideQuestions.find(q => String(q.id) === qId);
+                const containerId = (questionInfo && questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
+                
+                questionData.dynamicInputs.forEach(input => {
+                    addDynamicInput(containerId, input.text, input.completed);
+                });
+            }
+
+            saveFormState();
+            alert('E-posta içeriği başarıyla işlenerek forma aktarıldı. Tamamlandı olarak işaretlenmesi gerekenleri manuel olarak güncelleyebilirsiniz.');
         }
 
         function renderMigrationManagerUI() {
@@ -806,7 +874,6 @@
         }
         function addDynamicInput(id, value = '', isCompleted = false) {
             const container = document.getElementById(`sub-items-container-${id}`);
-            if (!container) return;
             const newItem = document.createElement('div');
             newItem.className = 'dynamic-input-item';
             const input = document.createElement('input');
@@ -1169,6 +1236,7 @@
             document.getElementById('form-content').style.display = 'none';
             document.querySelector('.action-button').style.display = 'none';
             document.getElementById('load-section').style.display = 'none';
+            document.getElementById('email-load-section').style.display = 'none';
             const existingDraft = document.getElementById('email-draft-container');
             if (existingDraft) existingDraft.remove();
             const draftContainer = document.createElement('div');
@@ -1223,7 +1291,7 @@
                     document.getElementById('store-list').style.display = 'none';
                 }
                 
-                const formContent = document.getElementById('form-content');
+                const formContainer = document.getElementById('form-content');
 
                 for (const qId in reportData.questions_status) {
                     let questionItem = document.getElementById(`fide-item-${qId}`);
@@ -1232,7 +1300,7 @@
                         const archivedQuestion = fideQuestions.find(q => String(q.id) === String(qId));
                         if (archivedQuestion && archivedQuestion.isArchived) {
                             const questionHtml = generateQuestionHtml(archivedQuestion);
-                            formContent.insertAdjacentHTML('beforeend', questionHtml);
+                            formContainer.insertAdjacentHTML('beforeend', questionHtml);
                             questionItem = document.getElementById(`fide-item-${qId}`);
                         }
                     }
@@ -1389,7 +1457,7 @@
                 if (storeToRestore) {
                     selectedStore = storeToRestore;
                     const searchInput = document.getElementById('store-search-input');
-                    let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
+                    let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : storeToRestore.bayiAdi;
                     searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`;
                     document.getElementById('store-list').style.display = 'none';
                     loadReportForStore(storeToRestore.bayiKodu);
@@ -1680,7 +1748,7 @@
                         container.insertBefore(currentlyDragged, afterElement);
                     }
                 }
-            }, false);
+            });
 
             function getDragAfterElement(container, y) {
                 const draggableElements = [...container.querySelectorAll('[draggable="true"]:not(.dragging)')];
@@ -1809,7 +1877,7 @@
         }
 
         function deleteQuestionUI(id) {
-            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz?`)) {
+            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
                 const itemToDelete = document.querySelector(`.manager-item[data-id="${id}"]`);
                 if(itemToDelete) {
                     itemToDelete.style.transition = 'opacity 0.5s ease';
@@ -1907,66 +1975,6 @@
             inputs.forEach(input => {
                 input.disabled = !enable;
             });
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            const loadEmailBtn = document.getElementById('load-email-btn');
-            if (loadEmailBtn) {
-                loadEmailBtn.addEventListener('click', () => {
-                    loadFromEmail();
-                });
-            }
-        });
-        
-        async function loadFromEmail() {
-            const emailContent = document.getElementById('email-content-area').value;
-            if (!emailContent) {
-                alert('Lütfen e-posta içeriğini metin kutusuna yapıştırın.');
-                return;
-            }
-
-            resetForm();
-
-            const lines = emailContent.split(/\r?\n/);
-            let currentQuestionId = null;
-
-            lines.forEach(line => {
-                const trimmedLine = line.trim();
-                if (trimmedLine.length === 0) return;
-
-                const fideMatch = trimmedLine.match(/FiDe (\d+)\.?\s*(.*)/i);
-                if (fideMatch) {
-                    currentQuestionId = parseInt(fideMatch[1], 10);
-                    const questionText = fideMatch[2].replace(':', '').trim();
-
-                    if (questionText.includes('Tamamlandı')) {
-                        const questionItem = document.getElementById(`fide-item-${currentQuestionId}`);
-                        if (questionItem) {
-                            const completeBtn = questionItem.querySelector('.fide-actions .status-btn');
-                            if (completeBtn && !questionItem.querySelector('.fide-title-container').classList.contains('question-completed')) {
-                                toggleQuestionCompleted(completeBtn, currentQuestionId);
-                            }
-                        }
-                    }
-
-                    return;
-                }
-
-                if (currentQuestionId !== null) {
-                    const bulletMatch = trimmedLine.match(/^(•|\*|-)\s*(.*)/);
-                    if (bulletMatch) {
-                        const itemText = bulletMatch[2].trim();
-                        if (itemText) {
-                            const isCompleted = itemText.includes('Tamamlandı');
-                            const cleanItemText = itemText.replace('Tamamlandı', '').trim();
-                            addDynamicInput(`fide${currentQuestionId}`, cleanItemText, isCompleted);
-                        }
-                    }
-                }
-            });
-
-            alert('Geçmiş e-posta içeriği başarıyla forma aktarıldı!');
-            updateFormInteractivity(true);
         }
     </script>
 </body>
