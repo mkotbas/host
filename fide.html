@@ -624,7 +624,7 @@
         
                     const staticItems = questionInfo.staticItems || [];
                     const normalizedStaticItems = staticItems.map(s => s.trim().replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').toLowerCase());
-
+                    
                     items.forEach(item => {
                         const questionTitle = fideQuestions.find(q => q.id == qId).title;
                         if (item.includes(questionTitle) || item.includes('rica ederim')) {
