@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
-    <link rel="stylesheet" href="fidecss.css">
+    <link rel="stylesheet" href="https://mkotbas.github.io/host/fidecss.css">
 
 </head>
 <body>
@@ -145,22 +145,21 @@
                 <div id="store-list"></div>
             </div>
         </div>
-        
-        <div class="card" id="load-section">
-            <h2><i class="fas fa-download"></i> Önceki Bir Fide Raporunu Yükle (Manuel)</h2>
-            <p>Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve "Raporu Yükle" düğmesine tıklayın.</p>
-            <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..."></textarea>
-            <button class="btn-primary" onclick="loadReport()" title="Yukarıdaki alana yapıştırılan rapor kodunu forma yükler."><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
-        </div>
-        
-        <div class="card" id="email-load-section">
-            <h2><i class="fas fa-envelope-open-text"></i> E-Posta Taslağından Rapor Yükle</h2>
-            <p>Bir bayi raporu e-postasının içeriğini bu alana yapıştırın ve butona basarak formu doldurun.</p>
-            <textarea id="email-report-area" placeholder="Rapor e-postasının içeriğini bu alana yapıştırın..."></textarea>
-            <button class="btn-primary" onclick="loadReportFromEmail()" title="Yapıştırılan e-posta içeriğini okuyarak formu doldurur."><i class="fas fa-check-circle"></i> E-Posta ile Yükle</button>
-            <p style="font-size: 12px; color: var(--secondary); margin-top: 15px;">
-                <i class="fas fa-info-circle"></i> Bu özellik sadece "eksiklik" maddelerini otomatik girer. Tamamlandı veya diğer durumlar manuel ayarlanmalıdır.
-            </p>
+
+        <div class="card" id="load-options-card" style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div class="load-option-box" style="flex: 1 1 45%;">
+                <h2 style="font-size: 16px; border-bottom: none; margin-bottom: 15px;"><i class="fas fa-download"></i> Rapor Kodu ile Yükle</h2>
+                <p style="font-size: 14px; color: var(--secondary); margin-bottom: 10px;">Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve düğmeye tıklayın.</p>
+                <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..." style="width: 100%; min-height: 120px;"></textarea>
+                <button class="btn-primary" onclick="loadReport()" style="width: 100%;"><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
+            </div>
+            
+            <div class="load-option-box" style="flex: 1 1 45%;">
+                <h2 style="font-size: 16px; border-bottom: none; margin-bottom: 15px;"><i class="fas fa-envelope-open-text"></i> E-Posta Taslağından Yükle</h2>
+                <p style="font-size: 14px; color: var(--secondary); margin-bottom: 10px;">Bir bayi raporu e-postasının içeriğini bu alana yapıştırın ve butona basarak formu doldurun.</p>
+                <textarea id="email-report-area" placeholder="Rapor e-postasının içeriğini bu alana yapıştırın..." style="width: 100%; min-height: 120px;"></textarea>
+                <button class="btn-primary" onclick="loadReportFromEmail()" style="width: 100%;"><i class="fas fa-check-circle"></i> E-Posta ile Yükle</button>
+            </div>
         </div>
 
         <div class="card" id="initialization-error">
@@ -356,8 +355,7 @@
         function closeManager() {
             document.getElementById('question-manager').style.display = 'none';
             document.getElementById('dide-upload-card').style.display = '';
-            document.getElementById('load-section').style.display = '';
-            document.getElementById('email-load-section').style.display = '';
+            document.getElementById('load-options-card').style.display = 'flex';
             
             const emailDraft = document.getElementById('email-draft-container');
             const saveSection = document.getElementById('save-section');
@@ -504,8 +502,7 @@
 
                             manager.style.display = 'block';
                             document.getElementById('dide-upload-card').style.display = 'none';
-                            document.getElementById('load-section').style.display = 'none';
-                            document.getElementById('email-load-section').style.display = 'none';
+                            document.getElementById('load-options-card').style.display = 'none';
                             document.getElementById('form-content').style.display = 'none';
                             document.querySelector('.action-button').style.display = 'none';
                             renderQuestionManager();
@@ -1255,8 +1252,7 @@
             const finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
             document.getElementById('form-content').style.display = 'none';
             document.querySelector('.action-button').style.display = 'none';
-            document.getElementById('load-section').style.display = 'none';
-            document.getElementById('email-load-section').style.display = 'none';
+            document.getElementById('load-options-card').style.display = 'none';
             const existingDraft = document.getElementById('email-draft-container');
             if (existingDraft) existingDraft.remove();
             const draftContainer = document.createElement('div');
