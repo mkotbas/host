@@ -1027,7 +1027,7 @@
                 }
                 if (contentHtml !== '' || isQuestionCompleted) {
                     const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
-                    let emailTag = q.id === 16 ? ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@berkcan_boza@arcelik.com.tr</span>` : '';
+                    let emailTag = q.type === 'pop_system' ? ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@berkcan_boza@arcelik.com.tr</span>` : '';
                     fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
                     if (!isQuestionCompleted || (isQuestionCompleted && q.type === 'standard' && contentHtml !== '')) fideReportHtml += contentHtml;
                     fideReportHtml += '<p>&nbsp;</p>';
