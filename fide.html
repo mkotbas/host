@@ -622,12 +622,18 @@
                     const questionInfo = fideQuestions.find(q => String(q.id) === qId);
                     const containerId = (questionInfo && questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
         
+                    const staticItems = questionInfo.staticItems || [];
+
                     items.forEach(item => {
                         const questionTitle = fideQuestions.find(q => q.id == qId).title;
                         if (item.includes(questionTitle) || item.includes('rica ederim')) {
                             return;
                         }
-                        addDynamicInput(containerId, item, false);
+                        
+                        // Eğer madde statik maddeler arasında yoksa ekle
+                        if (!staticItems.map(s => s.trim().replace(/<[^>]*>/g, '')).includes(item)) {
+                            addDynamicInput(containerId, item, false);
+                        }
                     });
                 } else {
                     // E-postada ilgili soru yoksa, formdaki öğeyi kaldır (removed)
@@ -1473,7 +1479,7 @@
                 if (storeToRestore) {
                     selectedStore = storeToRestore;
                     const searchInput = document.getElementById('store-search-input');
-                    let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : storeToRestore.bayiAdi;
+                    let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
                     searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`;
                     document.getElementById('store-list').style.display = 'none';
                     loadReportForStore(storeToRestore.bayiKodu);
@@ -1826,32 +1832,32 @@
             itemDiv.dataset.id = newId;
             itemDiv.innerHTML = `
                 <div class="manager-item-grid">
+                        <div>
+                            <label>Soru ID</label>
+                            <input type="number" class="manager-id-input" value="${newId}">
+                        </div>
+                        <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
+                        <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
+                        <div class="archive-switch-container">
+                            <label>Arşivle</label>
+                            <label class="switch">
+                                <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
                     <div>
-                        <label>Soru ID</label>
-                        <input type="number" class="manager-id-input" value="${newId}">
+                        <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
+                        <div class="editor-toolbar">
+                           <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
+                           <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
+                           <button onclick="formatText(this, 'underline')" title="Altı Çizili"><i class="fas fa-underline"></i></button>
+                           <button onclick="formatText(this, 'link')" title="Köprü Ekle/Düzenle/Kaldır"><i class="fas fa-link"></i></button>
+                        </div>
+                        <div class="editable-textarea" contenteditable="true"></div>
                     </div>
-                    <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
-                    <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
-                    <div class="archive-switch-container">
-                        <label>Arşivle</label>
-                        <label class="switch">
-                            <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <div>
-                    <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
-                    <div class="editor-toolbar">
-                       <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
-                       <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
-                       <button onclick="formatText(this, 'underline')" title="Altı Çizili"><i class="fas fa-underline"></i></button>
-                       <button onclick="formatText(this, 'link')" title="Köprü Ekle/Düzenle/Kaldır"><i class="fas fa-link"></i></button>
-                    </div>
-                    <div class="editable-textarea" contenteditable="true"></div>
-                </div>
-                <div class="product-list-manager" style="display: none;"></div>
-                <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
+                    <div class="product-list-manager" style="display: none;"></div>
+                    <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
             managerList.appendChild(itemDiv);
             itemDiv.querySelector('input[type="text"]').focus();
         }
