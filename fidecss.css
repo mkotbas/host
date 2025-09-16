@@ -423,6 +423,118 @@ input:checked + .slider:before {
     transform: translateX(22px);
 }
 
+/* YENİ: Veri Taşıma Paneli Stilleri (Modern Tasarım) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-panel {
+    background-color: var(--light);
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 550px;
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.modal-header {
+    padding: 16px 24px;
+    background-color: #fff;
+    border-bottom: 1px solid var(--border);
+}
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.modal-header p {
+    font-size: 13px;
+    color: var(--secondary);
+    margin: 8px 0 0 0;
+}
+.modal-body {
+    padding: 24px;
+}
+.modal-footer {
+    padding: 16px 24px;
+    background-color: #fff;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.migration-form {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    align-items: center;
+}
+.migration-form input[type="number"] {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+}
+.migration-form .fa-long-arrow-alt-right {
+    font-size: 18px;
+    color: var(--gray);
+}
+.migration-list {
+    list-style-type: none;
+    padding: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background-color: #fff;
+    padding: 8px;
+}
+.migration-list li {
+    background-color: #fff;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+.migration-list li:last-child {
+    margin-bottom: 0;
+}
+.migration-list li:hover {
+    background-color: var(--light);
+}
+.migration-list li .mapping-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+}
+.migration-list li .mapping-text i {
+    color: var(--primary);
+}
+.migration-list .empty-message {
+    text-align: center;
+    color: var(--secondary);
+    font-style: italic;
+    padding: 20px;
+}
+
 @media (max-width: 768px) {
     .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
     
@@ -501,57 +613,4 @@ input:checked + .slider:before {
     .bulk-add-controls {
         grid-template-columns: 1fr;
     }
-}
-
-/* YENİ: Veri Taşıma Paneli Stilleri */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-.modal-panel {
-    background-color: #fff;
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    width: 90%;
-    max-width: 500px;
-    z-index: 1001;
-}
-.modal-panel h3 {
-    margin-top: 0;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-}
-.migration-form {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    align-items: center;
-}
-.migration-form input {
-    flex-grow: 1;
-    padding: 8px;
-}
-.migration-list {
-    list-style-type: none;
-    padding: 0;
-    max-height: 200px;
-    overflow-y: auto;
-}
-.migration-list li {
-    background-color: #f9f9f9;
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
