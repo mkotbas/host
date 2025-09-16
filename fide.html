@@ -69,6 +69,7 @@
                 </div>
                 <div class="manager-main-actions">
                     <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Soru Ekle</button>
+                    <button id="open-migration-manager-btn" class="btn-primary btn-sm" title="Eski raporlardaki verilerin yeni soru ID'lerine taşınması için kurallar belirleyin."><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</button>
                     <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenle</button>
                     <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Arşivi Sil</button>
                     <button id="restore-all-archived-btn" class="btn-success btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları aktif hale getirir."><i class="fas fa-undo"></i> Arşivi Geri Yükle</button>
@@ -76,6 +77,25 @@
                 </div>
             </div>
             <div id="manager-list"></div>
+            <div id="migration-manager-overlay" class="modal-overlay" style="display: none;">
+                <div class="modal-panel">
+                    <h3><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</h3>
+                    <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+                        <i class="fas fa-info-circle"></i> Soru ID'sini değiştirdiğinizde, eski yedeklerdeki verilerin kaybolmaması için buradan yönlendirme ekleyin.
+                    </p>
+                    <div class="migration-form">
+                        <input type="number" id="migration-old-id" placeholder="Eski ID">
+                        <i class="fas fa-long-arrow-alt-right"></i>
+                        <input type="number" id="migration-new-id" placeholder="Yeni ID">
+                        <button id="add-migration-btn" class="btn-success btn-sm"><i class="fas fa-plus"></i> Ekle</button>
+                    </div>
+                    <h4>Mevcut Yönlendirmeler</h4>
+                    <ul id="migration-list-container" class="migration-list">
+                    </ul>
+                    <hr>
+                    <button id="close-migration-manager-btn" class="btn-danger btn-sm">Paneli Kapat</button>
+                </div>
+            </div>
         </div>
 
         <div class="card" id="dide-upload-card">
@@ -176,17 +196,18 @@
         // --- Global Değişkenler ---
         let dideData = [], fideData = [], uniqueStores = [], selectedStore = null;
         let fideQuestions = [], popCodes = [], expiredCodes = [], productList = [], expiredExcelFiles = [];
+        let migrationMap = {}; 
         const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi." }];
         const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
         let isFirebaseConnected = false;
-        let currentManagerView = 'active'; // 'active' veya 'archived'
+        let currentManagerView = 'active'; 
 
         // --- Ana Uygulama Mantığı ---
         window.onload = initializeApp;
 
         async function initializeApp() {
             await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-            auth.onAuthStateChanged(async user => { // async eklendi
+            auth.onAuthStateChanged(async user => { 
                 const loginToggleBtn = document.getElementById('login-toggle-btn');
                 const logoutBtn = document.getElementById('logout-btn');
                 const loginPopup = document.getElementById('login-popup');
@@ -202,14 +223,19 @@
                     if (uploadBtn) uploadBtn.disabled = true;
                 }
                 updateConnectionIndicator();
-                // GÜNCELLEME: Kullanıcı durumu değiştiğinde Excel verilerini yeniden yükle
                 await loadInitialData();
                 setupEventListeners();
                 updateFormInteractivity(selectedStore !== null);
             });
         }
+        
+        function loadMigrationMapFromStorage() {
+            const storedMap = localStorage.getItem('fideMigrationMap');
+            migrationMap = storedMap ? JSON.parse(storedMap) : {};
+        }
 
         async function loadInitialData() {
+            loadMigrationMapFromStorage();
             try {
                 const response = await fetch(`fide_soru_listesi.json?v=${new Date().getTime()}`);
                 if (!response.ok) throw new Error('Soru dosyası bulunamadı.');
@@ -235,7 +261,6 @@
                 });
             }
 
-            // GÜNCELLEME: Veri yükleme mantığı değişti. Önce bulut, sonra yerel.
             await loadExcelData();
 
             if (expiredExcelFiles.length > 0) {
@@ -249,14 +274,12 @@
             restoreLastSession();
         }
         
-        // YENİ FONKSİYON: Excel verilerini buluttan veya yerelden yükler
         async function loadExcelData() {
             const user = auth.currentUser;
             let dideLoaded = false;
             let fideLoaded = false;
 
             if (user && database) {
-                // DiDe verisini buluttan çekmeyi dene
                 const dideRef = database.ref('excelData/dide');
                 const dideSnapshot = await dideRef.once('value');
                 if (dideSnapshot.exists()) {
@@ -269,7 +292,6 @@
                     }
                 }
 
-                // FiDe verisini buluttan çekmeyi dene
                 const fideRef = database.ref('excelData/fide');
                 const fideSnapshot = await fideRef.once('value');
                 if (fideSnapshot.exists()) {
@@ -283,7 +305,6 @@
                 }
             }
 
-            // Eğer buluttan yüklenemediyse, yerel hafızayı kontrol et
             if (!dideLoaded) loadDideDataFromStorage();
             if (!fideLoaded) loadFideDataFromStorage();
         }
@@ -317,7 +338,6 @@
         }
 
         function setupEventListeners() {
-            // Event listener'lar artık sadece bir kere atanmalı, initializeApp içinde çağrılacak.
             if (document.body.dataset.listenersAttached) return;
             document.body.dataset.listenersAttached = 'true';
 
@@ -335,10 +355,7 @@
                     const girilenSifreHash = btoa(girilenSifre);
                     if (girilenSifreHash === dogruSifreHash) {
                         if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları, yüklenmiş Excel dosyaları ve son oturum bilgileri dahil olmak üzere tarayıcıda ve bulutta saklanan BÜTÜN uygulama verileri kalıcı olarak silinecektir.")) {
-                            localStorage.removeItem('allFideReports');
-                            localStorage.removeItem('lastSelectedStoreCode');
-                            localStorage.removeItem('didePersistenceData');
-                            localStorage.removeItem('fidePersistenceData');
+                            localStorage.clear();
                             
                             if(auth.currentUser && database){
                                 database.ref('allFideReports').remove();
@@ -496,6 +513,69 @@
                     }
                 }
             });
+
+            document.getElementById('open-migration-manager-btn').addEventListener('click', () => {
+                renderMigrationManagerUI();
+                document.getElementById('migration-manager-overlay').style.display = 'flex';
+            });
+            document.getElementById('close-migration-manager-btn').addEventListener('click', () => {
+                document.getElementById('migration-manager-overlay').style.display = 'none';
+            });
+            document.getElementById('add-migration-btn').addEventListener('click', addMigrationMapping);
+        }
+
+        function renderMigrationManagerUI() {
+            const listContainer = document.getElementById('migration-list-container');
+            listContainer.innerHTML = '';
+            if (Object.keys(migrationMap).length === 0) {
+                listContainer.innerHTML = '<li>Henüz yönlendirme eklenmemiş.</li>';
+            } else {
+                for (const oldId in migrationMap) {
+                    const newId = migrationMap[oldId];
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <span>Eski ID: <b>${oldId}</b>  &nbsp;➔&nbsp;  Yeni ID: <b>${newId}</b></span>
+                        <button class="btn-danger btn-sm" onclick="deleteMigrationMapping('${oldId}')" title="Bu yönlendirmeyi sil."><i class="fas fa-trash"></i></button>
+                    `;
+                    listContainer.appendChild(listItem);
+                }
+            }
+        }
+
+        function addMigrationMapping() {
+            const oldIdInput = document.getElementById('migration-old-id');
+            const newIdInput = document.getElementById('migration-new-id');
+            const oldId = oldIdInput.value.trim();
+            const newId = newIdInput.value.trim();
+
+            if (!oldId || !newId) {
+                alert("Lütfen hem 'Eski ID' hem de 'Yeni ID' alanlarını doldurun.");
+                return;
+            }
+            if (oldId === newId) {
+                alert("Eski ve yeni ID aynı olamaz.");
+                return;
+            }
+
+            migrationMap[oldId] = newId;
+            saveMigrationMapToStorage();
+            renderMigrationManagerUI();
+
+            oldIdInput.value = '';
+            newIdInput.value = '';
+            oldIdInput.focus();
+        }
+
+        function deleteMigrationMapping(oldIdToDelete) {
+            if (confirm(`'${oldIdToDelete}' ID'li yönlendirmeyi silmek istediğinizden emin misiniz?`)) {
+                delete migrationMap[oldIdToDelete];
+                saveMigrationMapToStorage();
+                renderMigrationManagerUI();
+            }
+        }
+
+        function saveMigrationMapToStorage() {
+            localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
         }
         
         function uploadLocalBackupToCloud() {
@@ -848,7 +928,6 @@
             if (saveToStorage) {
                 const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
                 localStorage.setItem('didePersistenceData', JSON.stringify(persistenceData));
-                // GÜNCELLEME: Firebase'e de kaydet
                 if (auth.currentUser && database) {
                     database.ref('excelData/dide').set(persistenceData);
                 }
@@ -900,7 +979,6 @@
             if (saveToStorage) {
                 const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
                 localStorage.setItem('fidePersistenceData', JSON.stringify(persistenceData));
-                 // GÜNCELLEME: Firebase'e de kaydet
                 if (auth.currentUser && database) {
                     database.ref('excelData/fide').set(persistenceData);
                 }
@@ -1083,6 +1161,17 @@
                     if (!loadCode) return alert('Lütfen yüklemek için bir rapor kodu yapıştırın.');
                     reportData = JSON.parse(loadCode);
                 }
+
+                for (const oldId in migrationMap) {
+                    if (reportData.questions_status[oldId]) {
+                        const newId = migrationMap[oldId];
+                        if (!reportData.questions_status[newId]) {
+                            reportData.questions_status[newId] = reportData.questions_status[oldId];
+                            delete reportData.questions_status[oldId];
+                        }
+                    }
+                }
+
                 resetForm(); 
                 if (reportData.selectedStore) {
                     selectedStore = reportData.selectedStore;
@@ -1266,8 +1355,6 @@
             }
         }
         
-        // --- YENİ ve GÜNCELLENMİŞ Soru Yöneticisi Fonksiyonları ---
-
         function formatText(buttonEl, command) {
             const editor = buttonEl.closest('.manager-item').querySelector('.editable-textarea');
             editor.focus();
@@ -1523,13 +1610,11 @@
             return row;
         }
         
-        // YENİ: Sürükle-Bırak Fonksiyonları
         function setupProductManagerDragDrop(container) {
             let draggingElement = null;
 
             container.addEventListener('dragstart', e => {
                 draggingElement = e.target;
-                // Tarayıcının sürükleme gölgesini daha hızlı oluşturması için kısa bir gecikme
                 setTimeout(() => {
                     e.target.classList.add('dragging');
                 }, 0);
