@@ -570,39 +570,31 @@
                 return;
             }
         
-            // E-posta içeriğini satırlara ayır ve tüm metin içeriğini temizle
-            const cleanContent = emailContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
+            const cleanContent = emailContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
             const lines = cleanContent.split('\n');
             const questions = {};
             let currentId = null;
-        
-            // Metni FiDe başlıklarına göre böl
             let buffer = '';
             
             lines.forEach(line => {
                 const trimmedLine = line.trim();
-                const match = trimmedLine.match(/FiDe (\d+)\./);
+                const match = trimmedLine.match(/^FiDe (\d+)\./);
         
                 if (match) {
-                    // Yeni bir FiDe başlığı bulundu
                     if (currentId !== null && buffer.trim() !== '') {
-                        // Bir önceki sorunun içeriğini işle
                         questions[currentId] = buffer.trim();
                     }
                     currentId = match[1];
                     buffer = trimmedLine + '\n';
                 } else if (currentId !== null) {
-                    // Aynı sorunun alt maddelerini biriktir
                     buffer += trimmedLine + '\n';
                 }
             });
         
-            // Son sorunun içeriğini işle
             if (currentId !== null && buffer.trim() !== '') {
                 questions[currentId] = buffer.trim();
             }
         
-            // Formu temizle ve yeni verilerle doldur
             resetForm(); 
             const formQuestions = document.querySelectorAll('.fide-item');
             
@@ -611,33 +603,39 @@
                 const questionData = questions[qId];
                 
                 if (questionData) {
-                    // E-postada ilgili soru varsa, içeriğini işle
-                    const items = questionData.split('\n')
-                        .map(line => line.replace(/^(\*|\-|•)\s*/, '').trim())
-                        // 'Tamamlandı' ifadesi içeren satırları filtrele
-                        .filter(line => !line.includes('Tamamlandı'))
-                        .filter(line => line !== '' && !line.includes('SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.') && !line.includes('ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.') && !line.includes('Tüm ürünlerde enerji etiketi var mı?') && !line.includes('Aşağıdaki ürünlerin enerji etiketlerinin tamamlanmasını rica ederim.') && !line.includes('Ürünler teşhir ürün dizilim kılavuzuna göre sergilenmiş mi?') && !line.includes('Aşağıdaki ürünlerin teşhir ürün dizilim kılavuzuna (5 nolu sirkü) göre düzenlenmesini rica ederim.') && !line.includes('@tevfik_2979@hotmail.com'))
-                        .filter(line => line.toLowerCase().includes('eksik') || !fideQuestions.find(q => q.id == qId).title.toLowerCase().includes(line.toLowerCase()));
-
                     const questionInfo = fideQuestions.find(q => String(q.id) === qId);
-                    const containerId = (questionInfo && questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
-        
-                    const staticItems = questionInfo.staticItems || [];
-                    const normalizedStaticItems = staticItems.map(s => s.trim().replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').toLowerCase());
+                    if (!questionInfo) return;
+
+                    const normalizedStaticItems = (questionInfo.staticItems || []).map(s => 
+                        s.trim().replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').toLowerCase()
+                    );
+                    const questionTitle = questionInfo.title.toLowerCase();
+
+                    const dynamicItems = questionData.split('\n')
+                        .map(line => line.replace(/^(\*|\-|•)\s*/, '').trim())
+                        .filter(line => {
+                            if (line === '' || line.includes('Tamamlandı')) return false;
+                            
+                            const lowerLine = line.toLowerCase();
+                            
+                            if (lowerLine.includes(questionTitle) || lowerLine.includes('rica ederim')) return false;
+                            if (lowerLine.includes('sirküyü i̇ncelemek') || lowerLine.includes('örnek fotoğraf')) return false;
+
+                            // **GÜNCELLEME:** Eğer satır, o sorunun bilinen statik maddelerinden biriyse, onu filtrele.
+                            if (normalizedStaticItems.includes(lowerLine)) {
+                                return false;
+                            }
+
+                            return true; 
+                        });
+
+                    const containerId = (questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
                     
-                    items.forEach(item => {
-                        const questionTitle = fideQuestions.find(q => q.id == qId).title;
-                        if (item.includes(questionTitle) || item.includes('rica ederim')) {
-                            return;
-                        }
-                        
-                        // Eğer madde statik maddeler arasında yoksa ekle
-                        if (!normalizedStaticItems.includes(item.toLowerCase())) {
-                            addDynamicInput(containerId, item, false);
-                        }
+                    dynamicItems.forEach(item => {
+                        addDynamicInput(containerId, item, false);
                     });
+
                 } else {
-                    // E-postada ilgili soru yoksa, formdaki öğeyi kaldır (removed)
                     const removeButton = qElement.querySelector('.remove-btn');
                     if (removeButton && !qElement.classList.contains('question-removed')) {
                         toggleQuestionRemoved(removeButton, qId);
