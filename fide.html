@@ -82,7 +82,7 @@
                     <div class="modal-header">
                          <h3><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</h3>
                         <p>
-                            Soru ID'sini değiştirdiğinizde, eski yedeklerdeki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
+                            Soru ID'sini değiştirdiğinizde, eski raporlardaki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
                         </p>
                     </div>
                     <div class="modal-body">
@@ -572,55 +572,69 @@
                 alert('Lütfen e-posta içeriğini yapıştırın.');
                 return;
             }
-
-            const lines = emailContent.split('\n');
-            const newReportData = {};
-            let currentQuestionId = null;
-
+        
+            // E-posta içeriğini satırlara ayır ve tüm metin içeriğini temizle
+            const cleanContent = emailContent.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
+            const lines = cleanContent.split('\n');
+            const questions = {};
+            let currentId = null;
+        
+            // Metni FiDe başlıklarına göre böl
+            let buffer = '';
+            let isFirstQuestion = true;
+        
             lines.forEach(line => {
-                let trimmedLine = line.trim();
-                
-                // HTML etiketlerini ve &nbsp; gibi ifadeleri temizle
-                trimmedLine = trimmedLine.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim();
-
-                // "FiDe XX." başlıklarını bul
+                const trimmedLine = line.trim();
                 const match = trimmedLine.match(/FiDe (\d+)\./);
+        
                 if (match) {
-                    currentQuestionId = match[1];
-                    if (!newReportData[currentQuestionId]) {
-                        newReportData[currentQuestionId] = { dynamicInputs: [] };
+                    // Yeni bir FiDe başlığı bulundu
+                    if (currentId !== null && buffer.trim() !== '') {
+                        // Bir önceki sorunun içeriğini işle
+                        questions[currentId] = buffer.trim();
                     }
-                } else if (currentQuestionId !== null) {
-                    // Madde imlerini ve boşlukları temizleyerek eksiklikleri al
-                    const itemMatch = trimmedLine.match(/^(\*|\-|•)\s*(.+)/);
-                    if (itemMatch) {
-                        const itemText = itemMatch[2].trim();
-                        // "Tamamlandı" ibaresini içeren satırları atla
-                        if (!itemText.includes('Tamamlandı') && itemText !== '' && itemText !== 'Sipariş verilmesi gerekenler:' && itemText !== 'Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:') {
-                            newReportData[currentQuestionId].dynamicInputs.push({ text: itemText, completed: false });
-                        }
-                    }
+                    currentId = match[1];
+                    buffer = trimmedLine + '\n';
+                } else if (currentId !== null) {
+                    // Aynı sorunun alt maddelerini biriktir
+                    buffer += trimmedLine + '\n';
                 }
             });
-
-            // Formu mevcut verilere göre sıfırla ve doldur
+        
+            // Son sorunun içeriğini işle
+            if (currentId !== null && buffer.trim() !== '') {
+                questions[currentId] = buffer.trim();
+            }
+        
+            // Formu temizle ve yeni verilerle doldur
             resetForm(); 
-            for (const qId in newReportData) {
-                const questionData = newReportData[qId];
+            for (const qId in questions) {
+                const questionText = questions[qId];
                 const questionDiv = document.getElementById(`fide-item-${qId}`);
                 if (!questionDiv) {
                     console.warn(`FiDe ${qId} sorusu formda bulunamadı, atlanıyor.`);
                     continue;
                 }
-                
+        
+                // Boşlukları ve liste imlerini temizle
+                const items = questionText.split('\n')
+                    .map(line => line.replace(/^(\*|\-|•)\s*/, '').trim())
+                    .filter(line => line !== '' && !line.includes('Tamamlandı') && !line.includes('SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.') && !line.includes('ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.') && !line.includes('Tüm ürünlerde enerji etiketi var mı?') && !line.includes('Aşağıdaki ürünlerin enerji etiketlerinin tamamlanmasını rica ederim.') && !line.includes('Ürünler teşhir ürün dizilim kılavuzuna göre sergilenmiş mi?') && !line.includes('Aşağıdaki ürünlerin teşhir ürün dizilim kılavuzuna (5 nolu sirkü) göre düzenlenmesini rica ederim.') && !line.includes('@tevfik_2979@hotmail.com'))
+                    .filter(line => line.toLowerCase().includes('eksik') || !fideQuestions.find(q => q.id == qId).title.toLowerCase().includes(line.toLowerCase()));
+        
                 const questionInfo = fideQuestions.find(q => String(q.id) === qId);
                 const containerId = (questionInfo && questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
-                
-                questionData.dynamicInputs.forEach(input => {
-                    addDynamicInput(containerId, input.text, input.completed);
+        
+                items.forEach(item => {
+                    // Soru başlığını ve gereksiz metinleri atla
+                    const questionTitle = fideQuestions.find(q => q.id == qId).title;
+                    if (item.includes(questionTitle) || item.includes('rica ederim')) {
+                        return;
+                    }
+                    addDynamicInput(containerId, item, false);
                 });
             }
-
+        
             saveFormState();
             alert('E-posta içeriği başarıyla işlenerek forma aktarıldı. Tamamlandı olarak işaretlenmesi gerekenleri manuel olarak güncelleyebilirsiniz.');
         }
@@ -1877,7 +1891,7 @@
         }
 
         function deleteQuestionUI(id) {
-            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz?`)) {
                 const itemToDelete = document.querySelector(`.manager-item[data-id="${id}"]`);
                 if(itemToDelete) {
                     itemToDelete.style.transition = 'opacity 0.5s ease';
