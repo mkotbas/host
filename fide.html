@@ -33,7 +33,7 @@
             </div>
             <div class="right-controls">
                 <div id="connection-status-container">
-                    <div id="connection-status-switch" class="disconnected">
+                    <div class="connected">
                         <div class="thumb"></div>
                     </div>
                     <span id="connection-status-text">Bağlı Değil</span>
@@ -60,6 +60,7 @@
                 <i class="fas fa-upload"></i> E-Postadan Formu Doldur
             </button>
         </div>
+
         <div class="card" id="question-manager" style="display: none;">
             <h2>
                 <a href="#" onclick="event.preventDefault(); closeManager();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
@@ -89,7 +90,7 @@
                     <div class="modal-header">
                          <h3><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</h3>
                         <p>
-                            Soru ID'sini değiştirdiğinizde, eski yedeklerdeki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
+                            Soru ID'sini değiştirdiğinizde, eski raporlardaki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
                         </p>
                     </div>
                     <div class="modal-body">
@@ -805,7 +806,7 @@
         }
         function addDynamicInput(id, value = '', isCompleted = false) {
             const container = document.getElementById(`sub-items-container-${id}`);
-            if (!container) return; // Eksiklik konteyneri yoksa fonksiyondan çık
+            if (!container) return;
             const newItem = document.createElement('div');
             newItem.className = 'dynamic-input-item';
             const input = document.createElement('input');
@@ -1908,7 +1909,7 @@
             });
         }
         
-        // --- YENİ EKLENEN KOD BAŞLANGICI ---
+        // Bu kısım, düz metin veya HTML fark etmeksizin içeriği doğru okuması için güncellendi.
         document.addEventListener('DOMContentLoaded', () => {
             const loadEmailBtn = document.getElementById('load-email-btn');
             if (loadEmailBtn) {
@@ -1925,68 +1926,52 @@
                 return;
             }
 
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = emailContent;
-
-            const ulElement = tempDiv.querySelector('ul');
-            if (!ulElement) {
-                alert('E-posta içeriğinde madde işaretli liste (<ul>) bulunamadı. Lütfen doğru içeriği yapıştırdığınızdan emin olun.');
-                return;
-            }
-
-            const listItems = ulElement.querySelectorAll('li');
-            const questionsData = fideQuestions; 
-
-            // Formu temizle ve yeni verilerle doldur.
             resetForm();
 
-            listItems.forEach(li => {
-                const text = li.textContent.trim();
-                const fideMatch = text.match(/FiDe (\d+)/); 
+            const lines = emailContent.split(/\r?\n/);
+            let currentQuestionId = null;
 
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                if (trimmedLine.length === 0) return;
+
+                // "FiDe" başlığını arıyoruz
+                const fideMatch = trimmedLine.match(/FiDe (\d+)\.?\s*(.*)/i);
                 if (fideMatch) {
-                    const questionId = parseInt(fideMatch[1], 10);
-                    const question = questionsData.find(q => q.id === questionId); 
+                    currentQuestionId = parseInt(fideMatch[1], 10);
+                    const questionText = fideMatch[2].replace(':', '').trim();
 
-                    if (question) {
-                        const sectionElement = document.getElementById(`fide-item-${question.id}`);
-                        if (sectionElement) {
-                            // Dinamik olarak eklenen eksiklikleri bul ve forma ekle.
-                            const dynamicItemsText = text.replace(fideMatch[0], '').trim();
-                            if (dynamicItemsText) {
-                                // "Tamamlandı" durumunu tespit et
-                                const isCompleted = dynamicItemsText.includes('Tamamlandı');
-                                // Sadece eksiklik metnini al
-                                const cleanText = dynamicItemsText.replace('Tamamlandı', '').trim();
-                                if (cleanText) {
-                                    // Mevcut kodunuzdaki dinamik giriş ekleme fonksiyonunu çağırın.
-                                    addDynamicInput(`fide${question.id}`, cleanText, isCompleted);
-                                }
+                    // Soru tamamlama durumu varsa işaretle
+                    if (questionText.includes('Tamamlandı')) {
+                        const questionItem = document.getElementById(`fide-item-${currentQuestionId}`);
+                        if (questionItem) {
+                            const completeBtn = questionItem.querySelector('.fide-actions .status-btn');
+                            if (completeBtn && !questionItem.querySelector('.fide-title-container').classList.contains('question-completed')) {
+                                toggleQuestionCompleted(completeBtn, currentQuestionId);
                             }
+                        }
+                    }
+
+                    return;
+                }
+
+                // Eğer bir soru başlığı altında değilse veya satır bir eksiklik listesi gibi görünüyorsa
+                if (currentQuestionId !== null) {
+                    const bulletMatch = trimmedLine.match(/^(•|\*|-)\s*(.*)/);
+                    if (bulletMatch) {
+                        const itemText = bulletMatch[2].trim();
+                        if (itemText) {
+                            const isCompleted = itemText.includes('Tamamlandı');
+                            const cleanItemText = itemText.replace('Tamamlandı', '').trim();
+                            addDynamicInput(`fide${currentQuestionId}`, cleanItemText, isCompleted);
                         }
                     }
                 }
             });
 
-            // "Tamamlandı" işaretli statik maddeleri işle
-            const titleMatch = emailContent.match(/FiDe (\d+)\. .*?Tamamlandı/g);
-            if (titleMatch) {
-                titleMatch.forEach(match => {
-                    const idMatch = match.match(/FiDe (\d+)/);
-                    if (idMatch) {
-                        const questionId = parseInt(idMatch[1], 10);
-                        const questionItem = document.getElementById(`fide-item-${questionId}`);
-                        const completeBtn = questionItem.querySelector('.fide-actions .status-btn');
-                        if (completeBtn && !questionItem.querySelector('.fide-title-container').classList.contains('question-completed')) {
-                            toggleQuestionCompleted(completeBtn, questionId);
-                        }
-                    }
-                });
-            }
-            
             alert('Geçmiş e-posta içeriği başarıyla forma aktarıldı!');
+            updateFormInteractivity(true);
         }
-        // --- YENİ EKLENEN KOD SONU ---
     </script>
 </body>
 </html>
