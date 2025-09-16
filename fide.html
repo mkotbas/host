@@ -581,8 +581,7 @@
         
             // Metni FiDe başlıklarına göre böl
             let buffer = '';
-            let isFirstQuestion = true;
-        
+            
             lines.forEach(line => {
                 const trimmedLine = line.trim();
                 const match = trimmedLine.match(/FiDe (\d+)\./);
@@ -608,32 +607,39 @@
         
             // Formu temizle ve yeni verilerle doldur
             resetForm(); 
-            for (const qId in questions) {
-                const questionText = questions[qId];
-                const questionDiv = document.getElementById(`fide-item-${qId}`);
-                if (!questionDiv) {
-                    console.warn(`FiDe ${qId} sorusu formda bulunamadı, atlanıyor.`);
-                    continue;
-                }
+            const formQuestions = document.querySelectorAll('.fide-item');
+            
+            formQuestions.forEach(qElement => {
+                const qId = qElement.id.replace('fide-item-', '');
+                const questionData = questions[qId];
+                
+                if (questionData) {
+                    // E-postada ilgili soru varsa, içeriğini işle
+                    const items = questionData.split('\n')
+                        .map(line => line.replace(/^(\*|\-|•)\s*/, '').trim())
+                        // 'Tamamlandı' ifadesi içeren satırları filtrele
+                        .filter(line => !line.includes('Tamamlandı'))
+                        .filter(line => line !== '' && !line.includes('SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.') && !line.includes('ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.') && !line.includes('Tüm ürünlerde enerji etiketi var mı?') && !line.includes('Aşağıdaki ürünlerin enerji etiketlerinin tamamlanmasını rica ederim.') && !line.includes('Ürünler teşhir ürün dizilim kılavuzuna göre sergilenmiş mi?') && !line.includes('Aşağıdaki ürünlerin teşhir ürün dizilim kılavuzuna (5 nolu sirkü) göre düzenlenmesini rica ederim.') && !line.includes('@tevfik_2979@hotmail.com'))
+                        .filter(line => line.toLowerCase().includes('eksik') || !fideQuestions.find(q => q.id == qId).title.toLowerCase().includes(line.toLowerCase()));
+
+                    const questionInfo = fideQuestions.find(q => String(q.id) === qId);
+                    const containerId = (questionInfo && questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
         
-                // Boşlukları ve liste imlerini temizle
-                const items = questionText.split('\n')
-                    .map(line => line.replace(/^(\*|\-|•)\s*/, '').trim())
-                    .filter(line => line !== '' && !line.includes('Tamamlandı') && !line.includes('SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.') && !line.includes('ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.') && !line.includes('Tüm ürünlerde enerji etiketi var mı?') && !line.includes('Aşağıdaki ürünlerin enerji etiketlerinin tamamlanmasını rica ederim.') && !line.includes('Ürünler teşhir ürün dizilim kılavuzuna göre sergilenmiş mi?') && !line.includes('Aşağıdaki ürünlerin teşhir ürün dizilim kılavuzuna (5 nolu sirkü) göre düzenlenmesini rica ederim.') && !line.includes('@tevfik_2979@hotmail.com'))
-                    .filter(line => line.toLowerCase().includes('eksik') || !fideQuestions.find(q => q.id == qId).title.toLowerCase().includes(line.toLowerCase()));
-        
-                const questionInfo = fideQuestions.find(q => String(q.id) === qId);
-                const containerId = (questionInfo && questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
-        
-                items.forEach(item => {
-                    // Soru başlığını ve gereksiz metinleri atla
-                    const questionTitle = fideQuestions.find(q => q.id == qId).title;
-                    if (item.includes(questionTitle) || item.includes('rica ederim')) {
-                        return;
+                    items.forEach(item => {
+                        const questionTitle = fideQuestions.find(q => q.id == qId).title;
+                        if (item.includes(questionTitle) || item.includes('rica ederim')) {
+                            return;
+                        }
+                        addDynamicInput(containerId, item, false);
+                    });
+                } else {
+                    // E-postada ilgili soru yoksa, formdaki öğeyi kaldır (removed)
+                    const removeButton = qElement.querySelector('.remove-btn');
+                    if (removeButton && !qElement.classList.contains('question-removed')) {
+                        toggleQuestionRemoved(removeButton, qId);
                     }
-                    addDynamicInput(containerId, item, false);
-                });
-            }
+                }
+            });
         
             saveFormState();
             alert('E-posta içeriği başarıyla işlenerek forma aktarıldı. Tamamlandı olarak işaretlenmesi gerekenleri manuel olarak güncelleyebilirsiniz.');
@@ -1898,7 +1904,7 @@
                     itemToDelete.style.opacity = '0';
                     setTimeout(() => {
                         itemToDelete.style.display = 'none';
-                        itemToDelete.classList.add('to-be-deleted');
+                        item.classList.add('to-be-deleted');
                     }, 500);
                 }
             }
