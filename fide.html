@@ -53,6 +53,13 @@
             </div>
         </div>
 
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Geçmiş Raporu Yükleme</h3>
+            <textarea id="email-content-area" rows="5" placeholder="Geçmiş e-posta içeriğini buraya yapıştırın..."></textarea>
+            <button id="load-email-btn" class="btn-success" style="width: 100%; margin-top: 10px;">
+                <i class="fas fa-upload"></i> E-Postadan Formu Doldur
+            </button>
+        </div>
         <div class="card" id="question-manager" style="display: none;">
             <h2>
                 <a href="#" onclick="event.preventDefault(); closeManager();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
@@ -798,6 +805,7 @@
         }
         function addDynamicInput(id, value = '', isCompleted = false) {
             const container = document.getElementById(`sub-items-container-${id}`);
+            if (!container) return; // Eksiklik konteyneri yoksa fonksiyondan çık
             const newItem = document.createElement('div');
             newItem.className = 'dynamic-input-item';
             const input = document.createElement('input');
@@ -1214,7 +1222,7 @@
                     document.getElementById('store-list').style.display = 'none';
                 }
                 
-                const formContainer = document.getElementById('form-content');
+                const formContent = document.getElementById('form-content');
 
                 for (const qId in reportData.questions_status) {
                     let questionItem = document.getElementById(`fide-item-${qId}`);
@@ -1223,7 +1231,7 @@
                         const archivedQuestion = fideQuestions.find(q => String(q.id) === String(qId));
                         if (archivedQuestion && archivedQuestion.isArchived) {
                             const questionHtml = generateQuestionHtml(archivedQuestion);
-                            formContainer.insertAdjacentHTML('beforeend', questionHtml);
+                            formContent.insertAdjacentHTML('beforeend', questionHtml);
                             questionItem = document.getElementById(`fide-item-${qId}`);
                         }
                     }
@@ -1671,7 +1679,7 @@
                         container.insertBefore(currentlyDragged, afterElement);
                     }
                 }
-            });
+            }, false);
 
             function getDragAfterElement(container, y) {
                 const draggableElements = [...container.querySelectorAll('[draggable="true"]:not(.dragging)')];
@@ -1899,6 +1907,86 @@
                 input.disabled = !enable;
             });
         }
+        
+        // --- YENİ EKLENEN KOD BAŞLANGICI ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadEmailBtn = document.getElementById('load-email-btn');
+            if (loadEmailBtn) {
+                loadEmailBtn.addEventListener('click', () => {
+                    loadFromEmail();
+                });
+            }
+        });
+        
+        async function loadFromEmail() {
+            const emailContent = document.getElementById('email-content-area').value;
+            if (!emailContent) {
+                alert('Lütfen e-posta içeriğini metin kutusuna yapıştırın.');
+                return;
+            }
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = emailContent;
+
+            const ulElement = tempDiv.querySelector('ul');
+            if (!ulElement) {
+                alert('E-posta içeriğinde madde işaretli liste (<ul>) bulunamadı. Lütfen doğru içeriği yapıştırdığınızdan emin olun.');
+                return;
+            }
+
+            const listItems = ulElement.querySelectorAll('li');
+            const questionsData = fideQuestions; 
+
+            // Formu temizle ve yeni verilerle doldur.
+            resetForm();
+
+            listItems.forEach(li => {
+                const text = li.textContent.trim();
+                const fideMatch = text.match(/FiDe (\d+)/); 
+
+                if (fideMatch) {
+                    const questionId = parseInt(fideMatch[1], 10);
+                    const question = questionsData.find(q => q.id === questionId); 
+
+                    if (question) {
+                        const sectionElement = document.getElementById(`fide-item-${question.id}`);
+                        if (sectionElement) {
+                            // Dinamik olarak eklenen eksiklikleri bul ve forma ekle.
+                            const dynamicItemsText = text.replace(fideMatch[0], '').trim();
+                            if (dynamicItemsText) {
+                                // "Tamamlandı" durumunu tespit et
+                                const isCompleted = dynamicItemsText.includes('Tamamlandı');
+                                // Sadece eksiklik metnini al
+                                const cleanText = dynamicItemsText.replace('Tamamlandı', '').trim();
+                                if (cleanText) {
+                                    // Mevcut kodunuzdaki dinamik giriş ekleme fonksiyonunu çağırın.
+                                    addDynamicInput(`fide${question.id}`, cleanText, isCompleted);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // "Tamamlandı" işaretli statik maddeleri işle
+            const titleMatch = emailContent.match(/FiDe (\d+)\. .*?Tamamlandı/g);
+            if (titleMatch) {
+                titleMatch.forEach(match => {
+                    const idMatch = match.match(/FiDe (\d+)/);
+                    if (idMatch) {
+                        const questionId = parseInt(idMatch[1], 10);
+                        const questionItem = document.getElementById(`fide-item-${questionId}`);
+                        const completeBtn = questionItem.querySelector('.fide-actions .status-btn');
+                        if (completeBtn && !questionItem.querySelector('.fide-title-container').classList.contains('question-completed')) {
+                            toggleQuestionCompleted(completeBtn, questionId);
+                        }
+                    }
+                });
+            }
+            
+            alert('Geçmiş e-posta içeriği başarıyla forma aktarıldı!');
+        }
+        // --- YENİ EKLENEN KOD SONU ---
     </script>
 </body>
 </html>
