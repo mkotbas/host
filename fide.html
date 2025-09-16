@@ -81,7 +81,7 @@
                 <div class="modal-panel">
                     <h3><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</h3>
                     <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
-                        <i class="fas fa-info-circle"></i> Soru ID'sini değiştirdiğinizde, eski yedeklerdeki verilerin kaybolmaması için buradan yönlendirme ekleyin.
+                        <i class="fas fa-info-circle"></i> Soru ID'sini değiştirdiğinizde, eski yedeklerdeki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
                     </p>
                     <div class="migration-form">
                         <input type="number" id="migration-old-id" placeholder="Eski ID">
@@ -229,13 +229,32 @@
             });
         }
         
-        function loadMigrationMapFromStorage() {
-            const storedMap = localStorage.getItem('fideMigrationMap');
-            migrationMap = storedMap ? JSON.parse(storedMap) : {};
+        async function loadMigrationMap() {
+            const user = auth.currentUser;
+            let loadedFromCloud = false;
+
+            if (user && database) {
+                try {
+                    const migrationRef = database.ref('migrationSettings/map');
+                    const snapshot = await migrationRef.once('value');
+                    if (snapshot.exists()) {
+                        migrationMap = snapshot.val();
+                        localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
+                        loadedFromCloud = true;
+                    }
+                } catch (error) {
+                    console.error("Buluttan veri taşıma ayarları yüklenemedi:", error);
+                }
+            }
+
+            if (!loadedFromCloud) {
+                const storedMap = localStorage.getItem('fideMigrationMap');
+                migrationMap = storedMap ? JSON.parse(storedMap) : {};
+            }
         }
 
         async function loadInitialData() {
-            loadMigrationMapFromStorage();
+            await loadMigrationMap();
             try {
                 const response = await fetch(`fide_soru_listesi.json?v=${new Date().getTime()}`);
                 if (!response.ok) throw new Error('Soru dosyası bulunamadı.');
@@ -360,6 +379,7 @@
                             if(auth.currentUser && database){
                                 database.ref('allFideReports').remove();
                                 database.ref('excelData').remove();
+                                database.ref('migrationSettings').remove(); // Veri taşıma ayarlarını da buluttan sil
                             }
                             
                             alert("Tüm uygulama verileri başarıyla temizlendi. Sayfa yenileniyor.");
@@ -558,7 +578,7 @@
             }
 
             migrationMap[oldId] = newId;
-            saveMigrationMapToStorage();
+            saveMigrationMap();
             renderMigrationManagerUI();
 
             oldIdInput.value = '';
@@ -569,13 +589,19 @@
         function deleteMigrationMapping(oldIdToDelete) {
             if (confirm(`'${oldIdToDelete}' ID'li yönlendirmeyi silmek istediğinizden emin misiniz?`)) {
                 delete migrationMap[oldIdToDelete];
-                saveMigrationMapToStorage();
+                saveMigrationMap();
                 renderMigrationManagerUI();
             }
         }
 
-        function saveMigrationMapToStorage() {
+        function saveMigrationMap() {
             localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
+            const user = auth.currentUser;
+            if (user && database) {
+                database.ref('migrationSettings/map').set(migrationMap).catch(error => {
+                    console.error("Veri taşıma ayarları buluta kaydedilemedi:", error);
+                });
+            }
         }
         
         function uploadLocalBackupToCloud() {
