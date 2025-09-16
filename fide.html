@@ -381,7 +381,7 @@
             document.getElementById('new-report-btn').addEventListener('click', startNewReport);
             document.getElementById('clear-storage-btn').addEventListener('click', () => {
                 const dogruSifreHash = 'ZmRlMDAx';
-                const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
+                const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini (raporlar, Excel'ler vb.) kalıcı olarak silmek için lütfen şifreyi girin:");
 
                 if (girilenSifre) { 
                     const girilenSifreHash = btoa(girilenSifre);
@@ -1389,7 +1389,7 @@
                 if (storeToRestore) {
                     selectedStore = storeToRestore;
                     const searchInput = document.getElementById('store-search-input');
-                    let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : storeToRestore.bayiAdi;
+                    let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
                     searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`;
                     document.getElementById('store-list').style.display = 'none';
                     loadReportForStore(storeToRestore.bayiKodu);
@@ -1809,7 +1809,7 @@
         }
 
         function deleteQuestionUI(id) {
-            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz?`)) {
                 const itemToDelete = document.querySelector(`.manager-item[data-id="${id}"]`);
                 if(itemToDelete) {
                     itemToDelete.style.transition = 'opacity 0.5s ease';
@@ -1909,7 +1909,6 @@
             });
         }
         
-        // Bu kısım, düz metin veya HTML fark etmeksizin içeriği doğru okuması için güncellendi.
         document.addEventListener('DOMContentLoaded', () => {
             const loadEmailBtn = document.getElementById('load-email-btn');
             if (loadEmailBtn) {
@@ -1935,13 +1934,11 @@
                 const trimmedLine = line.trim();
                 if (trimmedLine.length === 0) return;
 
-                // "FiDe" başlığını arıyoruz
                 const fideMatch = trimmedLine.match(/FiDe (\d+)\.?\s*(.*)/i);
                 if (fideMatch) {
                     currentQuestionId = parseInt(fideMatch[1], 10);
                     const questionText = fideMatch[2].replace(':', '').trim();
 
-                    // Soru tamamlama durumu varsa işaretle
                     if (questionText.includes('Tamamlandı')) {
                         const questionItem = document.getElementById(`fide-item-${currentQuestionId}`);
                         if (questionItem) {
@@ -1955,7 +1952,6 @@
                     return;
                 }
 
-                // Eğer bir soru başlığı altında değilse veya satır bir eksiklik listesi gibi görünüyorsa
                 if (currentQuestionId !== null) {
                     const bulletMatch = trimmedLine.match(/^(•|\*|-)\s*(.*)/);
                     if (bulletMatch) {
