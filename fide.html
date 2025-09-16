@@ -1,4 +1,564 @@
-function loadReportFromEmail() {
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denetim Formu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <link rel="stylesheet" href="https://mkotbas.github.io/host/fidecss.css">
+
+</head>
+<body>
+    <div class="container">
+        
+        <div class="top-controls">
+            <div class="backup-controls">
+                <button id="toggle-manager-btn" class="btn-warning btn-sm"><i class="fas fa-edit"></i> Soru Yöneticisi</button>
+                <div class="dropdown-container">
+                    <button id="backup-menu-btn" class="btn-primary btn-sm">
+                        <i class="fas fa-archive"></i> Yedekleme <i class="fas fa-caret-down"></i>
+                    </button>
+                    <div id="backup-dropdown" class="dropdown-menu">
+                        <button id="backup-btn" class="btn-primary btn-sm" title="Kaydedilmiş tüm bayi raporlarını tek bir .json dosyası olarak indirir."><i class="fas fa-cloud-download-alt"></i> Raporları Yedekle</button>
+                        <button id="restore-from-backup-btn" class="btn-primary btn-sm" title="Bilgisayarınızdaki yedek dosyasını seçerek tarayıcıya yükler."><i class="fas fa-upload"></i> Yedekten Yükle</button>
+                        <button id="merge-backups-btn" class="btn-primary btn-sm" title="Birden fazla yedek dosyasını seçerek tek bir güncel yedek dosyası oluşturur."><i class="fas fa-compress-arrows-alt"></i> Yedekleri Birleştir</button>
+                        <button id="upload-backup-to-cloud-btn" class="btn-primary btn-sm" title="Tarayıcı hafızasındaki yedeği buluta yükler ve buluttaki verilerin üzerine yazar."><i class="fas fa-cloud-upload-alt"></i> Buluta Aktar</button>
+                        
+                        <input type="file" id="restore-file-input" accept=".json" style="display: none;">
+                        <input type="file" id="merge-file-input" accept=".json" style="display: none;" multiple>
+                    </div>
+                </div>
+            </div>
+            <div class="right-controls">
+                <div id="connection-status-container">
+                    <div id="connection-status-switch" class="disconnected">
+                        <div class="thumb"></div>
+                    </div>
+                    <span id="connection-status-text">Bağlı Değil</span>
+                </div>
+                
+                <div id="auth-controls">
+                    <button id="login-toggle-btn" class="btn-success btn-sm"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
+                    <button id="logout-btn" class="btn-danger btn-sm" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
+                    <div id="login-popup">
+                        <h3><i class="fas fa-cloud"></i> Bulut Sistemine Giriş</h3>
+                        <input type="email" id="email-input" placeholder="E-posta">
+                        <input type="password" id="password-input" placeholder="Şifre">
+                        <button id="login-submit-btn" class="btn-primary btn-sm"><i class="fas fa-check"></i> Onayla</button>
+                        <div id="login-error"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="question-manager" style="display: none;">
+            <h2>
+                <a href="#" onclick="event.preventDefault(); closeManager();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
+                    <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i> FiDe Soru Yöneticisi
+                </a>
+            </h2>
+            <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+                <i class="fas fa-info-circle"></i> Buradan FİDE sorularını düzenleyin. <b>Kaydet</b> tuşuna bastığınızda size <b>"fide_soru_listesi.json"</b> adında bir dosya indirilecek. Bu dosyayı mevcut olanla değiştirin ve sayfayı yenileyin.
+            </p>
+            <div class="manager-actions">
+                <div class="manager-view-controls">
+                    <button id="view-active-btn" class="btn-primary btn-sm active"><i class="fas fa-check-circle"></i> Aktif Sorular</button>
+                    <button id="view-archived-btn" class="btn-warning btn-sm"><i class="fas fa-archive"></i> Arşivlenmiş Sorular</button>
+                </div>
+                <div class="manager-main-actions">
+                    <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Soru Ekle</button>
+                    <button id="open-migration-manager-btn" class="btn-primary btn-sm" title="Eski raporlardaki verilerin yeni soru ID'lerine taşınması için kurallar belirleyin."><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</button>
+                    <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenle</button>
+                    <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Arşivi Sil</button>
+                    <button id="restore-all-archived-btn" class="btn-success btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları aktif hale getirir."><i class="fas fa-undo"></i> Arşivi Geri Yükle</button>
+                    <button id="save-questions-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Kaydet</button>
+                </div>
+            </div>
+            <div id="manager-list"></div>
+            <div id="migration-manager-overlay" class="modal-overlay" style="display: none;">
+                <div class="modal-panel">
+                    <div class="modal-header">
+                         <h3><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</h3>
+                        <p>
+                            Soru ID'sini değiştirdiğinizde, eski raporlardaki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
+                        </p>
+                    </div>
+                    <div class="modal-body">
+                        <div class="migration-form">
+                            <input type="number" id="migration-old-id" placeholder="Eski ID">
+                            <i class="fas fa-long-arrow-alt-right"></i>
+                            <input type="number" id="migration-new-id" placeholder="Yeni ID">
+                            <button id="add-migration-btn" class="btn-success btn-sm"><i class="fas fa-plus"></i> Ekle</button>
+                        </div>
+                        <h4>Mevcut Yönlendirmeler</h4>
+                        <ul id="migration-list-container" class="migration-list">
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="close-migration-manager-btn" class="btn-danger btn-sm">Paneli Kapat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="dide-upload-card">
+            <h2><i class="fas fa-chart-line"></i> Puan Entegrasyonu ve Veri Yönetimi</h2>
+            <div id="excel-expiry-warning">
+                <p><i class="fas fa-exclamation-triangle"></i> Veri Uyarısı</p>
+                <span>Aşağıdaki dosyalar 30 günden eski olduğu için hafızadan silindi. Lütfen güncel versiyonlarını tekrar yükleyin:</span>
+                <ul id="expired-files-list"></ul>
+            </div>
+            <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+                <i class="fas fa-info-circle"></i> Raporlarınız artık hem tarayıcı hafızasında saklanır hem de buluta yedeklenir. Düzenli olarak "Tüm Raporları Yedekle" özelliğini kullanmanız yine de tavsiye edilir.
+            </p>
+            <div>
+                <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
+                <div class="file-input-wrapper">
+                    <label for="excel-file-input" class="file-input-label btn-sm" title="Bayi DiDe puanlarını içeren Excel dosyasını seçmek için tıklayın."><i class="fas fa-file-excel"></i> DiDe Excel'i Seç</label>
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls" style="display: none;">
+                    <span id="file-name">Henüz dosya seçilmedi.</span>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <p><b>2. Adım: FiDe Puan Excel Dosyasını Yükleyin</b></p>
+                <div class="file-input-wrapper">
+                    <label for="fide-excel-file-input" class="file-input-label btn-sm" title="Bayi FiDe puanlarını içeren Excel dosyasını seçmek için tıklayın."><i class="fas fa-file-excel"></i> FiDe Excel'i Seç</label>
+                    <input type="file" id="fide-excel-file-input" accept=".xlsx, .xls" style="display: none;">
+                    <span id="fide-file-name">Henüz dosya seçilmedi.</span>
+                </div>
+            </div>
+             <div style="margin-top: 20px;">
+                <p><b>3. Adım: Rapor ve Veri Temizleme</b></p>
+                 <div class="file-input-wrapper">
+                    <button id="clear-storage-btn" class="btn-danger btn-sm" title="UYARI: Tarayıcı hafızasındaki tüm uygulama verilerini (raporlar, Excel'ler vb.) kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Uygulama Verilerini Sil</button>
+                    <button id="clear-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan DiDe Excel verisini tarayıcı hafızasından ve buluttan temizler."><i class="fas fa-trash-alt"></i> DiDe Excell'i Sil</button>
+                    <button id="clear-fide-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan FiDe Excel verisini tarayıcı hafızasından ve buluttan temizler."><i class="fas fa-trash-alt"></i> FiDe Excell'i Sil</button>
+                </div>
+            </div>
+            <div id="store-selection-area">
+                <hr style="margin: 20px 0;">
+                <p><b>4. Adım: Denetlenecek Bayiyi Arayın ve Seçin</b></p>
+                <button id="new-report-btn" class="btn-warning btn-sm" style="margin-bottom: 10px; width: 100%;" title="Mevcut formu boşaltır ve temiz bir rapor sayfası açar."><i class="fas fa-file"></i> Yeni Rapor / Formu Temizle</button>
+                <input type="text" id="store-search-input" placeholder="Bayi adı veya kodu ile aramaya başlayın...">
+                <div id="store-list"></div>
+            </div>
+        </div>
+
+        <div class="card" id="load-options-card" style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div class="load-option-box" style="flex: 1 1 45%;">
+                <h2 style="font-size: 16px; border-bottom: none; margin-bottom: 15px;"><i class="fas fa-download"></i> Rapor Kodu ile Yükle</h2>
+                <p style="font-size: 14px; color: var(--secondary); margin-bottom: 10px;">Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve düğmeye tıklayın.</p>
+                <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..." style="width: 100%; min-height: 120px;"></textarea>
+                <button class="btn-primary" onclick="loadReport()" style="width: 100%;"><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
+            </div>
+            
+            <div class="load-option-box" style="flex: 1 1 45%;">
+                <h2 style="font-size: 16px; border-bottom: none; margin-bottom: 15px;"><i class="fas fa-envelope-open-text"></i> E-Posta Taslağından Yükle</h2>
+                <p style="font-size: 14px; color: var(--secondary); margin-bottom: 10px;">Bir bayi raporu e-postasının içeriğini bu alana yapıştırın ve butona basarak formu doldurun.</p>
+                <textarea id="email-report-area" placeholder="Rapor e-postasının içeriğini bu alana yapıştırın..." style="width: 100%; min-height: 120px;"></textarea>
+                <button class="btn-primary" onclick="loadReportFromEmail()" style="width: 100%;"><i class="fas fa-check-circle"></i> E-Posta ile Yükle</button>
+            </div>
+        </div>
+
+        <div class="card" id="initialization-error">
+            <h2><i class="fas fa-exclamation-triangle"></i> Başlatma Hatası</h2>
+            <p><b><code>fide_soru_listesi.json</code></b> dosyası bulunamadı veya okunamadı. Lütfen bu HTML dosyasıyla aynı klasörde olduğundan emin olun. Form, geçici olarak varsayılan sorularla yüklendi.</p>
+        </div>
+
+        <div id="form-content"></div>
+
+        <button class="action-button" onclick="generateEmail()" title="Formdaki tüm verileri kullanarak nihai e-posta taslağını oluşturur ve raporu kaydeder.">
+            <i class="fas fa-envelope"></i> E-POSTA TASLAĞI OLUŞTUR
+        </button>
+
+        <div class="card" id="save-section" style="display: none;">
+            <h2><i class="fas fa-save"></i> YEDEKLEME İÇİN RAPOR KODU</h2>
+            <p>Bu rapor tarayıcınıza ve buluta otomatik olarak kaydedildi. İsterseniz bu kodu kopyalayıp harici bir dosyaya yedekleyebilirsiniz.</p>
+            <textarea id="save-code-area" readonly></textarea>
+            <button class="btn-success" id="download-report-btn" onclick="downloadReportCode()" style="margin-top: 10px;" title="Oluşturulan raporun manuel yedek kodunu bir metin dosyası olarak indirir.">
+                <i class="fas fa-download"></i> Rapor Kodunu İndir (.txt)
+            </button>
+        </div>
+
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+
+    <script>
+        // --- Firebase Başlatma ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBzTb9cop8B4k8D8VGRBnojlxvIKoaGcbQ",
+            authDomain: "fideraporuygulamasi.firebaseapp.com",
+            databaseURL: "https://fideraporuygulamasi-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "fideraporuygulamasi",
+            storageBucket: "fideraporuygulamasi.appspot.com",
+            messagingSenderId: "351112274026",
+            appId: "1:351112274026:web:2e7433982f3b4bc747ea13"
+        };
+        
+        let database, auth;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            auth = firebase.auth();
+        } catch (e) { console.error("Firebase başlatılamadı.", e); }
+        
+        // --- Global Değişkenler ---
+        let dideData = [], fideData = [], uniqueStores = [], selectedStore = null;
+        let fideQuestions = [], popCodes = [], expiredCodes = [], productList = [], expiredExcelFiles = [];
+        let migrationMap = {}; 
+        const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi." }];
+        const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+        let isFirebaseConnected = false;
+        let currentManagerView = 'active'; 
+
+        // --- Ana Uygulama Mantığı ---
+        window.onload = initializeApp;
+
+        async function initializeApp() {
+            await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+            auth.onAuthStateChanged(async user => { 
+                const loginToggleBtn = document.getElementById('login-toggle-btn');
+                const logoutBtn = document.getElementById('logout-btn');
+                const loginPopup = document.getElementById('login-popup');
+                const uploadBtn = document.getElementById('upload-backup-to-cloud-btn');
+                if (user) {
+                    loginToggleBtn.style.display = 'none';
+                    logoutBtn.style.display = 'inline-flex';
+                    loginPopup.style.display = 'none';
+                    if (uploadBtn) uploadBtn.disabled = false;
+                } else {
+                    loginToggleBtn.style.display = 'inline-flex';
+                    logoutBtn.style.display = 'none';
+                    if (uploadBtn) uploadBtn.disabled = true;
+                }
+                updateConnectionIndicator();
+                await loadInitialData();
+                setupEventListeners();
+                updateFormInteractivity(selectedStore !== null);
+            });
+        }
+        
+        async function loadMigrationMap() {
+            const user = auth.currentUser;
+            let loadedFromCloud = false;
+
+            if (user && database) {
+                try {
+                    const migrationRef = database.ref('migrationSettings/map');
+                    const snapshot = await migrationRef.once('value');
+                    if (snapshot.exists()) {
+                        migrationMap = snapshot.val();
+                        localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
+                        loadedFromCloud = true;
+                    }
+                } catch (error) {
+                    console.error("Buluttan veri taşıma ayarları yüklenemedi:", error);
+                }
+            }
+
+            if (!loadedFromCloud) {
+                const storedMap = localStorage.getItem('fideMigrationMap');
+                migrationMap = storedMap ? JSON.parse(storedMap) : {};
+            }
+        }
+
+        async function loadInitialData() {
+            await loadMigrationMap();
+            try {
+                const response = await fetch(`fide_soru_listesi.json?v=${new Date().getTime()}`);
+                if (!response.ok) throw new Error('Soru dosyası bulunamadı.');
+                const jsonData = await response.json();
+                fideQuestions = jsonData.questions || [];
+                productList = jsonData.productList || [];
+                const popSystemQuestion = fideQuestions.find(q => q.type === 'pop_system');
+                if (popSystemQuestion) {
+                    popCodes = popSystemQuestion.popCodes || [];
+                    expiredCodes = popSystemQuestion.expiredCodes || [];
+                }
+            } catch (error) {
+                console.error("Soru dosyası yüklenemedi:", error);
+                fideQuestions = fallbackFideQuestions;
+                document.getElementById('initialization-error').style.display = 'block';
+            }
+
+            if (database) {
+                const connectionRef = database.ref('.info/connected');
+                connectionRef.on('value', (snapshot) => {
+                    isFirebaseConnected = snapshot.val();
+                    updateConnectionIndicator();
+                });
+            }
+
+            await loadExcelData();
+
+            if (expiredExcelFiles.length > 0) {
+                const warningDiv = document.getElementById('excel-expiry-warning');
+                const list = document.getElementById('expired-files-list');
+                list.innerHTML = expiredExcelFiles.map(file => `<li>${file}</li>`).join('');
+                warningDiv.style.display = 'block';
+            }
+
+            buildForm();
+            restoreLastSession();
+        }
+        
+        async function loadExcelData() {
+            const user = auth.currentUser;
+            let dideLoaded = false;
+            let fideLoaded = false;
+
+            if (user && database) {
+                const dideRef = database.ref('excelData/dide');
+                const dideSnapshot = await dideRef.once('value');
+                if (dideSnapshot.exists()) {
+                    const storedData = dideSnapshot.val();
+                    const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+                    if (ageInDays <= 30) {
+                        if (storedData.filename) { document.getElementById('file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
+                        populateDideState(storedData.data);
+                        dideLoaded = true;
+                    }
+                }
+
+                const fideRef = database.ref('excelData/fide');
+                const fideSnapshot = await fideRef.once('value');
+                if (fideSnapshot.exists()) {
+                    const storedData = fideSnapshot.val();
+                    const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+                    if (ageInDays <= 30) {
+                        if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
+                        populateFideState(storedData.data);
+                        fideLoaded = true;
+                    }
+                }
+            }
+
+            if (!dideLoaded) loadDideDataFromStorage();
+            if (!fideLoaded) loadFideDataFromStorage();
+        }
+
+        function updateConnectionIndicator() {
+            const statusSwitch = document.getElementById('connection-status-switch');
+            const statusText = document.getElementById('connection-status-text');
+            const isOnline = isFirebaseConnected && auth.currentUser;
+            
+            statusSwitch.classList.toggle('connected', isOnline);
+            statusSwitch.classList.toggle('disconnected', !isOnline);
+            statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
+        }
+        
+        function closeManager() {
+            document.getElementById('question-manager').style.display = 'none';
+            document.getElementById('dide-upload-card').style.display = '';
+            document.getElementById('load-options-card').style.display = 'flex';
+            
+            const emailDraft = document.getElementById('email-draft-container');
+            const saveSection = document.getElementById('save-section');
+
+            if (emailDraft) {
+                emailDraft.style.display = 'block';
+                if(saveSection) saveSection.style.display = 'block';
+            } else {
+                document.getElementById('form-content').style.display = '';
+                document.querySelector('.action-button').style.display = '';
+                if(saveSection) saveSection.style.display = 'none';
+            }
+        }
+
+        function setupEventListeners() {
+            if (document.body.dataset.listenersAttached) return;
+            document.body.dataset.listenersAttached = 'true';
+
+            document.getElementById('excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'dide'));
+            document.getElementById('fide-excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'fide'));
+            document.getElementById('backup-btn').addEventListener('click', backupAllReports);
+            document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
+            document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
+            document.getElementById('new-report-btn').addEventListener('click', startNewReport);
+            document.getElementById('clear-storage-btn').addEventListener('click', () => {
+                const dogruSifreHash = 'ZmRlMDAx';
+                const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
+
+                if (girilenSifre) { 
+                    const girilenSifreHash = btoa(girilenSifre);
+                    if (girilenSifreHash === dogruSifreHash) {
+                        if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları, yüklenmiş Excel dosyaları ve son oturum bilgileri dahil olmak üzere tarayıcıda ve bulutta saklanan BÜTÜN uygulama verileri kalıcı olarak silinecektir.")) {
+                            localStorage.clear();
+                            
+                            if(auth.currentUser && database){
+                                database.ref('allFideReports').remove();
+                                database.ref('excelData').remove();
+                                database.ref('migrationSettings').remove(); // Veri taşıma ayarlarını da buluttan sil
+                            }
+                            
+                            alert("Tüm uygulama verileri başarıyla temizlendi. Sayfa yenileniyor.");
+                            window.location.reload();
+                        }
+                    } else {
+                        alert("Hatalı şifre! Silme işlemi iptal edildi.");
+                    }
+                }
+            });
+            document.getElementById('clear-excel-btn').addEventListener('click', () => {
+                if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+                    localStorage.removeItem('didePersistenceData');
+                    if(auth.currentUser && database) {
+                        database.ref('excelData/dide').remove();
+                    }
+                    alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor.");
+                    window.location.reload();
+                }
+            });
+             document.getElementById('clear-fide-excel-btn').addEventListener('click', () => {
+                if (confirm("Yüklenmiş olan FiDe Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+                    localStorage.removeItem('fidePersistenceData');
+                    if(auth.currentUser && database) {
+                        database.ref('excelData/fide').remove();
+                    }
+                    alert("FiDe Excel verisi temizlendi. Sayfa yenileniyor.");
+                    window.location.reload();
+                }
+            });
+            document.getElementById('store-search-input').addEventListener('keyup', (e) => {
+                selectedStore = null; 
+                const filter = e.target.value.toLowerCase().trim();
+                const storeListDiv = document.getElementById('store-list');
+                storeListDiv.style.display = 'block';
+                if (filter === "") {
+                    storeListDiv.innerHTML = ''; 
+                    return;
+                }
+                const filteredStores = uniqueStores.filter(store => 
+                    (store.bayiAdi && store.bayiAdi.toLowerCase().includes(filter)) || 
+                    (store.bayiKodu && String(store.bayiKodu).toLowerCase().includes(filter))
+                );
+                displayStores(filteredStores);
+            });
+            
+            const loginToggleBtn = document.getElementById('login-toggle-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const loginPopup = document.getElementById('login-popup');
+            const loginSubmitBtn = document.getElementById('login-submit-btn');
+            const uploadBackupBtn = document.getElementById('upload-backup-to-cloud-btn');
+            const backupMenuBtn = document.getElementById('backup-menu-btn');
+            const backupDropdown = document.getElementById('backup-dropdown');
+            const restoreBtn = document.getElementById('restore-from-backup-btn');
+            const mergeBtn = document.getElementById('merge-backups-btn');
+
+            backupMenuBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                backupDropdown.classList.toggle('show');
+                backupMenuBtn.classList.toggle('open');
+            });
+            restoreBtn.addEventListener('click', () => document.getElementById('restore-file-input').click());
+            mergeBtn.addEventListener('click', () => document.getElementById('merge-file-input').click());
+            loginToggleBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
+            });
+            logoutBtn.addEventListener('click', () => { auth.signOut(); window.location.reload(); });
+            loginSubmitBtn.addEventListener('click', () => {
+                const email = document.getElementById('email-input').value;
+                const password = document.getElementById('password-input').value;
+                const errorDiv = document.getElementById('login-error');
+                errorDiv.textContent = '';
+                if (!email || !password) { errorDiv.textContent = 'Lütfen tüm alanları doldurun.'; return; }
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(() => { loginPopup.style.display = 'none'; })
+                    .catch(error => { errorDiv.textContent = 'E-posta veya şifre hatalı.'; });
+            });
+            uploadBackupBtn.addEventListener('click', uploadLocalBackupToCloud);
+            window.addEventListener('click', function(event) {
+                const authControls = document.getElementById('auth-controls');
+                if (authControls && !authControls.contains(event.target)) {
+                    loginPopup.style.display = 'none';
+                }
+                const dropdownContainer = document.querySelector('.dropdown-container');
+                if (dropdownContainer && !dropdownContainer.contains(event.target)) {
+                    backupDropdown.classList.remove('show');
+                    backupMenuBtn.classList.remove('open');
+                }
+            });
+
+            document.getElementById('toggle-manager-btn').addEventListener('click', () => {
+                const manager = document.getElementById('question-manager');
+                const isManagerHidden = manager.style.display === 'none' || manager.style.display === '';
+                if (isManagerHidden) {
+                    const dogruSifreHash = 'ZmRlMDAx';
+                    const girilenSifre = prompt("Lütfen Soru Yöneticisi şifresini girin:");
+                    if (girilenSifre) {
+                        const girilenSifreHash = btoa(girilenSifre);
+                        if (girilenSifreHash === dogruSifreHash) {
+                            const emailDraft = document.getElementById('email-draft-container');
+                            if(emailDraft) emailDraft.style.display = 'none';
+
+                            const saveSection = document.getElementById('save-section');
+                            if(saveSection) saveSection.style.display = 'none';
+
+                            manager.style.display = 'block';
+                            document.getElementById('dide-upload-card').style.display = 'none';
+                            document.getElementById('load-options-card').style.display = 'none';
+                            document.getElementById('form-content').style.display = 'none';
+                            document.querySelector('.action-button').style.display = 'none';
+                            renderQuestionManager();
+                        } else {
+                            alert("Hatalı şifre!");
+                        }
+                    }
+                } else {
+                    closeManager();
+                }
+            });
+            
+            document.getElementById('view-active-btn').addEventListener('click', () => {
+                currentManagerView = 'active';
+                filterManagerView();
+            });
+            document.getElementById('view-archived-btn').addEventListener('click', () => {
+                currentManagerView = 'archived';
+                filterManagerView();
+            });
+            document.getElementById('add-new-question-btn').addEventListener('click', addNewQuestionUI);
+            document.getElementById('save-questions-btn').addEventListener('click', saveQuestions);
+            document.getElementById('delete-all-archived-btn').addEventListener('click', deleteAllArchivedQuestions);
+            document.getElementById('restore-all-archived-btn').addEventListener('click', restoreAllArchivedQuestions);
+            
+            document.getElementById('unlock-ids-btn').addEventListener('click', () => {
+                const dogruSifreHash = 'ZmRlMDAx';
+                const girilenSifre = prompt("ID alanlarını düzenlemeye açmak için lütfen yönetici şifresini tekrar girin:");
+                if (girilenSifre) {
+                    const girilenSifreHash = btoa(girilenSifre);
+                    if (girilenSifreHash === dogruSifreHash) {
+                        const idInputs = document.querySelectorAll('.manager-id-input');
+                        idInputs.forEach(input => {
+                            input.disabled = false;
+                        });
+                        const unlockBtn = document.getElementById('unlock-ids-btn');
+                        unlockBtn.disabled = true;
+                        unlockBtn.innerHTML = '<i class="fas fa-lock-open"></i> ID Alanları Düzenlenebilir';
+                        alert('Soru ID alanları artık düzenlenebilir.');
+                    } else {
+                        alert('Hatalı şifre!');
+                    }
+                }
+            });
+
+            document.getElementById('open-migration-manager-btn').addEventListener('click', () => {
+                renderMigrationManagerUI();
+                document.getElementById('migration-manager-overlay').style.display = 'flex';
+            });
+            document.getElementById('close-migration-manager-btn').addEventListener('click', () => {
+                document.getElementById('migration-manager-overlay').style.display = 'none';
+            });
+            document.getElementById('add-migration-btn').addEventListener('click', addMigrationMapping);
+        }
+        
+        function loadReportFromEmail() {
             if (!selectedStore) {
                 alert('Lütfen e-posta içeriğini yüklemeden önce denetlenecek bayiyi seçin!');
                 return;
@@ -88,3 +648,1357 @@ function loadReportFromEmail() {
             saveFormState();
             alert('E-posta içeriği başarıyla işlenerek forma aktarıldı. Tamamlandı olarak işaretlenmesi gerekenleri manuel olarak güncelleyebilirsiniz.');
         }
+
+        function renderMigrationManagerUI() {
+            const listContainer = document.getElementById('migration-list-container');
+            listContainer.innerHTML = '';
+            if (Object.keys(migrationMap).length === 0) {
+                listContainer.innerHTML = '<li class="empty-message">Henüz yönlendirme eklenmemiş.</li>';
+            } else {
+                for (const oldId in migrationMap) {
+                    const newId = migrationMap[oldId];
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <span class="mapping-text">
+                            Eski ID: <b>${oldId}</b> <i class="fas fa-long-arrow-alt-right"></i> Yeni ID: <b>${newId}</b>
+                        </span>
+                        <button class="btn-danger btn-sm" onclick="deleteMigrationMapping('${oldId}')" title="Bu yönlendirmeyi sil."><i class="fas fa-trash"></i></button>
+                    `;
+                    listContainer.appendChild(listItem);
+                }
+            }
+        }
+
+        function addMigrationMapping() {
+            const oldIdInput = document.getElementById('migration-old-id');
+            const newIdInput = document.getElementById('migration-new-id');
+            const oldId = oldIdInput.value.trim();
+            const newId = newIdInput.value.trim();
+
+            if (!oldId || !newId) {
+                alert("Lütfen hem 'Eski ID' hem de 'Yeni ID' alanlarını doldurun.");
+                return;
+            }
+            if (oldId === newId) {
+                alert("Eski ve yeni ID aynı olamaz.");
+                return;
+            }
+
+            migrationMap[oldId] = newId;
+            saveMigrationMap();
+            renderMigrationManagerUI();
+
+            oldIdInput.value = '';
+            newIdInput.value = '';
+            oldIdInput.focus();
+        }
+
+        function deleteMigrationMapping(oldIdToDelete) {
+            if (confirm(`'${oldIdToDelete}' ID'li yönlendirmeyi silmek istediğinizden emin misiniz?`)) {
+                delete migrationMap[oldIdToDelete];
+                saveMigrationMap();
+                renderMigrationManagerUI();
+            }
+        }
+
+        function saveMigrationMap() {
+            localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
+            const user = auth.currentUser;
+            if (user && database) {
+                database.ref('migrationSettings/map').set(migrationMap).catch(error => {
+                    console.error("Veri taşıma ayarları buluta kaydedilemedi:", error);
+                });
+            }
+        }
+        
+        function uploadLocalBackupToCloud() {
+            if (!auth.currentUser) { alert("Bu işlem için önce sisteme giriş yapmalısınız."); return; }
+            const localDataString = localStorage.getItem('allFideReports');
+            if (!localDataString) { alert("Buluta yüklenecek yerel bir yedek bulunamadı."); return; }
+            const confirmation = confirm("DİKKAT! Bu işlem, buluttaki mevcut tüm raporların üzerine yazacaktır. Tarayıcı hafızanızdaki yedek buluta yüklenecektir. Emin misiniz?");
+            if (confirmation) {
+                try {
+                    const localData = JSON.parse(localDataString);
+                    const firebaseRef = database.ref('allFideReports');
+                    
+                    firebaseRef.set(localData)
+                        .then(() => { alert("Yerel yedek başarıyla buluta yüklendi! Sayfanın yenilenmesi önerilir."); })
+                        .catch(error => { alert("Buluta yükleme sırasında bir hata oluştu: " + error.message); console.error("Firebase'e yazma hatası:", error); });
+                } catch (error) { alert("Yerel yedek verisi okunurken bir hata oluştu. Yedek dosyası bozuk olabilir."); console.error("JSON parse hatası:", error); }
+            }
+        }
+        function saveFormState() {
+            if (!document.getElementById('form-content').innerHTML || !selectedStore) return;
+            let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
+            const reportData = getFormDataForSaving();
+            const storeKey = `store_${selectedStore.bayiKodu}`;
+            allReports[storeKey] = { timestamp: new Date().getTime(), data: reportData };
+            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+            if (database && auth.currentUser) {
+                const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
+                firebaseStoreRef.set({ timestamp: new Date().getTime(), data: reportData })
+                    .catch(error => console.error("Firebase'e yazma hatası:", error));
+            }
+        }
+        function loadReportForStore(bayiKodu) {
+            const storeKey = `store_${bayiKodu}`;
+            if (database && auth.currentUser) {
+                const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
+                firebaseStoreRef.once('value', (snapshot) => {
+                    if (snapshot.exists()) { loadReport(snapshot.val().data); } 
+                    else {
+                        const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
+                        if (allReports[storeKey]) { loadReport(allReports[storeKey].data); } else { resetForm(); }
+                    }
+                }).catch(error => {
+                    console.error("Firebase'den okuma hatası:", error);
+                    const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
+                    if (allReports[storeKey]) { loadReport(allReports[storeKey].data); } else { resetForm(); }
+                });
+            } else {
+                const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
+                if (allReports[storeKey]) { loadReport(allReports[storeKey].data); } else { resetForm(); }
+            }
+        }
+        function getUnitForProduct(productName) {
+            const upperCaseName = productName.toUpperCase();
+            if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; }
+            return 'Paket';
+        }
+        function resetForm() { document.getElementById('form-content').innerHTML = ''; buildForm(); }
+        
+        function generateQuestionHtml(q) {
+            let questionActionsHTML = '';
+            let questionContentHTML = '';
+            let isArchivedClass = q.isArchived ? 'archived-item' : ''; 
+
+            if (q.type === 'standard') {
+                questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+                let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`).join('');
+                questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
+            } else if (q.type === 'product_list') {
+                questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')" title="Pleksi kullanımıyla ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+                let productOptions = '';
+                let currentOptgroup = false;
+                productList.forEach(p => {
+                    if (p.type === 'header') {
+                        if (currentOptgroup) productOptions += `</optgroup>`;
+                        productOptions += `<optgroup label="${p.name}">`;
+                        currentOptgroup = true;
+                    } else {
+                        productOptions += `<option value="${p.code}">${p.code} - ${p.name}</option>`;
+                    }
+                });
+                if (currentOptgroup) productOptions += `</optgroup>`;
+                questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
+            } else if (q.type === 'pop_system') {
+                questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+                questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
+            }
+            return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
+        }
+        
+        function buildForm() {
+            const formContainer = document.getElementById('form-content');
+            formContainer.innerHTML = '';
+            let html = '';
+            fideQuestions.forEach(q => {
+                if (q.isArchived) { return; }
+                html += generateQuestionHtml(q);
+            });
+            formContainer.innerHTML = html;
+            if (document.getElementById('popCodesContainer')) initializePopSystem();
+        }
+        function initiateDeleteItem(buttonEl) {
+            const itemEl = buttonEl.parentElement;
+            if (itemEl.classList.contains('is-deleting')) {
+                clearTimeout(itemEl.dataset.deleteTimer);
+                itemEl.removeAttribute('data-delete-timer');
+                itemEl.classList.remove('is-deleting');
+                buttonEl.querySelector('i').className = 'fas fa-trash';
+                buttonEl.classList.remove('btn-warning');
+                buttonEl.classList.add('btn-danger');
+            } else {
+                itemEl.classList.add('is-deleting');
+                buttonEl.querySelector('i').className = 'fas fa-undo';
+                buttonEl.classList.remove('btn-danger');
+                buttonEl.classList.add('btn-warning');
+                const timerId = setTimeout(() => { itemEl.remove(); saveFormState(); }, 4000);
+                itemEl.dataset.deleteTimer = timerId;
+            }
+            saveFormState();
+        }
+
+        function addProductToList(productCode, quantity) {
+            const select = document.getElementById('product-selector');
+            const qtyInput = document.getElementById('product-qty');
+            const selectedProductCode = productCode || select.value;
+            const selectedQty = quantity || qtyInput.value;
+            if (!selectedProductCode || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.');
+            
+            const product = productList.find(p => p.code === selectedProductCode);
+            if (!product) { console.error("Ürün bulunamadı: ", selectedProductCode); return; }
+
+            const listContainer = document.getElementById('selected-products-list');
+            if (document.querySelector(`.selected-product-item[data-code="${product.code}"]`)) return alert('Bu ürün zaten listede.');
+            
+            const unit = getUnitForProduct(product.name);
+            const newItem = document.createElement('div');
+            newItem.className = 'selected-product-item';
+            newItem.dataset.code = product.code;
+            newItem.dataset.qty = selectedQty;
+            newItem.innerHTML = `<span>${product.code} ${product.name} - <b>${selectedQty} ${unit}</b></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler." onclick="this.parentElement.remove(); saveFormState();"><i class="fas fa-trash"></i></button>`;
+            listContainer.appendChild(newItem);
+            
+            if (!productCode) { select.value = ''; qtyInput.value = '1'; }
+            saveFormState();
+        }
+
+        function toggleCompleted(button) {
+            const input = button.parentElement.querySelector('input[type="text"]');
+            const isCompleted = input.classList.toggle('completed');
+            input.readOnly = isCompleted;
+            button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
+            button.classList.toggle('undo', isCompleted);
+            saveFormState();
+        }
+        function toggleQuestionCompleted(button, id) {
+            const itemDiv = document.getElementById(`fide-item-${id}`);
+            const titleContainer = itemDiv.querySelector('.fide-title-container');
+            const isQuestionCompleted = titleContainer.classList.toggle('question-completed');
+            button.innerHTML = isQuestionCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
+            button.classList.toggle('undo', isQuestionCompleted);
+            const inputArea = itemDiv.querySelector('.input-area');
+            if (inputArea) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
+            saveFormState();
+        }
+        function toggleQuestionRemoved(button, id) {
+            const itemDiv = document.getElementById(`fide-item-${id}`);
+            const inputArea = itemDiv.querySelector('.input-area');
+            const actionsContainer = button.closest('.fide-actions');
+            const addItemBtn = actionsContainer.querySelector('.add-item-btn');
+            const completeBtn = actionsContainer.querySelector('.status-btn');
+            const isRemoved = itemDiv.classList.toggle('question-removed');
+            if (isRemoved) {
+                if (inputArea) inputArea.style.display = 'none';
+                button.innerHTML = '<i class="fas fa-undo"></i> Geri Al';
+                button.classList.remove('btn-danger');
+                button.classList.add('btn-primary');
+                if (addItemBtn) addItemBtn.disabled = true;
+                if (completeBtn) completeBtn.disabled = true;
+            } else {
+                if (inputArea) inputArea.style.display = 'block';
+                button.innerHTML = '<i class="fas fa-times-circle"></i> Çıkar';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-danger');
+                if (addItemBtn) addItemBtn.disabled = false;
+                if (completeBtn) completeBtn.disabled = false;
+            }
+            saveFormState();
+        }
+        function addDynamicInput(id, value = '', isCompleted = false) {
+            const container = document.getElementById(`sub-items-container-${id}`);
+            const newItem = document.createElement('div');
+            newItem.className = 'dynamic-input-item';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = 'Eksikliği yazın...';
+            input.value = value;
+            input.addEventListener('keydown', function(event) { if (event.key === 'Enter') { event.preventDefault(); addDynamicInput(id); } });
+            input.addEventListener('blur', saveFormState);
+            const completeButton = document.createElement('button');
+            completeButton.className = 'status-btn btn-sm';
+            completeButton.innerHTML = '<i class="fas fa-check"></i> Tamamlandı';
+            completeButton.onclick = () => toggleCompleted(completeButton);
+            completeButton.title = "Bu eksikliği 'Tamamlandı' olarak işaretler. Geri alınabilir.";
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-bar btn-danger';
+            deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+            deleteButton.onclick = function() { initiateDeleteItem(this); };
+            deleteButton.title = "Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir.";
+            newItem.appendChild(input);
+            newItem.appendChild(completeButton);
+            newItem.appendChild(deleteButton);
+            if(isCompleted) toggleCompleted(completeButton);
+            container.prepend(newItem);
+            if (value === '') input.focus();
+            saveFormState();
+        }
+        function getCombinedInputs(id) {
+            const container = document.getElementById(`sub-items-container-${id}`);
+            if (!container) return [];
+            const allItems = [];
+            Array.from(container.childNodes).reverse().forEach(node => {
+                if (node.classList && (node.classList.contains('static-item') || node.classList.contains('dynamic-input-item'))) {
+                    if(node.classList.contains('is-deleting')) return;
+                    let text, completed = false, type = '';
+                    if (node.classList.contains('static-item')) {
+                        text = node.querySelector('.content').innerHTML;
+                        type = 'static';
+                    } else {
+                        const input = node.querySelector('input[type="text"]');
+                        text = input.value.trim();
+                        completed = input.classList.contains('completed');
+                        type = 'dynamic';
+                    }
+                    if (text) allItems.push({ text, completed, type });
+                }
+            });
+            return allItems;
+        }
+        function getDynamicInputsForSaving(id) {
+             const container = document.getElementById(`sub-items-container-${id}`);
+            if (!container) return [];
+            const dynamicItems = [];
+            Array.from(container.childNodes).reverse().forEach(node => {
+                if (node.classList && node.classList.contains('dynamic-input-item')) {
+                    const input = node.querySelector('input[type="text"]');
+                    const text = input.value.trim();
+                    if (text) dynamicItems.push({ text: text, completed: input.classList.contains('completed') });
+                }
+            });
+            return dynamicItems;
+        }
+        function initializePopSystem() {
+            const popCodesContainer = document.getElementById('popCodesContainer');
+            if (!popCodesContainer) return;
+            popCodesContainer.innerHTML = '';
+            popCodes.forEach(code => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-label';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = code;
+                checkbox.className = 'pop-checkbox';
+                checkbox.addEventListener('change', () => {
+                    checkExpiredPopCodes();
+                    saveFormState();
+                });
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(code));
+                popCodesContainer.appendChild(label);
+            });
+        }
+        function checkExpiredPopCodes() {
+            const warningMessage = document.getElementById('expiredWarning');
+            if (!warningMessage) return;
+            const hasExpired = Array.from(document.querySelectorAll('.pop-checkbox:checked')).some(cb => expiredCodes.includes(cb.value));
+            warningMessage.style.display = hasExpired ? 'block' : 'none';
+        }
+        function copySelectedCodes() {
+            const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+            if (nonExpiredCodes.length === 0) return alert("Kopyalamak için geçerli kod seçin.");
+            navigator.clipboard.writeText(nonExpiredCodes.join(', ')).then(() => alert("Seçilen geçerli kodlar kopyalandı!"));
+        }
+        function clearSelectedCodes() {
+            document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
+            checkExpiredPopCodes();
+            saveFormState();
+        }
+        function selectExpiredCodes() {
+            document.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = expiredCodes.includes(cb.value); });
+            checkExpiredPopCodes();
+            saveFormState();
+        }
+        function openEmailDraft() {
+            const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+            const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
+            if (nonExpiredCodes.length === 0) { alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin."); return; }
+            const kodSatiri = nonExpiredCodes.join(', ');
+            const emailHTML = `
+                <!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>E-Posta Taslağı</title>
+                <style>body { font-family: Arial; padding: 20px; background-color: #fff; } .block { margin-bottom: 15px; } .label { font-weight: bold; color: #555; display: inline-block; margin-bottom: 8px; }</style>
+                </head><body>
+                <div class="block"><span class="label">Kime:</span> berkcan_boza@arcelik.com.tr</div>
+                <div class="block"><span class="label">CC:</span> "ugur.dogan@arcelik.com" &lt;ugur.dogan@arcelik.com.tr&gt;; "aykut.demen@arcelik.com.tr" &lt;aykut.demen@arcelik.com.tr&gt;; "Ahmet.Erol2@arcelik.com.tr" &lt;ahmet.erol2@arcelik.com.tr&gt;</div>
+                <div class="block"><span class="label">Konu:</span> (Boş)</div>
+                <div class="block"><span class="label">İçerik:</span><div style="margin-top: 10px;">${kodSatiri}</div></div>
+                </body></html>`;
+            const emailWindow = window.open('', '_blank');
+            emailWindow.document.write(emailHTML);
+            emailWindow.document.close();
+        }
+        function handleFileSelect(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const filename = file.name;
+            const fileNameSpan = type === 'dide' ? document.getElementById('file-name') : document.getElementById('fide-file-name');
+            fileNameSpan.textContent = `Yüklü dosya: ${filename}`;
+            const reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+                    if (type === 'dide') { processDideExcelData(dataAsArray, true, filename); } else { processFideExcelData(dataAsArray, true, filename); }
+                } catch (error) { alert("Excel dosyası okunurken bir hata oluştu."); console.error("Excel okuma hatası:", error); }
+            };
+        }
+        function processDideExcelData(dataAsArray, saveToStorage = false, filename = '') {
+            if (dataAsArray.length < 2) return alert('DiDe Excel dosyası beklenen formatta değil (en az 2 satır gerekli).');
+            let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
+            if (headerRowIndex === -1) return alert('DiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
+            const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h);
+            const dataRows = dataAsArray.slice(headerRowIndex + 1);
+            const bayiKoduIndex = headerRow.indexOf('Bayi Kodu');
+            const bayiIndex = headerRow.indexOf('Bayi');
+            const bayiYonetmeniIndex = headerRow.indexOf('Bayi Yönetmeni');
+            if ([bayiKoduIndex, bayiIndex, bayiYonetmeniIndex].includes(-1)) return alert('DiDe Excel dosyasında "Bayi Kodu", "Bayi" veya "Bayi Yönetmeni" sütunlarından biri bulunamadı.');
+            const processedData = dataRows.map(row => {
+                if (!row[bayiKoduIndex]) return null;
+                const scores = {};
+                headerRow.forEach((header, index) => {
+                    const monthNumber = parseInt(header);
+                    if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
+                        if(row[index] !== null && row[index] !== undefined) scores[monthNumber] = row[index];
+                    }
+                });
+                return { 'Bayi Kodu': row[bayiKoduIndex], 'Bayi': row[bayiIndex], 'Bayi Yönetmeni': row[bayiYonetmeniIndex], 'scores': scores };
+            }).filter(d => d);
+            if (saveToStorage) {
+                const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
+                localStorage.setItem('didePersistenceData', JSON.stringify(persistenceData));
+                if (auth.currentUser && database) {
+                    database.ref('excelData/dide').set(persistenceData);
+                }
+                alert('DiDe puan dosyası başarıyla işlendi, tarayıcıya ve buluta kaydedildi.');
+            }
+            populateDideState(processedData);
+        }
+        function processFideExcelData(dataAsArray, saveToStorage = false, filename = '') {
+            if (dataAsArray.length < 3) return alert('FiDe Excel dosyası beklenen formatta değil (en az 3 satır gerekli).');
+            const currentYear = new Date().getFullYear();
+            let yearRowIndex = -1;
+            for(let i = 0; i < dataAsArray.length; i++) {
+                if(dataAsArray[i].some(cell => String(cell).trim() == currentYear)) {
+                    yearRowIndex = i;
+                    break;
+                }
+            }
+            if (yearRowIndex === -1) return alert(`FiDe Excel dosyasında '${currentYear}' yılını içeren bir satır bulunamadı.`);
+            const yearRow = dataAsArray[yearRowIndex];
+            const filledYearRow = [];
+            let lastKnownYear = null;
+            for (const cell of yearRow) {
+                if (cell !== null && cell !== undefined && String(cell).trim() !== "") { lastKnownYear = String(cell).trim(); }
+                filledYearRow.push(lastKnownYear);
+            }
+            let monthRowIndex = yearRowIndex + 1;
+            if (monthRowIndex >= dataAsArray.length) return alert('FiDe Excel dosyasında ay bilgileri (yıl satırının altında) bulunamadı.');
+            const monthRow = dataAsArray[monthRowIndex];
+            let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
+            if (headerRowIndex === -1) return alert('FiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
+            const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h);
+            const dataRows = dataAsArray.slice(headerRowIndex + 1);
+            const bayiKoduIndex = headerRow.indexOf('Bayi Kodu');
+            if (bayiKoduIndex === -1) return alert('FiDe Excel dosyasında "Bayi Kodu" sütunu bulunamadı.');
+            const processedData = dataRows.map(row => {
+                if (!row[bayiKoduIndex]) return null;
+                const scores = {};
+                for (let i = 0; i < filledYearRow.length; i++) {
+                    if (filledYearRow[i] == currentYear) {
+                        const monthNumber = parseInt(monthRow[i]);
+                        if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
+                            if(row[i] !== null && row[i] !== undefined && row[i] !== "") scores[monthNumber] = row[i];
+                        }
+                    }
+                }
+                return { 'Bayi Kodu': row[bayiKoduIndex], 'scores': scores };
+            }).filter(d => d);
+
+            if (saveToStorage) {
+                const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
+                localStorage.setItem('fidePersistenceData', JSON.stringify(persistenceData));
+                if (auth.currentUser && database) {
+                    database.ref('excelData/fide').set(persistenceData);
+                }
+                alert('FiDe puan dosyası başarıyla işlendi, tarayıcıya ve buluta kaydedildi.');
+            }
+            populateFideState(processedData);
+        }
+        function populateDideState(data) {
+            dideData = data;
+            const storeMap = new Map();
+            dideData.forEach(row => { 
+                if (row['Bayi Kodu'] && !storeMap.has(row['Bayi Kodu'])) {
+                    storeMap.set(row['Bayi Kodu'], { bayiKodu: row['Bayi Kodu'], bayiAdi: row['Bayi'] });
+                }
+            });
+            uniqueStores = Array.from(storeMap.values()).sort((a, b) => a.bayiAdi.localeCompare(b.bayiAdi));
+            document.getElementById('store-list').innerHTML = '';
+            document.getElementById('store-selection-area').style.display = 'block';
+            document.getElementById('clear-storage-btn').style.display = 'inline-flex';
+            document.getElementById('clear-excel-btn').style.display = 'inline-flex';
+        }
+        function populateFideState(data) {
+            fideData = data;
+            document.getElementById('clear-fide-excel-btn').style.display = 'inline-flex';
+        }
+        function loadDideDataFromStorage() {
+            const storedDataJSON = localStorage.getItem('didePersistenceData');
+            if (!storedDataJSON) return;
+            try {
+                const storedData = JSON.parse(storedDataJSON);
+                const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+                if (ageInDays > 30) {
+                    localStorage.removeItem('didePersistenceData');
+                    expiredExcelFiles.push('DiDe Puan Excel');
+                    return;
+                }
+                if (storedData.filename) { document.getElementById('file-name').textContent = `Yerel hafızadan yüklendi: ${storedData.filename}`; }
+                populateDideState(storedData.data);
+            } catch (e) { localStorage.removeItem('didePersistenceData'); }
+        }
+        function loadFideDataFromStorage() {
+            const storedDataJSON = localStorage.getItem('fidePersistenceData');
+            if (!storedDataJSON) return;
+            try {
+                const storedData = JSON.parse(storedDataJSON);
+                const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+                if (ageInDays > 30) {
+                    localStorage.removeItem('fidePersistenceData');
+                    expiredExcelFiles.push('FiDe Puan Excel');
+                    return;
+                }
+                if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Yerel hafızadan yüklendi: ${storedData.filename}`; }
+                populateFideState(storedData.data);
+            } catch(e) { localStorage.removeItem('fidePersistenceData'); }
+        }
+        function displayStores(stores) {
+            const storeListDiv = document.getElementById('store-list');
+            storeListDiv.innerHTML = '';
+            stores.forEach(store => {
+                const item = document.createElement('div');
+                item.className = 'store-item';
+                let displayName = store.bayiAdi;
+                if (displayName && displayName.length > 20) displayName = displayName.substring(0, 20) + '...';
+                item.textContent = `${displayName} (${store.bayiKodu})`;
+                item.dataset.bayiKodu = store.bayiKodu;
+                item.dataset.bayiAdi = store.bayiAdi;
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi };
+                    localStorage.setItem('lastSelectedStoreCode', store.bayiKodu);
+                    const searchInput = document.getElementById('store-search-input');
+                    let shortBayiAdi = store.bayiAdi.length > 20 ? store.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
+                    searchInput.value = `${store.bayiKodu} - ${shortBayiAdi}`;
+                    storeListDiv.innerHTML = '';
+                    storeListDiv.style.display = 'none';
+                    loadReportForStore(store.bayiKodu);
+                });
+                storeListDiv.appendChild(item);
+            });
+        }
+        function generateEmail() {
+            if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!');
+            saveFormState(); 
+            const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
+            const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
+            if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
+            const reportData = getFormDataForSaving();
+            document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2);
+            document.getElementById('save-section').style.display = 'block';
+            const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
+            const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
+            const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
+            let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
+            let fideReportHtml = "";
+            fideQuestions.forEach(q => {
+                const itemDiv = document.getElementById(`fide-item-${q.id}`);
+                if (!itemDiv || itemDiv.classList.contains('question-removed')) return;
+                const titleContainer = itemDiv.querySelector('.fide-title-container');
+                const isQuestionCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
+                let contentHtml = '';
+                if (q.type === 'standard') {
+                    const allItems = getCombinedInputs(`fide${q.id}`);
+                    const textItems = [], linkItems = [];
+                    allItems.forEach(item => { (item.type === 'static' && item.text.includes('<a href')) ? linkItems.push(item) : textItems.push(item); });
+                    const sortedItems = textItems.concat(linkItems);
+                    if (sortedItems.length > 0) {
+                        contentHtml = `<ul>${sortedItems.map(item => {
+                            if (item.completed) return `<li>${item.text} <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span></li>`;
+                            return `<li>${item.text}</li>`;
+                        }).join('')}</ul>`;
+                    }
+                } else if (q.type === 'product_list') {
+                    const productItemsHtml = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => {
+                        const product = productList.find(p => p.code === item.dataset.code);
+                        if(product) { const unit = getUnitForProduct(product.name); return `<li>${product.code} ${product.name}: ${item.dataset.qty} ${unit}</li>`; }
+                    }).filter(Boolean);
+                    const pleksiItemsHtml = getCombinedInputs(`fide${q.id}_pleksi`).filter(item => !item.completed).map(item => `<li>${item.text}</li>`);
+                    if (productItemsHtml.length > 0) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
+                    if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
+                } else if (q.type === 'pop_system') {
+                    const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+                    if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
+                }
+                if (contentHtml !== '' || isQuestionCompleted) {
+                    const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
+                    let emailTag = q.type === 'pop_system' ? ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@berkcan_boza@arcelik.com.tr</span>` : '';
+                    fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
+                    if (!isQuestionCompleted || (isQuestionCompleted && q.type === 'standard' && contentHtml !== '')) fideReportHtml += contentHtml;
+                    fideReportHtml += '<p>&nbsp;</p>';
+                }
+            });
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+            let monthHeaders = '';
+            for (let m = 1; m <= currentMonth; m++) monthHeaders += `<th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;">${monthNames[m] || m}</th>`;
+            let dideScores = '';
+            for (let m = 1; m <= currentMonth; m++) dideScores += `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;">${storeInfo.scores[m] || '-'}</td>`;
+            let fideScores = '';
+            for (let m = 1; m <= currentMonth; m++) {
+                 const score = (fideStoreInfo && fideStoreInfo.scores && fideStoreInfo.scores[m] !== undefined) ? fideStoreInfo.scores[m] : '-';
+                 fideScores += `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;">${score}</td>`;
+            }
+            const tableHtml = `<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #dddddd;"><thead><tr><th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;">${currentYear}</th>${monthHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">DiDe</td>${dideScores}</tr><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">FiDe</td>${fideScores}</tr></tbody></table></div>`;
+            const finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
+            document.getElementById('form-content').style.display = 'none';
+            document.querySelector('.action-button').style.display = 'none';
+            document.getElementById('load-options-card').style.display = 'none';
+            const existingDraft = document.getElementById('email-draft-container');
+            if (existingDraft) existingDraft.remove();
+            const draftContainer = document.createElement('div');
+            draftContainer.id = 'email-draft-container';
+            draftContainer.className = 'card';
+            draftContainer.innerHTML = `<h2><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p><div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
+            document.querySelector('.container').insertBefore(draftContainer, document.getElementById('save-section'));
+        }
+        function downloadReportCode() {
+            const reportCode = document.getElementById('save-code-area').value;
+            if (!selectedStore || !reportCode) return alert('Bayi seçilmediği veya indirilecek rapor kodu bulunamadığı için dosya oluşturulamadı.');
+            const bayiKodu = selectedStore.bayiKodu;
+            const shortBayiAdi = selectedStore.bayiAdi.substring(0, 15).trim();
+            const sanitizedBayiAdi = shortBayiAdi.replace(/[\\/:*?"<>|]/g, '_'); 
+            const filename = `${bayiKodu} - ${sanitizedBayiAdi}.txt`;
+            const blob = new Blob([reportCode], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+        function loadReport(reportDataFromCode) {
+            try {
+                let reportData = reportDataFromCode;
+                if (!reportData) {
+                    const loadCode = document.getElementById('load-code-area').value.trim();
+                    if (!loadCode) return alert('Lütfen yüklemek için bir rapor kodu yapıştırın.');
+                    reportData = JSON.parse(loadCode);
+                }
+
+                for (const oldId in migrationMap) {
+                    if (reportData.questions_status[oldId]) {
+                        const newId = migrationMap[oldId];
+                        if (!reportData.questions_status[newId]) {
+                            reportData.questions_status[newId] = reportData.questions_status[oldId];
+                            delete reportData.questions_status[oldId];
+                        }
+                    }
+                }
+
+                resetForm(); 
+                if (reportData.selectedStore) {
+                    selectedStore = reportData.selectedStore;
+                    const searchInput = document.getElementById('store-search-input');
+                    let shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
+                    searchInput.value = `${selectedStore.bayiKodu} - ${shortBayiAdi}`;
+                    document.getElementById('store-list').style.display = 'none';
+                }
+                
+                const formContainer = document.getElementById('form-content');
+
+                for (const qId in reportData.questions_status) {
+                    let questionItem = document.getElementById(`fide-item-${qId}`);
+
+                    if (!questionItem) {
+                        const archivedQuestion = fideQuestions.find(q => String(q.id) === String(qId));
+                        if (archivedQuestion && archivedQuestion.isArchived) {
+                            const questionHtml = generateQuestionHtml(archivedQuestion);
+                            formContainer.insertAdjacentHTML('beforeend', questionHtml);
+                            questionItem = document.getElementById(`fide-item-${qId}`);
+                        }
+                    }
+                    
+                    if (!questionItem) continue;
+
+                    const data = reportData.questions_status[qId];
+                    const completeButton = questionItem.querySelector('.fide-actions .status-btn');
+                    const removeButton = questionItem.querySelector('.fide-actions .remove-btn');
+                    if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId);
+                    else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId);
+                    
+                    const questionInfo = fideQuestions.find(q => String(q.id) === qId);
+                    if (data.dynamicInputs) {
+                        data.dynamicInputs.forEach(input => {
+                            const containerId = (questionInfo && questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
+                            addDynamicInput(containerId, input.text, input.completed);
+                        });
+                    }
+                    
+                    if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty)); 
+                    
+                    if (data.selectedPops) {
+                        data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
+                        checkExpiredPopCodes();
+                    }
+                }
+                if (!reportDataFromCode) { alert('Rapor başarıyla yüklendi!'); document.getElementById('load-code-area').value = ''; }
+                updateFormInteractivity(true);
+            } catch (error) { alert('Geçersiz rapor kodu!'); console.error("Rapor yükleme hatası:", error); }
+        }
+        function startNewReport() {
+            selectedStore = null;
+            document.getElementById('store-search-input').value = '';
+            localStorage.removeItem('lastSelectedStoreCode');
+            resetForm();
+            updateFormInteractivity(false);
+        }
+        function getFormDataForSaving() {
+            let reportData = { selectedStore: selectedStore, questions_status: {} };
+             fideQuestions.forEach(q => {
+                const itemDiv = document.getElementById(`fide-item-${q.id}`);
+                const isRemoved = itemDiv ? itemDiv.classList.contains('question-removed') : false;
+                const titleContainer = itemDiv ? itemDiv.querySelector('.fide-title-container') : null;
+                const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
+                
+                if (!itemDiv && q.isArchived) { return; }
+
+                const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
+
+                if (itemDiv) {
+                    if (q.type === 'standard') questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`);
+                    else if (q.type === 'product_list') {
+                        document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => questionData.selectedProducts.push({ code: item.dataset.code, qty: item.dataset.qty }));
+                        questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}_pleksi`);
+                    } else if (q.type === 'pop_system') questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+                }
+                reportData.questions_status[q.id] = questionData;
+            });
+            return reportData;
+        }
+        function backupAllReports() {
+            const allReports = localStorage.getItem('allFideReports');
+            if (!allReports || Object.keys(JSON.parse(allReports)).length === 0) return alert('Yedeklenecek kayıtlı rapor bulunamadı.');
+            const blob = new Blob([allReports], { type: 'application/json;charset=utf-8' });
+            const today = new Date().toISOString().slice(0, 10);
+            const filename = `fide_rapor_yedek_${today}.json`;
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+        function handleRestoreUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (confirm("Bu işlem mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz?")) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const restoredData = e.target.result;
+                        JSON.parse(restoredData); 
+                        localStorage.setItem('allFideReports', restoredData);
+                        alert('Yedek başarıyla geri yüklendi! Şimdi "Yedeği Buluta Aktar" butonunu kullanarak bu yedeği bulutla eşitleyebilirsiniz.');
+                        window.location.reload();
+                    } catch (error) {
+                        alert('Geçersiz veya bozuk yedek dosyası!');
+                        console.error("Yedek yükleme hatası:", error);
+                    }
+                };
+                reader.readAsText(file);
+            }
+            event.target.value = null; 
+        }
+        async function handleMergeUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length < 2) { alert("Lütfen birleştirmek için en az 2 yedek dosyası seçin."); return; }
+            let mergedReports = {};
+            let fileReadPromises = [];
+            for (const file of files) {
+                const promise = new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            resolve(data);
+                        } catch (err) { reject(`'${file.name}' dosyası okunamadı.`); }
+                    };
+                    reader.onerror = () => reject(`'${file.name}' dosyası okunurken bir hata oluştu.`);
+                    reader.readAsText(file);
+                });
+                fileReadPromises.push(promise);
+            }
+            try {
+                const allBackupData = await Promise.all(fileReadPromises);
+                allBackupData.forEach(backupData => {
+                    for (const storeKey in backupData) {
+                        if (Object.hasOwnProperty.call(backupData, storeKey)) {
+                            const newReport = backupData[storeKey];
+                            if (!mergedReports[storeKey] || newReport.timestamp > mergedReports[storeKey].timestamp) {
+                                mergedReports[storeKey] = newReport;
+                            }
+                        }
+                    }
+                });
+                const mergedDataStr = JSON.stringify(mergedReports, null, 2);
+                const blob = new Blob([mergedDataStr], { type: 'application/json;charset=utf-8' });
+                const today = new Date().toISOString().slice(0, 10);
+                const filename = `birlesik_fide_rapor_yedek_${today}.json`;
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                alert(`Başarılı! ${Object.keys(mergedReports).length} adet güncel raporu içeren birleştirilmiş yedek dosyanız '${filename}' adıyla indirildi.`);
+            } catch (error) {
+                alert("Birleştirme sırasında bir hata oluştu:\n" + error);
+                console.error("Yedek birleştirme hatası:", error);
+            } finally {
+                event.target.value = null; 
+            }
+        }
+        function restoreLastSession() {
+            const lastStoreCode = localStorage.getItem('lastSelectedStoreCode');
+            if (lastStoreCode && uniqueStores.length > 0) {
+                const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode));
+                if (storeToRestore) {
+                    selectedStore = storeToRestore;
+                    const searchInput = document.getElementById('store-search-input');
+                    let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
+                    searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`;
+                    document.getElementById('store-list').style.display = 'none';
+                    loadReportForStore(storeToRestore.bayiKodu);
+                }
+            }
+        }
+        
+        function formatText(buttonEl, command) {
+            const editor = buttonEl.closest('.manager-item').querySelector('.editable-textarea');
+            editor.focus();
+
+            if (command === 'link') {
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return;
+                const anchorNode = selection.anchorNode;
+                const linkElement = anchorNode.nodeType === 3 ? anchorNode.parentNode.closest('a') : anchorNode.closest('a');
+
+                if (linkElement) {
+                    const currentUrl = linkElement.getAttribute('href');
+                    const newUrl = prompt("Köprüyü düzenleyin veya kaldırmak için bu alanı boş bırakın:", currentUrl);
+                    
+                    if (newUrl === null) {
+                        return;
+                    } else if (newUrl === "") {
+                        linkElement.outerHTML = linkElement.innerHTML;
+                    } else {
+                        linkElement.href = newUrl;
+                    }
+                } else {
+                     if (selection.toString().length === 0) {
+                        alert("Lütfen köprüye dönüştürmek istediğiniz metni seçin.");
+                        return;
+                    }
+                    const url = prompt("Lütfen köprü için URL girin:", "https://");
+                    if (url) {
+                        document.execCommand('createLink', false, url);
+                        const newLink = selection.anchorNode.parentNode.closest('a');
+                        if (newLink) newLink.target = '_blank';
+                    }
+                }
+            } else {
+                 document.execCommand(command, false, null);
+            }
+        }
+
+        function renderQuestionManager() {
+            const managerList = document.getElementById('manager-list');
+            managerList.innerHTML = '';
+            fideQuestions.sort((a, b) => a.id - b.id).forEach(q => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'manager-item';
+                itemDiv.dataset.id = q.id;
+                let staticItemsHtml = (q.staticItems || []).join('<br>'); 
+                const typeOptions = ['standard', 'product_list', 'pop_system'];
+                const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join('');
+                const isArchivedChecked = q.isArchived ? 'checked' : '';
+
+                itemDiv.innerHTML = `
+                    <div class="manager-item-grid">
+                        <div>
+                            <label>Soru ID</label>
+                            <input type="number" class="manager-id-input" value="${q.id}" disabled title="ID değiştirmek veri bütünlüğünü bozabilir. Düzenlemek için şifre gerekir.">
+                        </div>
+                        <div><label>Soru Başlığı</label><input type="text" value="${q.title}"></div>
+                        <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)">${selectOptionsHTML}</select></div>
+                        <div class="archive-switch-container">
+                            <label>Arşivle</label>
+                            <label class="switch">
+                                <input type="checkbox" class="archive-checkbox" ${isArchivedChecked} onchange="filterManagerView()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
+                        <div class="editor-toolbar">
+                           <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
+                           <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
+                           <button onclick="formatText(this, 'underline')" title="Altı Çizili"><i class="fas fa-underline"></i></button>
+                           <button onclick="formatText(this, 'link')" title="Köprü Ekle/Düzenle/Kaldır"><i class="fas fa-link"></i></button>
+                        </div>
+                        <div class="editable-textarea" contenteditable="true">${staticItemsHtml}</div>
+                    </div>
+                    <div class="product-list-manager" style="display: none;"></div>
+                    <div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button></div>`;
+                managerList.appendChild(itemDiv);
+
+                if(q.type === 'product_list') {
+                    toggleProductManager(itemDiv.querySelector('select'));
+                }
+            });
+            filterManagerView(); 
+        }
+
+        function toggleProductManager(selectElement) {
+            const managerItem = selectElement.closest('.manager-item');
+            const productManagerContainer = managerItem.querySelector('.product-list-manager');
+            if (selectElement.value === 'product_list') {
+                productManagerContainer.style.display = 'block';
+                renderProductManagerUI(productManagerContainer);
+            } else {
+                productManagerContainer.style.display = 'none';
+                productManagerContainer.innerHTML = '';
+            }
+        }
+
+        function renderProductManagerUI(container) {
+            const categories = productList.filter(p => p.type === 'header');
+            let categoryOptions = '<option value="__end">Ana Liste (Sona Ekle)</option>';
+            categories.forEach(cat => {
+                categoryOptions += `<option value="${cat.name}">${cat.name}</option>`;
+            });
+
+            container.innerHTML = `
+                <h4><i class="fas fa-boxes"></i> Ürün Listesi Yöneticisi</h4>
+                <p class="product-manager-info">
+                    <i class="fas fa-info-circle"></i> Bu liste tüm "product_list" tipi sorular için ortaktır. Değişiklikleriniz tüm listeyi etkiler.
+                </p>
+                
+                <div class="bulk-add-container">
+                    <h5><i class="fas fa-paste"></i> Toplu Ürün Ekle</h5>
+                    <p class="bulk-add-info">Her satıra bir ürün gelecek şekilde yapıştırın. Stok Kodu ile Ürün Adı arasına bir <strong>BOŞLUK</strong> bırakmanız yeterlidir (Örn: 123456 Enerji Etiketi).</p>
+                    <div class="bulk-add-controls">
+                        <select id="bulk-add-category-select" title="Ürünlerin hangi kategori altına ekleneceğini seçin.">${categoryOptions}</select>
+                        <textarea id="bulk-product-input" placeholder="88001 Siyah T-Shirt\n88002 Mavi Kot Pantolon..."></textarea>
+                    </div>
+                    <button class="btn-success btn-sm" onclick="parseAndAddProducts()"><i class="fas fa-plus-circle"></i> Yapıştırılanları Listeye Ekle</button>
+                </div>
+
+                <button id="toggle-detailed-editor-btn" class="btn-sm" onclick="toggleDetailedEditor(this)">
+                    <i class="fas fa-edit"></i> Detaylı Liste Editörünü Göster
+                </button>
+
+                <div id="detailed-editor-panel">
+                    <div class="product-manager-actions">
+                        <button class="btn-primary btn-sm" onclick="addCategoryRow(this.closest('#detailed-editor-panel').querySelector('.product-list-editor'))"><i class="fas fa-tags"></i> Kategori Ekle</button>
+                        <button class="btn-success btn-sm" onclick="addProductRow(this.closest('#detailed-editor-panel').querySelector('.product-list-editor'))"><i class="fas fa-box"></i> Ürün Ekle</button>
+                    </div>
+                    <div class="product-list-editor"></div>
+                </div>
+            `;
+            
+            const editor = container.querySelector('.product-list-editor');
+            productList.forEach(item => {
+                if(item.type === 'header') {
+                    addCategoryRow(editor, item);
+                } else {
+                    addProductRow(editor, item);
+                }
+            });
+             setupProductManagerDragDrop(editor);
+        }
+        
+        function toggleDetailedEditor(button) {
+            const panel = document.getElementById('detailed-editor-panel');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                button.innerHTML = '<i class="fas fa-eye-slash"></i> Detaylı Liste Editörünü Gizle';
+            } else {
+                button.innerHTML = '<i class="fas fa-edit"></i> Detaylı Liste Editörünü Göster';
+            }
+        }
+        
+        function parseAndAddProducts() {
+            const container = document.querySelector('.product-list-manager:not([style*="display: none"])');
+            if (!container) return; 
+
+            const textarea = container.querySelector('#bulk-product-input');
+            const editor = container.querySelector('.product-list-editor');
+            const categorySelect = container.querySelector('#bulk-add-category-select');
+            const selectedCategoryName = categorySelect.value;
+            const text = textarea.value.trim();
+            if (!text) return;
+
+            const lines = text.split('\n');
+            let addedCount = 0;
+            
+            let targetElement = null;
+            if (selectedCategoryName !== '__end') {
+                const allRows = Array.from(editor.querySelectorAll('.category-manager-row, .product-manager-row'));
+                const categoryIndex = allRows.findIndex(row => row.dataset.type === 'category' && row.querySelector('input').value === selectedCategoryName);
+
+                if (categoryIndex > -1) {
+                    targetElement = allRows[categoryIndex]; 
+                    for (let i = categoryIndex + 1; i < allRows.length; i++) {
+                        if (allRows[i].dataset.type === 'category') break; 
+                        targetElement = allRows[i];
+                    }
+                }
+            }
+
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return;
+
+                const firstSpaceIndex = trimmedLine.indexOf(' ');
+
+                if (firstSpaceIndex > 0 && firstSpaceIndex < trimmedLine.length - 1) {
+                    const product = {
+                        code: trimmedLine.substring(0, firstSpaceIndex).trim(),
+                        name: trimmedLine.substring(firstSpaceIndex + 1).trim()
+                    };
+                    
+                    if (product.code && product.name) {
+                        const newRow = addProductRow(editor, product, targetElement);
+                        targetElement = newRow; 
+                        addedCount++;
+                    }
+                }
+            });
+
+            if (addedCount > 0) {
+                alert(`${addedCount} adet ürün başarıyla eklendi!`);
+                textarea.value = '';
+                const panel = document.getElementById('detailed-editor-panel');
+                if (panel && !panel.classList.contains('open')) {
+                    document.getElementById('toggle-detailed-editor-btn').click();
+                }
+            } else {
+                alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu BOŞLUK Ürün Adı).");
+            }
+        }
+
+        function addCategoryRow(container, category = {}, targetElement = null) {
+            const row = document.createElement('div');
+            row.className = 'category-manager-row';
+            row.dataset.type = 'category';
+            row.draggable = true;
+            row.innerHTML = `
+                <i class="fas fa-grip-vertical drag-handle" title="Sıralamak için sürükleyin"></i>
+                <i class="fas fa-tag category-icon"></i>
+                <input type="text" placeholder="Kategori Adı" value="${category.name || ''}">
+                <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+            `;
+            if (targetElement) {
+                container.insertBefore(row, targetElement.nextSibling);
+            } else {
+                container.appendChild(row);
+            }
+            return row;
+        }
+
+        function addProductRow(container, product = {}, targetElement = null) {
+            const row = document.createElement('div');
+            row.className = 'product-manager-row';
+            row.dataset.type = 'product';
+            row.draggable = true;
+            row.innerHTML = `
+                <i class="fas fa-grip-vertical drag-handle" title="Sıralamak için sürükleyin"></i>
+                <input type="text" class="product-code" placeholder="Stok Kodu" value="${product.code || ''}">
+                <input type="text" class="product-name" placeholder="Ürün Adı" value="${product.name || ''}">
+                <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+            `;
+            
+            if (targetElement) {
+                container.insertBefore(row, targetElement.nextSibling);
+            } else {
+                container.appendChild(row);
+            }
+            return row;
+        }
+        
+        function setupProductManagerDragDrop(container) {
+            let draggingElement = null;
+
+            container.addEventListener('dragstart', e => {
+                draggingElement = e.target;
+                setTimeout(() => {
+                    e.target.classList.add('dragging');
+                }, 0);
+            });
+
+            container.addEventListener('dragend', e => {
+                if (draggingElement) {
+                    draggingElement.classList.remove('dragging');
+                    draggingElement = null;
+                }
+            });
+
+            container.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const currentlyDragged = document.querySelector('.dragging');
+                if (currentlyDragged) {
+                    if (afterElement == null) {
+                        container.appendChild(currentlyDragged);
+                    } else {
+                        container.insertBefore(currentlyDragged, afterElement);
+                    }
+                }
+            });
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('[draggable="true"]:not(.dragging)')];
+
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                    }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+        }
+
+
+        function filterManagerView() {
+            const viewActiveBtn = document.getElementById('view-active-btn');
+            const viewArchivedBtn = document.getElementById('view-archived-btn');
+            const addNewBtn = document.getElementById('add-new-question-btn');
+            const deleteAllArchivedBtn = document.getElementById('delete-all-archived-btn');
+            const restoreAllArchivedBtn = document.getElementById('restore-all-archived-btn');
+
+            viewActiveBtn.classList.toggle('active', currentManagerView === 'active');
+            viewArchivedBtn.classList.toggle('active', currentManagerView === 'archived');
+            
+            addNewBtn.style.display = currentManagerView === 'active' ? 'inline-flex' : 'none';
+            deleteAllArchivedBtn.style.display = currentManagerView === 'archived' ? 'inline-flex' : 'none';
+            restoreAllArchivedBtn.style.display = currentManagerView === 'archived' ? 'inline-flex' : 'none';
+
+            const items = document.querySelectorAll('#manager-list .manager-item');
+            let visibleItemCount = 0;
+            items.forEach(item => {
+                const isArchived = item.querySelector('.archive-checkbox').checked;
+                const shouldBeVisible = (currentManagerView === 'active' && !isArchived) || (currentManagerView === 'archived' && isArchived);
+                item.classList.toggle('hidden-question', !shouldBeVisible);
+                if(shouldBeVisible) visibleItemCount++;
+            });
+
+            if (currentManagerView === 'archived') {
+                deleteAllArchivedBtn.disabled = visibleItemCount === 0;
+                restoreAllArchivedBtn.disabled = visibleItemCount === 0;
+            }
+        }
+
+        function addNewQuestionUI() {
+            if (currentManagerView !== 'active') {
+                alert("Yeni soru eklemek için 'Aktif Sorular' görünümünde olmalısınız.");
+                return;
+            }
+            const managerList = document.getElementById('manager-list');
+            const existingIds = Array.from(managerList.querySelectorAll('.manager-item')).map(item => parseInt(item.querySelector('.manager-id-input').value));
+            const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'manager-item';
+            itemDiv.style.backgroundColor = '#dcfce7';
+            itemDiv.dataset.id = newId;
+            itemDiv.innerHTML = `
+                <div class="manager-item-grid">
+                        <div>
+                            <label>Soru ID</label>
+                            <input type="number" class="manager-id-input" value="${newId}">
+                        </div>
+                        <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
+                        <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
+                        <div class="archive-switch-container">
+                            <label>Arşivle</label>
+                            <label class="switch">
+                                <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
+                        <div class="editor-toolbar">
+                           <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
+                           <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
+                           <button onclick="formatText(this, 'underline')" title="Altı Çizili"><i class="fas fa-underline"></i></button>
+                           <button onclick="formatText(this, 'link')" title="Köprü Ekle/Düzenle/Kaldır"><i class="fas fa-link"></i></button>
+                        </div>
+                        <div class="editable-textarea" contenteditable="true"></div>
+                    </div>
+                    <div class="product-list-manager" style="display: none;"></div>
+                    <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
+            managerList.appendChild(itemDiv);
+            itemDiv.querySelector('input[type="text"]').focus();
+        }
+        
+        function restoreAllArchivedQuestions() {
+            const itemsToRestore = document.querySelectorAll('#manager-list .manager-item:not(.hidden-question)');
+            if (itemsToRestore.length === 0) {
+                alert("Aktif edilecek arşivlenmiş soru bulunamadı.");
+                return;
+            }
+            if (confirm(`Arşivdeki ${itemsToRestore.length} sorunun tümünü aktif hale getirmek istediğinizden emin misiniz?`)) {
+                itemsToRestore.forEach(item => {
+                    const checkbox = item.querySelector('.archive-checkbox');
+                    if (checkbox) checkbox.checked = false;
+                });
+                filterManagerView();
+                alert("Arşivlenmiş tüm sorular aktif hale getirildi. Değişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna tıklayın.");
+            }
+        }
+        
+        function deleteAllArchivedQuestions() {
+            const itemsToDelete = document.querySelectorAll('#manager-list .manager-item:not(.hidden-question)');
+            if (itemsToDelete.length === 0) {
+                alert("Silinecek arşivlenmiş soru bulunamadı.");
+                return;
+            }
+            if (confirm(`Arşivdeki ${itemsToDelete.length} sorunun tümünü kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+                itemsToDelete.forEach(item => {
+                     item.style.transition = 'opacity 0.5s ease';
+                    item.style.opacity = '0';
+                    setTimeout(() => {
+                        item.style.display = 'none';
+                        item.classList.add('to-be-deleted');
+                    }, 500);
+                });
+                 document.getElementById('delete-all-archived-btn').disabled = true;
+                 alert("Arşivlenmiş sorular silinmek üzere işaretlendi. Değişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna tıklayın.");
+            }
+        }
+
+        function deleteQuestionUI(id) {
+            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz?`)) {
+                const itemToDelete = document.querySelector(`.manager-item[data-id="${id}"]`);
+                if(itemToDelete) {
+                    itemToDelete.style.transition = 'opacity 0.5s ease';
+                    itemToDelete.style.opacity = '0';
+                    setTimeout(() => {
+                        itemToDelete.style.display = 'none';
+                        item.classList.add('to-be-deleted');
+                    }, 500);
+                }
+            }
+        }
+        
+        function saveQuestions() {
+            const newProductList = [];
+            const activeProductManager = document.querySelector('.product-list-manager:not([style*="display: none"])');
+            
+            if (activeProductManager) {
+                const rows = activeProductManager.querySelectorAll('.category-manager-row, .product-manager-row');
+                rows.forEach(row => {
+                    if (row.dataset.type === 'category') {
+                        const name = row.querySelector('input').value.trim();
+                        if (name) newProductList.push({ type: 'header', name });
+                    } else if (row.dataset.type === 'product') {
+                        const code = row.querySelector('.product-code').value.trim();
+                        const name = row.querySelector('.product-name').value.trim();
+                        if (code && name) newProductList.push({ code, name });
+                    }
+                });
+            }
+            
+            if (newProductList.length > 0 || activeProductManager) {
+                productList = newProductList;
+            }
+
+            const newQuestions = [];
+            const ids = new Set();
+            const items = document.querySelectorAll('#manager-list .manager-item');
+            
+            for (const item of items) {
+                if (item.classList.contains('to-be-deleted')) continue;
+
+                const id = parseInt(item.querySelector('.manager-id-input').value);
+                const title = item.querySelector('input[type="text"]').value.trim();
+                const type = item.querySelector('select').value;
+                const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
+                const isArchived = item.querySelector('.archive-checkbox').checked;
+
+                if (!id && id !== 0 || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
+                if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılamaz.`); return; }
+                ids.add(id);
+
+                const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
+                const newQuestion = { id, title, type };
+                if (staticItems.length > 0 && type !== 'product_list') newQuestion.staticItems = staticItems;
+                if (isArchived) newQuestion.isArchived = true;
+
+                if (type === 'pop_system') {
+                    const originalPopQuestion = fideQuestions.find(q => q.type === 'pop_system');
+                    newQuestion.popCodes = popCodes || (originalPopQuestion ? originalPopQuestion.popCodes : []);
+                    newQuestion.expiredCodes = expiredCodes || (originalPopQuestion ? originalPopQuestion.expiredCodes : []);
+                }
+                newQuestions.push(newQuestion);
+            }
+
+            const finalJsonData = {
+                questions: newQuestions,
+                productList: productList
+            };
+            const dataStr = JSON.stringify(finalJsonData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = 'fide_soru_listesi.json';
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+            alert("Güncellenmiş sorularınız ve ürün listeniz 'fide_soru_listesi.json' olarak indirildi.\n\nLÜTFEN BU DOSYAYI ESKİSİYLE DEĞİŞTİRİP SAYFAYI YENİLEYİN.");
+        }
+
+
+        function updateFormInteractivity(enable) {
+            const formContent = document.getElementById('form-content');
+            if (!formContent) return;
+
+            const buttons = formContent.querySelectorAll(
+                '.add-item-btn, .status-btn, .remove-btn, .delete-bar, .delete-item-btn, .product-adder button'
+            );
+            const inputs = formContent.querySelectorAll(
+                '#product-selector, #product-qty'
+            );
+
+            buttons.forEach(btn => {
+                btn.disabled = !enable;
+            });
+            inputs.forEach(input => {
+                input.disabled = !enable;
+            });
+        }
+    </script>
+</body>
+</html>
