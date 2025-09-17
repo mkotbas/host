@@ -1354,7 +1354,12 @@
                     const staticItems = question.staticItems || [];
                     const isStatic = staticItems.some(staticItem => {
                         const plainStaticItem = staticItem.replace(/<[^>]*>/g, '');
-                        return _normalizeText(plainStaticItem) === _normalizeText(trimmedLine);
+                        // ESKİ YÖNTEM: return _normalizeText(plainStaticItem) === _normalizeText(trimmedLine);
+                        // YENİ, DAHA ESNEK YÖNTEM:
+                        const normalizedStatic = _normalizeText(plainStaticItem);
+                        const normalizedLine = _normalizeText(trimmedLine);
+                        if (normalizedLine.length < 5) return false; // Çok kısa satırların yanlışlıkla eşleşmesini engelle
+                        return normalizedStatic.includes(normalizedLine);
                     });
                     
                     if (!isStatic) {
@@ -2023,7 +2028,3 @@
     </script>
 </body>
 </html>
-}
-**Soru:** "add-item-btn" butonu ne işe yarar?
-
-**Yanıt:** `add-item-btn` sınıfına sahip olan butonlar, görsel denetim formunda belirli bir soruya (FiDe maddesine) yeni bir eksiklik veya not eklemek için kullanılır. Kullanıcı bu butona tıkladığında, ilgili sorunun altına dinamik olarak yeni bir metin giriş alanı eklenir. Bu, kullanıcının standart cevapların yanı sıra kendi gözlemlerini de rapora dahil etmesine olanak tanır. Örneğin, "Perakende Malzemelerin kullanımı ve siparişi" sorusu için bu butona basıldığında, pleksi malzeme kullanımıyla ilgili yeni bir eksiklik satırı açılır.
