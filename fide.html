@@ -1100,7 +1100,7 @@
                 storeListDiv.appendChild(item);
             });
         }
-        function selectStore(store) {
+        function selectStore(store, loadSavedData = true) {
             document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
             const storeItem = document.querySelector(`.store-item[data-bayi-kodu="${store.bayiKodu}"]`);
             if (storeItem) storeItem.classList.add('selected');
@@ -1112,11 +1112,15 @@
             let shortBayiAdi = store.bayiAdi.length > 20 ? store.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
             searchInput.value = `${store.bayiKodu} - ${shortBayiAdi}`;
             
-            const storeListDiv = document.getElementById('store-list');
-            storeListDiv.innerHTML = '';
-            storeListDiv.style.display = 'none';
+            document.getElementById('store-list').innerHTML = '';
+            document.getElementById('store-list').style.display = 'none';
             
-            loadReportForStore(store.bayiKodu);
+            if (loadSavedData) {
+                loadReportForStore(store.bayiKodu);
+            } else {
+                resetForm();
+                updateFormInteractivity(true);
+            }
         }
         function generateEmail() {
             if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -1229,11 +1233,12 @@
                         }
                     }
                 }
-
-                resetForm(); 
+ 
                 if (reportData.selectedStore) {
                     const storeData = uniqueStores.find(s => s.bayiKodu == reportData.selectedStore.bayiKodu);
-                    if(storeData) selectStore(storeData);
+                    if(storeData) selectStore(storeData, false);
+                } else {
+                     resetForm();
                 }
                 
                 const formContainer = document.getElementById('form-content');
@@ -1287,49 +1292,60 @@
 
             const lines = emailText.split('\n');
             let storeCodeFound = null;
+            let storeFoundAndSelected = false;
 
-            // 1. Bayi kodunu bul ve bayiyi seç
             for (const line of lines) {
-                const match = line.match(/^.*?(\d{5,})\s/); // 5 haneli bir kod ara
+                const match = line.match(/^.*?(\d{5,})\s/);
                 if (match) {
                     storeCodeFound = match[1];
                     const storeToSelect = uniqueStores.find(s => String(s.bayiKodu) === storeCodeFound);
                     if (storeToSelect) {
-                        selectStore(storeToSelect);
+                        selectStore(storeToSelect, false);
+                        storeFoundAndSelected = true;
                         break;
                     }
                 }
             }
 
-            if (!selectedStore) {
-                alert("E-posta metninden geçerli bir bayi bulunamadı veya DiDe listenizde mevcut değil. Lütfen önce manuel olarak bir bayi seçin.");
-                return;
+            if (!storeFoundAndSelected) {
+                if(selectedStore) {
+                    resetForm();
+                    updateFormInteractivity(true);
+                } else {
+                    alert("E-posta metninden bayi bulunamadı ve manuel olarak da bir bayi seçilmedi. Lütfen önce bir bayi seçin.");
+                    return;
+                }
             }
             
-            // Formu temizle ve yeniden oluştur
-            resetForm();
-
             let currentQuestionId = null;
             const questionHeaderRegex = /^FiDe\s+(\d+)\./i;
+            const ignorePhrases = [
+                "sipariş verilmesi gerekenler",
+                "pleksiyle sergilenmesi gerekenler",
+                "yanlış pleksi malzeme ile kullanılanlar"
+            ];
 
             lines.forEach(line => {
-                const trimmedLine = line.trim();
+                const trimmedLine = line.trim().replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+                const lowerTrimmedLine = trimmedLine.toLowerCase();
                 const headerMatch = trimmedLine.match(questionHeaderRegex);
 
                 if (headerMatch) {
                     currentQuestionId = headerMatch[1];
                 } else if (currentQuestionId && trimmedLine) {
+                    if (ignorePhrases.some(phrase => lowerTrimmedLine.includes(phrase))) {
+                        return; 
+                    }
+
                     const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
                     if (!question) return;
 
-                    // Bu satırın statik bir madde olup olmadığını kontrol et
                     const staticItems = question.staticItems || [];
                     const isStatic = staticItems.some(staticItem => {
-                        const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim(); // HTML etiketlerini temizle
+                        const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
                         return plainStaticItem.includes(trimmedLine);
                     });
                     
-                    // Eğer statik bir madde değilse, dinamik girdi olarak ekle
                     if (!isStatic) {
                         const containerId = (question.type === 'product_list') ? `fide${currentQuestionId}_pleksi` : `fide${currentQuestionId}`;
                         addDynamicInput(containerId, trimmedLine, false);
@@ -1339,7 +1355,6 @@
 
             alert("E-posta içeriği başarıyla forma aktarıldı!");
             document.getElementById('load-email-area').value = '';
-            updateFormInteractivity(true);
         }
 
         function startNewReport() {
