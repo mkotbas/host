@@ -1280,6 +1280,15 @@
             } catch (error) { alert('Geçersiz rapor kodu!'); console.error("Rapor yükleme hatası:", error); }
         }
         
+        function _normalizeText(text) {
+            if (!text) return '';
+            return text
+                .replace(/[\u2018\u2019]/g, "'") // Akıllı tek tırnakları düzelt
+                .replace(/[\u201C\u201D]/g, '"') // Akıllı çift tırnakları düzelt
+                .replace(/\s+/g, ' ')           // Çoklu boşlukları tek boşluğa indir
+                .trim();
+        }
+
         function parseAndLoadFromEmail() {
             const emailText = document.getElementById('load-email-area').value.trim();
             if (!emailText) {
@@ -1323,10 +1332,8 @@
                 "yanlış pleksi malzeme ile kullanılanlar"
             ];
             
-            // Tek bir döngüde hem ID'leri topla hem de verileri işle
             lines.forEach(line => {
-                const trimmedLine = line.trim().replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
-                const lowerTrimmedLine = trimmedLine.toLowerCase();
+                const trimmedLine = line.trim();
                 const headerMatch = trimmedLine.match(questionHeaderRegex);
 
                 if (headerMatch) {
@@ -1335,6 +1342,7 @@
                     currentQuestionId = finalId;
                     idsInEmail.add(finalId);
                 } else if (currentQuestionId && trimmedLine) {
+                    const lowerTrimmedLine = _normalizeText(trimmedLine).toLowerCase();
                     if (ignorePhrases.some(phrase => lowerTrimmedLine.includes(phrase))) {
                         return; 
                     }
@@ -1344,8 +1352,8 @@
 
                     const staticItems = question.staticItems || [];
                     const isStatic = staticItems.some(staticItem => {
-                        const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
-                        return plainStaticItem.includes(trimmedLine);
+                        const plainStaticItem = staticItem.replace(/<[^>]*>/g, '');
+                        return _normalizeText(plainStaticItem) === _normalizeText(trimmedLine);
                     });
                     
                     if (!isStatic) {
