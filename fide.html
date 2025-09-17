@@ -1317,7 +1317,9 @@
                 }
             }
             
-            const questionHeaderRegex = /^FiDe\s+(\d+)\./i;
+            // YENİ: Başlıkları daha esnek tanımak için düzenlenmiş regex.
+            // Satır başındaki madde işaretlerini (•, o, -), TAB ve boşlukları yoksayar.
+            const questionHeaderRegex = /^[\s•o-]*FiDe\s+(\d+)\./i;
             const idsInEmail = new Set();
             let currentQuestionId = null;
             
@@ -1328,8 +1330,7 @@
             ];
 
             lines.forEach(line => {
-                const trimmedLine = line.trim().replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').replace(/^-/, '').trim();
-                const lowerTrimmedLine = trimmedLine.toLowerCase();
+                const trimmedLine = line.trim();
                 const headerMatch = trimmedLine.match(questionHeaderRegex);
 
                 if (headerMatch) {
@@ -1338,24 +1339,28 @@
                     currentQuestionId = finalId;
                     idsInEmail.add(finalId);
                 } else if (currentQuestionId && trimmedLine) {
+                    // YENİ: Madde içeriklerinin başındaki madde işaretlerini ve boşlukları temizle.
+                    const cleanedLine = trimmedLine.replace(/^[\s•o-]+\s*/, '');
+                    if (!cleanedLine) return; // Temizledikten sonra satır boş kalırsa atla.
+
                     const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
                     if (!question || (question.answerType === 'fixed')) {
                         return; 
                     }
                     
-                    if (ignorePhrases.some(phrase => lowerTrimmedLine.includes(phrase))) {
+                    if (ignorePhrases.some(phrase => cleanedLine.toLowerCase().includes(phrase))) {
                         return; 
                     }
                     
                     const staticItems = question.staticItems || [];
                     const isStatic = staticItems.some(staticItem => {
                         const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
-                        return plainStaticItem.includes(trimmedLine);
+                        return plainStaticItem.includes(cleanedLine);
                     });
                     
                     if (!isStatic) {
                         const containerId = (question.type === 'product_list') ? `fide${currentQuestionId}_pleksi` : `fide${currentQuestionId}`;
-                        addDynamicInput(containerId, trimmedLine, false);
+                        addDynamicInput(containerId, cleanedLine, false);
                     }
                 }
             });
@@ -1376,6 +1381,7 @@
             alert("E-posta içeriği başarıyla forma aktarıldı!");
             document.getElementById('load-email-area').value = '';
         }
+
 
         function startNewReport() {
             selectedStore = null;
