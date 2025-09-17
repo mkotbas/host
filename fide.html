@@ -370,6 +370,20 @@
             }
         }
 
+        function clearExcelData(type) {
+            const typeName = type.toUpperCase();
+            const persistenceKey = `${type}PersistenceData`;
+            
+            if (confirm(`Yüklenmiş olan ${typeName} Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+                localStorage.removeItem(persistenceKey);
+                if(auth.currentUser && database) {
+                    database.ref(`excelData/${type}`).remove();
+                }
+                alert(`${typeName} Excel verisi temizlendi. Sayfa yenileniyor.`);
+                window.location.reload();
+            }
+        }
+
         function setupEventListeners() {
             if (document.body.dataset.listenersAttached) return;
             document.body.dataset.listenersAttached = 'true';
@@ -407,26 +421,9 @@
                     }
                 }
             });
-            document.getElementById('clear-excel-btn').addEventListener('click', () => {
-                if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
-                    localStorage.removeItem('didePersistenceData');
-                    if(auth.currentUser && database) {
-                        database.ref('excelData/dide').remove();
-                    }
-                    alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor.");
-                    window.location.reload();
-                }
-            });
-             document.getElementById('clear-fide-excel-btn').addEventListener('click', () => {
-                if (confirm("Yüklenmiş olan FiDe Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
-                    localStorage.removeItem('fidePersistenceData');
-                    if(auth.currentUser && database) {
-                        database.ref('excelData/fide').remove();
-                    }
-                    alert("FiDe Excel verisi temizlendi. Sayfa yenileniyor.");
-                    window.location.reload();
-                }
-            });
+            document.getElementById('clear-excel-btn').addEventListener('click', () => clearExcelData('dide'));
+            document.getElementById('clear-fide-excel-btn').addEventListener('click', () => clearExcelData('fide'));
+
             document.getElementById('store-search-input').addEventListener('keyup', (e) => {
                 selectedStore = null; 
                 const filter = e.target.value.toLowerCase().trim();
@@ -1317,16 +1314,16 @@
                 }
             }
             
+            let currentQuestionId = null;
             const questionHeaderRegex = /^FiDe\s+(\d+)\./i;
             const idsInEmail = new Set();
-            let currentQuestionId = null;
-            
             const ignorePhrases = [
                 "sipariş verilmesi gerekenler",
                 "pleksiyle sergilenmesi gerekenler",
                 "yanlış pleksi malzeme ile kullanılanlar"
             ];
-
+            
+            // Tek bir döngüde hem ID'leri topla hem de verileri işle
             lines.forEach(line => {
                 const trimmedLine = line.trim().replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
                 const lowerTrimmedLine = trimmedLine.toLowerCase();
