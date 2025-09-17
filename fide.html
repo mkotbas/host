@@ -1319,12 +1319,8 @@
             
             const questionHeaderRegex = /^FiDe\s+(\d+)\./i;
             const idsInEmail = new Set();
-            lines.forEach(line => {
-                const match = line.trim().match(questionHeaderRegex);
-                if (match) idsInEmail.add(match[1]);
-            });
-
             let currentQuestionId = null;
+            
             const ignorePhrases = [
                 "sipariş verilmesi gerekenler",
                 "pleksiyle sergilenmesi gerekenler",
@@ -1337,7 +1333,10 @@
                 const headerMatch = trimmedLine.match(questionHeaderRegex);
 
                 if (headerMatch) {
-                    currentQuestionId = headerMatch[1];
+                    const originalId = headerMatch[1];
+                    const finalId = migrationMap[originalId] || originalId;
+                    currentQuestionId = finalId;
+                    idsInEmail.add(finalId);
                 } else if (currentQuestionId && trimmedLine) {
                     if (ignorePhrases.some(phrase => lowerTrimmedLine.includes(phrase))) {
                         return; 
