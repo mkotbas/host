@@ -1362,7 +1362,7 @@
             
             fideQuestions.forEach(q => {
                 if (q.isArchived) return;
-                if (!idsInEmail.has(String(q.id))) {
+                if (!idsInEmail.has(String(q.id)) && q.answerType !== 'fixed') {
                     const questionItem = document.getElementById(`fide-item-${q.id}`);
                     if (questionItem) {
                         const removeButton = questionItem.querySelector('.fide-actions .remove-btn');
