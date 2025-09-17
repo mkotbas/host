@@ -146,12 +146,21 @@
             </div>
         </div>
         
-        <div class="card" id="load-section">
-            <h2><i class="fas fa-download"></i> Önceki Bir Fide Raporunu Yükle (Manuel)</h2>
-            <p style="margin-bottom: 8px;">Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve "Raporu Yükle" düğmesine tıklayın.</p>
-            <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..."></textarea>
-            <button class="btn-primary" onclick="loadReport()" title="Yukarıdaki alana yapıştırılan rapor kodunu forma yükler."><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
+        <div class="card load-container">
+            <div id="load-from-code-section">
+                <h2><i class="fas fa-download"></i> Rapor Kodu ile Yükle</h2>
+                <p>Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve düğmeye tıklayın.</p>
+                <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..."></textarea>
+                <button class="btn-primary" id="load-from-code-btn" title="Yukarıdaki alana yapıştırılan rapor kodunu forma yükler."><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
+            </div>
+            <div id="load-from-email-section">
+                <h2><i class="fas fa-paste"></i> E-Posta Taslağından Yükle</h2>
+                <p>Bir bayi raporu e-postasının içeriğini bu alana yapıştırın ve butona basarak formu doldurun.</p>
+                <textarea id="load-email-area" placeholder="Rapor e-postasının içeriğini bu alana yapıştırın..."></textarea>
+                <button class="btn-primary" id="load-from-email-btn" title="Yapıştırılan e-posta metnini analiz ederek formu otomatik doldurur."><i class="fas fa-check"></i> E-Posta ile Yükle</button>
+            </div>
         </div>
+
 
         <div class="card" id="initialization-error">
             <h2><i class="fas fa-exclamation-triangle"></i> Başlatma Hatası</h2>
@@ -346,7 +355,7 @@
         function closeManager() {
             document.getElementById('question-manager').style.display = 'none';
             document.getElementById('dide-upload-card').style.display = '';
-            document.getElementById('load-section').style.display = '';
+            document.querySelector('.load-container').style.display = 'flex';
             
             const emailDraft = document.getElementById('email-draft-container');
             const saveSection = document.getElementById('save-section');
@@ -371,6 +380,9 @@
             document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
             document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
             document.getElementById('new-report-btn').addEventListener('click', startNewReport);
+            document.getElementById('load-from-code-btn').addEventListener('click', () => loadReport());
+            document.getElementById('load-from-email-btn').addEventListener('click', parseAndLoadFromEmail);
+            
             document.getElementById('clear-storage-btn').addEventListener('click', () => {
                 const dogruSifreHash = 'ZmRlMDAx';
                 const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
@@ -493,7 +505,7 @@
 
                             manager.style.display = 'block';
                             document.getElementById('dide-upload-card').style.display = 'none';
-                            document.getElementById('load-section').style.display = 'none';
+                            document.querySelector('.load-container').style.display = 'none';
                             document.getElementById('form-content').style.display = 'none';
                             document.querySelector('.action-button').style.display = 'none';
                             renderQuestionManager();
@@ -798,6 +810,10 @@
         }
         function addDynamicInput(id, value = '', isCompleted = false) {
             const container = document.getElementById(`sub-items-container-${id}`);
+            if (!container) {
+                console.warn(`Dinamik girdi eklenemedi: '${id}' ID'li konteyner bulunamadı.`);
+                return;
+            }
             const newItem = document.createElement('div');
             newItem.className = 'dynamic-input-item';
             const input = document.createElement('input');
@@ -1079,19 +1095,28 @@
                 item.dataset.bayiKodu = store.bayiKodu;
                 item.dataset.bayiAdi = store.bayiAdi;
                 item.addEventListener('click', () => {
-                    document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
-                    item.classList.add('selected');
-                    selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi };
-                    localStorage.setItem('lastSelectedStoreCode', store.bayiKodu);
-                    const searchInput = document.getElementById('store-search-input');
-                    let shortBayiAdi = store.bayiAdi.length > 20 ? store.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
-                    searchInput.value = `${store.bayiKodu} - ${shortBayiAdi}`;
-                    storeListDiv.innerHTML = '';
-                    storeListDiv.style.display = 'none';
-                    loadReportForStore(store.bayiKodu);
+                    selectStore(store);
                 });
                 storeListDiv.appendChild(item);
             });
+        }
+        function selectStore(store) {
+            document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
+            const storeItem = document.querySelector(`.store-item[data-bayi-kodu="${store.bayiKodu}"]`);
+            if (storeItem) storeItem.classList.add('selected');
+            
+            selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi };
+            localStorage.setItem('lastSelectedStoreCode', store.bayiKodu);
+            
+            const searchInput = document.getElementById('store-search-input');
+            let shortBayiAdi = store.bayiAdi.length > 20 ? store.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
+            searchInput.value = `${store.bayiKodu} - ${shortBayiAdi}`;
+            
+            const storeListDiv = document.getElementById('store-list');
+            storeListDiv.innerHTML = '';
+            storeListDiv.style.display = 'none';
+            
+            loadReportForStore(store.bayiKodu);
         }
         function generateEmail() {
             if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -1159,7 +1184,7 @@
             const finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
             document.getElementById('form-content').style.display = 'none';
             document.querySelector('.action-button').style.display = 'none';
-            document.getElementById('load-section').style.display = 'none';
+            document.querySelector('.load-container').style.display = 'none';
             const existingDraft = document.getElementById('email-draft-container');
             if (existingDraft) existingDraft.remove();
             const draftContainer = document.createElement('div');
@@ -1207,11 +1232,8 @@
 
                 resetForm(); 
                 if (reportData.selectedStore) {
-                    selectedStore = reportData.selectedStore;
-                    const searchInput = document.getElementById('store-search-input');
-                    let shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
-                    searchInput.value = `${selectedStore.bayiKodu} - ${shortBayiAdi}`;
-                    document.getElementById('store-list').style.display = 'none';
+                    const storeData = uniqueStores.find(s => s.bayiKodu == reportData.selectedStore.bayiKodu);
+                    if(storeData) selectStore(storeData);
                 }
                 
                 const formContainer = document.getElementById('form-content');
@@ -1255,6 +1277,71 @@
                 updateFormInteractivity(true);
             } catch (error) { alert('Geçersiz rapor kodu!'); console.error("Rapor yükleme hatası:", error); }
         }
+        
+        function parseAndLoadFromEmail() {
+            const emailText = document.getElementById('load-email-area').value.trim();
+            if (!emailText) {
+                alert("Lütfen e-posta içeriğini yapıştırın.");
+                return;
+            }
+
+            const lines = emailText.split('\n');
+            let storeCodeFound = null;
+
+            // 1. Bayi kodunu bul ve bayiyi seç
+            for (const line of lines) {
+                const match = line.match(/^.*?(\d{5,})\s/); // 5 haneli bir kod ara
+                if (match) {
+                    storeCodeFound = match[1];
+                    const storeToSelect = uniqueStores.find(s => String(s.bayiKodu) === storeCodeFound);
+                    if (storeToSelect) {
+                        selectStore(storeToSelect);
+                        break;
+                    }
+                }
+            }
+
+            if (!selectedStore) {
+                alert("E-posta metninden geçerli bir bayi bulunamadı veya DiDe listenizde mevcut değil. Lütfen önce manuel olarak bir bayi seçin.");
+                return;
+            }
+            
+            // Formu temizle ve yeniden oluştur
+            resetForm();
+
+            let currentQuestionId = null;
+            const questionHeaderRegex = /^FiDe\s+(\d+)\./i;
+
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                const headerMatch = trimmedLine.match(questionHeaderRegex);
+
+                if (headerMatch) {
+                    currentQuestionId = headerMatch[1];
+                } else if (currentQuestionId && trimmedLine) {
+                    const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
+                    if (!question) return;
+
+                    // Bu satırın statik bir madde olup olmadığını kontrol et
+                    const staticItems = question.staticItems || [];
+                    const isStatic = staticItems.some(staticItem => {
+                        const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim(); // HTML etiketlerini temizle
+                        return plainStaticItem.includes(trimmedLine);
+                    });
+                    
+                    // Eğer statik bir madde değilse, dinamik girdi olarak ekle
+                    if (!isStatic) {
+                        const containerId = (question.type === 'product_list') ? `fide${currentQuestionId}_pleksi` : `fide${currentQuestionId}`;
+                        addDynamicInput(containerId, trimmedLine, false);
+                    }
+                }
+            });
+
+            alert("E-posta içeriği başarıyla forma aktarıldı!");
+            document.getElementById('load-email-area').value = '';
+            updateFormInteractivity(true);
+        }
+
         function startNewReport() {
             selectedStore = null;
             document.getElementById('store-search-input').value = '';
@@ -1378,12 +1465,7 @@
             if (lastStoreCode && uniqueStores.length > 0) {
                 const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode));
                 if (storeToRestore) {
-                    selectedStore = storeToRestore;
-                    const searchInput = document.getElementById('store-search-input');
-                    let shortBayiAdi = storeToRestore.bayiAdi.length > 20 ? storeToRestore.bayiAdi.substring(0, 20) + '...' : storeToRestore.bayiAdi;
-                    searchInput.value = `${storeToRestore.bayiKodu} - ${shortBayiAdi}`;
-                    document.getElementById('store-list').style.display = 'none';
-                    loadReportForStore(storeToRestore.bayiKodu);
+                    selectStore(storeToRestore);
                 }
             }
         }
