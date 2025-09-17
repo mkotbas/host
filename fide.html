@@ -1285,6 +1285,7 @@
             return text
                 .replace(/[\u2018\u2019]/g, "'") // Akıllı tek tırnakları düzelt
                 .replace(/[\u201C\u201D]/g, '"') // Akıllı çift tırnakları düzelt
+                .replace(/^\s*[\u2022\u25E6\u25CF\u2023\u25A0\u25A1-]\s*/, '') // Satır başındaki madde imlerini temizle
                 .replace(/\s+/g, ' ')           // Çoklu boşlukları tek boşluğa indir
                 .trim();
         }
