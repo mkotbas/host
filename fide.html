@@ -632,8 +632,7 @@
                     
                     firebaseRef.set(localData)
                         .then(() => { alert("Yerel yedek başarıyla buluta yüklendi! Sayfanın yenilenmesi önerilir."); })
-                        .catch(error => { alert("Buluta yükleme sırasında bir hata oluştu: " + error.message); console.error("Firebase'e yazma hatası:", error); });
-                } catch (error) { alert("Yerel yedek verisi okunurken bir hata oluştu. Yedek dosyası bozuk olabilir."); console.error("JSON parse hatası:", error); }
+                        .catch(error => { alert("Buluta yükleme sırasında bir hata oluştu: " + error.message); console.error("Firebase'e yazma hatası:", error); }
             }
         }
         function saveFormState() {
@@ -1333,6 +1332,8 @@
                 "yanlış pleksi malzeme ile kullanılanlar"
             ];
             
+            let isCurrentQuestionFixed = false;
+
             lines.forEach(line => {
                 const trimmedLine = line.trim();
                 const headerMatch = trimmedLine.match(questionHeaderRegex);
@@ -1342,7 +1343,17 @@
                     const finalId = migrationMap[originalId] || originalId;
                     currentQuestionId = finalId;
                     idsInEmail.add(finalId);
+                    
+                    const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
+                    // Cevap tipi 'fixed' (Sabit) ise, bu sorunun içeriğini işlemeyi atla
+                    isCurrentQuestionFixed = question && question.answerType === 'fixed';
+
                 } else if (currentQuestionId && trimmedLine) {
+                    // Eğer soru "Sabit" olarak işaretlenmişse, bu satırı tamamen yok say
+                    if (isCurrentQuestionFixed) {
+                        return;
+                    }
+
                     const lowerTrimmedLine = _normalizeText(trimmedLine).toLowerCase();
                     if (ignorePhrases.some(phrase => lowerTrimmedLine.includes(phrase))) {
                         return; 
@@ -1354,11 +1365,9 @@
                     const staticItems = question.staticItems || [];
                     const isStatic = staticItems.some(staticItem => {
                         const plainStaticItem = staticItem.replace(/<[^>]*>/g, '');
-                        // ESKİ YÖNTEM: return _normalizeText(plainStaticItem) === _normalizeText(trimmedLine);
-                        // YENİ, DAHA ESNEK YÖNTEM:
                         const normalizedStatic = _normalizeText(plainStaticItem);
                         const normalizedLine = _normalizeText(trimmedLine);
-                        if (normalizedLine.length < 5) return false; // Çok kısa satırların yanlışlıkla eşleşmesini engelle
+                        if (normalizedLine.length < 5) return false; 
                         return normalizedStatic.includes(normalizedLine);
                     });
                     
@@ -1562,6 +1571,10 @@
                 let staticItemsHtml = (q.staticItems || []).join('<br>'); 
                 const typeOptions = ['standard', 'product_list', 'pop_system'];
                 const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join('');
+                
+                // Cevap Tipi için varsayılan değeri belirle (eski JSON'larla uyumluluk için)
+                const answerType = q.answerType || 'variable';
+                
                 const isArchivedChecked = q.isArchived ? 'checked' : '';
 
                 itemDiv.innerHTML = `
@@ -1571,7 +1584,17 @@
                             <input type="number" class="manager-id-input" value="${q.id}" disabled title="ID değiştirmek veri bütünlüğünü bozabilir. Düzenlemek için şifre gerekir.">
                         </div>
                         <div><label>Soru Başlığı</label><input type="text" value="${q.title}"></div>
-                        <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)">${selectOptionsHTML}</select></div>
+                        <div>
+                            <label>Soru Tipi</label>
+                            <select onchange="toggleProductManager(this)">${selectOptionsHTML}</select>
+                        </div>
+                        <div>
+                            <label>Cevap Tipi</label>
+                            <select class="manager-answer-type">
+                                <option value="variable" ${answerType === 'variable' ? 'selected' : ''}>Değişken</option>
+                                <option value="fixed" ${answerType === 'fixed' ? 'selected' : ''}>Sabit</option>
+                            </select>
+                        </div>
                         <div class="archive-switch-container">
                             <label>Arşivle</label>
                             <label class="switch">
@@ -1864,7 +1887,21 @@
                         <input type="number" class="manager-id-input" value="${newId}">
                     </div>
                     <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
-                    <div><label>Soru Tipi</label><select onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
+                    <div>
+                        <label>Soru Tipi</label>
+                        <select onchange="toggleProductManager(this)">
+                            <option value="standard" selected>standard</option>
+                            <option value="product_list">product_list</option>
+                            <option value="pop_system">pop_system</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Cevap Tipi</label>
+                        <select class="manager-answer-type">
+                            <option value="variable" selected>Değişken</option>
+                            <option value="fixed">Sabit</option>
+                        </select>
+                    </div>
                     <div class="archive-switch-container">
                         <label>Arşivle</label>
                         <label class="switch">
@@ -1971,6 +2008,7 @@
                 const id = parseInt(item.querySelector('.manager-id-input').value);
                 const title = item.querySelector('input[type="text"]').value.trim();
                 const type = item.querySelector('select').value;
+                const answerType = item.querySelector('.manager-answer-type').value;
                 const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
                 const isArchived = item.querySelector('.archive-checkbox').checked;
 
@@ -1979,7 +2017,7 @@
                 ids.add(id);
 
                 const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
-                const newQuestion = { id, title, type };
+                const newQuestion = { id, title, type, answerType };
                 if (staticItems.length > 0 && type !== 'product_list') newQuestion.staticItems = staticItems;
                 if (isArchived) newQuestion.isArchived = true;
 
