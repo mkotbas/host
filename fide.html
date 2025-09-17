@@ -107,7 +107,7 @@
             <h2><i class="fas fa-chart-line"></i> Puan Entegrasyonu ve Veri Yönetimi</h2>
             <div id="excel-expiry-warning">
                 <p><i class="fas fa-exclamation-triangle"></i> Veri Uyarısı</p>
-                <span>Aşağıdaki dosyalar 30 günden eski olduğu için hafızadan silindi. Lütfen güncel versiyonlarını tekrar yükleyin:</span>
+                <span>Aşağıdaki dosyalar 30 günden eski olduğu için hafadan silindi. Lütfen güncel versiyonlarını tekrar yükleyin:</span>
                 <ul id="expired-files-list"></ul>
             </div>
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
@@ -1317,8 +1317,6 @@
                 }
             }
             
-            // YENİ: Başlıkları daha esnek tanımak için düzenlenmiş regex.
-            // Satır başındaki madde işaretlerini (•, o, -), TAB ve boşlukları yoksayar.
             const questionHeaderRegex = /^[\s•o-]*FiDe\s+(\d+)\./i;
             const idsInEmail = new Set();
             let currentQuestionId = null;
@@ -1339,13 +1337,31 @@
                     currentQuestionId = finalId;
                     idsInEmail.add(finalId);
                 } else if (currentQuestionId && trimmedLine) {
-                    // YENİ: Madde içeriklerinin başındaki madde işaretlerini ve boşlukları temizle.
                     const cleanedLine = trimmedLine.replace(/^[\s•o-]+\s*/, '');
-                    if (!cleanedLine) return; // Temizledikten sonra satır boş kalırsa atla.
+                    if (!cleanedLine) return; 
 
                     const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
                     if (!question || (question.answerType === 'fixed')) {
                         return; 
+                    }
+
+                    // YENİ: Ürün siparişlerini tanıma ve ayırma mantığı
+                    if (question.type === 'product_list') {
+                        const productMatch = cleanedLine.match(/^(\d{8,})/); 
+                        if (productMatch) {
+                            const productCode = productMatch[1];
+                            let quantity = 1; 
+                            const quantityMatch = cleanedLine.match(/:?\s*(\d+)\s*(paket|adet)/i);
+                            if (quantityMatch && quantityMatch[1]) {
+                                quantity = parseInt(quantityMatch[1], 10);
+                            }
+                            
+                            const productExists = productList.some(p => p.code === productCode);
+                            if (productExists) {
+                                addProductToList(productCode, quantity);
+                                return; 
+                            }
+                        }
                     }
                     
                     if (ignorePhrases.some(phrase => cleanedLine.toLowerCase().includes(phrase))) {
