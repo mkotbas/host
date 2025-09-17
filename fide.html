@@ -1317,8 +1317,14 @@
                 }
             }
             
-            let currentQuestionId = null;
             const questionHeaderRegex = /^FiDe\s+(\d+)\./i;
+            const idsInEmail = new Set();
+            lines.forEach(line => {
+                const match = line.trim().match(questionHeaderRegex);
+                if (match) idsInEmail.add(match[1]);
+            });
+
+            let currentQuestionId = null;
             const ignorePhrases = [
                 "sipariş verilmesi gerekenler",
                 "pleksiyle sergilenmesi gerekenler",
@@ -1349,6 +1355,19 @@
                     if (!isStatic) {
                         const containerId = (question.type === 'product_list') ? `fide${currentQuestionId}_pleksi` : `fide${currentQuestionId}`;
                         addDynamicInput(containerId, trimmedLine, false);
+                    }
+                }
+            });
+            
+            fideQuestions.forEach(q => {
+                if (q.isArchived) return;
+                if (!idsInEmail.has(String(q.id))) {
+                    const questionItem = document.getElementById(`fide-item-${q.id}`);
+                    if (questionItem) {
+                        const removeButton = questionItem.querySelector('.fide-actions .remove-btn');
+                        if (removeButton && !questionItem.classList.contains('question-removed')) {
+                            toggleQuestionRemoved(removeButton, q.id);
+                        }
                     }
                 }
             });
