@@ -370,20 +370,6 @@
             }
         }
 
-        function clearExcelData(type) {
-            const typeName = type.toUpperCase();
-            const persistenceKey = `${type}PersistenceData`;
-            
-            if (confirm(`Yüklenmiş olan ${typeName} Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
-                localStorage.removeItem(persistenceKey);
-                if(auth.currentUser && database) {
-                    database.ref(`excelData/${type}`).remove();
-                }
-                alert(`${typeName} Excel verisi temizlendi. Sayfa yenileniyor.`);
-                window.location.reload();
-            }
-        }
-
         function setupEventListeners() {
             if (document.body.dataset.listenersAttached) return;
             document.body.dataset.listenersAttached = 'true';
@@ -421,9 +407,26 @@
                     }
                 }
             });
-            document.getElementById('clear-excel-btn').addEventListener('click', () => clearExcelData('dide'));
-            document.getElementById('clear-fide-excel-btn').addEventListener('click', () => clearExcelData('fide'));
-
+            document.getElementById('clear-excel-btn').addEventListener('click', () => {
+                if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+                    localStorage.removeItem('didePersistenceData');
+                    if(auth.currentUser && database) {
+                        database.ref('excelData/dide').remove();
+                    }
+                    alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor.");
+                    window.location.reload();
+                }
+            });
+             document.getElementById('clear-fide-excel-btn').addEventListener('click', () => {
+                if (confirm("Yüklenmiş olan FiDe Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+                    localStorage.removeItem('fidePersistenceData');
+                    if(auth.currentUser && database) {
+                        database.ref('excelData/fide').remove();
+                    }
+                    alert("FiDe Excel verisi temizlendi. Sayfa yenileniyor.");
+                    window.location.reload();
+                }
+            });
             document.getElementById('store-search-input').addEventListener('keyup', (e) => {
                 selectedStore = null; 
                 const filter = e.target.value.toLowerCase().trim();
@@ -632,7 +635,8 @@
                     
                     firebaseRef.set(localData)
                         .then(() => { alert("Yerel yedek başarıyla buluta yüklendi! Sayfanın yenilenmesi önerilir."); })
-                        .catch(error => { alert("Buluta yükleme sırasında bir hata oluştu: " + error.message); console.error("Firebase'e yazma hatası:", error); }
+                        .catch(error => { alert("Buluta yükleme sırasında bir hata oluştu: " + error.message); console.error("Firebase'e yazma hatası:", error); });
+                } catch (error) { alert("Yerel yedek verisi okunurken bir hata oluştu. Yedek dosyası bozuk olabilir."); console.error("JSON parse hatası:", error); }
             }
         }
         function saveFormState() {
@@ -1279,16 +1283,6 @@
             } catch (error) { alert('Geçersiz rapor kodu!'); console.error("Rapor yükleme hatası:", error); }
         }
         
-        function _normalizeText(text) {
-            if (!text) return '';
-            return text
-                .replace(/[\u2018\u2019]/g, "'") // Akıllı tek tırnakları düzelt
-                .replace(/[\u201C\u201D]/g, '"') // Akıllı çift tırnakları düzelt
-                .replace(/^\s*[\u2022\u25E6\u25CF\u2023\u25A0\u25A1-]\s*/, '') // Satır başındaki madde imlerini temizle
-                .replace(/\s+/g, ' ')           // Çoklu boşlukları tek boşluğa indir
-                .trim();
-        }
-
         function parseAndLoadFromEmail() {
             const emailText = document.getElementById('load-email-area').value.trim();
             if (!emailText) {
@@ -1301,7 +1295,7 @@
             let storeFoundAndSelected = false;
 
             for (const line of lines) {
-                const match = line.match(/^.*?(\d{5,})\s/);
+                const match = line.match(/Ziyaret etmiş olduğum (\d{5,})\s/);
                 if (match) {
                     storeCodeFound = match[1];
                     const storeToSelect = uniqueStores.find(s => String(s.bayiKodu) === storeCodeFound);
@@ -1323,19 +1317,19 @@
                 }
             }
             
-            let currentQuestionId = null;
             const questionHeaderRegex = /^FiDe\s+(\d+)\./i;
             const idsInEmail = new Set();
+            let currentQuestionId = null;
+            
             const ignorePhrases = [
                 "sipariş verilmesi gerekenler",
                 "pleksiyle sergilenmesi gerekenler",
                 "yanlış pleksi malzeme ile kullanılanlar"
             ];
-            
-            let isCurrentQuestionFixed = false;
 
             lines.forEach(line => {
-                const trimmedLine = line.trim();
+                const trimmedLine = line.trim().replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').replace(/^-/, '').trim();
+                const lowerTrimmedLine = trimmedLine.toLowerCase();
                 const headerMatch = trimmedLine.match(questionHeaderRegex);
 
                 if (headerMatch) {
@@ -1343,32 +1337,20 @@
                     const finalId = migrationMap[originalId] || originalId;
                     currentQuestionId = finalId;
                     idsInEmail.add(finalId);
-                    
-                    const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
-                    // Cevap tipi 'fixed' (Sabit) ise, bu sorunun içeriğini işlemeyi atla
-                    isCurrentQuestionFixed = question && question.answerType === 'fixed';
-
                 } else if (currentQuestionId && trimmedLine) {
-                    // Eğer soru "Sabit" olarak işaretlenmişse, bu satırı tamamen yok say
-                    if (isCurrentQuestionFixed) {
-                        return;
+                    const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
+                    if (!question || (question.answerType === 'fixed')) {
+                        return; 
                     }
-
-                    const lowerTrimmedLine = _normalizeText(trimmedLine).toLowerCase();
+                    
                     if (ignorePhrases.some(phrase => lowerTrimmedLine.includes(phrase))) {
                         return; 
                     }
-
-                    const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
-                    if (!question) return;
-
+                    
                     const staticItems = question.staticItems || [];
                     const isStatic = staticItems.some(staticItem => {
-                        const plainStaticItem = staticItem.replace(/<[^>]*>/g, '');
-                        const normalizedStatic = _normalizeText(plainStaticItem);
-                        const normalizedLine = _normalizeText(trimmedLine);
-                        if (normalizedLine.length < 5) return false; 
-                        return normalizedStatic.includes(normalizedLine);
+                        const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
+                        return plainStaticItem.includes(trimmedLine);
                     });
                     
                     if (!isStatic) {
@@ -1572,9 +1554,12 @@
                 const typeOptions = ['standard', 'product_list', 'pop_system'];
                 const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join('');
                 
-                // Cevap Tipi için varsayılan değeri belirle (eski JSON'larla uyumluluk için)
                 const answerType = q.answerType || 'variable';
-                
+                const answerTypeOptionsHTML = `
+                    <option value="variable" ${answerType === 'variable' ? 'selected' : ''}>Değişken</option>
+                    <option value="fixed" ${answerType === 'fixed' ? 'selected' : ''}>Sabit</option>
+                `;
+
                 const isArchivedChecked = q.isArchived ? 'checked' : '';
 
                 itemDiv.innerHTML = `
@@ -1583,18 +1568,9 @@
                             <label>Soru ID</label>
                             <input type="number" class="manager-id-input" value="${q.id}" disabled title="ID değiştirmek veri bütünlüğünü bozabilir. Düzenlemek için şifre gerekir.">
                         </div>
-                        <div><label>Soru Başlığı</label><input type="text" value="${q.title}"></div>
-                        <div>
-                            <label>Soru Tipi</label>
-                            <select onchange="toggleProductManager(this)">${selectOptionsHTML}</select>
-                        </div>
-                        <div>
-                            <label>Cevap Tipi</label>
-                            <select class="manager-answer-type">
-                                <option value="variable" ${answerType === 'variable' ? 'selected' : ''}>Değişken</option>
-                                <option value="fixed" ${answerType === 'fixed' ? 'selected' : ''}>Sabit</option>
-                            </select>
-                        </div>
+                        <div><label>Soru Başlığı</label><input type="text" class="question-title-input" value="${q.title}"></div>
+                        <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleProductManager(this)">${selectOptionsHTML}</select></div>
+                        <div><label>Cevap Tipi</label><select class="answer-type-select">${answerTypeOptionsHTML}</select></div>
                         <div class="archive-switch-container">
                             <label>Arşivle</label>
                             <label class="switch">
@@ -1886,18 +1862,11 @@
                         <label>Soru ID</label>
                         <input type="number" class="manager-id-input" value="${newId}">
                     </div>
-                    <div><label>Soru Başlığı</label><input type="text" placeholder="Yeni sorunun başlığını yazın..."></div>
-                    <div>
-                        <label>Soru Tipi</label>
-                        <select onchange="toggleProductManager(this)">
-                            <option value="standard" selected>standard</option>
-                            <option value="product_list">product_list</option>
-                            <option value="pop_system">pop_system</option>
-                        </select>
-                    </div>
+                    <div><label>Soru Başlığı</label><input type="text" class="question-title-input" placeholder="Yeni sorunun başlığını yazın..."></div>
+                    <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
                     <div>
                         <label>Cevap Tipi</label>
-                        <select class="manager-answer-type">
+                        <select class="answer-type-select">
                             <option value="variable" selected>Değişken</option>
                             <option value="fixed">Sabit</option>
                         </select>
@@ -2006,9 +1975,9 @@
                 if (item.classList.contains('to-be-deleted')) continue;
 
                 const id = parseInt(item.querySelector('.manager-id-input').value);
-                const title = item.querySelector('input[type="text"]').value.trim();
-                const type = item.querySelector('select').value;
-                const answerType = item.querySelector('.manager-answer-type').value;
+                const title = item.querySelector('.question-title-input').value.trim();
+                const type = item.querySelector('.question-type-select').value;
+                const answerType = item.querySelector('.answer-type-select').value;
                 const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
                 const isArchived = item.querySelector('.archive-checkbox').checked;
 
