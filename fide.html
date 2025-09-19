@@ -8,9 +8,44 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <link rel="stylesheet" href="fidecss.css">
-
+    <style>
+        /* YENİ EKLENDİ: Yükleme Ekranı Stilleri */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-size: 18px;
+        }
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid var(--primary);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
+    <div id="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>İşlem yapılıyor, lütfen bekleyin...</p>
+    </div>
+
     <div class="container">
         
         <div class="top-controls">
@@ -1612,7 +1647,10 @@
                         <div class="editable-textarea" contenteditable="true">${staticItemsHtml}</div>
                     </div>
                     <div class="product-list-manager" style="display: none;"></div>
-                    <div class="manager-item-footer"><button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button></div>`;
+                    <div class="manager-item-footer">
+                        <button class="btn-warning btn-sm" onclick="deleteAllAnswersForQuestion(${q.id})" title="Bu soruya ait TÜM cevapları BÜTÜN bayi raporlarından kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Cevapları Temizle</button>
+                        <button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button>
+                    </div>`;
                 managerList.appendChild(itemDiv);
 
                 if(q.type === 'product_list') {
@@ -1967,6 +2005,58 @@
             }
         }
         
+        // YENİ EKLENDİ: Belirli bir soruya ait tüm cevapları silen fonksiyon
+        async function deleteAllAnswersForQuestion(questionId) {
+            const questionTitle = document.querySelector(`.manager-item[data-id="${questionId}"] .question-title-input`).value;
+            const confirmation = confirm(`DİKKAT! Bu işlem geri alınamaz.\n\nFiDe ${questionId} ("${questionTitle}") sorusuna ait TÜM cevapları, BÜTÜN bayi raporlarından kalıcı olarak silmek istediğinizden emin misiniz?`);
+            
+            if (!confirmation) {
+                alert("İşlem iptal edildi.");
+                return;
+            }
+
+            const loadingOverlay = document.getElementById('loading-overlay');
+            loadingOverlay.style.display = 'flex';
+
+            try {
+                // 1. Adım: localStorage'daki verileri temizle
+                const localDataString = localStorage.getItem('allFideReports');
+                if (localDataString) {
+                    let allReports = JSON.parse(localDataString);
+                    for (const storeKey in allReports) {
+                        if (allReports[storeKey] && allReports[storeKey].data && allReports[storeKey].data.questions_status && allReports[storeKey].data.questions_status[questionId]) {
+                            delete allReports[storeKey].data.questions_status[questionId];
+                        }
+                    }
+                    localStorage.setItem('allFideReports', JSON.stringify(allReports));
+                }
+
+                // 2. Adım: Firebase'deki verileri temizle (kullanıcı giriş yapmışsa)
+                if (auth.currentUser && database) {
+                    const reportsRef = database.ref('allFideReports');
+                    const snapshot = await reportsRef.once('value');
+                    if (snapshot.exists()) {
+                        let allCloudReports = snapshot.val();
+                        for (const storeKey in allCloudReports) {
+                            if (allCloudReports[storeKey] && allCloudReports[storeKey].data && allCloudReports[storeKey].data.questions_status && allCloudReports[storeKey].data.questions_status[questionId]) {
+                                delete allCloudReports[storeKey].data.questions_status[questionId];
+                            }
+                        }
+                        await reportsRef.set(allCloudReports);
+                    }
+                }
+                
+                alert(`İşlem tamamlandı!\n\nFiDe ${questionId} sorusuna ait tüm cevaplar bütün raporlardan (hem yerel hem de bulut) başarıyla silindi.`);
+
+            } catch (error) {
+                console.error("Cevapları silerken bir hata oluştu:", error);
+                alert("Bir hata oluştu! Cevaplar silinemedi. Lütfen konsolu kontrol edin.");
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+
         function saveQuestions() {
             const newProductList = [];
             const activeProductManager = document.querySelector('.product-list-manager:not([style*="display: none"])');
