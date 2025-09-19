@@ -210,6 +210,15 @@
       "title": "Elektronik ürünler stant üzerinde sergileniyor mu?",
       "type": "standard",
       "answerType": "variable"
+    },
+    {
+      "id": 20,
+      "title": "Merhaba",
+      "type": "standard",
+      "answerType": "variable",
+      "staticItems": [
+        "dsadsadasdasd"
+      ]
     }
   ],
   "productList": [
