@@ -416,15 +416,12 @@
             if(saveSection) saveSection.style.display = 'none';
         }
 
-        // YENİ FONKSİYON: E-posta taslağından ana sayfaya dönmek için
         function returnToMainPage() {
-            // E-posta ve kaydetme alanlarını kaldır
             const emailDraft = document.getElementById('email-draft-container');
             if (emailDraft) emailDraft.remove();
             const saveSection = document.getElementById('save-section');
             if(saveSection) saveSection.style.display = 'none';
             
-            // Ana sayfa elementlerini tekrar görünür yap
             document.getElementById('dide-upload-card').style.display = 'block';
             document.querySelector('.load-container').style.display = 'flex';
             document.getElementById('form-content').style.display = 'block';
@@ -558,7 +555,7 @@
                     if (girilenSifre) {
                         const girilenSifreHash = btoa(girilenSifre);
                         if (girilenSifreHash === dogruSifreHash) {
-                           returnToMainPage(); // Ana sayfa elementlerini gösterir
+                           returnToMainPage();
                            manager.style.display = 'block';
                            document.getElementById('dide-upload-card').style.display = 'none';
                            document.querySelector('.load-container').style.display = 'none';
@@ -607,7 +604,6 @@
                 }
             });
 
-            // Veri Taşıma Yöneticisi Event Listeners
             document.getElementById('open-migration-manager-btn').addEventListener('click', () => {
                 renderMigrationManagerUI();
                 document.getElementById('migration-manager-overlay').style.display = 'flex';
@@ -617,7 +613,6 @@
             });
             document.getElementById('add-migration-btn').addEventListener('click', () => addMigrationMapping());
 
-            // Hazır Senaryo Sistemi Event Listeners
             document.getElementById('open-scenario-system-btn').addEventListener('click', openScenarioSystem);
             document.getElementById('close-scenario-system-btn').addEventListener('click', closeScenarioSystem);
             document.querySelectorAll('.scenario-btn').forEach(btn => {
@@ -627,10 +622,8 @@
             document.getElementById('apply-text-change-btn').addEventListener('click', applyTextChangeScenario);
         }
 
-        // --- HAZIR SENARYO SİSTEMİ FONKSİYONLARI ---
         function openScenarioSystem() {
             document.getElementById('scenario-system-overlay').style.display = 'flex';
-            // Paneli temiz bir başlangıç için sıfırla
             document.querySelector('.scenario-selection').style.display = 'flex';
             document.querySelectorAll('.scenario-form').forEach(form => form.style.display = 'none');
             document.getElementById('scenario-old-id').value = '';
@@ -670,12 +663,10 @@
                 return;
             }
             
-            // 1. Adım: Soru Yöneticisi'ndeki ID'yi güncelle
             const idInput = questionItem.querySelector('.manager-id-input');
             idInput.value = newId;
             questionItem.dataset.id = newId;
 
-            // 2. Adım: Veri taşıma haritasına otomatik olarak kural ekle
             addMigrationMapping(oldId, newId);
             
             alert(`Başarılı!\n\n- Soru ${oldId} ID'si, ${newId} olarak güncellendi.\n- Veri kaybını önlemek için otomatik yönlendirme kuralı eklendi.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
@@ -697,18 +688,15 @@
 
             closeScenarioSystem();
 
-            // Soruyu görünür kıl ve odaklan
             questionItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
-            // Geçici bir vurgulama efekti ekle
             questionItem.style.transition = 'background-color 0.5s ease';
-            questionItem.style.backgroundColor = '#cffafe'; // Açık camgöbeği
+            questionItem.style.backgroundColor = '#cffafe';
             setTimeout(() => {
-                questionItem.style.backgroundColor = ''; // Rengi normale döndür
+                questionItem.style.backgroundColor = '';
             }, 2000);
         }
         
-        // --- VERİ TAŞIMA FONKSİYONLARI (Güncellendi) ---
         function renderMigrationManagerUI() {
             const listContainer = document.getElementById('migration-list-container');
             listContainer.innerHTML = '';
@@ -747,7 +735,6 @@
             migrationMap[oldId] = newId;
             saveMigrationMap();
 
-            // Eğer bu fonksiyon manuel olarak Veri Taşıma panelinden çağrıldıysa UI'ı güncelle
             if (!oldIdValue) {
                 renderMigrationManagerUI();
                 oldIdInput.value = '';
@@ -1352,13 +1339,11 @@
             const tableHtml = `<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #dddddd;"><thead><tr><th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;">${currentYear}</th>${monthHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">DiDe</td>${dideScores}</tr><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">FiDe</td>${fideScores}</tr></tbody></table></div>`;
             const finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
             
-            // ANA SAYFA ELEMENTLERİNİ GİZLE
             document.getElementById('dide-upload-card').style.display = 'none';
             document.getElementById('form-content').style.display = 'none';
             document.querySelector('.action-button').style.display = 'none';
             document.querySelector('.load-container').style.display = 'none';
 
-            // E-POSTA TASLAĞINI OLUŞTUR
             const existingDraft = document.getElementById('email-draft-container');
             if (existingDraft) existingDraft.remove();
             const draftContainer = document.createElement('div');
@@ -1523,7 +1508,6 @@
                         return; 
                     }
 
-                    // YENİ: Ürün siparişlerini tanıma ve ayırma mantığı
                     if (question.type === 'product_list') {
                         const productMatch = cleanedLine.match(/^(\d{8,})/); 
                         if (productMatch) {
@@ -2161,7 +2145,6 @@
             loadingOverlay.style.display = 'flex';
 
             try {
-                // 1. Adım: localStorage'daki verileri temizle
                 const localDataString = localStorage.getItem('allFideReports');
                 if (localDataString) {
                     let allReports = JSON.parse(localDataString);
@@ -2173,7 +2156,6 @@
                     localStorage.setItem('allFideReports', JSON.stringify(allReports));
                 }
 
-                // 2. Adım: Firebase'deki verileri temizle (kullanıcı giriş yapmışsa)
                 if (auth.currentUser && database) {
                     const reportsRef = database.ref('allFideReports');
                     const snapshot = await reportsRef.once('value');
@@ -2250,6 +2232,9 @@
                 }
                 newQuestions.push(newQuestion);
             }
+
+            // YENİ EKLENEN OTOMATİK SIRALAMA
+            newQuestions.sort((a, b) => a.id - b.id);
 
             const finalJsonData = {
                 questions: newQuestions,
