@@ -75,7 +75,7 @@
                 <div class="manager-main-actions">
                     <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Soru Ekle</button>
                     <button id="open-scenario-system-btn" class="btn-primary btn-sm" title="Sık yapılan değişiklikleri otomatikleştirmek için hazır senaryoları kullanın."><i class="fas fa-magic"></i> Hazır Senaryo Sistemi</button>
-                    <button id="open-migration-manager-btn" class="btn-primary btn-sm" title="Eski raporlardaki verilerin yeni soru ID'lerine taşınması için kurallar belirleyin."><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</button>
+                    <button id="open-migration-manager-btn" class="btn-primary btn-sm" title="Mevcut ID yönlendirme kurallarını görüntüleyin veya silin."><i class="fas fa-ruler-combined"></i> Yönlendirme Kuralları</button>
                     <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenle</button>
                     <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Arşivi Sil</button>
                     <button id="restore-all-archived-btn" class="btn-success btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları aktif hale getirir."><i class="fas fa-undo"></i> Arşivi Geri Yükle</button>
@@ -87,18 +87,12 @@
             <div id="migration-manager-overlay" class="modal-overlay" style="display: none;">
                 <div class="modal-panel">
                     <div class="modal-header">
-                         <h3><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</h3>
+                         <h3><i class="fas fa-ruler-combined"></i> Yönlendirme Kuralları</h3>
                         <p>
-                            Soru ID'sini değiştirdiğinizde, eski yedeklerdeki verilerin kaybolmaması için buradan yönlendirme ekleyin. Ayarlarınız buluta otomatik yedeklenir.
+                            Burada, "Hazır Senaryo Sistemi" ile oluşturulmuş ID yönlendirme kurallarını görebilir ve silebilirsiniz. Yeni kural eklemek için "Hazır Senaryo Sistemi"ni kullanın.
                         </p>
                     </div>
                     <div class="modal-body">
-                        <div class="migration-form">
-                            <input type="number" id="migration-old-id" placeholder="Eski ID">
-                            <i class="fas fa-long-arrow-alt-right"></i>
-                            <input type="number" id="migration-new-id" placeholder="Yeni ID">
-                            <button id="add-migration-btn" class="btn-success btn-sm"><i class="fas fa-plus"></i> Ekle</button>
-                        </div>
                         <h4>Mevcut Yönlendirmeler</h4>
                         <ul id="migration-list-container" class="migration-list">
                         </ul>
@@ -454,7 +448,7 @@
                             if(auth.currentUser && database){
                                 database.ref('allFideReports').remove();
                                 database.ref('excelData').remove();
-                                database.ref('migrationSettings').remove(); // Veri taşıma ayarlarını da buluttan sil
+                                database.ref('migrationSettings').remove();
                             }
                             
                             alert("Tüm uygulama verileri başarıyla temizlendi. Sayfa yenileniyor.");
@@ -611,8 +605,7 @@
             document.getElementById('close-migration-manager-btn').addEventListener('click', () => {
                 document.getElementById('migration-manager-overlay').style.display = 'none';
             });
-            document.getElementById('add-migration-btn').addEventListener('click', () => addMigrationMapping());
-
+           
             document.getElementById('open-scenario-system-btn').addEventListener('click', openScenarioSystem);
             document.getElementById('close-scenario-system-btn').addEventListener('click', closeScenarioSystem);
             document.querySelectorAll('.scenario-btn').forEach(btn => {
@@ -718,10 +711,8 @@
         }
 
         function addMigrationMapping(oldIdValue, newIdValue) {
-            const oldIdInput = document.getElementById('migration-old-id');
-            const newIdInput = document.getElementById('migration-new-id');
-            const oldId = oldIdValue || oldIdInput.value.trim();
-            const newId = newIdValue || newIdInput.value.trim();
+            const oldId = oldIdValue;
+            const newId = newIdValue;
 
             if (!oldId || !newId) {
                 alert("Lütfen hem 'Eski ID' hem de 'Yeni ID' alanlarını doldurun.");
@@ -734,13 +725,6 @@
 
             migrationMap[oldId] = newId;
             saveMigrationMap();
-
-            if (!oldIdValue) {
-                renderMigrationManagerUI();
-                oldIdInput.value = '';
-                newIdInput.value = '';
-                oldIdInput.focus();
-            }
         }
 
         function deleteMigrationMapping(oldIdToDelete) {
@@ -2233,7 +2217,6 @@
                 newQuestions.push(newQuestion);
             }
 
-            // YENİ EKLENEN OTOMATİK SIRALAMA
             newQuestions.sort((a, b) => a.id - b.id);
 
             const finalJsonData = {
