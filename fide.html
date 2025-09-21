@@ -435,7 +435,7 @@
             
             document.getElementById('clear-storage-btn').addEventListener('click', () => {
                 const dogruSifreHash = 'ZmRlMDAx';
-                const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
+                const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifre girin:");
 
                 if (girilenSifre) { 
                     const girilenSifreHash = btoa(girilenSifre);
@@ -1293,14 +1293,21 @@
                     let itemsForEmail = [];
 
                     if (hasDynamicItems) {
-                        // Eğer kullanıcı özel bir eksik eklediyse, sadece o eksikleri ve statik linkleri göster.
                         itemsForEmail = allItems.filter(item => item.type === 'dynamic' || (item.type === 'static' && item.text.includes('<a href')));
                     } else {
-                        // Eğer özel bir eksik eklenmediyse, tüm statik maddeleri (hem metin hem link) göster.
                         itemsForEmail = allItems.filter(item => item.type === 'static');
                     }
                     
                     if (itemsForEmail.length > 0) {
+                        // YENİ SIRALAMA MANTIĞI BURADA EKLENDİ
+                        itemsForEmail.sort((a, b) => {
+                            const aIsLink = a.text.includes('<a href');
+                            const bIsLink = b.text.includes('<a href');
+                            if (aIsLink && !bIsLink) return 1;  // a bir link ise, b'den sonra gelsin
+                            if (!aIsLink && bIsLink) return -1; // b bir link ise, a'dan sonra gelsin
+                            return 0; // ikisi de link veya ikisi de değilse, sıralama değişmesin
+                        });
+
                         contentHtml = `<ul>${itemsForEmail.map(item => {
                             if (item.completed) return `<li>${item.text} <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span></li>`;
                             return `<li>${item.text}</li>`;
