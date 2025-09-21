@@ -74,6 +74,7 @@
                 </div>
                 <div class="manager-main-actions">
                     <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Soru Ekle</button>
+                    <button id="open-scenario-system-btn" class="btn-primary btn-sm" title="Sık yapılan değişiklikleri otomatikleştirmek için hazır senaryoları kullanın."><i class="fas fa-magic"></i> Hazır Senaryo Sistemi</button>
                     <button id="open-migration-manager-btn" class="btn-primary btn-sm" title="Eski raporlardaki verilerin yeni soru ID'lerine taşınması için kurallar belirleyin."><i class="fas fa-directions"></i> Veri Taşıma Yöneticisi</button>
                     <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenle</button>
                     <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Arşivi Sil</button>
@@ -82,6 +83,7 @@
                 </div>
             </div>
             <div id="manager-list"></div>
+            
             <div id="migration-manager-overlay" class="modal-overlay" style="display: none;">
                 <div class="modal-panel">
                     <div class="modal-header">
@@ -106,6 +108,49 @@
                     </div>
                 </div>
             </div>
+
+            <div id="scenario-system-overlay" class="modal-overlay" style="display: none;">
+                <div class="modal-panel">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-magic"></i> Hazır Senaryo Sistemi</h3>
+                        <p>Sık yapılan işlemleri otomatikleştirmek için bir senaryo seçin. Sistem gerekli adımları sizin için atacaktır.</p>
+                    </div>
+                    <div class="modal-body">
+                        <div class="scenario-selection">
+                            <button class="scenario-btn" data-scenario="id-change">
+                                <i class="fas fa-random"></i>
+                                <span>Bir Sorunun Numarası (ID) Değişti</span>
+                                <small>ID'yi günceller ve veri kaybını önlemek için otomatik yönlendirme ekler.</small>
+                            </button>
+                            <button class="scenario-btn" data-scenario="text-change">
+                                <i class="fas fa-pencil-alt"></i>
+                                <span>Bir Sorunun Metni / İçeriği Değişti</span>
+                                <small>Düzenlemek istediğiniz soruyu listede bulur ve odaklar.</small>
+                            </button>
+                        </div>
+                        <div id="scenario-id-change-form" class="scenario-form" style="display: none;">
+                            <h4>Senaryo: Soru Numarası Değişikliği</h4>
+                            <div class="migration-form">
+                                <input type="number" id="scenario-old-id" placeholder="Eski Soru ID">
+                                <i class="fas fa-long-arrow-alt-right"></i>
+                                <input type="number" id="scenario-new-id" placeholder="Yeni Soru ID">
+                            </div>
+                            <button id="apply-id-change-btn" class="btn-success"><i class="fas fa-check"></i> Değişikliği Uygula</button>
+                        </div>
+                        <div id="scenario-text-change-form" class="scenario-form" style="display: none;">
+                            <h4>Senaryo: Soru Metni Değişikliği</h4>
+                            <div class="migration-form">
+                                <input type="number" id="scenario-find-id" placeholder="Düzenlenecek Soru ID">
+                            </div>
+                            <button id="apply-text-change-btn" class="btn-primary"><i class="fas fa-search"></i> Beni Soruya Götür</button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="close-scenario-system-btn" class="btn-danger btn-sm">Paneli Kapat</button>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <div class="card" id="dide-upload-card">
@@ -556,6 +601,7 @@
                 }
             });
 
+            // Veri Taşıma Yöneticisi Event Listeners
             document.getElementById('open-migration-manager-btn').addEventListener('click', () => {
                 renderMigrationManagerUI();
                 document.getElementById('migration-manager-overlay').style.display = 'flex';
@@ -563,9 +609,100 @@
             document.getElementById('close-migration-manager-btn').addEventListener('click', () => {
                 document.getElementById('migration-manager-overlay').style.display = 'none';
             });
-            document.getElementById('add-migration-btn').addEventListener('click', addMigrationMapping);
+            document.getElementById('add-migration-btn').addEventListener('click', () => addMigrationMapping());
+
+            // Hazır Senaryo Sistemi Event Listeners
+            document.getElementById('open-scenario-system-btn').addEventListener('click', openScenarioSystem);
+            document.getElementById('close-scenario-system-btn').addEventListener('click', closeScenarioSystem);
+            document.querySelectorAll('.scenario-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => selectScenario(e.currentTarget.dataset.scenario));
+            });
+            document.getElementById('apply-id-change-btn').addEventListener('click', applyIdChangeScenario);
+            document.getElementById('apply-text-change-btn').addEventListener('click', applyTextChangeScenario);
         }
 
+        // --- HAZIR SENARYO SİSTEMİ FONKSİYONLARI ---
+        function openScenarioSystem() {
+            document.getElementById('scenario-system-overlay').style.display = 'flex';
+            // Paneli temiz bir başlangıç için sıfırla
+            document.querySelector('.scenario-selection').style.display = 'flex';
+            document.querySelectorAll('.scenario-form').forEach(form => form.style.display = 'none');
+            document.getElementById('scenario-old-id').value = '';
+            document.getElementById('scenario-new-id').value = '';
+            document.getElementById('scenario-find-id').value = '';
+        }
+
+        function closeScenarioSystem() {
+            document.getElementById('scenario-system-overlay').style.display = 'none';
+        }
+
+        function selectScenario(scenario) {
+            document.querySelector('.scenario-selection').style.display = 'none';
+            if (scenario === 'id-change') {
+                document.getElementById('scenario-id-change-form').style.display = 'block';
+            } else if (scenario === 'text-change') {
+                document.getElementById('scenario-text-change-form').style.display = 'block';
+            }
+        }
+
+        function applyIdChangeScenario() {
+            const oldId = document.getElementById('scenario-old-id').value.trim();
+            const newId = document.getElementById('scenario-new-id').value.trim();
+
+            if (!oldId || !newId) {
+                alert("Lütfen hem 'Eski Soru ID' hem de 'Yeni Soru ID' alanlarını doldurun.");
+                return;
+            }
+            if (oldId === newId) {
+                alert("Eski ve yeni ID aynı olamaz.");
+                return;
+            }
+
+            const questionItem = document.querySelector(`.manager-item[data-id="${oldId}"]`);
+            if (!questionItem) {
+                alert(`HATA: "${oldId}" ID'li bir soru bulunamadı.`);
+                return;
+            }
+            
+            // 1. Adım: Soru Yöneticisi'ndeki ID'yi güncelle
+            const idInput = questionItem.querySelector('.manager-id-input');
+            idInput.value = newId;
+            questionItem.dataset.id = newId;
+
+            // 2. Adım: Veri taşıma haritasına otomatik olarak kural ekle
+            addMigrationMapping(oldId, newId);
+            
+            alert(`Başarılı!\n\n- Soru ${oldId} ID'si, ${newId} olarak güncellendi.\n- Veri kaybını önlemek için otomatik yönlendirme kuralı eklendi.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
+            closeScenarioSystem();
+        }
+
+        function applyTextChangeScenario() {
+            const findId = document.getElementById('scenario-find-id').value.trim();
+            if (!findId) {
+                alert("Lütfen düzenlemek istediğiniz sorunun ID'sini girin.");
+                return;
+            }
+
+            const questionItem = document.querySelector(`.manager-item[data-id="${findId}"]`);
+            if (!questionItem) {
+                alert(`HATA: "${findId}" ID'li bir soru bulunamadı.`);
+                return;
+            }
+
+            closeScenarioSystem();
+
+            // Soruyu görünür kıl ve odaklan
+            questionItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Geçici bir vurgulama efekti ekle
+            questionItem.style.transition = 'background-color 0.5s ease';
+            questionItem.style.backgroundColor = '#cffafe'; // Açık camgöbeği
+            setTimeout(() => {
+                questionItem.style.backgroundColor = ''; // Rengi normale döndür
+            }, 2000);
+        }
+        
+        // --- VERİ TAŞIMA FONKSİYONLARI (Güncellendi) ---
         function renderMigrationManagerUI() {
             const listContainer = document.getElementById('migration-list-container');
             listContainer.innerHTML = '';
@@ -586,11 +723,11 @@
             }
         }
 
-        function addMigrationMapping() {
+        function addMigrationMapping(oldIdValue, newIdValue) {
             const oldIdInput = document.getElementById('migration-old-id');
             const newIdInput = document.getElementById('migration-new-id');
-            const oldId = oldIdInput.value.trim();
-            const newId = newIdInput.value.trim();
+            const oldId = oldIdValue || oldIdInput.value.trim();
+            const newId = newIdValue || newIdInput.value.trim();
 
             if (!oldId || !newId) {
                 alert("Lütfen hem 'Eski ID' hem de 'Yeni ID' alanlarını doldurun.");
@@ -603,11 +740,14 @@
 
             migrationMap[oldId] = newId;
             saveMigrationMap();
-            renderMigrationManagerUI();
 
-            oldIdInput.value = '';
-            newIdInput.value = '';
-            oldIdInput.focus();
+            // Eğer bu fonksiyon manuel olarak Veri Taşıma panelinden çağrıldıysa UI'ı güncelle
+            if (!oldIdValue) {
+                renderMigrationManagerUI();
+                oldIdInput.value = '';
+                newIdInput.value = '';
+                oldIdInput.focus();
+            }
         }
 
         function deleteMigrationMapping(oldIdToDelete) {
