@@ -1289,11 +1289,19 @@
                 let contentHtml = '';
                 if (q.type === 'standard') {
                     const allItems = getCombinedInputs(`fide${q.id}`);
-                    const textItems = [], linkItems = [];
-                    allItems.forEach(item => { (item.type === 'static' && item.text.includes('<a href')) ? linkItems.push(item) : textItems.push(item); });
-                    const sortedItems = textItems.concat(linkItems);
-                    if (sortedItems.length > 0) {
-                        contentHtml = `<ul>${sortedItems.map(item => {
+                    const hasDynamicItems = allItems.some(item => item.type === 'dynamic');
+                    let itemsForEmail = [];
+
+                    if (hasDynamicItems) {
+                        // Eğer kullanıcı özel bir eksik eklediyse, sadece o eksikleri ve statik linkleri göster.
+                        itemsForEmail = allItems.filter(item => item.type === 'dynamic' || (item.type === 'static' && item.text.includes('<a href')));
+                    } else {
+                        // Eğer özel bir eksik eklenmediyse, tüm statik maddeleri (hem metin hem link) göster.
+                        itemsForEmail = allItems.filter(item => item.type === 'static');
+                    }
+                    
+                    if (itemsForEmail.length > 0) {
+                        contentHtml = `<ul>${itemsForEmail.map(item => {
                             if (item.completed) return `<li>${item.text} <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span></li>`;
                             return `<li>${item.text}</li>`;
                         }).join('')}</ul>`;
