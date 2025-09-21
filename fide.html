@@ -404,20 +404,31 @@
         
         function closeManager() {
             document.getElementById('question-manager').style.display = 'none';
-            document.getElementById('dide-upload-card').style.display = '';
+            document.getElementById('dide-upload-card').style.display = 'block';
             document.querySelector('.load-container').style.display = 'flex';
+            document.getElementById('form-content').style.display = 'block';
+            document.querySelector('.action-button').style.display = 'block';
             
             const emailDraft = document.getElementById('email-draft-container');
+             if (emailDraft) emailDraft.remove();
+            
             const saveSection = document.getElementById('save-section');
+            if(saveSection) saveSection.style.display = 'none';
+        }
 
-            if (emailDraft) {
-                emailDraft.style.display = 'block';
-                if(saveSection) saveSection.style.display = 'block';
-            } else {
-                document.getElementById('form-content').style.display = '';
-                document.querySelector('.action-button').style.display = '';
-                if(saveSection) saveSection.style.display = 'none';
-            }
+        // YENİ FONKSİYON: E-posta taslağından ana sayfaya dönmek için
+        function returnToMainPage() {
+            // E-posta ve kaydetme alanlarını kaldır
+            const emailDraft = document.getElementById('email-draft-container');
+            if (emailDraft) emailDraft.remove();
+            const saveSection = document.getElementById('save-section');
+            if(saveSection) saveSection.style.display = 'none';
+            
+            // Ana sayfa elementlerini tekrar görünür yap
+            document.getElementById('dide-upload-card').style.display = 'block';
+            document.querySelector('.load-container').style.display = 'flex';
+            document.getElementById('form-content').style.display = 'block';
+            document.querySelector('.action-button').style.display = 'block';
         }
 
         function setupEventListeners() {
@@ -435,7 +446,7 @@
             
             document.getElementById('clear-storage-btn').addEventListener('click', () => {
                 const dogruSifreHash = 'ZmRlMDAx';
-                const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifre girin:");
+                const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
 
                 if (girilenSifre) { 
                     const girilenSifreHash = btoa(girilenSifre);
@@ -547,18 +558,13 @@
                     if (girilenSifre) {
                         const girilenSifreHash = btoa(girilenSifre);
                         if (girilenSifreHash === dogruSifreHash) {
-                            const emailDraft = document.getElementById('email-draft-container');
-                            if(emailDraft) emailDraft.style.display = 'none';
-
-                            const saveSection = document.getElementById('save-section');
-                            if(saveSection) saveSection.style.display = 'none';
-
-                            manager.style.display = 'block';
-                            document.getElementById('dide-upload-card').style.display = 'none';
-                            document.querySelector('.load-container').style.display = 'none';
-                            document.getElementById('form-content').style.display = 'none';
-                            document.querySelector('.action-button').style.display = 'none';
-                            renderQuestionManager();
+                           returnToMainPage(); // Ana sayfa elementlerini gösterir
+                           manager.style.display = 'block';
+                           document.getElementById('dide-upload-card').style.display = 'none';
+                           document.querySelector('.load-container').style.display = 'none';
+                           document.getElementById('form-content').style.display = 'none';
+                           document.querySelector('.action-button').style.display = 'none';
+                           renderQuestionManager();
                         } else {
                             alert("Hatalı şifre!");
                         }
@@ -1299,13 +1305,12 @@
                     }
                     
                     if (itemsForEmail.length > 0) {
-                        // YENİ SIRALAMA MANTIĞI BURADA EKLENDİ
                         itemsForEmail.sort((a, b) => {
                             const aIsLink = a.text.includes('<a href');
                             const bIsLink = b.text.includes('<a href');
-                            if (aIsLink && !bIsLink) return 1;  // a bir link ise, b'den sonra gelsin
-                            if (!aIsLink && bIsLink) return -1; // b bir link ise, a'dan sonra gelsin
-                            return 0; // ikisi de link veya ikisi de değilse, sıralama değişmesin
+                            if (aIsLink && !bIsLink) return 1;
+                            if (!aIsLink && bIsLink) return -1;
+                            return 0;
                         });
 
                         contentHtml = `<ul>${itemsForEmail.map(item => {
@@ -1346,15 +1351,28 @@
             }
             const tableHtml = `<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #dddddd;"><thead><tr><th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;">${currentYear}</th>${monthHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">DiDe</td>${dideScores}</tr><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">FiDe</td>${fideScores}</tr></tbody></table></div>`;
             const finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
+            
+            // ANA SAYFA ELEMENTLERİNİ GİZLE
+            document.getElementById('dide-upload-card').style.display = 'none';
             document.getElementById('form-content').style.display = 'none';
             document.querySelector('.action-button').style.display = 'none';
             document.querySelector('.load-container').style.display = 'none';
+
+            // E-POSTA TASLAĞINI OLUŞTUR
             const existingDraft = document.getElementById('email-draft-container');
             if (existingDraft) existingDraft.remove();
             const draftContainer = document.createElement('div');
             draftContainer.id = 'email-draft-container';
             draftContainer.className = 'card';
-            draftContainer.innerHTML = `<h2><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p><div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
+            draftContainer.innerHTML = `
+                <h2>
+                    <a href="#" onclick="event.preventDefault(); returnToMainPage();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
+                         <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i>
+                    </a>
+                    <i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı
+                </h2>
+                <p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p>
+                <div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
             document.querySelector('.container').insertBefore(draftContainer, document.getElementById('save-section'));
         }
         function downloadReportCode() {
