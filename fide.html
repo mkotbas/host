@@ -75,7 +75,6 @@
                 <div class="manager-main-actions">
                     <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Soru Ekle</button>
                     <button id="open-scenario-system-btn" class="btn-primary btn-sm" title="Sık yapılan değişiklikleri otomatikleştirmek için hazır senaryoları kullanın."><i class="fas fa-magic"></i> Hazır Senaryo Sistemi</button>
-                    <button id="open-migration-manager-btn" class="btn-primary btn-sm" title="Mevcut ID yönlendirme kurallarını görüntüleyin veya silin."><i class="fas fa-ruler-combined"></i> Yönlendirme Kuralları</button>
                     <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenle</button>
                     <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Arşivi Sil</button>
                     <button id="restore-all-archived-btn" class="btn-success btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları aktif hale getirir."><i class="fas fa-undo"></i> Arşivi Geri Yükle</button>
@@ -111,11 +110,17 @@
                     </div>
                     <div class="modal-body">
                         <div class="scenario-selection">
-                            <button class="scenario-btn" data-scenario="id-change">
-                                <i class="fas fa-random"></i>
-                                <span>Bir Sorunun Numarası (ID) Değişti</span>
-                                <small>ID'yi günceller ve veri kaybını önlemek için otomatik yönlendirme ekler.</small>
-                            </button>
+                            <div class="scenario-group">
+                                <button class="scenario-btn" data-scenario="id-change">
+                                    <i class="fas fa-random"></i>
+                                    <span>Bir Sorunun Numarası (ID) Değişti</span>
+                                    <small>ID'yi günceller ve veri kaybını önlemek için otomatik yönlendirme ekler.</small>
+                                </button>
+                                <button id="open-migration-manager-from-scenario-btn" class="scenario-related-btn" title="Mevcut ID yönlendirme kurallarını görüntüleyin veya silin.">
+                                    <i class="fas fa-ruler-combined"></i>
+                                    <span>Mevcut Kuralları Yönet</span>
+                                </button>
+                            </div>
                             <button class="scenario-btn" data-scenario="text-change">
                                 <i class="fas fa-pencil-alt"></i>
                                 <span>Bir Sorunun Metni / İçeriği Değişti</span>
@@ -636,7 +641,8 @@
                 }
             });
 
-            document.getElementById('open-migration-manager-btn').addEventListener('click', () => {
+            document.getElementById('open-migration-manager-from-scenario-btn').addEventListener('click', () => {
+                document.getElementById('scenario-system-overlay').style.display = 'none';
                 renderMigrationManagerUI();
                 document.getElementById('migration-manager-overlay').style.display = 'flex';
             });
