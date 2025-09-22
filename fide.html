@@ -65,7 +65,7 @@
                 </a>
             </h2>
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
-                <i class="fas fa-info-circle"></i> Buradan FİDE sorularını düzenleyin. <b>Kaydet</b> tuşuna bastığınızda size <b>"fide_soru_listesi.json"</b> adında bir dosya indirilecek. Bu dosyayı mevcut olanla değiştirin ve sayfayı yenileyin.
+                <i class="fas fa-info-circle"></i> Buradan FİDE sorularını ve ürün listesini düzenleyebilirsiniz. <b>Kaydet</b> tuşuna bastığınızda tüm değişiklikler anında buluta kaydedilecek ve sayfa yenilenecektir.
             </p>
             <div class="manager-actions">
                 <div class="manager-view-controls">
@@ -79,7 +79,7 @@
                     <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenle</button>
                     <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Arşivi Sil</button>
                     <button id="restore-all-archived-btn" class="btn-success btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları aktif hale getirir."><i class="fas fa-undo"></i> Arşivi Geri Yükle</button>
-                    <button id="save-questions-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Kaydet</button>
+                    <button id="save-questions-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Değişiklikleri Buluta Kaydet</button>
                 </div>
             </div>
             <div id="manager-list"></div>
@@ -255,7 +255,7 @@
         let dideData = [], fideData = [], uniqueStores = [], selectedStore = null;
         let fideQuestions = [], popCodes = [], expiredCodes = [], productList = [], expiredExcelFiles = [];
         let migrationMap = {}; 
-        const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: fide_soru_listesi.json dosyası yüklenemedi." }];
+        const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan veya yerel dosyadan yüklenemedi." }];
         const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
         let isFirebaseConnected = false;
         let currentManagerView = 'active'; 
@@ -313,22 +313,58 @@
 
         async function loadInitialData() {
             await loadMigrationMap();
-            try {
-                const response = await fetch(`fide_soru_listesi.json?v=${new Date().getTime()}`);
-                if (!response.ok) throw new Error('Soru dosyası bulunamadı.');
-                const jsonData = await response.json();
-                fideQuestions = jsonData.questions || [];
-                productList = jsonData.productList || [];
-                const popSystemQuestion = fideQuestions.find(q => q.type === 'pop_system');
-                if (popSystemQuestion) {
-                    popCodes = popSystemQuestion.popCodes || [];
-                    expiredCodes = popSystemQuestion.expiredCodes || [];
+            let questionsLoaded = false;
+
+            // 1. Önce buluttan yüklemeyi dene
+            if (auth.currentUser && database) {
+                try {
+                    const questionsRef = database.ref('fideQuestionsData');
+                    const snapshot = await questionsRef.once('value');
+                    if (snapshot.exists()) {
+                        const cloudData = snapshot.val();
+                        fideQuestions = cloudData.questions || [];
+                        productList = cloudData.productList || [];
+                        console.log("Sorular ve ürün listesi başarıyla buluttan yüklendi.");
+                        questionsLoaded = true;
+                    }
+                } catch (error) {
+                    console.error("Firebase'den soru verisi okunurken hata oluştu:", error);
                 }
-            } catch (error) {
-                console.error("Soru dosyası yüklenemedi:", error);
-                fideQuestions = fallbackFideQuestions;
-                document.getElementById('initialization-error').style.display = 'block';
             }
+            
+            // 2. Bulutta veri yoksa veya yüklenemediyse, yerel JSON'dan yükle ve bulutu besle
+            if (!questionsLoaded) {
+                 try {
+                    const response = await fetch(`fide_soru_listesi.json?v=${new Date().getTime()}`);
+                    if (!response.ok) throw new Error('Soru dosyası bulunamadı.');
+                    const jsonData = await response.json();
+                    
+                    fideQuestions = jsonData.questions || [];
+                    productList = jsonData.productList || [];
+                    
+                    // Veriyi buluta yaz (ilk kurulum için)
+                    if (auth.currentUser && database) {
+                        await database.ref('fideQuestionsData').set(jsonData);
+                        alert("BİLGİ: Bulutta soru veritabanı bulunamadı. Yerel 'fide_soru_listesi.json' dosyası okunarak bulut veritabanı otomatik olarak oluşturuldu. Bundan sonra tüm değişiklikler bulut üzerinden yönetilecektir.");
+                    } else {
+                         console.log("Kullanıcı giriş yapmadığı için yerel JSON verisi buluta yazılamadı. Sadece yerel dosya kullanılıyor.");
+                    }
+                     questionsLoaded = true;
+
+                } catch (error) {
+                    console.error("Yerel soru dosyası 'fide_soru_listesi.json' yüklenemedi:", error);
+                    fideQuestions = fallbackFideQuestions;
+                    document.getElementById('initialization-error').style.display = 'block';
+                }
+            }
+
+            // POP sistemi kodlarını ayıkla
+            const popSystemQuestion = fideQuestions.find(q => q.type === 'pop_system');
+            if (popSystemQuestion) {
+                popCodes = popSystemQuestion.popCodes || [];
+                expiredCodes = popSystemQuestion.expiredCodes || [];
+            }
+
 
             if (database) {
                 const connectionRef = database.ref('.info/connected');
@@ -449,6 +485,8 @@
                                 database.ref('allFideReports').remove();
                                 database.ref('excelData').remove();
                                 database.ref('migrationSettings').remove();
+                                // ÖNEMLİ: Soru veritabanını silmek tehlikeli olabilir, bu yüzden varsayılan olarak kapalı.
+                                // İstenirse bu satır açılabilir: database.ref('fideQuestionsData').remove();
                             }
                             
                             alert("Tüm uygulama verileri başarıyla temizlendi. Sayfa yenileniyor.");
@@ -2164,7 +2202,12 @@
             }
         }
 
-        function saveQuestions() {
+        async function saveQuestions() {
+            if (!auth.currentUser || !database) {
+                alert("Değişiklikleri buluta kaydetmek için lütfen giriş yapın.");
+                return;
+            }
+
             const newProductList = [];
             const activeProductManager = document.querySelector('.product-list-manager:not([style*="display: none"])');
             
@@ -2180,10 +2223,8 @@
                         if (code && name) newProductList.push({ code, name });
                     }
                 });
-            }
-            
-            if (newProductList.length > 0 || activeProductManager) {
-                productList = newProductList;
+            } else {
+                 productList.forEach(p => newProductList.push(p));
             }
 
             const newQuestions = [];
@@ -2221,17 +2262,23 @@
 
             const finalJsonData = {
                 questions: newQuestions,
-                productList: productList
+                productList: newProductList
             };
-            const dataStr = JSON.stringify(finalJsonData, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.download = 'fide_soru_listesi.json';
-            link.href = url;
-            link.click();
-            URL.revokeObjectURL(url);
-            alert("Güncellenmiş sorularınız ve ürün listeniz 'fide_soru_listesi.json' olarak indirildi.\n\nLÜTFEN BU DOSYAYI ESKİSİYLE DEĞİŞTİRİP SAYFAYI YENİLEYİN.");
+
+            const loadingOverlay = document.getElementById('loading-overlay');
+            loadingOverlay.style.display = 'flex';
+
+            try {
+                const questionsRef = database.ref('fideQuestionsData');
+                await questionsRef.set(finalJsonData);
+                alert("Değişiklikler başarıyla buluta kaydedildi. Sayfa yenileniyor...");
+                window.location.reload();
+            } catch (error) {
+                console.error("Sorular buluta kaydedilirken hata oluştu:", error);
+                alert("HATA: Değişiklikler buluta kaydedilemedi. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.");
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
         }
 
 
