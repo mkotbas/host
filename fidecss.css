@@ -573,6 +573,7 @@ input:checked + .slider:before {
     background-color: #fff;
     cursor: pointer;
     transition: var(--transition);
+    width: 100%;
 }
 .scenario-btn:hover {
     border-color: var(--primary);
@@ -604,6 +605,48 @@ input:checked + .slider:before {
 .scenario-form button {
     width: 100%;
 }
+
+.scenario-group {
+    display: flex;
+    gap: 15px;
+    align-items: stretch;
+}
+.scenario-group .scenario-btn {
+    flex-grow: 1;
+}
+.scenario-related-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background-color: #fff;
+    cursor: pointer;
+    transition: var(--transition);
+    width: 180px;
+    flex-shrink: 0;
+}
+.scenario-related-btn:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 140, 186, 0.1);
+    transform: translateY(-2px);
+}
+.scenario-related-btn i {
+    font-size: 20px;
+    color: var(--primary);
+    margin: 0 0 10px 0;
+    background-color: #e0f2fe;
+    padding: 8px;
+    border-radius: 50%;
+}
+.scenario-related-btn span {
+    font-weight: 600;
+    color: var(--dark);
+}
+
 
 @media (max-width: 768px) {
     .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -684,6 +727,12 @@ input:checked + .slider:before {
     }
     .bulk-add-controls {
         grid-template-columns: 1fr;
+    }
+    .scenario-group {
+        flex-direction: column;
+    }
+    .scenario-related-btn {
+        width: 100%;
     }
 }
 
