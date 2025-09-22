@@ -298,6 +298,7 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
     color: var(--gray);
     cursor: grab;
 }
+/* YENİ: Sürükleme stilleri */
 .product-manager-row.dragging,
 .category-manager-row.dragging {
     opacity: 0.5;
@@ -441,7 +442,7 @@ input:checked + .slider:before {
     transform: translateX(22px);
 }
 
-/* MODAL / AÇILIR PANEL STİLLERİ */
+/* MODAL / AÇILIR PANEL STİLLERİ (Veri Taşıma ve Senaryo Sistemi için) */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -555,7 +556,7 @@ input:checked + .slider:before {
     padding: 20px;
 }
 
-/* HAZIR SENARYO SİSTEMİ STİLLERİ - GÜNCELLENDİ */
+/* YENİ: Hazır Senaryo Sistemi Panel Stilleri */
 .scenario-selection {
     display: flex;
     flex-direction: column;
@@ -605,33 +606,28 @@ input:checked + .slider:before {
     width: 100%;
 }
 
-/* YAN YANA DURMALARI İÇİN GRUP */
 .scenario-group {
     display: flex;
     gap: 15px;
     align-items: stretch;
 }
-
-/* GRUP İÇİNDEKİ BUTONLARI EŞİTLEME VE KARE GÖRÜNÜMÜ */
-.scenario-group > .scenario-btn,
-.scenario-group > .scenario-related-btn {
-    flex: 1; /* Genişlikleri eşit olarak paylaştır */
-    width: auto; /* Sabit genişliği iptal et */
-    justify-content: center; /* İçeriği dikeyde ortala */
-    align-items: center; /* İçeriği yatayda ortala */
-    text-align: center;
-    padding-top: 20px;
-    padding-bottom: 20px;
+.scenario-group .scenario-btn {
+    flex-grow: 1;
 }
-
 .scenario-related-btn {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 15px;
     border-radius: 8px;
     border: 1px solid var(--border);
     background-color: #fff;
     cursor: pointer;
     transition: var(--transition);
+    width: 180px;
+    flex-shrink: 0;
 }
 .scenario-related-btn:hover {
     border-color: var(--primary);
@@ -650,6 +646,7 @@ input:checked + .slider:before {
     font-weight: 600;
     color: var(--dark);
 }
+
 
 @media (max-width: 768px) {
     .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -731,7 +728,12 @@ input:checked + .slider:before {
     .bulk-add-controls {
         grid-template-columns: 1fr;
     }
-    /* MOBİLDE YAN YANA KALMASI İÇİN İLGİLİ KOD KALDIRILDI */
+    .scenario-group {
+        flex-direction: column;
+    }
+    .scenario-related-btn {
+        width: 100%;
+    }
 }
 
 /* Yükleme Ekranı Stilleri */
