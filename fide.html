@@ -849,7 +849,7 @@
             }
             const question = fideQuestions.find(q => String(q.id) === String(id));
             if (question) {
-                previewArea.innerHTML = `<b>Silinecek Soru:</b> "${question.title.substring(0, 20)}..."`;
+                previewArea.innerHTML = `<b>Silinecek Soru:</b> "${question.title.substring(0, 45)}..."`;
                 previewArea.style.color = 'var(--dark)';
                 deleteBtn.disabled = false;
             } else {
@@ -1995,19 +1995,21 @@
                         <div><label>Soru Başlığı</label><input type="text" class="question-title-input" value="${q.title}"></div>
                         <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleProductManager(this)">${selectOptionsHTML}</select></div>
                         <div><label>Cevap Tipi</label><select class="answer-type-select">${answerTypeOptionsHTML}</select></div>
-                         <div class="archive-switch-container">
-                            <label>E-posta Ekle</label>
-                            <label class="switch">
-                                <input type="checkbox" class="wants-email-checkbox" ${wantsStoreEmailChecked}>
-                                <span class="slider green"></span>
-                            </label>
-                        </div>
-                        <div class="archive-switch-container">
-                            <label>Arşivle</label>
-                            <label class="switch">
-                                <input type="checkbox" class="archive-checkbox" ${isArchivedChecked} onchange="filterManagerView()">
-                                <span class="slider"></span>
-                            </label>
+                        <div class="manager-grid-switch-group">
+                            <div class="archive-switch-container">
+                                <label>E-posta Ekle</label>
+                                <label class="switch">
+                                    <input type="checkbox" class="wants-email-checkbox" ${wantsStoreEmailChecked}>
+                                    <span class="slider green"></span>
+                                </label>
+                            </div>
+                            <div class="archive-switch-container">
+                                <label>Arşivle</label>
+                                <label class="switch">
+                                    <input type="checkbox" class="archive-checkbox" ${isArchivedChecked} onchange="filterManagerView()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div>
@@ -2023,7 +2025,6 @@
                     <div class="product-list-manager" style="display: none;"></div>
                     <div class="manager-item-footer">
                         <button class="btn-warning btn-sm" onclick="deleteAllAnswersForQuestion(${q.id})" title="Bu soruya ait TÜM cevapları BÜTÜN bayi raporlarından kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Cevapları Temizle</button>
-                        <button class="btn-danger btn-sm" onclick="deleteQuestionUI(${q.id})"><i class="fas fa-trash"></i> Soruyu Sil</button>
                     </div>`;
                 managerList.appendChild(itemDiv);
 
@@ -2305,19 +2306,21 @@
                             <option value="fixed">Sabit</option>
                         </select>
                     </div>
-                    <div class="archive-switch-container">
-                        <label>E-posta Ekle</label>
-                        <label class="switch">
-                            <input type="checkbox" class="wants-email-checkbox">
-                            <span class="slider green"></span>
-                        </label>
-                    </div>
-                    <div class="archive-switch-container">
-                        <label>Arşivle</label>
-                        <label class="switch">
-                            <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
-                            <span class="slider"></span>
-                        </label>
+                    <div class="manager-grid-switch-group">
+                        <div class="archive-switch-container">
+                            <label>E-posta Ekle</label>
+                            <label class="switch">
+                                <input type="checkbox" class="wants-email-checkbox">
+                                <span class="slider green"></span>
+                            </label>
+                        </div>
+                        <div class="archive-switch-container">
+                            <label>Arşivle</label>
+                            <label class="switch">
+                                <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -2369,20 +2372,6 @@
                 });
                  document.getElementById('delete-all-archived-btn').disabled = true;
                  alert("Arşivlenmiş sorular silinmek üzere işaretlendi. Değişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna tıklayın.");
-            }
-        }
-
-        function deleteQuestionUI(id) {
-            if (confirm(`FiDe ${id} sorusunu kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
-                const itemToDelete = document.querySelector(`.manager-item[data-id="${id}"]`);
-                if(itemToDelete) {
-                    itemToDelete.style.transition = 'opacity 0.5s ease';
-                    itemToDelete.style.opacity = '0';
-                    setTimeout(() => {
-                        itemToDelete.style.display = 'none';
-                        itemToDelete.classList.add('to-be-deleted');
-                    }, 500);
-                }
             }
         }
         
