@@ -936,7 +936,7 @@
             const input = button.parentElement.querySelector('input[type="text"]');
             const isCompleted = input.classList.toggle('completed');
             input.readOnly = isCompleted;
-            button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i><span> Geri Al</span>' : '<i class="fas fa-check"></i><span> Tamamlandı</span>';
+            button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
             button.classList.toggle('undo', isCompleted);
             saveFormState();
         }
@@ -944,7 +944,7 @@
             const itemDiv = document.getElementById(`fide-item-${id}`);
             const titleContainer = itemDiv.querySelector('.fide-title-container');
             const isQuestionCompleted = titleContainer.classList.toggle('question-completed');
-            button.innerHTML = isQuestionCompleted ? '<i class="fas fa-undo"></i><span> Geri Al</span>' : '<i class="fas fa-check"></i><span> Tamamlandı</span>';
+            button.innerHTML = isQuestionCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
             button.classList.toggle('undo', isQuestionCompleted);
             const inputArea = itemDiv.querySelector('.input-area');
             if (inputArea) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
@@ -990,7 +990,7 @@
             input.addEventListener('blur', saveFormState);
             const completeButton = document.createElement('button');
             completeButton.className = 'status-btn btn-sm';
-            completeButton.innerHTML = '<i class="fas fa-check"></i><span> Tamamlandı</span>';
+            completeButton.innerHTML = '<i class="fas fa-check"></i> Tamamlandı';
             completeButton.onclick = () => toggleCompleted(completeButton);
             completeButton.title = "Bu eksikliği 'Tamamlandı' olarak işaretler. Geri alınabilir.";
             const deleteButton = document.createElement('button');
