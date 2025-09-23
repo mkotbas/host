@@ -21,21 +21,8 @@
         <div class="top-controls">
             <div class="backup-controls">
                 <button id="toggle-manager-btn" class="btn-warning btn-sm"><i class="fas fa-edit"></i> Soru Yöneticisi</button>
-                <button id="toggle-email-manager-btn" class="btn-warning btn-sm"><i class="fas fa-at"></i> Bayi Yöneticisi</button>
-                <div class="dropdown-container">
-                    <button id="backup-menu-btn" class="btn-primary btn-sm">
-                        <i class="fas fa-archive"></i> Yedekleme <i class="fas fa-caret-down"></i>
-                    </button>
-                    <div id="backup-dropdown" class="dropdown-menu">
-                        <button id="backup-btn" class="btn-primary btn-sm" title="Kaydedilmiş tüm bayi raporlarını tek bir .json dosyası olarak indirir."><i class="fas fa-cloud-download-alt"></i> Raporları Yedekle</button>
-                        <button id="restore-from-backup-btn" class="btn-primary btn-sm" title="Bilgisayarınızdaki yedek dosyasını seçerek tarayıcıya yükler."><i class="fas fa-upload"></i> Yedekten Yükle</button>
-                        <button id="merge-backups-btn" class="btn-primary btn-sm" title="Birden fazla yedek dosyasını seçerek tek bir güncel yedek dosyası oluşturur."><i class="fas fa-compress-arrows-alt"></i> Yedekleri Birleştir</button>
-                        <button id="upload-backup-to-cloud-btn" class="btn-primary btn-sm" title="Tarayıcı hafızasındaki yedeği buluta yükler ve buluttaki verilerin üzerine yazar."><i class="fas fa-cloud-upload-alt"></i> Buluta Aktar</button>
-                        
-                        <input type="file" id="restore-file-input" accept=".json" style="display: none;">
-                        <input type="file" id="merge-file-input" accept=".json" style="display: none;" multiple>
-                    </div>
-                </div>
+                <button id="toggle-email-manager-btn" class="btn-warning btn-sm"><i class="fas fa-at"></i> Bayi E-posta Yöneticisi</button>
+                <button id="toggle-backup-manager-btn" class="btn-primary btn-sm"><i class="fas fa-archive"></i> Yedekleme Yöneticisi</button>
             </div>
             <div class="right-controls">
                 <div id="connection-status-container">
@@ -59,6 +46,41 @@
             </div>
         </div>
 
+        <div class="card" id="backup-manager" style="display: none;">
+            <h2>
+                <a href="#" onclick="event.preventDefault(); closeManager();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
+                    <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i> Yedekleme Yöneticisi
+                </a>
+            </h2>
+            <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 25px;">
+                <i class="fas fa-info-circle"></i> Buradan rapor verilerinizi yönetebilir, bilgisayarınıza indirebilir veya bulut ile eşitleyebilirsiniz.
+            </p>
+            <div class="backup-options-grid">
+                <div class="backup-option-card">
+                    <h3><i class="fas fa-cloud-download-alt"></i> Raporları Yedekle</h3>
+                    <p>Tarayıcıda kayıtlı tüm bayi raporlarını tek bir `.json` dosyası olarak bilgisayarınıza indirir.</p>
+                    <button id="backup-btn" class="btn-primary"><i class="fas fa-download"></i> Yedek Dosyasını İndir</button>
+                </div>
+                <div class="backup-option-card">
+                    <h3><i class="fas fa-upload"></i> Yedekten Geri Yükle</h3>
+                    <p>Bilgisayarınızdaki `.json` yedek dosyasını seçerek tarayıcı hafızasına yükler. Bu işlem mevcut verilerin üzerine yazar!</p>
+                    <button id="restore-from-backup-btn" class="btn-primary"><i class="fas fa-folder-open"></i> Dosya Seç ve Yükle</button>
+                </div>
+                <div class="backup-option-card">
+                    <h3><i class="fas fa-compress-arrows-alt"></i> Yedekleri Birleştir</h3>
+                    <p>Birden fazla yedek dosyasını seçerek, içlerindeki en güncel raporları içeren tek bir yeni yedek dosyası oluşturur.</p>
+                    <button id="merge-backups-btn" class="btn-primary"><i class="fas fa-object-group"></i> Dosyaları Seç ve Birleştir</button>
+                </div>
+                <div class="backup-option-card">
+                    <h3><i class="fas fa-cloud-upload-alt"></i> Buluta Aktar</h3>
+                    <p>Tarayıcı hafızasındaki güncel raporları buluta yükler. Bu işlem buluttaki mevcut raporların üzerine yazar!</p>
+                    <button id="upload-backup-to-cloud-btn" class="btn-success"><i class="fas fa-cloud-upload-alt"></i> Yerel Yedeği Buluta Aktar</button>
+                </div>
+            </div>
+            <input type="file" id="restore-file-input" accept=".json" style="display: none;">
+            <input type="file" id="merge-file-input" accept=".json" style="display: none;" multiple>
+        </div>
+        
         <div class="card" id="email-manager" style="display: none;">
             <h2>
                 <a href="#" onclick="event.preventDefault(); closeManager();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
@@ -182,7 +204,7 @@
                 <ul id="expired-files-list"></ul>
             </div>
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
-                <i class="fas fa-info-circle"></i> Raporlarınız artık hem tarayıcı hafızasında saklanır hem de buluta yedeklenir. Düzenli olarak "Tüm Raporları Yedekle" özelliğini kullanmanız yine de tavsiye edilir.
+                <i class="fas fa-info-circle"></i> Raporlarınız artık hem tarayıcı hafızasında saklanır hem de buluta yedeklenir. Düzenli olarak "Yedekleme Yöneticisi"ni kullanmanız yine de tavsiye edilir.
             </p>
             <div>
                 <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
@@ -487,6 +509,7 @@
         function closeManager() {
             document.getElementById('question-manager').style.display = 'none';
             document.getElementById('email-manager').style.display = 'none';
+            document.getElementById('backup-manager').style.display = 'none';
 
             document.getElementById('dide-upload-card').style.display = 'block';
             document.querySelector('.load-container').style.display = 'flex';
@@ -544,7 +567,7 @@
                                 // İstenirse bu satır açılabilir: database.ref('fideQuestionsData').remove();
                             }
                             
-                            alert("Tüm uygulama verileri başarıyla temizlendi. Sayfa yeneleniyor.");
+                            alert("Tüm uygulama verileri başarıyla temizlendi. Sayfa yenileniyor.");
                             window.location.reload();
                         }
                     } else {
@@ -558,7 +581,7 @@
                     if(auth.currentUser && database) {
                         database.ref('excelData/dide').remove();
                     }
-                    alert("DiDe Excel verisi temizlendi. Sayfa yeniliyor.");
+                    alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor.");
                     window.location.reload();
                 }
             });
@@ -593,16 +616,9 @@
             const loginPopup = document.getElementById('login-popup');
             const loginSubmitBtn = document.getElementById('login-submit-btn');
             const uploadBackupBtn = document.getElementById('upload-backup-to-cloud-btn');
-            const backupMenuBtn = document.getElementById('backup-menu-btn');
-            const backupDropdown = document.getElementById('backup-dropdown');
             const restoreBtn = document.getElementById('restore-from-backup-btn');
             const mergeBtn = document.getElementById('merge-backups-btn');
 
-            backupMenuBtn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                backupDropdown.classList.toggle('show');
-                backupMenuBtn.classList.toggle('open');
-            });
             restoreBtn.addEventListener('click', () => document.getElementById('restore-file-input').click());
             mergeBtn.addEventListener('click', () => document.getElementById('merge-file-input').click());
             loginToggleBtn.addEventListener('click', (event) => {
@@ -625,11 +641,6 @@
                 const authControls = document.getElementById('auth-controls');
                 if (authControls && !authControls.contains(event.target)) {
                     loginPopup.style.display = 'none';
-                }
-                const dropdownContainer = document.querySelector('.dropdown-container');
-                if (dropdownContainer && !dropdownContainer.contains(event.target)) {
-                    backupDropdown.classList.remove('show');
-                    backupMenuBtn.classList.remove('open');
                 }
             });
 
@@ -685,6 +696,31 @@
                 }
             });
             
+            document.getElementById('toggle-backup-manager-btn').addEventListener('click', () => {
+                const manager = document.getElementById('backup-manager');
+                const isManagerHidden = manager.style.display === 'none' || manager.style.display === '';
+                 if (isManagerHidden) {
+                    const dogruSifreHash = 'ZmRlMDAx';
+                    const girilenSifre = prompt("Lütfen Yedekleme Yöneticisi şifresini girin:");
+                     if (girilenSifre) {
+                        const girilenSifreHash = btoa(girilenSifre);
+                         if (girilenSifreHash === dogruSifreHash) {
+                           returnToMainPage();
+                           closeManager();
+                           manager.style.display = 'block';
+                           document.getElementById('dide-upload-card').style.display = 'none';
+                           document.querySelector('.load-container').style.display = 'none';
+                           document.getElementById('form-content').style.display = 'none';
+                           document.querySelector('.action-button').style.display = 'none';
+                        } else {
+                            alert("Hatalı şifre!");
+                        }
+                    }
+                } else {
+                    closeManager();
+                }
+            });
+
             document.getElementById('view-active-btn').addEventListener('click', () => {
                 currentManagerView = 'active';
                 filterManagerView();
@@ -1738,7 +1774,7 @@
                         const restoredData = e.target.result;
                         JSON.parse(restoredData); 
                         localStorage.setItem('allFideReports', restoredData);
-                        alert('Yedek başarıyla geri yüklendi! Şimdi "Yedeği Buluta Aktar" butonunu kullanarak bu yedeği bulutla eşitleyebilirsiniz.');
+                        alert('Yedek başarıyla geri yüklendi! "Yedekleme Yöneticisi" üzerinden bu yedeği bulutla eşitleyebilirsiniz.');
                         window.location.reload();
                     } catch (error) {
                         alert('Geçersiz veya bozuk yedek dosyası!');
@@ -2496,7 +2532,7 @@
              const newItemDiv = document.querySelector('.email-manager-item.new-item');
              if (!newItemDiv) return;
              
-             constcodeInput = newItemDiv.querySelector('.email-manager-code-input');
+             const codeInput = newItemDiv.querySelector('.email-manager-code-input');
              const emailInput = newItemDiv.querySelector('.email-manager-input');
              const newCode = codeInput.value.trim();
              const newEmail = emailInput.value.trim();
