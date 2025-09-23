@@ -1,0 +1,15 @@
+32.00 dk
+
+01.43
+
+
+Bu sistemde e posta taslağı oluşturduğunda her maddenin yanında o maddeyi ilgilendiren kişilerin mail adresleri yer alıyor. Örneğini eke yükledim. Yapmak istediğim şey şu;
+
+
+Yükleyeceğim e posta adresleri isimli metin belgesinde, bayi kodları ve o bayi kodlarına ait mail adresleri yer alıyor. Bu bilgileri buluta yükleyeceğim yükledikten sonra denetim yapacağım denetim yaptıktan sonra e posta taslağı seçeneğine tıkladığımda maddelerin yanına denetim yapılan bayi koduna ait mail adresleri otomatik yazacak.
+
+
+Her bayi kodunun karşısında o bayi koduna ait mail adresleri yer alıyor. Bu bilgileri buluta yılda bir yükleyeceğim için mevcut kodu bozma yani kodun içine bu mail adreslerini gömme sadece bulutta saklayacağım.
+
+
+Sisteme bayi bilgileri adlı bir bölüm aç. Bu bölümde sonradan değiştirmek istediğim bay kodu ve mail adresleri olursa burada güncelleyeceğim buluttaki o bayi kodu ve mail adresi de güncellenmiş olacak. Ve aynı zamanda bayi kodu ve mail adresi ekleme seçeneği de olacak aynı zamanda silme seçeneği olacak.

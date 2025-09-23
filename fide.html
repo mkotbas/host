@@ -21,6 +21,7 @@
         <div class="top-controls">
             <div class="backup-controls">
                 <button id="toggle-manager-btn" class="btn-warning btn-sm"><i class="fas fa-edit"></i> Soru Yöneticisi</button>
+                <button id="toggle-email-manager-btn" class="btn-warning btn-sm"><i class="fas fa-at"></i> Bayi E-posta Yöneticisi</button>
                 <div class="dropdown-container">
                     <button id="backup-menu-btn" class="btn-primary btn-sm">
                         <i class="fas fa-archive"></i> Yedekleme <i class="fas fa-caret-down"></i>
@@ -57,6 +58,27 @@
                 </div>
             </div>
         </div>
+
+        <div class="card" id="email-manager" style="display: none;">
+            <h2>
+                <a href="#" onclick="event.preventDefault(); closeManager();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
+                    <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i> Bayi E-posta Yöneticisi
+                </a>
+            </h2>
+            <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+                <i class="fas fa-info-circle"></i> Buradan bayi kodlarına atanmış e-posta adreslerini yönetebilirsiniz. Değişiklikler anında buluta kaydedilir.
+            </p>
+            <div class="manager-actions">
+                 <div class="manager-main-actions">
+                    <button id="bulk-upload-emails-btn" class="btn-success btn-sm"><i class="fas fa-file-upload"></i> Toplu E-posta Yükle (.txt)</button>
+                    <button id="add-new-email-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Yeni E-posta Ekle</button>
+                     <input type="file" id="email-bulk-upload-input" accept=".txt" style="display: none;">
+                </div>
+                 <input type="text" id="email-search-input" placeholder="Bayi kodu veya e-posta ile ara..." style="padding: 10px; border-radius: 6px; border: 1px solid var(--border); width: 100%; max-width: 300px;">
+            </div>
+            <div id="email-manager-list" class="email-manager-list-container"></div>
+        </div>
+
 
         <div class="card" id="question-manager" style="display: none;">
             <h2>
@@ -259,7 +281,7 @@
         // --- Global Değişkenler ---
         let dideData = [], fideData = [], uniqueStores = [], selectedStore = null;
         let fideQuestions = [], popCodes = [], expiredCodes = [], productList = [], expiredExcelFiles = [];
-        let migrationMap = {}; 
+        let migrationMap = {}, storeEmails = {};
         const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan veya yerel dosyadan yüklenemedi." }];
         const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
         let isFirebaseConnected = false;
@@ -292,6 +314,30 @@
             });
         }
         
+        async function loadStoreEmails() {
+            const user = auth.currentUser;
+            let loadedFromCloud = false;
+
+            if (user && database) {
+                try {
+                    const emailsRef = database.ref('storeEmails');
+                    const snapshot = await emailsRef.once('value');
+                    if (snapshot.exists()) {
+                        storeEmails = snapshot.val();
+                        localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails));
+                        loadedFromCloud = true;
+                    }
+                } catch (error) {
+                    console.error("Buluttan bayi e-postaları yüklenemedi:", error);
+                }
+            }
+
+            if (!loadedFromCloud) {
+                const storedEmails = localStorage.getItem('fideStoreEmails');
+                storeEmails = storedEmails ? JSON.parse(storedEmails) : {};
+            }
+        }
+
         async function loadMigrationMap() {
             const user = auth.currentUser;
             let loadedFromCloud = false;
@@ -318,6 +364,7 @@
 
         async function loadInitialData() {
             await loadMigrationMap();
+            await loadStoreEmails();
             let questionsLoaded = false;
 
             // 1. Önce buluttan yüklemeyi dene
@@ -439,6 +486,8 @@
         
         function closeManager() {
             document.getElementById('question-manager').style.display = 'none';
+            document.getElementById('email-manager').style.display = 'none';
+
             document.getElementById('dide-upload-card').style.display = 'block';
             document.querySelector('.load-container').style.display = 'flex';
             document.getElementById('form-content').style.display = 'block';
@@ -490,11 +539,12 @@
                                 database.ref('allFideReports').remove();
                                 database.ref('excelData').remove();
                                 database.ref('migrationSettings').remove();
+                                database.ref('storeEmails').remove();
                                 // ÖNEMLİ: Soru veritabanını silmek tehlikeli olabilir, bu yüzden varsayılan olarak kapalı.
                                 // İstenirse bu satır açılabilir: database.ref('fideQuestionsData').remove();
                             }
                             
-                            alert("Tüm uygulama verileri başarıyla temizlendi. Sayfa yenileniyor.");
+                            alert("Tüm uygulama verileri başarıyla temizlendi. Sayfa yeneleniyor.");
                             window.location.reload();
                         }
                     } else {
@@ -508,7 +558,7 @@
                     if(auth.currentUser && database) {
                         database.ref('excelData/dide').remove();
                     }
-                    alert("DiDe Excel verisi temizlendi. Sayfa yenileniyor.");
+                    alert("DiDe Excel verisi temizlendi. Sayfa yeniliyor.");
                     window.location.reload();
                 }
             });
@@ -593,12 +643,39 @@
                         const girilenSifreHash = btoa(girilenSifre);
                         if (girilenSifreHash === dogruSifreHash) {
                            returnToMainPage();
+                           closeManager();
                            manager.style.display = 'block';
                            document.getElementById('dide-upload-card').style.display = 'none';
                            document.querySelector('.load-container').style.display = 'none';
                            document.getElementById('form-content').style.display = 'none';
                            document.querySelector('.action-button').style.display = 'none';
                            renderQuestionManager();
+                        } else {
+                            alert("Hatalı şifre!");
+                        }
+                    }
+                } else {
+                    closeManager();
+                }
+            });
+            
+            document.getElementById('toggle-email-manager-btn').addEventListener('click', () => {
+                const manager = document.getElementById('email-manager');
+                const isManagerHidden = manager.style.display === 'none' || manager.style.display === '';
+                 if (isManagerHidden) {
+                    const dogruSifreHash = 'ZmRlMDAx';
+                    const girilenSifre = prompt("Lütfen Bayi E-posta Yöneticisi şifresini girin:");
+                     if (girilenSifre) {
+                        const girilenSifreHash = btoa(girilenSifre);
+                         if (girilenSifreHash === dogruSifreHash) {
+                           returnToMainPage();
+                           closeManager();
+                           manager.style.display = 'block';
+                           document.getElementById('dide-upload-card').style.display = 'none';
+                           document.querySelector('.load-container').style.display = 'none';
+                           document.getElementById('form-content').style.display = 'none';
+                           document.querySelector('.action-button').style.display = 'none';
+                           renderEmailManager();
                         } else {
                             alert("Hatalı şifre!");
                         }
@@ -657,6 +734,11 @@
             });
             document.getElementById('apply-id-change-btn').addEventListener('click', applyIdChangeScenario);
             document.getElementById('apply-text-change-btn').addEventListener('click', applyTextChangeScenario);
+            
+            document.getElementById('bulk-upload-emails-btn').addEventListener('click', () => document.getElementById('email-bulk-upload-input').click());
+            document.getElementById('email-bulk-upload-input').addEventListener('change', handleBulkEmailUpload);
+            document.getElementById('add-new-email-btn').addEventListener('click', addNewEmailUI);
+            document.getElementById('email-search-input').addEventListener('keyup', () => renderEmailManager());
         }
 
         function openScenarioSystem() {
@@ -1294,6 +1376,10 @@
             const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
             const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
             if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
+            
+            const storeEmail = storeEmails[selectedStore.bayiKodu] || null;
+            const storeEmailTag = storeEmail ? ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@${storeEmail}</span>` : '';
+            
             const reportData = getFormDataForSaving();
             document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2);
             document.getElementById('save-section').style.display = 'block';
@@ -1347,7 +1433,14 @@
                 }
                 if (contentHtml !== '' || isQuestionCompleted) {
                     const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
-                    let emailTag = q.type === 'pop_system' ? ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@berkcan_boza@arcelik.com.tr</span>` : '';
+                    
+                    let emailTag = '';
+                    if (q.type === 'pop_system') {
+                        emailTag = ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@berkcan_boza@arcelik.com.tr</span>`;
+                    } else if (q.wantsStoreEmail) {
+                        emailTag = storeEmailTag;
+                    }
+
                     fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
                     if (!isQuestionCompleted || q.type === 'product_list' || (isQuestionCompleted && q.type === 'standard' && contentHtml !== '')) fideReportHtml += contentHtml;
                     fideReportHtml += '<p>&nbsp;</p>';
@@ -1773,6 +1866,7 @@
                 `;
 
                 const isArchivedChecked = q.isArchived ? 'checked' : '';
+                const wantsStoreEmailChecked = q.wantsStoreEmail ? 'checked' : '';
 
                 itemDiv.innerHTML = `
                     <div class="manager-item-grid">
@@ -1783,6 +1877,13 @@
                         <div><label>Soru Başlığı</label><input type="text" class="question-title-input" value="${q.title}"></div>
                         <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleProductManager(this)">${selectOptionsHTML}</select></div>
                         <div><label>Cevap Tipi</label><select class="answer-type-select">${answerTypeOptionsHTML}</select></div>
+                         <div class="archive-switch-container">
+                            <label>E-posta Ekle</label>
+                            <label class="switch">
+                                <input type="checkbox" class="wants-email-checkbox" ${wantsStoreEmailChecked}>
+                                <span class="slider green"></span>
+                            </label>
+                        </div>
                         <div class="archive-switch-container">
                             <label>Arşivle</label>
                             <label class="switch">
@@ -2087,6 +2188,13 @@
                         </select>
                     </div>
                     <div class="archive-switch-container">
+                        <label>E-posta Ekle</label>
+                        <label class="switch">
+                            <input type="checkbox" class="wants-email-checkbox">
+                            <span class="slider green"></span>
+                        </label>
+                    </div>
+                    <div class="archive-switch-container">
                         <label>Arşivle</label>
                         <label class="switch">
                             <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
@@ -2246,6 +2354,8 @@
                 const answerType = item.querySelector('.answer-type-select').value;
                 const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
                 const isArchived = item.querySelector('.archive-checkbox').checked;
+                const wantsStoreEmail = item.querySelector('.wants-email-checkbox').checked;
+
 
                 if (!id && id !== 0 || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
                 if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılamaz.`); return; }
@@ -2255,6 +2365,8 @@
                 const newQuestion = { id, title, type, answerType };
                 if (staticItems.length > 0 && type !== 'product_list') newQuestion.staticItems = staticItems;
                 if (isArchived) newQuestion.isArchived = true;
+                if (wantsStoreEmail) newQuestion.wantsStoreEmail = true;
+
 
                 if (type === 'pop_system') {
                     const originalPopQuestion = fideQuestions.find(q => q.type === 'pop_system');
@@ -2286,6 +2398,169 @@
                 loadingOverlay.style.display = 'none';
             }
         }
+        
+        // --- YENİ EKLENEN E-POSTA YÖNETİCİSİ FONKSİYONLARI ---
+        function renderEmailManager() {
+            const listContainer = document.getElementById('email-manager-list');
+            const filterText = document.getElementById('email-search-input').value.toLowerCase();
+            listContainer.innerHTML = '';
+
+            const filteredEntries = Object.entries(storeEmails).filter(([kodu, email]) => {
+                return kodu.toLowerCase().includes(filterText) || email.toLowerCase().includes(filterText);
+            });
+            
+            if(filteredEntries.length === 0) {
+                 listContainer.innerHTML = '<p class="empty-list-message">Eşleşen bayi e-postası bulunamadı veya hiç e-posta eklenmedi.</p>';
+                 return;
+            }
+
+            filteredEntries.sort((a, b) => a[0].localeCompare(b[0])).forEach(([kodu, email]) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'email-manager-item';
+                itemDiv.dataset.kodu = kodu;
+                itemDiv.innerHTML = `
+                    <span class="email-manager-code">${kodu}</span>
+                    <input type="email" class="email-manager-input" value="${email}">
+                    <div class="email-manager-actions">
+                        <button class="btn-success btn-sm" onclick="saveEmail('${kodu}')" title="Değişikliği Kaydet"><i class="fas fa-save"></i></button>
+                        <button class="btn-danger btn-sm" onclick="deleteEmail('${kodu}')" title="Bu Kaydı Sil"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+        }
+        
+        async function saveEmail(kodu, isNew = false) {
+            if (!auth.currentUser || !database) { alert("Bu işlem için sisteme giriş yapmalısınız."); return; }
+            const itemDiv = document.querySelector(`.email-manager-item[data-kodu="${kodu}"]`);
+            if (!itemDiv) return;
+            const emailInput = itemDiv.querySelector('.email-manager-input');
+            const newEmail = emailInput.value.trim();
+            if (!newEmail) { alert("E-posta alanı boş bırakılamaz."); return; }
+            
+            try {
+                await database.ref(`storeEmails/${kodu}`).set(newEmail);
+                storeEmails[kodu] = newEmail;
+                localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails));
+                if(isNew) {
+                   itemDiv.querySelector('.email-manager-code').textContent = kodu;
+                   itemDiv.dataset.kodu = kodu;
+                   itemDiv.classList.remove('new-item');
+                }
+                emailInput.style.border = '2px solid var(--success)';
+                setTimeout(() => { emailInput.style.border = '1px solid var(--border)'; }, 2000);
+
+            } catch (error) {
+                alert("E-posta kaydedilirken bir hata oluştu: " + error.message);
+            }
+        }
+        
+        async function deleteEmail(kodu) {
+             if (!auth.currentUser || !database) { alert("Bu işlem için sisteme giriş yapmalısınız."); return; }
+             if (confirm(`'${kodu}' kodlu bayiye ait e-postayı silmek istediğinizden emin misiniz?`)) {
+                 try {
+                     await database.ref(`storeEmails/${kodu}`).remove();
+                     delete storeEmails[kodu];
+                     localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails));
+                     document.querySelector(`.email-manager-item[data-kodu="${kodu}"]`).remove();
+                 } catch(error) {
+                     alert("E-posta silinirken bir hata oluştu: " + error.message);
+                 }
+             }
+        }
+
+        function addNewEmailUI() {
+            const listContainer = document.getElementById('email-manager-list');
+            if (document.querySelector('.email-manager-item.new-item')) {
+                alert("Önce mevcut yeni kaydı tamamlayın.");
+                return;
+            }
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'email-manager-item new-item';
+            
+            const newCode = 'YENI_BAYI_KODU';
+            itemDiv.dataset.kodu = newCode;
+
+            itemDiv.innerHTML = `
+                <input type="text" class="email-manager-code-input" placeholder="Bayi Kodu">
+                <input type="email" class="email-manager-input" placeholder="E-posta Adresi">
+                <div class="email-manager-actions">
+                    <button class="btn-success btn-sm" onclick="saveNewEmail()" title="Yeni Kaydı Ekle"><i class="fas fa-check"></i></button>
+                    <button class="btn-danger btn-sm" onclick="this.closest('.email-manager-item').remove()" title="İptal Et"><i class="fas fa-times"></i></button>
+                </div>`;
+            listContainer.prepend(itemDiv);
+            itemDiv.querySelector('.email-manager-code-input').focus();
+        }
+        
+        async function saveNewEmail() {
+             const newItemDiv = document.querySelector('.email-manager-item.new-item');
+             if (!newItemDiv) return;
+             
+             constcodeInput = newItemDiv.querySelector('.email-manager-code-input');
+             const emailInput = newItemDiv.querySelector('.email-manager-input');
+             const newCode = codeInput.value.trim();
+             const newEmail = emailInput.value.trim();
+
+             if (!newCode || !newEmail) {
+                 alert("Bayi kodu ve e-posta alanları boş bırakılamaz.");
+                 return;
+             }
+            if (storeEmails[newCode]) {
+                alert("Bu bayi kodu zaten mevcut. Lütfen listeden güncelleyin.");
+                return;
+            }
+            
+            newItemDiv.dataset.kodu = newCode;
+            await saveEmail(newCode, true);
+            renderEmailManager();
+        }
+
+        function handleBulkEmailUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!auth.currentUser || !database) { alert("Bu işlem için sisteme giriş yapmalısınız."); return; }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const text = e.target.result;
+                    const lines = text.split('\n');
+                    const newEmailData = {};
+                    let count = 0;
+                    lines.forEach(line => {
+                        const parts = line.trim().split(/\s+/); // Boşluk veya tab ile ayır
+                        if (parts.length >= 2) {
+                            const kodu = parts[0];
+                            const email = parts[1];
+                            if (kodu && email && email.includes('@')) {
+                                newEmailData[kodu] = email;
+                                count++;
+                            }
+                        }
+                    });
+                    
+                    if(count === 0) {
+                        alert("Dosya okundu ancak geçerli 'bayikodu e-posta' formatında satır bulunamadı.");
+                        return;
+                    }
+
+                    if (confirm(`${count} adet e-posta bulundu. Bu işlem buluttaki mevcut tüm bayi e-posta listesinin üzerine yazılacaktır. Devam etmek istiyor musunuz?`)) {
+                        await database.ref('storeEmails').set(newEmailData);
+                        storeEmails = newEmailData;
+                        localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails));
+                        alert('Toplu e-posta yüklemesi başarıyla tamamlandı!');
+                        renderEmailManager();
+                    }
+
+                } catch (error) {
+                    alert('Dosya okunurken veya işlenirken bir hata oluştu!');
+                    console.error("Toplu e-posta yükleme hatası:", error);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = null; // Aynı dosyayı tekrar seçebilmek için
+        }
+        // --- BİTİŞ: E-POSTA YÖNETİCİSİ FONKSİYONLARI ---
 
 
         function updateFormInteractivity(enable) {
