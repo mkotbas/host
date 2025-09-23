@@ -154,10 +154,14 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
 .manager-item.hidden-question { display: none; }
 .manager-item-grid {
     display: grid; 
-    grid-template-columns: 80px 1fr 140px 140px 100px; 
+    grid-template-columns: 80px 1fr 140px 140px auto; 
     gap: 15px; margin-bottom: 15px; align-items: flex-end;
 }
-.manager-item-grid div { display: flex; flex-direction: column; }
+/* DEĞİŞİKLİK 1: Bu genel kuralın anahtar grubunu etkilememesi sağlandı. */
+.manager-item-grid > div:not(.manager-grid-switch-group) { 
+    display: flex; 
+    flex-direction: column; 
+}
 .manager-item label {
     font-size: 12px; font-weight: 600; color: var(--secondary); margin-bottom: 5px;
 }
@@ -165,11 +169,14 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
     width: 100%; padding: 10px; border: 1px solid var(--border);
     border-radius: 6px; font-size: 14px; font-family: inherit;
 }
+/* DEĞİŞİKLİK 2: Anahtar grubunun yatayda (yan yana) hizalanması için özel stil eklendi. */
 .manager-grid-switch-group {
-    flex-direction: row; 
-    justify-content: space-around;
-    align-items: center; 
-    gap: 5px; 
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 25px; 
+    padding-bottom: 5px; /* Dikey hizalama için küçük bir ayar */
 }
 .manager-item input:disabled {
     background-color: var(--border);
@@ -807,10 +814,6 @@ input:checked + .slider:before {
 }
 
 /* === BAŞLANGIÇ: YENİ EKLENEN BAYİ E-POSTA YÖNETİCİSİ STİLLERİ === */
-
-.manager-item-grid {
-    grid-template-columns: 80px 1fr 140px 140px 100px 100px; /* Yeni sütun için genişletildi */
-}
 
 .slider.green:before {
     background-color: white;
