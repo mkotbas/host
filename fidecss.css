@@ -165,14 +165,12 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
     width: 100%; padding: 10px; border: 1px solid var(--border);
     border-radius: 6px; font-size: 14px; font-family: inherit;
 }
-/* === BAŞLANGIÇ: YENİ EKLENEN KURAL === */
 .manager-grid-switch-group {
-    flex-direction: row; /* Varsayılan dikey hizalamayı ezer */
-    justify-content: space-around; /* Butonları hücreye yayar */
-    align-items: center; /* Butonları dikeyde ortalar */
-    gap: 5px; /* Butonlar arasındaki boşluğu azaltır */
+    flex-direction: row; 
+    justify-content: space-around;
+    align-items: center; 
+    gap: 5px; 
 }
-/* === BİTİŞ: YENİ EKLENEN KURAL === */
 .manager-item input:disabled {
     background-color: var(--border);
     cursor: not-allowed;
@@ -371,37 +369,6 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
     overflow-y: auto;  
     opacity: 1;
     transition: max-height 0.5s ease-in, opacity 0.5s ease-in;
-}
-
-.dropdown-container {
-    display: inline-block;
-}
-.dropdown-menu {
-    background-color: #fff;
-    box-shadow: var(--card-shadow);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0;
-    display: flex;
-    gap: 8px;
-    width: max-content;
-    overflow: hidden;
-    max-height: 0;
-    opacity: 0;
-    transition: max-height 0.3s ease-out, opacity 0.3s ease, padding 0.3s ease, margin-top 0.3s ease;
-}
-.dropdown-menu.show {
-    opacity: 1;
-    max-height: 100px;
-    padding: 8px;
-    margin-top: 5px;
-}
-#backup-menu-btn i.fa-caret-down {
-     margin-left: 8px;
-     transition: transform 0.3s ease;
-}
-#backup-menu-btn.open i.fa-caret-down {
-    transform: rotate(180deg);
 }
 
 .archive-switch-container {
@@ -748,10 +715,6 @@ input:checked + .slider:before {
     }
     .manager-item-grid { grid-template-columns: 1fr; align-items: stretch; }
     .archive-switch-container { align-items: flex-start; }
-    .dropdown-menu {
-        flex-direction: column;
-        width: 100%;
-    }
     .manager-actions { flex-direction: column; align-items: stretch; }
     .manager-view-controls, .manager-main-actions { width: 100%; justify-content: center;}
     .manager-view-controls button, .manager-main-actions button { flex-grow: 1; justify-content: center; }
@@ -768,10 +731,6 @@ input:checked + .slider:before {
         width: 100%;
     }
     
-    .dropdown-menu.show {
-        max-height: 250px;
-    }
-
     .product-manager-row {
         grid-template-columns: 20px 1fr;
     }
