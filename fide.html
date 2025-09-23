@@ -165,10 +165,10 @@
                                     <span>Yönlendirmeler</span>
                                 </button>
                             </div>
-                            <button class="scenario-btn" data-scenario="text-change">
-                                <i class="fas fa-pencil-alt"></i>
-                                <span>Bir Sorunun Metni / İçeriği Değişti</span>
-                                <small>Düzenlemek istediğiniz soruyu listede bulur ve odaklar.</small>
+                            <button class="scenario-btn" data-scenario="delete-question">
+                                <i class="fas fa-trash-alt"></i>
+                                <span>Bir Soruyu Kalıcı Olarak Sil</span>
+                                <small>Soruyu ve tüm raporlardaki cevaplarını siler.</small>
                             </button>
                         </div>
                         <div id="scenario-id-change-form" class="scenario-form" style="display: none;">
@@ -180,12 +180,19 @@
                             </div>
                             <button id="apply-id-change-btn" class="btn-success"><i class="fas fa-check"></i> Değişikliği Uygula</button>
                         </div>
-                        <div id="scenario-text-change-form" class="scenario-form" style="display: none;">
-                            <h4>Senaryo: Soru Metni Değişikliği</h4>
+                        <div id="scenario-delete-question-form" class="scenario-form" style="display: none;">
+                            <h4>Senaryo: Soruyu Kalıcı Olarak Sil</h4>
+                            <p class="product-manager-info" style="border-color: var(--danger); background-color: #fee2e2;">
+                                <i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i>
+                                <strong>UYARI:</strong> Bu işlem geri alınamaz. Soru ve bu soruya ait <strong>TÜM</strong> bayi raporlarındaki cevaplar kalıcı olarak silinecektir.
+                            </p>
                             <div class="migration-form">
-                                <input type="number" id="scenario-find-id" placeholder="Düzenlenecek Soru ID">
+                                <input type="number" id="scenario-delete-id" placeholder="Silinecek Soru ID">
                             </div>
-                            <button id="apply-text-change-btn" class="btn-primary"><i class="fas fa-search"></i> Beni Soruya Götür</button>
+                            <div id="scenario-delete-preview" style="margin-bottom: 15px; padding: 10px; background-color: var(--light); border-radius: 6px; min-height: 40px; font-style: italic; color: var(--secondary);">
+                                Lütfen silmek istediğiniz sorunun ID'sini girin.
+                            </div>
+                            <button id="apply-delete-question-btn" class="btn-danger"><i class="fas fa-trash-alt"></i> Soruyu ve Tüm Cevaplarını Sil</button>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -769,7 +776,8 @@
                 btn.addEventListener('click', (e) => selectScenario(e.currentTarget.dataset.scenario));
             });
             document.getElementById('apply-id-change-btn').addEventListener('click', applyIdChangeScenario);
-            document.getElementById('apply-text-change-btn').addEventListener('click', applyTextChangeScenario);
+            document.getElementById('scenario-delete-id').addEventListener('input', previewQuestionForDelete);
+            document.getElementById('apply-delete-question-btn').addEventListener('click', applyDeleteQuestionScenario);
             
             document.getElementById('bulk-upload-emails-btn').addEventListener('click', () => document.getElementById('email-bulk-upload-input').click());
             document.getElementById('email-bulk-upload-input').addEventListener('change', handleBulkEmailUpload);
@@ -783,7 +791,8 @@
             document.querySelectorAll('.scenario-form').forEach(form => form.style.display = 'none');
             document.getElementById('scenario-old-id').value = '';
             document.getElementById('scenario-new-id').value = '';
-            document.getElementById('scenario-find-id').value = '';
+            document.getElementById('scenario-delete-id').value = '';
+            previewQuestionForDelete();
         }
 
         function closeScenarioSystem() {
@@ -794,8 +803,8 @@
             document.querySelector('.scenario-selection').style.display = 'none';
             if (scenario === 'id-change') {
                 document.getElementById('scenario-id-change-form').style.display = 'block';
-            } else if (scenario === 'text-change') {
-                document.getElementById('scenario-text-change-form').style.display = 'block';
+            } else if (scenario === 'delete-question') {
+                document.getElementById('scenario-delete-question-form').style.display = 'block';
             }
         }
 
@@ -828,28 +837,101 @@
             closeScenarioSystem();
         }
 
-        function applyTextChangeScenario() {
-            const findId = document.getElementById('scenario-find-id').value.trim();
-            if (!findId) {
-                alert("Lütfen düzenlemek istediğiniz sorunun ID'sini girin.");
+        function previewQuestionForDelete() {
+            const id = document.getElementById('scenario-delete-id').value;
+            const previewArea = document.getElementById('scenario-delete-preview');
+            const deleteBtn = document.getElementById('apply-delete-question-btn');
+            if (!id) {
+                previewArea.innerHTML = "Lütfen silmek istediğiniz sorunun ID'sini girin.";
+                previewArea.style.color = 'var(--secondary)';
+                deleteBtn.disabled = true;
+                return;
+            }
+            const question = fideQuestions.find(q => String(q.id) === String(id));
+            if (question) {
+                previewArea.innerHTML = `<b>Silinecek Soru:</b> "${question.title.substring(0, 20)}..."`;
+                previewArea.style.color = 'var(--dark)';
+                deleteBtn.disabled = false;
+            } else {
+                previewArea.innerHTML = `"${id}" ID'li soru bulunamadı.`;
+                previewArea.style.color = 'var(--danger)';
+                deleteBtn.disabled = true;
+            }
+        }
+        
+        async function applyDeleteQuestionScenario() {
+            const questionIdToDelete = document.getElementById('scenario-delete-id').value;
+            if (!questionIdToDelete) {
+                alert("Lütfen silinecek soru ID'sini girin.");
+                return;
+            }
+            const question = fideQuestions.find(q => String(q.id) === String(questionIdToDelete));
+            if (!question) {
+                alert(`HATA: "${questionIdToDelete}" ID'li bir soru bulunamadı.`);
+                return;
+            }
+            const confirmationText = `DİKKAT! BU İŞLEM GERİ ALINAMAZ!\n\nID: ${question.id}\nSoru: "${question.title}"\n\nYukarıdaki soruyu ve bu soruya ait TÜM bayi raporlarındaki cevapları kalıcı olarak silmek istediğinizden KESİNLİKLE emin misiniz?`;
+            if (!confirm(confirmationText)) {
+                alert("İşlem iptal edildi.");
+                return;
+            }
+            if (!auth.currentUser || !database) {
+                alert("Bu kritik işlem için bulut sistemine giriş yapmış olmanız gerekmektedir.");
                 return;
             }
 
-            const questionItem = document.querySelector(`.manager-item[data-id="${findId}"]`);
-            if (!questionItem) {
-                alert(`HATA: "${findId}" ID'li bir soru bulunamadı.`);
-                return;
+            const loadingOverlay = document.getElementById('loading-overlay');
+            loadingOverlay.style.display = 'flex';
+
+            try {
+                // Adım 1: Bu soruya ait tüm cevapları sil (yerel ve bulut)
+                const localDataString = localStorage.getItem('allFideReports');
+                if (localDataString) {
+                    let allReports = JSON.parse(localDataString);
+                    for (const storeKey in allReports) {
+                        if (allReports[storeKey]?.data?.questions_status?.[questionIdToDelete]) {
+                            delete allReports[storeKey].data.questions_status[questionIdToDelete];
+                        }
+                    }
+                    localStorage.setItem('allFideReports', JSON.stringify(allReports));
+                }
+
+                const reportsRef = database.ref('allFideReports');
+                const snapshot = await reportsRef.once('value');
+                if (snapshot.exists()) {
+                    let allCloudReports = snapshot.val();
+                    let updates = {};
+                     for (const storeKey in allCloudReports) {
+                        if (allCloudReports[storeKey]?.data?.questions_status?.[questionIdToDelete]) {
+                            updates[`${storeKey}/data/questions_status/${questionIdToDelete}`] = null;
+                        }
+                    }
+                     if (Object.keys(updates).length > 0) {
+                        await reportsRef.update(updates);
+                    }
+                }
+
+                // Adım 2: Sorunun kendisini ana listeden sil
+                const newQuestions = fideQuestions.filter(q => String(q.id) !== String(questionIdToDelete));
+
+                const finalJsonData = {
+                    questions: newQuestions,
+                    productList: productList
+                };
+
+                // Adım 3: Yeni soru listesini buluta kaydet
+                const questionsRef = database.ref('fideQuestionsData');
+                await questionsRef.set(finalJsonData);
+
+                alert(`Başarılı!\n\nFiDe ${questionIdToDelete} sorusu ve ilişkili tüm cevaplar kalıcı olarak silindi. Sayfa yenileniyor.`);
+                window.location.reload();
+
+            } catch (error) {
+                console.error("Soru silme senaryosu sırasında bir hata oluştu:", error);
+                alert("Bir hata oluştu! Soru ve cevaplar silinemedi. Lütfen konsolu kontrol edin.");
+            } finally {
+                loadingOverlay.style.display = 'none';
             }
-
-            closeScenarioSystem();
-
-            questionItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            questionItem.style.transition = 'background-color 0.5s ease';
-            questionItem.style.backgroundColor = '#cffafe';
-            setTimeout(() => {
-                questionItem.style.backgroundColor = '';
-            }, 2000);
         }
         
         function renderMigrationManagerUI() {
