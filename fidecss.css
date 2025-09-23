@@ -647,6 +647,62 @@ input:checked + .slider:before {
     color: var(--dark);
 }
 
+/* === BAŞLANGIÇ: YEDEKLEME YÖNETİCİSİ İÇİN EKLENEN YENİ STİLLER === */
+
+/* Yedekleme seçeneklerini içeren grid yapısını oluşturur. */
+.backup-options-grid {
+    display: grid;
+    /* Ekran genişliğine göre otomatik olarak sütun sayısını ayarlar. 
+       Her bir kart en az 280px genişliğinde olur. */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px; /* Kartlar arasına boşluk ekler. */
+}
+
+/* Her bir yedekleme seçeneği kartının stilini belirler. */
+.backup-option-card {
+    background-color: var(--light);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex; /* İçeriklerin (başlık, açıklama, buton) dikeyde hizalanmasını sağlar. */
+    flex-direction: column;
+    transition: var(--transition);
+}
+
+/* Fare ile üzerine gelindiğinde karta hafif bir gölge ve yukarı kalkma efekti verir. */
+.backup-option-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-shadow);
+}
+
+/* Kart içindeki başlık (h3) stilini ayarlar. */
+.backup-option-card h3 {
+    font-size: 16px;
+    color: var(--primary-dark);
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px; /* İkon ile başlık arasına boşluk bırakır. */
+}
+
+/* Kart içindeki açıklama (p) stilini ayarlar. */
+.backup-option-card p {
+    font-size: 13px;
+    color: var(--secondary);
+    margin-bottom: 20px;
+    line-height: 1.5;
+    flex-grow: 1; /* Bu özellik, açıklama alanının mevcut tüm boşluğu doldurmasını sağlar.
+                     Böylece butonlar, açıklama metni ne kadar uzun olursa olsun,
+                     her zaman kartın en altında hizalı durur. */
+}
+
+/* Kart içindeki butonun her zaman kartın genişliğini kaplamasını sağlar. */
+.backup-option-card button {
+    width: 100%;
+}
+
+/* === BİTİŞ: YEDEKLEME YÖNETİCİSİ İÇİN EKLENEN YENİ STİLLER === */
+
 
 @media (max-width: 768px) {
     .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
