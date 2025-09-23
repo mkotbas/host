@@ -165,6 +165,14 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
     width: 100%; padding: 10px; border: 1px solid var(--border);
     border-radius: 6px; font-size: 14px; font-family: inherit;
 }
+/* === BAŞLANGIÇ: YENİ EKLENEN KURAL === */
+.manager-grid-switch-group {
+    flex-direction: row; /* Varsayılan dikey hizalamayı ezer */
+    justify-content: space-around; /* Butonları hücreye yayar */
+    align-items: center; /* Butonları dikeyde ortalar */
+    gap: 5px; /* Butonlar arasındaki boşluğu azaltır */
+}
+/* === BİTİŞ: YENİ EKLENEN KURAL === */
 .manager-item input:disabled {
     background-color: var(--border);
     cursor: not-allowed;
