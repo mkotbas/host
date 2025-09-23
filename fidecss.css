@@ -734,6 +734,23 @@ input:checked + .slider:before {
     .scenario-related-btn {
         width: 100%;
     }
+    
+    /* === YENİ EKLENEN KURALLAR BAŞLANGIÇ === */
+
+    /* Mobil cihazlarda "Tamamla" / "Geri Al" butonlarını sadece ikona dönüştürerek taşma sorununu giderir */
+    .status-btn {
+        font-size: 0; /* Buton içindeki metni (Tamamlandı, Geri Al) gizler */
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    /* Gizlenen metin sonrası ikonun boyutunu ve görünürlüğünü geri getirir */
+    .status-btn i {
+        font-size: 12px; /* .btn-sm ile tutarlı bir ikon boyutu sağlar */
+        margin-right: 0; /* İkonun yanında artık metin olmadığı için sağdaki boşluğu kaldırır */
+    }
+
+    /* === YENİ EKLENEN KURALLAR BİTİŞ === */
 }
 
 /* Yükleme Ekranı Stilleri */
