@@ -1205,8 +1205,12 @@ function generateEmail() {
     if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
     
     const storeEmail = storeEmails[selectedStore.bayiKodu] || null;
-    const storeEmailTag = storeEmail ? ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@${storeEmail}</span>` : '';
     
+    // === DEĞİŞİKLİK BURADA BAŞLIYOR ===
+    // Mail adresini tıklanabilir bir link haline getiren HTML kodu oluşturuluyor.
+    const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
+    // === DEĞİŞİKLİK BURADA BİTİYOR ===
+
     const reportData = getFormDataForSaving();
     document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2);
     document.getElementById('save-section').style.display = 'block';
@@ -1263,7 +1267,10 @@ function generateEmail() {
             
             let emailTag = '';
             if (q.type === 'pop_system') {
-                emailTag = ` <span style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px;">@berkcan_boza@arcelik.com.tr</span>`;
+                // === DEĞİŞİKLİK BURADA BAŞLIYOR ===
+                // Sabit mail adresi de tıklanabilir bir link haline getiriliyor.
+                emailTag = ` <a href="mailto:berkcan_boza@arcelik.com.tr" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@berkcan_boza@arcelik.com.tr</a>`;
+                // === DEĞİŞİKLİK BURADA BİTİYOR ===
             } else if (q.wantsStoreEmail) {
                 emailTag = storeEmailTag;
             }
