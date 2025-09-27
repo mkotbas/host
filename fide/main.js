@@ -6,8 +6,23 @@ const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular 
 const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 let isFirebaseConnected = false;
 
+// --- Helper Functions ---
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Script load error for ${src}`));
+        document.head.appendChild(script);
+    });
+}
+
 // --- Ana Uygulama Mantığı ---
-window.onload = initializeApp;
+window.addEventListener('DOMContentLoaded', initializeApp);
 
 async function initializeApp() {
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
@@ -155,38 +170,45 @@ async function loadInitialData() {
 }
 
 async function loadExcelData() {
-    const user = auth.currentUser;
-    let dideLoaded = false;
-    let fideLoaded = false;
+    // 1. Önce yerel hafızadan yükle (hızlı başlangıç için)
+    loadDideDataFromStorage();
+    loadFideDataFromStorage();
 
+    // 2. Sonra, kullanıcı giriş yapmışsa, buluttan güncel veriyi çek ve arayüzü güncelle
+    const user = auth.currentUser;
     if (user && database) {
-        const dideRef = database.ref('excelData/dide');
-        const dideSnapshot = await dideRef.once('value');
-        if (dideSnapshot.exists()) {
-            const storedData = dideSnapshot.val();
-            const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
-            if (ageInDays <= 30) {
-                if (storedData.filename) { document.getElementById('file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
-                populateDideState(storedData.data);
-                dideLoaded = true;
+        // DiDe verisini buluttan çek
+        try {
+            const dideRef = database.ref('excelData/dide');
+            const dideSnapshot = await dideRef.once('value');
+            if (dideSnapshot.exists()) {
+                const storedData = dideSnapshot.val();
+                const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+                if (ageInDays <= 30) {
+                    if (storedData.filename) { document.getElementById('file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
+                    populateDideState(storedData.data); // Arayüzü bulut verisiyle güncelle
+                }
             }
+        } catch (error) {
+            console.error("Buluttan DiDe verisi çekilirken hata:", error);
         }
 
-        const fideRef = database.ref('excelData/fide');
-        const fideSnapshot = await fideRef.once('value');
-        if (fideSnapshot.exists()) {
-            const storedData = fideSnapshot.val();
-            const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
-            if (ageInDays <= 30) {
-                if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
-                populateFideState(storedData.data);
-                fideLoaded = true;
+        // FiDe verisini buluttan çek
+        try {
+            const fideRef = database.ref('excelData/fide');
+            const fideSnapshot = await fideRef.once('value');
+            if (fideSnapshot.exists()) {
+                const storedData = fideSnapshot.val();
+                const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+                if (ageInDays <= 30) {
+                    if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
+                    populateFideState(storedData.data); // Arayüzü bulut verisiyle güncelle
+                }
             }
+        } catch (error) {
+            console.error("Buluttan FiDe verisi çekilirken hata:", error);
         }
     }
-
-    if (!dideLoaded) loadDideDataFromStorage();
-    if (!fideLoaded) loadFideDataFromStorage();
 }
 
 function updateConnectionIndicator() {
@@ -670,14 +692,31 @@ function openEmailDraft() {
     emailWindow.document.write(emailHTML);
     emailWindow.document.close();
 }
-function handleFileSelect(event, type) {
+
+async function handleFileSelect(event, type) {
     const file = event.target.files[0];
     if (!file) return;
+
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+
+    // Excel (XLSX) kütüphanesini sadece bu noktada yükle
+    if (typeof XLSX === 'undefined') {
+        try {
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+        } catch (error) {
+            loadingOverlay.style.display = 'none';
+            alert('Excel işlemleri için gerekli olan kütüphane yüklenemedi. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
+            console.error('XLSX library failed to load:', error);
+            return;
+        }
+    }
+
     const filename = file.name;
     const fileNameSpan = type === 'dide' ? document.getElementById('file-name') : document.getElementById('fide-file-name');
     fileNameSpan.textContent = `Yüklü dosya: ${filename}`;
+    
     const reader = new FileReader();
-    reader.readAsArrayBuffer(file);
     reader.onload = function(e) {
         try {
             const data = new Uint8Array(e.target.result);
@@ -685,10 +724,25 @@ function handleFileSelect(event, type) {
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-            if (type === 'dide') { processDideExcelData(dataAsArray, true, filename); } else { processFideExcelData(dataAsArray, true, filename); }
-        } catch (error) { alert("Excel dosyası okunurken bir hata oluştu."); console.error("Excel okuma hatası:", error); }
+            if (type === 'dide') {
+                processDideExcelData(dataAsArray, true, filename);
+            } else {
+                processFideExcelData(dataAsArray, true, filename);
+            }
+        } catch (error) {
+            alert("Excel dosyası okunurken bir hata oluştu.");
+            console.error("Excel okuma hatası:", error);
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
     };
+    reader.onerror = () => {
+        loadingOverlay.style.display = 'none';
+        alert("Dosya okunurken bir hata oluştu.");
+    };
+    reader.readAsArrayBuffer(file);
 }
+
 function processDideExcelData(dataAsArray, saveToStorage = false, filename = '') {
     if (dataAsArray.length < 2) return alert('DiDe Excel dosyası beklenen formatta değil (en az 2 satır gerekli).');
     let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
