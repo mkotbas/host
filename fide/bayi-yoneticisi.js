@@ -3,7 +3,7 @@ let storeEmails = {};
 let isFirebaseConnected = false;
 
 // --- Ana Uygulama Mantığı ---
-window.onload = initializeApp;
+window.addEventListener('DOMContentLoaded', initializeApp);
 
 async function initializeApp() {
     if (typeof auth === 'undefined') {
@@ -32,27 +32,32 @@ async function initializeApp() {
 }
 
 async function loadStoreEmails() {
-    const user = auth.currentUser;
-    let loadedFromCloud = false;
+    // 1. Önce yerel hafızadan yükle (hızlı başlangıç için)
+    const storedEmails = localStorage.getItem('fideStoreEmails');
+    storeEmails = storedEmails ? JSON.parse(storedEmails) : {};
+    
+    // 2. Arayüzü yerel veriyle hemen çiz (kullanıcı beklemesin)
+    renderEmailManager();
 
+    // 3. Sonra, kullanıcı giriş yapmışsa, buluttan güncel veriyi çek ve arayüzü güncelle
+    const user = auth.currentUser;
     if (user && database) {
         try {
             const emailsRef = database.ref('storeEmails');
             const snapshot = await emailsRef.once('value');
             if (snapshot.exists()) {
-                storeEmails = snapshot.val();
-                localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails));
-                loadedFromCloud = true;
+                storeEmails = snapshot.val(); // Değişkeni bulut verisiyle güncelle
+                localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails)); // Yerel hafızayı da güncelle
+                renderEmailManager(); // Arayüzü en güncel veriyle tekrar çiz
             }
         } catch (error) {
             console.error("Buluttan bayi e-postaları yüklenemedi:", error);
+            if (!storedEmails) {
+                 alert("E-posta listesi yerel hafızadan yüklendi. Değişiklik yapmak için lütfen sisteme giriş yapın.");
+            }
         }
-    }
-
-    if (!loadedFromCloud) {
-        const storedEmails = localStorage.getItem('fideStoreEmails');
-        storeEmails = storedEmails ? JSON.parse(storedEmails) : {};
-        if(!user) alert("E-posta listesi yerel hafızadan yüklendi. Değişiklik yapmak için lütfen sisteme giriş yapın.");
+    } else if (!user && !storedEmails) {
+        alert("E-posta listesi yerel hafızadan yüklendi. Değişiklik yapmak için lütfen sisteme giriş yapın.");
     }
     
     if (database) {
