@@ -203,25 +203,20 @@ function closeManager() {
     document.getElementById('backup-manager').style.display = 'none';
 
     document.getElementById('dide-upload-card').style.display = 'block';
-    document.querySelector('.load-container').style.display = 'flex';
+    document.querySelector('#load-from-email-section').style.display = 'block';
     document.getElementById('form-content').style.display = 'block';
     document.querySelector('.action-button').style.display = 'block';
     
     const emailDraft = document.getElementById('email-draft-container');
      if (emailDraft) emailDraft.remove();
-    
-    const saveSection = document.getElementById('save-section');
-    if(saveSection) saveSection.style.display = 'none';
 }
 
 function returnToMainPage() {
     const emailDraft = document.getElementById('email-draft-container');
     if (emailDraft) emailDraft.remove();
-    const saveSection = document.getElementById('save-section');
-    if(saveSection) saveSection.style.display = 'none';
     
     document.getElementById('dide-upload-card').style.display = 'block';
-    document.querySelector('.load-container').style.display = 'flex';
+    document.querySelector('#load-from-email-section').style.display = 'block';
     document.getElementById('form-content').style.display = 'block';
     document.querySelector('.action-button').style.display = 'block';
 }
@@ -236,7 +231,6 @@ function setupEventListeners() {
     document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
     document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
-    document.getElementById('load-from-code-btn').addEventListener('click', () => loadReport());
     document.getElementById('load-from-email-btn').addEventListener('click', parseAndLoadFromEmail);
     
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
@@ -346,7 +340,7 @@ function setupEventListeners() {
                    closeManager();
                    manager.style.display = 'block';
                    document.getElementById('dide-upload-card').style.display = 'none';
-                   document.querySelector('.load-container').style.display = 'none';
+                   document.querySelector('#load-from-email-section').style.display = 'none';
                    document.getElementById('form-content').style.display = 'none';
                    document.querySelector('.action-button').style.display = 'none';
                 } else {
@@ -869,9 +863,6 @@ function generateEmail() {
     
     const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
 
-    const reportData = getFormDataForSaving();
-    document.getElementById('save-code-area').value = JSON.stringify(reportData, null, 2);
-    document.getElementById('save-section').style.display = 'block';
     const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
     const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
     const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
@@ -952,7 +943,7 @@ function generateEmail() {
     document.getElementById('dide-upload-card').style.display = 'none';
     document.getElementById('form-content').style.display = 'none';
     document.querySelector('.action-button').style.display = 'none';
-    document.querySelector('.load-container').style.display = 'none';
+    document.querySelector('#load-from-email-section').style.display = 'none';
 
     const existingDraft = document.getElementById('email-draft-container');
     if (existingDraft) existingDraft.remove();
@@ -968,35 +959,11 @@ function generateEmail() {
         </h2>
         <p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p>
         <div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
-    document.querySelector('.container').insertBefore(draftContainer, document.getElementById('save-section'));
+    document.querySelector('.container').appendChild(draftContainer);
 }
-function downloadReportCode() {
-    const reportCode = document.getElementById('save-code-area').value;
-    if (!selectedStore || !reportCode) return alert('Bayi seçilmediği veya indirilecek rapor kodu bulunamadığı için dosya oluşturulamadı.');
-    const bayiKodu = selectedStore.bayiKodu;
-    const shortBayiAdi = selectedStore.bayiAdi.substring(0, 15).trim();
-    const sanitizedBayiAdi = shortBayiAdi.replace(/[\\/:*?"<>|]/g, '_'); 
-    const filename = `${bayiKodu} - ${sanitizedBayiAdi}.txt`;
-    const blob = new Blob([reportCode], { type: 'text/plain;charset=utf-8' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
-function loadReport(reportDataFromCode) {
-    try {
-        let reportData = reportDataFromCode;
-        if (!reportData) {
-            const loadCode = document.getElementById('load-code-area').value.trim();
-            if (!loadCode) return alert('Lütfen yüklemek için bir rapor kodu yapıştırın.');
-            reportData = JSON.parse(loadCode);
-        }
 
+function loadReport(reportData) {
+    try {
         for (const oldId in migrationMap) {
             if (reportData.questions_status[oldId]) {
                 const newId = migrationMap[oldId];
@@ -1051,9 +1018,8 @@ function loadReport(reportDataFromCode) {
                 checkExpiredPopCodes();
             }
         }
-        if (!reportDataFromCode) { alert('Rapor başarıyla yüklendi!'); document.getElementById('load-code-area').value = ''; }
         updateFormInteractivity(true);
-    } catch (error) { alert('Geçersiz rapor kodu!'); console.error("Rapor yükleme hatası:", error); }
+    } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
 }
 
 function parseAndLoadFromEmail() {
