@@ -124,19 +124,11 @@
             </div>
         </div>
         
-        <div class="card load-container">
-            <div id="load-from-code-section">
-                <h2><i class="fas fa-download"></i> Rapor Kodu ile Yükle</h2>
-                <p>Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve düğmeye tıklayın.</p>
-                <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..."></textarea>
-                <button class="btn-primary" id="load-from-code-btn" title="Yukarıdaki alana yapıştırılan rapor kodunu forma yükler."><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
-            </div>
-            <div id="load-from-email-section">
-                <h2><i class="fas fa-paste"></i> E-Posta Taslağından Yükle</h2>
-                <p>Bir bayi raporu e-postasının içeriğini bu alana yapıştırın ve butona basarak formu doldurun.</p>
-                <textarea id="load-email-area" placeholder="Rapor e-postasının içeriğini bu alana yapıştırın..."></textarea>
-                <button class="btn-primary" id="load-from-email-btn" title="Yapıştırılan e-posta metnini analiz ederek formu otomatik doldurur."><i class="fas fa-check"></i> E-Posta ile Yükle</button>
-            </div>
+        <div class="card" id="load-from-email-section">
+            <h2><i class="fas fa-paste"></i> E-Posta Taslağından Yükle</h2>
+            <p>Bir bayi raporu e-postasının içeriğini bu alana yapıştırın ve butona basarak formu doldurun.</p>
+            <textarea id="load-email-area" placeholder="Rapor e-postasının içeriğini bu alana yapıştırın..."></textarea>
+            <button class="btn-primary" id="load-from-email-btn" title="Yapıştırılan e-posta metnini analiz ederek formu otomatik doldurur."><i class="fas fa-check"></i> E-Posta ile Yükle</button>
         </div>
 
 
@@ -150,15 +142,6 @@
         <button class="action-button" onclick="generateEmail()" title="Formdaki tüm verileri kullanarak nihai e-posta taslağını oluşturur ve raporu kaydeder.">
             <i class="fas fa-envelope"></i> E-POSTA TASLAĞI OLUŞTUR
         </button>
-
-        <div class="card" id="save-section" style="display: none;">
-            <h2><i class="fas fa-save"></i> YEDEKLEME İÇİN RAPOR KODU</h2>
-            <p>Bu rapor tarayıcınıza ve buluta otomatik olarak kaydedildi. İsterseniz bu kodu kopyalayıp harici bir dosyaya yedekleyebilirsiniz.</p>
-            <textarea id="save-code-area" readonly></textarea>
-            <button class="btn-success" id="download-report-btn" onclick="downloadReportCode()" style="margin-top: 10px;" title="Oluşturulan raporun manuel yedek kodunu bir metin dosyası olarak indirir.">
-                <i class="fas fa-download"></i> Rapor Kodunu İndir (.txt)
-            </button>
-        </div>
 
     </div>
 
