@@ -90,25 +90,6 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
 .store-item.selected { background-color: var(--success); color: white; font-weight: bold; }
 #clear-storage-btn, #clear-excel-btn, #clear-fide-excel-btn { display: none; }
 #initialization-error { display: none; color: #b91c1c; background-color: #fee2e2; border: 1px solid #f87171; }
-.load-container {
-    display: flex;
-    gap: 24px;
-    padding: 0;
-    background: transparent;
-    box-shadow: none;
-}
-.load-container > div {
-    flex: 1;
-    background: white;
-    border-radius: 12px;
-    box-shadow: var(--card-shadow);
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-}
-.load-container h2 { font-size: 18px; }
-.load-container p { font-size: 13px; color: var(--secondary); margin-bottom: 15px; flex-grow: 1; }
-.load-container button { width: 100%; }
 .top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
 .backup-controls { display: flex; gap: 8px; flex-wrap: wrap; }
 .right-controls { display: flex; gap: 10px; align-items: center; position: relative; }
@@ -674,9 +655,6 @@ input:checked + .slider:before {
     #connection-status-container {
         margin: 0 auto;
         width: auto;
-    }
-    .load-container {
-        flex-direction: column;
     }
     .manager-item-grid { grid-template-columns: 1fr; align-items: stretch; }
     .archive-switch-container { align-items: flex-start; }
