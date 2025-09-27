@@ -835,7 +835,7 @@ function populateDideState(data) {
     });
     uniqueStores = Array.from(storeMap.values()).sort((a, b) => a.bayiAdi.localeCompare(b.bayiAdi));
     document.getElementById('store-list').innerHTML = '';
-    document.getElementById('store-selection-area').style.display = 'block';
+    document.getElementById('store-selection-area').classList.add('visible'); // DEĞİŞEN SATIR
     document.getElementById('clear-storage-btn').style.display = 'inline-flex';
     document.getElementById('clear-excel-btn').style.display = 'inline-flex';
 }
