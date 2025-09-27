@@ -827,3 +827,25 @@ input:checked + .slider.green {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* CLS Optimizasyonu için Eklendi */
+#store-selection-area {
+    visibility: hidden;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.5s ease-in-out;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+#store-selection-area.visible {
+    visibility: visible;
+    opacity: 1;
+    max-height: 500px; /* İçeriğin sığacağı kadar bir yükseklik */
+    margin: 20px 0;
+    padding: 0; /* İsterseniz padding ekleyebilirsiniz */
+    border-top: 1px solid var(--border);
+}
