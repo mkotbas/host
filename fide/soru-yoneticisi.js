@@ -5,7 +5,7 @@ let isFirebaseConnected = false;
 let currentManagerView = 'active'; 
 
 // --- Ana Uygulama Mantığı ---
-window.onload = initializeApp;
+window.addEventListener('DOMContentLoaded', initializeApp);
 
 async function initializeApp() {
     if (typeof auth === 'undefined') {
