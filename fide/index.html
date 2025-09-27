@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denetim Formu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+    <div id="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>İşlem yapılıyor, lütfen bekleyin...</p>
+    </div>
+
+    <div class="container">
+        
+        <div class="top-controls">
+            <div class="backup-controls">
+                <a href="soru-yoneticisi.html" class="btn-warning btn-sm"><i class="fas fa-edit"></i> Soru Yöneticisi</a>
+                <a href="bayi-yoneticisi.html" class="btn-warning btn-sm"><i class="fas fa-at"></i> Bayi Yöneticisi</a>
+                <button id="toggle-backup-manager-btn" class="btn-primary btn-sm"><i class="fas fa-archive"></i> Yedekleme</button>
+            </div>
+            <div class="right-controls">
+                <div id="connection-status-container">
+                    <div id="connection-status-switch" class="disconnected">
+                        <div class="thumb"></div>
+                    </div>
+                    <span id="connection-status-text">Bağlı Değil</span>
+                </div>
+                
+                <div id="auth-controls">
+                    <button id="login-toggle-btn" class="btn-success btn-sm"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
+                    <button id="logout-btn" class="btn-danger btn-sm" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
+                    <div id="login-popup">
+                        <h3><i class="fas fa-cloud"></i> Bulut Sistemine Giriş</h3>
+                        <input type="email" id="email-input" placeholder="E-posta">
+                        <input type="password" id="password-input" placeholder="Şifre">
+                        <button id="login-submit-btn" class="btn-primary btn-sm"><i class="fas fa-check"></i> Onayla</button>
+                        <div id="login-error"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="backup-manager" style="display: none;">
+            <h2>
+                <a href="#" onclick="event.preventDefault(); closeManager();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
+                    <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i> Yedekleme Yöneticisi
+                </a>
+            </h2>
+            <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 25px;">
+                <i class="fas fa-info-circle"></i> Buradan rapor verilerinizi yönetebilir, bilgisayarınıza indirebilir veya bulut ile eşitleyebilirsiniz.
+            </p>
+            <div class="backup-options-grid">
+                <div class="backup-option-card">
+                    <h3><i class="fas fa-cloud-download-alt"></i> Raporları Yedekle</h3>
+                    <p>Tarayıcıda kayıtlı tüm bayi raporlarını tek bir `.json` dosyası olarak bilgisayarınıza indirir.</p>
+                    <button id="backup-btn" class="btn-primary"><i class="fas fa-download"></i> Yedek Dosyasını İndir</button>
+                </div>
+                <div class="backup-option-card">
+                    <h3><i class="fas fa-upload"></i> Yedekten Geri Yükle</h3>
+                    <p>Bilgisayarınızdaki `.json` yedek dosyasını seçerek tarayıcı hafızasına yükler. Bu işlem mevcut verilerin üzerine yazar!</p>
+                    <button id="restore-from-backup-btn" class="btn-primary"><i class="fas fa-folder-open"></i> Dosya Seç ve Yükle</button>
+                </div>
+                <div class="backup-option-card">
+                    <h3><i class="fas fa-compress-arrows-alt"></i> Yedekleri Birleştir</h3>
+                    <p>Birden fazla yedek dosyasını seçerek, içlerindeki en güncel raporları içeren tek bir yeni yedek dosyası oluşturur.</p>
+                    <button id="merge-backups-btn" class="btn-primary"><i class="fas fa-object-group"></i> Dosyaları Seç ve Birleştir</button>
+                </div>
+                <div class="backup-option-card">
+                    <h3><i class="fas fa-cloud-upload-alt"></i> Buluta Aktar</h3>
+                    <p>Tarayıcı hafızasındaki güncel raporları buluta yükler. Bu işlem buluttaki mevcut raporların üzerine yazar!</p>
+                    <button id="upload-backup-to-cloud-btn" class="btn-success"><i class="fas fa-cloud-upload-alt"></i> Yerel Yedeği Buluta Aktar</button>
+                </div>
+            </div>
+            <input type="file" id="restore-file-input" accept=".json" style="display: none;">
+            <input type="file" id="merge-file-input" accept=".json" style="display: none;" multiple>
+        </div>
+        
+        <div class="card" id="dide-upload-card">
+            <h2><i class="fas fa-chart-line"></i> Puan Entegrasyonu ve Veri Yönetimi</h2>
+            <div id="excel-expiry-warning">
+                <p><i class="fas fa-exclamation-triangle"></i> Veri Uyarısı</p>
+                <span>Aşağıdaki dosyalar 30 günden eski olduğu için hafadan silindi. Lütfen güncel versiyonlarını tekrar yükleyin:</span>
+                <ul id="expired-files-list"></ul>
+            </div>
+            <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+                <i class="fas fa-info-circle"></i> Raporlarınız artık hem tarayıcı hafızasında saklanır hem de buluta yedeklenir. Düzenli olarak "Yedekleme Yöneticisi"ni kullanmanız yine de tavsiye edilir.
+            </p>
+            <div>
+                <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
+                <div class="file-input-wrapper">
+                    <label for="excel-file-input" class="file-input-label btn-sm" title="Bayi DiDe puanlarını içeren Excel dosyasını seçmek için tıklayın."><i class="fas fa-file-excel"></i> DiDe Excel'i Seç</label>
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls" style="display: none;">
+                    <span id="file-name">Henüz dosya seçilmedi.</span>
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <p><b>2. Adım: FiDe Puan Excel Dosyasını Yükleyin</b></p>
+                <div class="file-input-wrapper">
+                    <label for="fide-excel-file-input" class="file-input-label btn-sm" title="Bayi FiDe puanlarını içeren Excel dosyasını seçmek için tıklayın."><i class="fas fa-file-excel"></i> FiDe Excel'i Seç</label>
+                    <input type="file" id="fide-excel-file-input" accept=".xlsx, .xls" style="display: none;">
+                    <span id="fide-file-name">Henüz dosya seçilmedi.</span>
+                </div>
+            </div>
+             <div style="margin-top: 20px;">
+                <p><b>3. Adım: Rapor ve Veri Temizleme</b></p>
+                 <div class="file-input-wrapper">
+                    <button id="clear-storage-btn" class="btn-danger btn-sm" title="UYARI: Tarayıcı hafızasındaki tüm uygulama verilerini (raporlar, Excel'ler vb.) kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Uygulama Verilerini Sil</button>
+                    <button id="clear-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan DiDe Excel verisini tarayıcı hafızasından ve buluttan temizler."><i class="fas fa-trash-alt"></i> DiDe Excell'i Sil</button>
+                    <button id="clear-fide-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan FiDe Excel verisini tarayıcı hafızasından ve buluttan temizler."><i class="fas fa-trash-alt"></i> FiDe Excell'i Sil</button>
+                </div>
+            </div>
+            <div id="store-selection-area">
+                <hr style="margin: 20px 0;">
+                <p><b>4. Adım: Denetlenecek Bayiyi Arayın ve Seçin</b></p>
+                <button id="new-report-btn" class="btn-warning btn-sm" style="margin-bottom: 10px; width: 100%;" title="Mevcut formu boşaltır ve temiz bir rapor sayfası açar."><i class="fas fa-file"></i> Yeni Rapor / Formu Temizle</button>
+                <input type="text" id="store-search-input" placeholder="Bayi adı veya kodu ile aramaya başlayın...">
+                <div id="store-list"></div>
+            </div>
+        </div>
+        
+        <div class="card load-container">
+            <div id="load-from-code-section">
+                <h2><i class="fas fa-download"></i> Rapor Kodu ile Yükle</h2>
+                <p>Daha önce kaydettiğiniz "Rapor Kodu"nu buraya yapıştırın ve düğmeye tıklayın.</p>
+                <textarea id="load-code-area" placeholder="Rapor kodunuzu bu alana yapıştırın..."></textarea>
+                <button class="btn-primary" id="load-from-code-btn" title="Yukarıdaki alana yapıştırılan rapor kodunu forma yükler."><i class="fas fa-cloud-download-alt"></i> Raporu Yükle</button>
+            </div>
+            <div id="load-from-email-section">
+                <h2><i class="fas fa-paste"></i> E-Posta Taslağından Yükle</h2>
+                <p>Bir bayi raporu e-postasının içeriğini bu alana yapıştırın ve butona basarak formu doldurun.</p>
+                <textarea id="load-email-area" placeholder="Rapor e-postasının içeriğini bu alana yapıştırın..."></textarea>
+                <button class="btn-primary" id="load-from-email-btn" title="Yapıştırılan e-posta metnini analiz ederek formu otomatik doldurur."><i class="fas fa-check"></i> E-Posta ile Yükle</button>
+            </div>
+        </div>
+
+
+        <div class="card" id="initialization-error">
+            <h2><i class="fas fa-exclamation-triangle"></i> Başlatma Hatası</h2>
+            <p><b><code>fide_soru_listesi.json</code></b> dosyası bulunamadı veya okunamadı. Lütfen bu HTML dosyasıyla aynı klasörde olduğundan emin olun. Form, geçici olarak varsayılan sorularla yüklendi.</p>
+        </div>
+
+        <div id="form-content"></div>
+
+        <button class="action-button" onclick="generateEmail()" title="Formdaki tüm verileri kullanarak nihai e-posta taslağını oluşturur ve raporu kaydeder.">
+            <i class="fas fa-envelope"></i> E-POSTA TASLAĞI OLUŞTUR
+        </button>
+
+        <div class="card" id="save-section" style="display: none;">
+            <h2><i class="fas fa-save"></i> YEDEKLEME İÇİN RAPOR KODU</h2>
+            <p>Bu rapor tarayıcınıza ve buluta otomatik olarak kaydedildi. İsterseniz bu kodu kopyalayıp harici bir dosyaya yedekleyebilirsiniz.</p>
+            <textarea id="save-code-area" readonly></textarea>
+            <button class="btn-success" id="download-report-btn" onclick="downloadReportCode()" style="margin-top: 10px;" title="Oluşturulan raporun manuel yedek kodunu bir metin dosyası olarak indirir.">
+                <i class="fas fa-download"></i> Rapor Kodunu İndir (.txt)
+            </button>
+        </div>
+
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    
+    <script src="db-config.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
