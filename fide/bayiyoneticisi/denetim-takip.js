@@ -106,6 +106,7 @@ async function loadAuditedStoresData() {
 }
 
 function setupEventListeners() {
+    // Yönetim Paneli
     document.getElementById('open-admin-panel-btn').addEventListener('click', () => {
         document.getElementById('admin-panel-overlay').style.display = 'flex';
     });
@@ -113,14 +114,14 @@ function setupEventListeners() {
         document.getElementById('admin-panel-overlay').style.display = 'none';
     });
     document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+    
+    // Ana Fonksiyonlar
     document.getElementById('store-list-excel-input').addEventListener('change', handleStoreExcelUpload);
     
-    const resetDataBtn = document.getElementById('reset-data-btn');
-    if(resetDataBtn) resetDataBtn.addEventListener('click', resetAuditData);
-
     const deleteExcelBtn = document.getElementById('delete-excel-btn');
     if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
     
+    // Filtreler
     document.getElementById('bolge-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('yonetmen-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('sehir-filter').addEventListener('change', applyAndRepopulateFilters);
@@ -391,29 +392,4 @@ function getRemainingWorkdays() {
         if (dayOfWeek > 0 && dayOfWeek < 6) remainingWorkdays++;
     }
     return remainingWorkdays;
-}
-
-async function resetAuditData() {
-    const dogruSifreHash = 'ZmRlMDAx';
-    const girilenSifre = prompt("DİKKAT! Bu işlem, sadece yapılmış olan denetim kayıtlarını (aylık ve yıllık) siler. Excel bayi listeniz silinmez. Devam etmek için yönetici şifresini girin:");
-    if (!girilenSifre) return;
-    if (btoa(girilenSifre) !== dogruSifreHash) {
-        alert("Hatalı şifre! İşlem iptal edildi.");
-        return;
-    }
-    if (confirm("Şifre doğru. Tüm denetim verilerini sıfırlamak istediğinizden emin misiniz?")) {
-        const loadingOverlay = document.getElementById('loading-overlay');
-        loadingOverlay.style.display = 'flex';
-        try {
-            localStorage.removeItem('allFideReports');
-            if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-                await database.ref('allFideReports').remove();
-            }
-            alert("Tüm denetim verileri başarıyla sıfırlandı. Sayfa yeniden başlatılıyor.");
-            window.location.reload();
-        } catch (error) {
-            alert("Veriler sıfırlanırken bir hata oluştu: " + error.message);
-            loadingOverlay.style.display = 'none';
-        }
-    }
 }
