@@ -773,6 +773,7 @@ input:checked + .slider.green {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+    gap: 10px;
 }
 .annual-header h4 {
     margin: 0;
