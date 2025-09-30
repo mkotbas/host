@@ -2,6 +2,7 @@
 let allStores = [];
 let auditedStoreCodesCurrentMonth = [];
 let auditedStoreCodesCurrentYear = [];
+let revertedBayiKodlari = []; // YENİ: Geri alınan bayileri tutacak liste
 let aylikHedef = 47; // Varsayılan hedef, sonradan ayarlardan yüklenecek
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
@@ -14,6 +15,7 @@ async function initializeApp() {
     loadingOverlay.style.display = 'flex';
     
     await loadSettings();
+    await loadRevertedList(); // YENİ: Geri alınanlar listesini yükle
     await loadAuditedStoresData();
     await loadStoreList();
 
@@ -37,6 +39,32 @@ async function loadSettings() {
     aylikHedef = settings.aylikHedef || 47;
     document.getElementById('monthly-target-input').value = aylikHedef;
 }
+
+// YENİ FONKSİYON: Bu ay içinde denetimi geri alınan bayilerin listesini çeker
+async function loadRevertedList() {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth(); // 0-11 arası
+    const path = `denetimTakipGeriAlinanlar/${currentYear}/${currentMonth}`;
+
+    let revertedData = {};
+    const localReverted = localStorage.getItem(path);
+    if(localReverted) {
+        revertedData = JSON.parse(localReverted);
+    }
+
+    if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+        const revertedRef = database.ref(path);
+        const snapshot = await revertedRef.once('value');
+        if(snapshot.exists()){
+            revertedData = snapshot.val();
+            localStorage.setItem(path, JSON.stringify(revertedData));
+        }
+    }
+    // Veriyi { "12345": true, "67890": true } formatından ["12345", "67890"] formatına çevir
+    revertedBayiKodlari = Object.keys(revertedData);
+}
+
 
 async function loadStoreList() {
     let storeData = null;
@@ -73,7 +101,7 @@ function runDashboard() {
     renderRemainingStores(allStores);
 }
 
-// GÜNCELLENDİ: Artık 'denetimTakipGizle' işaretini kontrol ediyor
+// GÜNCELLENDİ: Artık 'revertedBayiKodlari' listesini kullanarak filtreleme yapıyor
 async function loadAuditedStoresData() {
     try {
         let allReports = {};
@@ -93,13 +121,14 @@ async function loadAuditedStoresData() {
         const yearlyCodes = [];
 
         Object.entries(allReports).forEach(([key, value]) => {
-            // Geri Al butonuyla işaretlenmiş kayıtları yok say
-            if (value.data && value.data.denetimTakipGizle) {
+            const storeCode = key.replace('store_', '');
+            
+            // Geri Alınanlar listesindeyse bu kaydı atla
+            if(revertedBayiKodlari.includes(storeCode)) {
                 return;
             }
 
             const reportDate = new Date(value.timestamp);
-            const storeCode = key.replace('store_', '');
 
             if (reportDate.getFullYear() === currentYear) yearlyCodes.push(storeCode);
             if (reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear) monthlyCodes.push(storeCode);
@@ -166,33 +195,34 @@ async function deleteStoreList() {
     }
 }
 
-// GÜNCELLENDİ: Artık silmek yerine 'denetimTakipGizle' olarak işaretliyor
+// GÜNCELLENDİ: Artık ana raporu silmiyor, sadece ayrı bir listeye işaretliyor.
 async function revertAudit(bayiKodu) {
     const store = allStores.find(s => s.bayiKodu === bayiKodu);
     const storeName = store ? store.bayiAdi : bayiKodu;
 
-    if (confirm(`'${storeName}' bayisinin bu ayki denetimini geri almak istediğinizden emin misiniz? Ana rapor verisi silinmeyecek, sadece bu listeden çıkarılacaktır.`)) {
+    if (confirm(`'${storeName}' bayisinin bu ayki denetimini geri almak istediğinizden emin misiniz? Ana rapor verisi SİLİNMEYECEK, sadece bu ayki takip listesinden çıkarılacaktır.`)) {
         const loadingOverlay = document.getElementById('loading-overlay');
         loadingOverlay.style.display = 'flex';
 
         try {
-            const storeKey = 'store_' + bayiKodu;
-            const dataToUpdate = { denetimTakipGizle: true };
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth();
+            const path = `denetimTakipGeriAlinanlar/${currentYear}/${currentMonth}`;
+            
+            // Geri alınanlar listesine bu bayiyi ekle
+            revertedBayiKodlari.push(bayiKodu);
+            const revertedData = revertedBayiKodlari.reduce((acc, code) => {
+                acc[code] = true;
+                return acc;
+            }, {});
 
             // 1. Yerel Hafızayı Güncelle
-            const localData = localStorage.getItem('allFideReports');
-            if (localData) {
-                let allReports = JSON.parse(localData);
-                if (allReports[storeKey] && allReports[storeKey].data) {
-                    allReports[storeKey].data.denetimTakipGizle = true;
-                    localStorage.setItem('allFideReports', JSON.stringify(allReports));
-                }
-            }
+            localStorage.setItem(path, JSON.stringify(revertedData));
 
-            // 2. Bulutu Güncelle (eğer kullanıcı giriş yapmışsa)
+            // 2. Bulutu Güncelle
             if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-                // .update() metodu sadece belirtilen alanı günceller, verinin geri kalanına dokunmaz.
-                await database.ref('allFideReports/' + storeKey + '/data').update(dataToUpdate);
+                await database.ref(path).set(revertedData);
             }
             
             alert("Denetim başarıyla geri alındı. Sayfa güncelleniyor.");
@@ -205,7 +235,6 @@ async function revertAudit(bayiKodu) {
         }
     }
 }
-
 
 function handleStoreExcelUpload(event) {
     const file = event.target.files[0];
