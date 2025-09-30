@@ -2,7 +2,6 @@
 let allStores = [];
 let auditedStoreCodesCurrentMonth = [];
 let auditedStoreCodesCurrentYear = [];
-let revertedBayiKodlari = []; // YENİ: Geri alınan bayileri tutacak liste
 let aylikHedef = 47; // Varsayılan hedef, sonradan ayarlardan yüklenecek
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
@@ -15,7 +14,6 @@ async function initializeApp() {
     loadingOverlay.style.display = 'flex';
     
     await loadSettings();
-    await loadRevertedList(); // YENİ: Geri alınanlar listesini yükle
     await loadAuditedStoresData();
     await loadStoreList();
 
@@ -39,32 +37,6 @@ async function loadSettings() {
     aylikHedef = settings.aylikHedef || 47;
     document.getElementById('monthly-target-input').value = aylikHedef;
 }
-
-// YENİ FONKSİYON: Bu ay içinde denetimi geri alınan bayilerin listesini çeker
-async function loadRevertedList() {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth(); // 0-11 arası
-    const path = `denetimTakipGeriAlinanlar/${currentYear}/${currentMonth}`;
-
-    let revertedData = {};
-    const localReverted = localStorage.getItem(path);
-    if(localReverted) {
-        revertedData = JSON.parse(localReverted);
-    }
-
-    if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-        const revertedRef = database.ref(path);
-        const snapshot = await revertedRef.once('value');
-        if(snapshot.exists()){
-            revertedData = snapshot.val();
-            localStorage.setItem(path, JSON.stringify(revertedData));
-        }
-    }
-    // Veriyi { "12345": true, "67890": true } formatından ["12345", "67890"] formatına çevir
-    revertedBayiKodlari = Object.keys(revertedData);
-}
-
 
 async function loadStoreList() {
     let storeData = null;
@@ -101,7 +73,6 @@ function runDashboard() {
     renderRemainingStores(allStores);
 }
 
-// GÜNCELLENDİ: Artık 'revertedBayiKodlari' listesini kullanarak filtreleme yapıyor
 async function loadAuditedStoresData() {
     try {
         let allReports = {};
@@ -121,15 +92,8 @@ async function loadAuditedStoresData() {
         const yearlyCodes = [];
 
         Object.entries(allReports).forEach(([key, value]) => {
-            const storeCode = key.replace('store_', '');
-            
-            // Geri Alınanlar listesindeyse bu kaydı atla
-            if(revertedBayiKodlari.includes(storeCode)) {
-                return;
-            }
-
             const reportDate = new Date(value.timestamp);
-
+            const storeCode = key.replace('store_', '');
             if (reportDate.getFullYear() === currentYear) yearlyCodes.push(storeCode);
             if (reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear) monthlyCodes.push(storeCode);
         });
@@ -151,6 +115,9 @@ function setupEventListeners() {
     document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
     document.getElementById('store-list-excel-input').addEventListener('change', handleStoreExcelUpload);
     
+    const resetDataBtn = document.getElementById('reset-data-btn');
+    if(resetDataBtn) resetDataBtn.addEventListener('click', resetAuditData);
+
     const deleteExcelBtn = document.getElementById('delete-excel-btn');
     if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
     
@@ -195,42 +162,29 @@ async function deleteStoreList() {
     }
 }
 
-// GÜNCELLENDİ: Artık ana raporu silmiyor, sadece ayrı bir listeye işaretliyor.
 async function revertAudit(bayiKodu) {
     const store = allStores.find(s => s.bayiKodu === bayiKodu);
     const storeName = store ? store.bayiAdi : bayiKodu;
-
-    if (confirm(`'${storeName}' bayisinin bu ayki denetimini geri almak istediğinizden emin misiniz? Ana rapor verisi SİLİNMEYECEK, sadece bu ayki takip listesinden çıkarılacaktır.`)) {
+    if (confirm(`'${storeName}' bayisinin bu ayki denetimini geri almak istediğinizden emin misiniz?`)) {
         const loadingOverlay = document.getElementById('loading-overlay');
         loadingOverlay.style.display = 'flex';
-
         try {
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth();
-            const path = `denetimTakipGeriAlinanlar/${currentYear}/${currentMonth}`;
-            
-            // Geri alınanlar listesine bu bayiyi ekle
-            revertedBayiKodlari.push(bayiKodu);
-            const revertedData = revertedBayiKodlari.reduce((acc, code) => {
-                acc[code] = true;
-                return acc;
-            }, {});
-
-            // 1. Yerel Hafızayı Güncelle
-            localStorage.setItem(path, JSON.stringify(revertedData));
-
-            // 2. Bulutu Güncelle
-            if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-                await database.ref(path).set(revertedData);
+            const storeKey = 'store_' + bayiKodu;
+            const localData = localStorage.getItem('allFideReports');
+            if (localData) {
+                let allReports = JSON.parse(localData);
+                if (allReports[storeKey]) {
+                    delete allReports[storeKey];
+                    localStorage.setItem('allFideReports', JSON.stringify(allReports));
+                }
             }
-            
+            if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+                await database.ref('allFideReports/' + storeKey).remove();
+            }
             alert("Denetim başarıyla geri alındı. Sayfa güncelleniyor.");
             window.location.reload();
-
         } catch (error) {
             alert("Denetim geri alınırken bir hata oluştu: " + error.message);
-            console.error("Geri alma hatası:", error);
             loadingOverlay.style.display = 'none';
         }
     }
@@ -241,21 +195,21 @@ function handleStoreExcelUpload(event) {
     if (!file) return;
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
-    reader.onload = async function(e) {
+    reader.onload = function(e) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-            await processStoreExcelData(dataAsArray);
+            processStoreExcelData(dataAsArray);
         } catch (error) {
             alert("Excel dosyası okunurken bir hata oluştu.");
         }
     };
 }
 
-async function processStoreExcelData(dataAsArray) {
+function processStoreExcelData(dataAsArray) {
     if (dataAsArray.length < 2) return alert('Excel dosyası beklenen formatta değil.');
     const headerRow = dataAsArray[0].map(h => String(h).trim());
     const colIndexes = {
@@ -277,21 +231,11 @@ async function processStoreExcelData(dataAsArray) {
 
     const dataToSave = { timestamp: new Date().getTime(), stores: allStores };
     localStorage.setItem('tumBayilerListesi', JSON.stringify(dataToSave));
-    
-    const loadingOverlay = document.getElementById('loading-overlay');
-    
-    try {
-        if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-            loadingOverlay.style.display = 'flex';
-            await database.ref('tumBayilerListesi').set(dataToSave);
-        }
-        alert("Excel listesi başarıyla yüklendi ve kaydedildi.");
-        window.location.reload();
-    } catch (error) {
-        console.error("Buluta kaydetme hatası:", error);
-        alert("Liste yerel olarak kaydedildi ancak buluta kaydedilirken bir hata oluştu: " + error.message);
-        window.location.reload();
+    if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+        database.ref('tumBayilerListesi').set(dataToSave);
     }
+    alert("Excel listesi başarıyla yüklendi ve kaydedildi.");
+    window.location.reload();
 }
 
 function calculateAndDisplayDashboard() {
@@ -447,4 +391,29 @@ function getRemainingWorkdays() {
         if (dayOfWeek > 0 && dayOfWeek < 6) remainingWorkdays++;
     }
     return remainingWorkdays;
+}
+
+async function resetAuditData() {
+    const dogruSifreHash = 'ZmRlMDAx';
+    const girilenSifre = prompt("DİKKAT! Bu işlem, sadece yapılmış olan denetim kayıtlarını (aylık ve yıllık) siler. Excel bayi listeniz silinmez. Devam etmek için yönetici şifresini girin:");
+    if (!girilenSifre) return;
+    if (btoa(girilenSifre) !== dogruSifreHash) {
+        alert("Hatalı şifre! İşlem iptal edildi.");
+        return;
+    }
+    if (confirm("Şifre doğru. Tüm denetim verilerini sıfırlamak istediğinizden emin misiniz?")) {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        loadingOverlay.style.display = 'flex';
+        try {
+            localStorage.removeItem('allFideReports');
+            if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+                await database.ref('allFideReports').remove();
+            }
+            alert("Tüm denetim verileri başarıyla sıfırlandı. Sayfa yeniden başlatılıyor.");
+            window.location.reload();
+        } catch (error) {
+            alert("Veriler sıfırlanırken bir hata oluştu: " + error.message);
+            loadingOverlay.style.display = 'none';
+        }
+    }
 }
