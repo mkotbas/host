@@ -3,7 +3,6 @@ let allStores = [];
 let auditedStoreCodesCurrentMonth = [];
 let auditedStoreCodesCurrentYear = [];
 let geriAlinanBayiKodlariBuAy = [];
-let dashboardAuditedCount = 0; // Sayaçlar için ayrı bir değişken
 let aylikHedef = 47; // Varsayılan hedef, sonradan ayarlardan yüklenecek
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
@@ -123,7 +122,6 @@ async function loadAuditedStoresData() {
         const yearlyCodes = [];
 
         Object.entries(allReports).forEach(([key, value]) => {
-            // Sadece auditCompletedTimestamp'i olan ve bu ay içinde olanları al
             if (value.data && value.data.auditCompletedTimestamp) {
                 const reportDate = new Date(value.data.auditCompletedTimestamp);
                 const storeCode = key.replace('store_', '');
@@ -138,7 +136,6 @@ async function loadAuditedStoresData() {
         });
         
         const uniqueMonthlyCodes = [...new Set(monthlyCodesFromReports)];
-        dashboardAuditedCount = uniqueMonthlyCodes.length; // Sayaç için toplam denetim sayısını ayarla
         
         // Geri alınanları listeden çıkararak sadece gösterilecekleri belirle
         auditedStoreCodesCurrentMonth = uniqueMonthlyCodes.filter(code => !geriAlinanBayiKodlariBuAy.includes(code));
@@ -211,7 +208,7 @@ async function deleteStoreList() {
 async function revertAudit(bayiKodu) {
     const store = allStores.find(s => s.bayiKodu === bayiKodu);
     const storeName = store ? store.bayiAdi : bayiKodu;
-    if (confirm(`'${storeName}' bayisinin bu ayki denetimini listeden kaldırmak istediğinizden emin misiniz?\n\n(Not: Bu işlem raporu silmez ve sayaçları etkilemez, sadece bu listeden gizler.)`)) {
+    if (confirm(`'${storeName}' bayisinin bu ayki denetimini listeden kaldırmak istediğinizden emin misiniz?\n\n(Not: Bu işlem raporu silmez, sadece bu listeden gizler ve sayaçları günceller.)`)) {
         const loadingOverlay = document.getElementById('loading-overlay');
         loadingOverlay.style.display = 'flex';
         try {
@@ -291,7 +288,7 @@ function processStoreExcelData(dataAsArray) {
 function calculateAndDisplayDashboard() {
     const today = new Date();
     const currentYear = today.getFullYear();
-    const auditedMonthlyCount = dashboardAuditedCount; // Sayaçlar için özel değişkeni kullan
+    const auditedMonthlyCount = auditedStoreCodesCurrentMonth.length; // Doğrudan listedeki eleman sayısını kullan
     const remainingToTarget = aylikHedef - auditedMonthlyCount;
     const remainingWorkDays = getRemainingWorkdays();
     const totalStores = allStores.length;
@@ -375,9 +372,7 @@ function populateDynamicFilters(storesToUse, filtersToUpdate, currentSelection) 
 function renderRemainingStores(filteredStores) {
     const container = document.getElementById('denetlenecek-bayiler-container');
     container.innerHTML = '';
-    // Denetlenenler listesini oluştururken hem bu ay denetlenenleri hem de geri alınanları dikkate al
-    const allAuditedAndRevertedThisMonth = [...new Set([...auditedStoreCodesCurrentMonth, ...geriAlinanBayiKodlariBuAy])];
-    const remainingStores = filteredStores.filter(store => !allAuditedAndRevertedThisMonth.includes(store.bayiKodu));
+    const remainingStores = filteredStores.filter(store => !auditedStoreCodesCurrentMonth.includes(store.bayiKodu));
 
     if (remainingStores.length === 0) {
         container.innerHTML = `<p class="empty-list-message">Seçili kriterlere uygun, bu ay denetlenmemiş bayi bulunamadı.</p>`;
@@ -393,7 +388,7 @@ function renderRemainingStores(filteredStores) {
     sortedRegions.forEach(region => {
         const regionStores = storesByRegion[region];
         const totalInRegionFiltered = filteredStores.filter(s => (s.bolge || 'Bölge Belirtilmemiş') === region);
-        const auditedInRegionFiltered = totalInRegionFiltered.filter(s => allAuditedAndRevertedThisMonth.includes(s.bayiKodu));
+        const auditedInRegionFiltered = totalInRegionFiltered.filter(s => auditedStoreCodesCurrentMonth.includes(s.bayiKodu));
         const progress = totalInRegionFiltered.length > 0 ? (auditedInRegionFiltered.length / totalInRegionFiltered.length) * 100 : 0;
         let regionHtml = `<div class="region-container"><div class="region-header"><span>${region} (Bu Ay: ${auditedInRegionFiltered.length}/${totalInRegionFiltered.length})</span></div><div class="progress-bar"><div class="progress-bar-fill" style="width: ${progress.toFixed(2)}%;">${progress.toFixed(0)}%</div></div><ul class="store-list">`;
         regionStores.forEach(store => {
@@ -409,7 +404,6 @@ function renderAuditedStores() {
     if (!allStores || allStores.length === 0) return;
     container.innerHTML = '';
     
-    // auditedStoreCodesCurrentMonth zaten geri alınanları içermiyor, bu yüzden direkt kullanabiliriz.
     if (auditedStoreCodesCurrentMonth.length === 0) {
         container.innerHTML = '<p class="empty-list-message">Bu ay henüz denetim yapılmadı veya yapılanlar geri alındı.</p>';
         return;
