@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denetim Takip Sistemi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div id="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>Veriler işleniyor, lütfen bekleyin...</p>
+    </div>
+
+    <div id="admin-panel-overlay" class="modal-overlay" style="display: none;">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h3><i class="fas fa-cogs"></i> Yönetim Paneli</h3>
+            </div>
+            <div class="modal-body">
+                <div class="settings-item">
+                    <label for="monthly-target-input">Aylık Ziyaret Hedefini Değiştir</label>
+                    <input type="number" id="monthly-target-input" placeholder="Örn: 47">
+                    <small>Yeni hedefi girip kaydettiğinizde panel güncellenecektir.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-settings-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Kaydet</button>
+                <button id="close-admin-panel-btn" class="btn-danger btn-sm">Paneli Kapat</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container">
+        <div class="top-controls">
+            <div class="backup-controls">
+                <a href="../index.html" class="btn-primary btn-sm"><i class="fas fa-home"></i> Ana Sayfa</a>
+                <a href="bayi-yoneticisi.html" class="btn-primary btn-sm"><i class="fas fa-at"></i> Bayi Yöneticisi</a>
+            </div>
+        </div>
+
+        <div class="card" id="audit-tracker-manager">
+            <div class="card-header">
+                <h2><i class="fas fa-calendar-check"></i> Denetim Takip Sistemi</h2>
+                <button id="open-admin-panel-btn" class="btn-primary btn-sm"><i class="fas fa-cogs"></i> Yönetim Paneli</button>
+            </div>
+            
+            <div id="upload-area">
+                <p style="font-size: 12px; color: var(--secondary); margin-bottom: 20px;">
+                    <i class="fas fa-info-circle"></i> Başlamak için lütfen tüm bayilerinizi içeren güncel Excel dosyasını yükleyin. Bu liste 6 ay boyunca saklanacaktır.
+                </p>
+                <div class="file-input-wrapper" style="margin-bottom: 25px;">
+                    <label for="store-list-excel-input" class="file-input-label btn-sm" title="Tüm bayilerinizin listesini içeren Excel dosyasını seçin."><i class="fas fa-file-excel"></i> Bayi Listesi Excel'ini Seç</label>
+                    <input type="file" id="store-list-excel-input" accept=".xlsx, .xls" style="display: none;">
+                </div>
+            </div>
+
+            <div id="loaded-data-area" style="display: none;">
+                 <div class="loaded-data-info">
+                    <p><i class="fas fa-database"></i>Bayi listesi hafızadan ve buluttan yüklendi. Listeyi güncellemek için önce mevcut listeyi silmeniz gerekmektedir.</p>
+                    <div class="data-actions">
+                        <button id="reset-data-btn" class="btn-danger btn-sm"><i class="fas fa-eraser"></i> Verileri Sıfırla</button>
+                        <button id="delete-excel-btn" class="btn-danger btn-sm"><i class="fas fa-trash-alt"></i> Excel'i Sil</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="dashboard-content" style="display: none;">
+                <div class="panel-header">
+                     <h3 id="dashboard-title"></h3>
+                     <div id="annual-performance-indicator"></div>
+                </div>
+               
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <span><i class="fas fa-briefcase"></i> Kalan İş Günü</span>
+                        <p id="work-days-count">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <span><i class="fas fa-bullseye"></i> Aylık Denetim Hedefi</span>
+                        <p id="total-stores-count">0</p>
+                    </div>
+                    <div class="stat-card completed">
+                        <span><i class="fas fa-check"></i> Bu Ay Denetlenen</span>
+                        <p id="audited-stores-count">0</p>
+                    </div>
+                    <div class="stat-card remaining">
+                        <span><i class="fas fa-hourglass-start"></i> Hedefe Kalan</span>
+                        <p id="remaining-stores-count">0</p>
+                    </div>
+                </div>
+
+                <div class="multi-filter-container">
+                    <div class="filter-item">
+                        <label for="bolge-filter">Bölge</label>
+                        <select id="bolge-filter"></select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="yonetmen-filter">Bayi Yönetmeni</label>
+                        <select id="yonetmen-filter"></select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="sehir-filter">Şehir</label>
+                        <select id="sehir-filter"></select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="ilce-filter">İlçe</label>
+                        <select id="ilce-filter"></select>
+                    </div>
+                </div>
+
+                <div class="audit-lists-container">
+                    <div class="audit-list-column">
+                        <h4><i class="fas fa-list-ul"></i> Denetlenecek Bayiler (Aylık)</h4>
+                        <div id="denetlenecek-bayiler-container"></div>
+                    </div>
+                    <div class="audit-list-column">
+                        <h4><i class="fas fa-check-double"></i> Bu Ay Denetlenenler</h4>
+                        <div id="denetlenen-bayiler-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    
+    <script src="../db-config.js"></script>
+    <script src="denetim-takip.js"></script>
+</body>
+</html>
