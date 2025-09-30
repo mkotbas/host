@@ -369,19 +369,36 @@ function uploadLocalBackupToCloud() {
         } catch (error) { alert("Yerel yedek verisi okunurken bir hata oluştu. Yedek dosyası bozuk olabilir."); console.error("JSON parse hatası:", error); }
     }
 }
-function saveFormState() {
+
+function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore) return;
+
     let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
     const reportData = getFormDataForSaving();
     const storeKey = `store_${selectedStore.bayiKodu}`;
-    allReports[storeKey] = { timestamp: new Date().getTime(), data: reportData };
+
+    // Başka bir yerden (örn: eski bir kayıttan) gelme ihtimaline karşı mevcut timestamp'i koru
+    const existingReport = allReports[storeKey];
+    if (existingReport && existingReport.data && existingReport.data.auditCompletedTimestamp) {
+        reportData.auditCompletedTimestamp = existingReport.data.auditCompletedTimestamp;
+    }
+
+    // Eğer e-posta oluşturuluyorsa (isFinalizing true ise), timestamp'i ekle/güncelle
+    if (isFinalizing) {
+        reportData.auditCompletedTimestamp = new Date().getTime();
+    }
+
+    const dataToSave = { timestamp: new Date().getTime(), data: reportData };
+    allReports[storeKey] = dataToSave;
+
     localStorage.setItem('allFideReports', JSON.stringify(allReports));
     if (database && auth.currentUser) {
         const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
-        firebaseStoreRef.set({ timestamp: new Date().getTime(), data: reportData })
+        firebaseStoreRef.set(dataToSave)
             .catch(error => console.error("Firebase'e yazma hatası:", error));
     }
 }
+
 function loadReportForStore(bayiKodu) {
     const storeKey = `store_${bayiKodu}`;
     if (database && auth.currentUser) {
@@ -852,12 +869,20 @@ function selectStore(store, loadSavedData = true) {
         updateFormInteractivity(true);
     }
 }
+
 function generateEmail() {
-    if (!selectedStore) return alert('Lütfen denetime başlamadan önce bir bayi seçin!');
-    saveFormState(); 
+    if (!selectedStore) {
+        alert('Lütfen denetime başlamadan önce bir bayi seçin!');
+        return;
+    }
+    saveFormState(true); // Raporu "tamamlandı" olarak işaretleyerek kaydet
+
     const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
     const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
-    if (!storeInfo) return alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
+    if (!storeInfo) {
+        alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
+        return;
+    }
     
     const storeEmail = storeEmails[selectedStore.bayiKodu] || null;
     
