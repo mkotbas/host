@@ -106,7 +106,6 @@ async function loadAuditedStoresData() {
 }
 
 function setupEventListeners() {
-    // Yönetim Paneli
     document.getElementById('open-admin-panel-btn').addEventListener('click', () => {
         document.getElementById('admin-panel-overlay').style.display = 'flex';
     });
@@ -114,14 +113,11 @@ function setupEventListeners() {
         document.getElementById('admin-panel-overlay').style.display = 'none';
     });
     document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
-    
-    // Ana Fonksiyonlar
     document.getElementById('store-list-excel-input').addEventListener('change', handleStoreExcelUpload);
     
     const deleteExcelBtn = document.getElementById('delete-excel-btn');
     if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
     
-    // Filtreler
     document.getElementById('bolge-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('yonetmen-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('sehir-filter').addEventListener('change', applyAndRepopulateFilters);
@@ -196,21 +192,22 @@ function handleStoreExcelUpload(event) {
     if (!file) return;
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
-    reader.onload = function(e) {
+    reader.onload = async function(e) { // Fonksiyonu async yap
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-            processStoreExcelData(dataAsArray);
+            await processStoreExcelData(dataAsArray); // processStoreExcelData'nın bitmesini bekle
         } catch (error) {
             alert("Excel dosyası okunurken bir hata oluştu.");
         }
     };
 }
 
-function processStoreExcelData(dataAsArray) {
+// DÜZELTİLMİŞ FONKSİYON
+async function processStoreExcelData(dataAsArray) { // Fonksiyonu async yap
     if (dataAsArray.length < 2) return alert('Excel dosyası beklenen formatta değil.');
     const headerRow = dataAsArray[0].map(h => String(h).trim());
     const colIndexes = {
@@ -232,12 +229,24 @@ function processStoreExcelData(dataAsArray) {
 
     const dataToSave = { timestamp: new Date().getTime(), stores: allStores };
     localStorage.setItem('tumBayilerListesi', JSON.stringify(dataToSave));
-    if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-        database.ref('tumBayilerListesi').set(dataToSave);
+    
+    const loadingOverlay = document.getElementById('loading-overlay');
+    
+    try {
+        if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+            loadingOverlay.style.display = 'flex';
+            // await kullanarak buluta kaydetme işleminin bitmesini bekle
+            await database.ref('tumBayilerListesi').set(dataToSave);
+        }
+        alert("Excel listesi başarıyla yüklendi ve kaydedildi.");
+        window.location.reload(); // İşlem bittikten sonra yenile
+    } catch (error) {
+        console.error("Buluta kaydetme hatası:", error);
+        alert("Liste yerel olarak kaydedildi ancak buluta kaydedilirken bir hata oluştu: " + error.message);
+        window.location.reload();
     }
-    alert("Excel listesi başarıyla yüklendi ve kaydedildi.");
-    window.location.reload();
 }
+
 
 function calculateAndDisplayDashboard() {
     const today = new Date();
