@@ -386,7 +386,7 @@ function calculateAndDisplayDashboard() {
     const annualIndicator = document.getElementById('annual-performance-indicator');
     annualIndicator.innerHTML = `
         <div class="annual-header">
-             <h4><i class="fas fa-calendar-alt"></i> ${currentYear} Yıllık Hedef </h4>
+             <h4><i class="fas fa-calendar-alt"></i> ${currentYear} Yıllık Hedef</h4>
              <p class="annual-progress-text">${auditedYearlyCount} / ${totalStores}</p>
         </div>
         <div class="progress-bar">
