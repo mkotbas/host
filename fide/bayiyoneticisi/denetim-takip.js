@@ -17,7 +17,7 @@ async function initializeApp() {
     await loadSettings();
     await loadGeriAlinanBayiler();
     await loadAuditedStoresData();
-    await loadStoreList();
+    await loadStoreList(); // Bu fonksiyonun yeni hali paneli her zaman gösterecek
 
     loadingOverlay.style.display = 'none';
 }
@@ -62,11 +62,15 @@ async function loadStoreList() {
         allStores = storeData.stores;
         document.getElementById('upload-area').style.display = 'none';
         document.getElementById('loaded-data-area').style.display = 'block';
-        runDashboard();
     } else {
+        // Excel yüklü olmasa bile 'allStores' boş bir dizi olarak kalır.
         document.getElementById('upload-area').style.display = 'block';
         document.getElementById('loaded-data-area').style.display = 'none';
     }
+    
+    // Değişiklik: runDashboard() fonksiyonu artık if/else bloğunun dışında.
+    // Bu sayede Excel yüklü olmasa bile panel (içi boş olarak) her zaman çalışır.
+    runDashboard();
 }
 
 function runDashboard() {
@@ -160,15 +164,85 @@ function setupEventListeners() {
     // Ana Fonksiyonlar
     document.getElementById('store-list-excel-input').addEventListener('change', handleStoreExcelUpload);
     
+    // Veri Yönetim Butonları
     const deleteExcelBtn = document.getElementById('delete-excel-btn');
     if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
     
+    // YENİ: "Verileri Sıfırla" butonu için olay dinleyici eklendi.
+    const resetDataBtn = document.getElementById('reset-data-btn');
+    if(resetDataBtn) resetDataBtn.addEventListener('click', resetMonthlyProgress);
+
     // Filtreler
     document.getElementById('bolge-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('yonetmen-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('sehir-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('ilce-filter').addEventListener('change', applyAndRepopulateFilters);
 }
+
+// YENİ: Aylık ilerlemeyi sıfırlayan fonksiyon
+async function resetMonthlyProgress() {
+    if (!confirm("Bu işlem, 'Bu Ay Denetlenenler' listesini ve ilgili sayaçları sıfırlayacaktır. Bu ay yapılan tüm denetimler 'Denetlenecek Bayiler' listesine geri taşınır. Onaylıyor musunuz?")) {
+        return;
+    }
+
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+
+    try {
+        // 1. Bu ay denetim raporu olan tüm bayilerin kodlarını bul
+        let allReports = {};
+        const localData = localStorage.getItem('allFideReports');
+        if (localData) allReports = JSON.parse(localData);
+        if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+            const reportsRef = database.ref('allFideReports');
+            const snapshot = await reportsRef.once('value');
+            if (snapshot.exists()) Object.assign(allReports, snapshot.val());
+        }
+
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        const monthlyCodesToReset = [];
+
+        Object.entries(allReports).forEach(([key, value]) => {
+            if (value.data && value.data.auditCompletedTimestamp) {
+                const reportDate = new Date(value.data.auditCompletedTimestamp);
+                if (reportDate.getFullYear() === currentYear && reportDate.getMonth() === currentMonth) {
+                    monthlyCodesToReset.push(key.replace('store_', ''));
+                }
+            }
+        });
+
+        const uniqueCodesToReset = [...new Set(monthlyCodesToReset)];
+
+        // 2. Bu kodları "geriAlinanlar" listesine ekle
+        const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
+        let geriAlinanlar = JSON.parse(localStorage.getItem('denetimGeriAlinanlar') || '{}');
+        if (!geriAlinanlar[currentMonthKey]) {
+            geriAlinanlar[currentMonthKey] = [];
+        }
+
+        uniqueCodesToReset.forEach(code => {
+            if (!geriAlinanlar[currentMonthKey].includes(code)) {
+                geriAlinanlar[currentMonthKey].push(code);
+            }
+        });
+
+        // 3. Güncellenmiş listeyi yerel hafızaya ve buluta kaydet
+        localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
+        if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+            await database.ref('denetimGeriAlinanlar/' + currentMonthKey).set(geriAlinanlar[currentMonthKey]);
+        }
+
+        alert("Bu ayki denetim verileri başarıyla sıfırlandı. Sayfa yeniden yükleniyor.");
+        window.location.reload();
+
+    } catch (error) {
+        alert("Aylık veriler sıfırlanırken bir hata oluştu: " + error.message);
+        loadingOverlay.style.display = 'none';
+    }
+}
+
 
 async function saveSettings() {
     const newTarget = parseInt(document.getElementById('monthly-target-input').value);
@@ -401,7 +475,10 @@ function renderRemainingStores(filteredStores) {
 
 function renderAuditedStores() {
     const container = document.getElementById('denetlenen-bayiler-container');
-    if (!allStores || allStores.length === 0) return;
+    if (!allStores || allStores.length === 0) {
+         container.innerHTML = '<p class="empty-list-message">Başlamak için lütfen bir bayi listesi Excel\'i yükleyin.</p>';
+        return;
+    }
     container.innerHTML = '';
     
     if (auditedStoreCodesCurrentMonth.length === 0) {
