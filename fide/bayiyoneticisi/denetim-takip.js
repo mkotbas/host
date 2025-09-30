@@ -2,6 +2,8 @@
 let allStores = [];
 let auditedStoreCodesCurrentMonth = [];
 let auditedStoreCodesCurrentYear = [];
+let geriAlinanBayiKodlariBuAy = [];
+let dashboardAuditedCount = 0; // Sayaçlar için ayrı bir değişken
 let aylikHedef = 47; // Varsayılan hedef, sonradan ayarlardan yüklenecek
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
@@ -14,6 +16,7 @@ async function initializeApp() {
     loadingOverlay.style.display = 'flex';
     
     await loadSettings();
+    await loadGeriAlinanBayiler();
     await loadAuditedStoresData();
     await loadStoreList();
 
@@ -73,6 +76,34 @@ function runDashboard() {
     renderRemainingStores(allStores);
 }
 
+async function loadGeriAlinanBayiler() {
+    const today = new Date();
+    const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
+    let geriAlinanlar = {};
+
+    const localData = localStorage.getItem('denetimGeriAlinanlar');
+    if (localData) {
+        geriAlinanlar = JSON.parse(localData);
+    }
+
+    if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+        try {
+            const ref = database.ref('denetimGeriAlinanlar');
+            const snapshot = await ref.once('value');
+            if (snapshot.exists()) {
+                const cloudData = snapshot.val();
+                Object.assign(geriAlinanlar, cloudData); // Bulut verisini yerel ile birleştir
+                localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
+            }
+        } catch (error) {
+            console.error("Geri alınan bayi bilgisi buluttan okunamadı:", error);
+        }
+    }
+
+    geriAlinanBayiKodlariBuAy = geriAlinanlar[currentMonthKey] || [];
+}
+
+
 async function loadAuditedStoresData() {
     try {
         let allReports = {};
@@ -88,24 +119,39 @@ async function loadAuditedStoresData() {
         const today = new Date();
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
-        const monthlyCodes = [];
+        const monthlyCodesFromReports = [];
         const yearlyCodes = [];
 
         Object.entries(allReports).forEach(([key, value]) => {
-            const reportDate = new Date(value.timestamp);
-            const storeCode = key.replace('store_', '');
-            if (reportDate.getFullYear() === currentYear) yearlyCodes.push(storeCode);
-            if (reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear) monthlyCodes.push(storeCode);
+            // Sadece auditCompletedTimestamp'i olan ve bu ay içinde olanları al
+            if (value.data && value.data.auditCompletedTimestamp) {
+                const reportDate = new Date(value.data.auditCompletedTimestamp);
+                const storeCode = key.replace('store_', '');
+                
+                if (reportDate.getFullYear() === currentYear) {
+                    yearlyCodes.push(storeCode);
+                    if (reportDate.getMonth() === currentMonth) {
+                        monthlyCodesFromReports.push(storeCode);
+                    }
+                }
+            }
         });
-
-        auditedStoreCodesCurrentMonth = [...new Set(monthlyCodes)];
+        
+        const uniqueMonthlyCodes = [...new Set(monthlyCodesFromReports)];
+        dashboardAuditedCount = uniqueMonthlyCodes.length; // Sayaç için toplam denetim sayısını ayarla
+        
+        // Geri alınanları listeden çıkararak sadece gösterilecekleri belirle
+        auditedStoreCodesCurrentMonth = uniqueMonthlyCodes.filter(code => !geriAlinanBayiKodlariBuAy.includes(code));
         auditedStoreCodesCurrentYear = [...new Set(yearlyCodes)];
+
     } catch (error) {
         console.error("Denetlenen bayi verileri okunurken hata oluştu:", error);
     }
 }
 
+
 function setupEventListeners() {
+    // Yönetim Paneli
     document.getElementById('open-admin-panel-btn').addEventListener('click', () => {
         document.getElementById('admin-panel-overlay').style.display = 'flex';
     });
@@ -113,14 +159,14 @@ function setupEventListeners() {
         document.getElementById('admin-panel-overlay').style.display = 'none';
     });
     document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+    
+    // Ana Fonksiyonlar
     document.getElementById('store-list-excel-input').addEventListener('change', handleStoreExcelUpload);
     
-    const resetDataBtn = document.getElementById('reset-data-btn');
-    if(resetDataBtn) resetDataBtn.addEventListener('click', resetAuditData);
-
     const deleteExcelBtn = document.getElementById('delete-excel-btn');
     if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
     
+    // Filtreler
     document.getElementById('bolge-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('yonetmen-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('sehir-filter').addEventListener('change', applyAndRepopulateFilters);
@@ -165,23 +211,27 @@ async function deleteStoreList() {
 async function revertAudit(bayiKodu) {
     const store = allStores.find(s => s.bayiKodu === bayiKodu);
     const storeName = store ? store.bayiAdi : bayiKodu;
-    if (confirm(`'${storeName}' bayisinin bu ayki denetimini geri almak istediğinizden emin misiniz?`)) {
+    if (confirm(`'${storeName}' bayisinin bu ayki denetimini listeden kaldırmak istediğinizden emin misiniz?\n\n(Not: Bu işlem raporu silmez ve sayaçları etkilemez, sadece bu listeden gizler.)`)) {
         const loadingOverlay = document.getElementById('loading-overlay');
         loadingOverlay.style.display = 'flex';
         try {
-            const storeKey = 'store_' + bayiKodu;
-            const localData = localStorage.getItem('allFideReports');
-            if (localData) {
-                let allReports = JSON.parse(localData);
-                if (allReports[storeKey]) {
-                    delete allReports[storeKey];
-                    localStorage.setItem('allFideReports', JSON.stringify(allReports));
-                }
+            const today = new Date();
+            const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
+
+            let geriAlinanlar = JSON.parse(localStorage.getItem('denetimGeriAlinanlar') || '{}');
+            if (!geriAlinanlar[currentMonthKey]) {
+                geriAlinanlar[currentMonthKey] = [];
             }
+            if (!geriAlinanlar[currentMonthKey].includes(bayiKodu)) {
+                geriAlinanlar[currentMonthKey].push(bayiKodu);
+            }
+
+            localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
+
             if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-                await database.ref('allFideReports/' + storeKey).remove();
+                await database.ref('denetimGeriAlinanlar/' + currentMonthKey).set(geriAlinanlar[currentMonthKey]);
             }
-            alert("Denetim başarıyla geri alındı. Sayfa güncelleniyor.");
+            alert("Bayi, denetlenenler listesinden kaldırıldı. Sayfa güncelleniyor.");
             window.location.reload();
         } catch (error) {
             alert("Denetim geri alınırken bir hata oluştu: " + error.message);
@@ -241,7 +291,7 @@ function processStoreExcelData(dataAsArray) {
 function calculateAndDisplayDashboard() {
     const today = new Date();
     const currentYear = today.getFullYear();
-    const auditedMonthlyCount = auditedStoreCodesCurrentMonth.length;
+    const auditedMonthlyCount = dashboardAuditedCount; // Sayaçlar için özel değişkeni kullan
     const remainingToTarget = aylikHedef - auditedMonthlyCount;
     const remainingWorkDays = getRemainingWorkdays();
     const totalStores = allStores.length;
@@ -251,7 +301,7 @@ function calculateAndDisplayDashboard() {
     document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-calendar-day"></i> ${currentYear} ${monthNames[today.getMonth()]} Ayı Performansı`;
     document.getElementById('work-days-count').textContent = remainingWorkDays;
     document.getElementById('total-stores-count').textContent = aylikHedef;
-    document.getElementById('audited-stores-count').textContent = auditedMonthlyCount;
+    document.getElementById('audited-stores-count').textContent = auditedMonthlyCount; // Sayacı güncelle
     document.getElementById('remaining-stores-count').textContent = remainingToTarget > 0 ? remainingToTarget : 0;
     
     const annualIndicator = document.getElementById('annual-performance-indicator');
@@ -325,7 +375,10 @@ function populateDynamicFilters(storesToUse, filtersToUpdate, currentSelection) 
 function renderRemainingStores(filteredStores) {
     const container = document.getElementById('denetlenecek-bayiler-container');
     container.innerHTML = '';
-    const remainingStores = filteredStores.filter(store => !auditedStoreCodesCurrentMonth.includes(store.bayiKodu));
+    // Denetlenenler listesini oluştururken hem bu ay denetlenenleri hem de geri alınanları dikkate al
+    const allAuditedAndRevertedThisMonth = [...new Set([...auditedStoreCodesCurrentMonth, ...geriAlinanBayiKodlariBuAy])];
+    const remainingStores = filteredStores.filter(store => !allAuditedAndRevertedThisMonth.includes(store.bayiKodu));
+
     if (remainingStores.length === 0) {
         container.innerHTML = `<p class="empty-list-message">Seçili kriterlere uygun, bu ay denetlenmemiş bayi bulunamadı.</p>`;
         return;
@@ -340,7 +393,7 @@ function renderRemainingStores(filteredStores) {
     sortedRegions.forEach(region => {
         const regionStores = storesByRegion[region];
         const totalInRegionFiltered = filteredStores.filter(s => (s.bolge || 'Bölge Belirtilmemiş') === region);
-        const auditedInRegionFiltered = totalInRegionFiltered.filter(s => auditedStoreCodesCurrentMonth.includes(s.bayiKodu));
+        const auditedInRegionFiltered = totalInRegionFiltered.filter(s => allAuditedAndRevertedThisMonth.includes(s.bayiKodu));
         const progress = totalInRegionFiltered.length > 0 ? (auditedInRegionFiltered.length / totalInRegionFiltered.length) * 100 : 0;
         let regionHtml = `<div class="region-container"><div class="region-header"><span>${region} (Bu Ay: ${auditedInRegionFiltered.length}/${totalInRegionFiltered.length})</span></div><div class="progress-bar"><div class="progress-bar-fill" style="width: ${progress.toFixed(2)}%;">${progress.toFixed(0)}%</div></div><ul class="store-list">`;
         regionStores.forEach(store => {
@@ -355,18 +408,23 @@ function renderAuditedStores() {
     const container = document.getElementById('denetlenen-bayiler-container');
     if (!allStores || allStores.length === 0) return;
     container.innerHTML = '';
+    
+    // auditedStoreCodesCurrentMonth zaten geri alınanları içermiyor, bu yüzden direkt kullanabiliriz.
     if (auditedStoreCodesCurrentMonth.length === 0) {
-        container.innerHTML = '<p class="empty-list-message">Bu ay henüz denetim yapılmadı.</p>';
+        container.innerHTML = '<p class="empty-list-message">Bu ay henüz denetim yapılmadı veya yapılanlar geri alındı.</p>';
         return;
     }
+
     const auditedStoresDetails = auditedStoreCodesCurrentMonth.map(code => allStores.find(store => store.bayiKodu === code)).filter(store => store !== undefined).sort((a,b) => a.bayiAdi.localeCompare(b.bayiAdi, 'tr'));
+    
     let listHtml = '<ul class="store-list">';
     auditedStoresDetails.forEach(store => {
-        listHtml += `<li class="store-list-item completed-item"><span>${store.bayiAdi} (${store.bayiKodu}) - ${store.bolge}</span><button class="btn-warning btn-sm" onclick="revertAudit('${store.bayiKodu}')" title="Bu denetimi geri al"><i class="fas fa-undo"></i> Geri Al</button></li>`;
+        listHtml += `<li class="store-list-item completed-item"><span>${store.bayiAdi} (${store.bayiKodu}) - ${store.bolge}</span><button class="btn-warning btn-sm" onclick="revertAudit('${store.bayiKodu}')" title="Bu denetimi listeden kaldır"><i class="fas fa-undo"></i> Geri Al</button></li>`;
     });
     listHtml += '</ul>';
     container.innerHTML = listHtml;
 }
+
 
 function getWorkdaysInCurrentMonth() {
     const today = new Date(); const year = today.getFullYear(); const month = today.getMonth();
@@ -391,29 +449,4 @@ function getRemainingWorkdays() {
         if (dayOfWeek > 0 && dayOfWeek < 6) remainingWorkdays++;
     }
     return remainingWorkdays;
-}
-
-async function resetAuditData() {
-    const dogruSifreHash = 'ZmRlMDAx';
-    const girilenSifre = prompt("DİKKAT! Bu işlem, sadece yapılmış olan denetim kayıtlarını (aylık ve yıllık) siler. Excel bayi listeniz silinmez. Devam etmek için yönetici şifresini girin:");
-    if (!girilenSifre) return;
-    if (btoa(girilenSifre) !== dogruSifreHash) {
-        alert("Hatalı şifre! İşlem iptal edildi.");
-        return;
-    }
-    if (confirm("Şifre doğru. Tüm denetim verilerini sıfırlamak istediğinizden emin misiniz?")) {
-        const loadingOverlay = document.getElementById('loading-overlay');
-        loadingOverlay.style.display = 'flex';
-        try {
-            localStorage.removeItem('allFideReports');
-            if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-                await database.ref('allFideReports').remove();
-            }
-            alert("Tüm denetim verileri başarıyla sıfırlandı. Sayfa yeniden başlatılıyor.");
-            window.location.reload();
-        } catch (error) {
-            alert("Veriler sıfırlanırken bir hata oluştu: " + error.message);
-            loadingOverlay.style.display = 'none';
-        }
-    }
 }
