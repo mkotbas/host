@@ -3,6 +3,7 @@ let allStores = [];
 let auditedStoreCodesCurrentMonth = [];
 let auditedStoreCodesCurrentYear = [];
 let geriAlinanBayiKodlariBuAy = [];
+let geriAlinanBayiKodlariBuYil = []; // YENİ: Yıl içinde geri alınan tüm bayileri tutacak
 let aylikHedef = 47; // Varsayılan hedef, sonradan ayarlardan yüklenecek
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
@@ -17,7 +18,7 @@ async function initializeApp() {
     await loadSettings();
     await loadGeriAlinanBayiler();
     await loadAuditedStoresData();
-    await loadStoreList(); // Bu fonksiyonun yeni hali paneli her zaman gösterecek
+    await loadStoreList(); 
 
     loadingOverlay.style.display = 'none';
 }
@@ -63,13 +64,10 @@ async function loadStoreList() {
         document.getElementById('upload-area').style.display = 'none';
         document.getElementById('loaded-data-area').style.display = 'block';
     } else {
-        // Excel yüklü olmasa bile 'allStores' boş bir dizi olarak kalır.
         document.getElementById('upload-area').style.display = 'block';
         document.getElementById('loaded-data-area').style.display = 'none';
     }
     
-    // Değişiklik: runDashboard() fonksiyonu artık if/else bloğunun dışında.
-    // Bu sayede Excel yüklü olmasa bile panel (içi boş olarak) her zaman çalışır.
     runDashboard();
 }
 
@@ -79,9 +77,11 @@ function runDashboard() {
     renderRemainingStores(allStores);
 }
 
+// GÜNCELLENDİ: Bu fonksiyon artık sadece bu ayı değil, yıl içinde geri alınan tüm bayileri de hesaplıyor.
 async function loadGeriAlinanBayiler() {
     const today = new Date();
-    const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
+    const currentYear = today.getFullYear();
+    const currentMonthKey = `${currentYear}-${today.getMonth()}`;
     let geriAlinanlar = {};
 
     const localData = localStorage.getItem('denetimGeriAlinanlar');
@@ -95,7 +95,7 @@ async function loadGeriAlinanBayiler() {
             const snapshot = await ref.once('value');
             if (snapshot.exists()) {
                 const cloudData = snapshot.val();
-                Object.assign(geriAlinanlar, cloudData); // Bulut verisini yerel ile birleştir
+                Object.assign(geriAlinanlar, cloudData);
                 localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
             }
         } catch (error) {
@@ -104,9 +104,18 @@ async function loadGeriAlinanBayiler() {
     }
 
     geriAlinanBayiKodlariBuAy = geriAlinanlar[currentMonthKey] || [];
+    
+    // YENİ: Yıl içindeki tüm geri alınanları topla
+    const yearlyRevertedCodes = [];
+    for (const key in geriAlinanlar) {
+        if (key.startsWith(currentYear)) {
+            yearlyRevertedCodes.push(...geriAlinanlar[key]);
+        }
+    }
+    geriAlinanBayiKodlariBuYil = [...new Set(yearlyRevertedCodes)];
 }
 
-
+// GÜNCELLENDİ: Yıllık denetim sayısını hesaplarken artık "geriAlinanBayiKodlariBuYil" listesini de dikkate alıyor.
 async function loadAuditedStoresData() {
     try {
         let allReports = {};
@@ -140,10 +149,11 @@ async function loadAuditedStoresData() {
         });
         
         const uniqueMonthlyCodes = [...new Set(monthlyCodesFromReports)];
-        
-        // Geri alınanları listeden çıkararak sadece gösterilecekleri belirle
         auditedStoreCodesCurrentMonth = uniqueMonthlyCodes.filter(code => !geriAlinanBayiKodlariBuAy.includes(code));
-        auditedStoreCodesCurrentYear = [...new Set(yearlyCodes)];
+        
+        // Yıllık denetlenenlerden, yıl içinde geri alınanları çıkar
+        const uniqueYearlyCodes = [...new Set(yearlyCodes)];
+        auditedStoreCodesCurrentYear = uniqueYearlyCodes.filter(code => !geriAlinanBayiKodlariBuYil.includes(code));
 
     } catch (error) {
         console.error("Denetlenen bayi verileri okunurken hata oluştu:", error);
@@ -168,8 +178,9 @@ function setupEventListeners() {
     const deleteExcelBtn = document.getElementById('delete-excel-btn');
     if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
     
+    // GÜNCELLENDİ: Fonksiyon adı resetProgress olarak değiştirildi
     const resetDataBtn = document.getElementById('reset-data-btn');
-    if(resetDataBtn) resetDataBtn.addEventListener('click', resetMonthlyProgress);
+    if(resetDataBtn) resetDataBtn.addEventListener('click', resetProgress); 
 
     // Filtreler
     document.getElementById('bolge-filter').addEventListener('change', applyAndRepopulateFilters);
@@ -178,8 +189,9 @@ function setupEventListeners() {
     document.getElementById('ilce-filter').addEventListener('change', applyAndRepopulateFilters);
 }
 
-async function resetMonthlyProgress() {
-    if (!confirm("Bu işlem, 'Bu Ay Denetlenenler' listesini ve ilgili sayaçları sıfırlayacaktır. Bu ay yapılan tüm denetimler 'Denetlenecek Bayiler' listesine geri taşınır. Onaylıyor musunuz?")) {
+// GÜNCELLENDİ: Fonksiyon artık sadece aylık değil, yıllık verileri de sıfırlıyor
+async function resetProgress() {
+    if (!confirm("Bu işlem, bu yıla ait TÜM denetim verilerini sıfırlayacaktır. 'Bu Ay Denetlenenler' ve 'Yıllık Hedef' sayaçları sıfırlanır. Onaylıyor musunuz?")) {
         return;
     }
 
@@ -187,7 +199,7 @@ async function resetMonthlyProgress() {
     loadingOverlay.style.display = 'flex';
 
     try {
-        // 1. Bu ay denetim raporu olan tüm bayilerin kodlarını bul
+        // 1. Bu yıl denetim raporu olan tüm bayilerin kodlarını bul
         let allReports = {};
         const localData = localStorage.getItem('allFideReports');
         if (localData) allReports = JSON.parse(localData);
@@ -198,22 +210,21 @@ async function resetMonthlyProgress() {
         }
 
         const today = new Date();
-        const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
-        const monthlyCodesToReset = [];
+        const yearlyCodesToReset = [];
 
         Object.entries(allReports).forEach(([key, value]) => {
             if (value.data && value.data.auditCompletedTimestamp) {
                 const reportDate = new Date(value.data.auditCompletedTimestamp);
-                if (reportDate.getFullYear() === currentYear && reportDate.getMonth() === currentMonth) {
-                    monthlyCodesToReset.push(key.replace('store_', ''));
+                if (reportDate.getFullYear() === currentYear) {
+                    yearlyCodesToReset.push(key.replace('store_', ''));
                 }
             }
         });
 
-        const uniqueCodesToReset = [...new Set(monthlyCodesToReset)];
+        const uniqueCodesToReset = [...new Set(yearlyCodesToReset)];
 
-        // 2. Bu kodları "geriAlinanlar" listesine ekle
+        // 2. Bu kodları mevcut ayın "geriAlinanlar" listesine ekle (bu işlem yıllık sayacı etkileyecektir)
         const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
         let geriAlinanlar = JSON.parse(localStorage.getItem('denetimGeriAlinanlar') || '{}');
         if (!geriAlinanlar[currentMonthKey]) {
@@ -232,11 +243,10 @@ async function resetMonthlyProgress() {
             await database.ref('denetimGeriAlinanlar/' + currentMonthKey).set(geriAlinanlar[currentMonthKey]);
         }
         
-        // DEĞİŞİKLİK: Uyarı mesajı bu satırdan kaldırıldı.
         window.location.reload();
 
     } catch (error) {
-        alert("Aylık veriler sıfırlanırken bir hata oluştu: " + error.message);
+        alert("Veriler sıfırlanırken bir hata oluştu: " + error.message);
         loadingOverlay.style.display = 'none';
     }
 }
@@ -301,7 +311,6 @@ async function revertAudit(bayiKodu) {
                 await database.ref('denetimGeriAlinanlar/' + currentMonthKey).set(geriAlinanlar[currentMonthKey]);
             }
             
-            // DEĞİŞİKLİK: Uyarı mesajı bu satırdan kaldırıldı.
             window.location.reload();
         } catch (error) {
             alert("Denetim geri alınırken bir hata oluştu: " + error.message);
@@ -361,7 +370,7 @@ function processStoreExcelData(dataAsArray) {
 function calculateAndDisplayDashboard() {
     const today = new Date();
     const currentYear = today.getFullYear();
-    const auditedMonthlyCount = auditedStoreCodesCurrentMonth.length; // Doğrudan listedeki eleman sayısını kullan
+    const auditedMonthlyCount = auditedStoreCodesCurrentMonth.length;
     const remainingToTarget = aylikHedef - auditedMonthlyCount;
     const remainingWorkDays = getRemainingWorkdays();
     const totalStores = allStores.length;
@@ -371,7 +380,7 @@ function calculateAndDisplayDashboard() {
     document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-calendar-day"></i> ${currentYear} ${monthNames[today.getMonth()]} Ayı Performansı`;
     document.getElementById('work-days-count').textContent = remainingWorkDays;
     document.getElementById('total-stores-count').textContent = aylikHedef;
-    document.getElementById('audited-stores-count').textContent = auditedMonthlyCount; // Sayacı güncelle
+    document.getElementById('audited-stores-count').textContent = auditedMonthlyCount;
     document.getElementById('remaining-stores-count').textContent = remainingToTarget > 0 ? remainingToTarget : 0;
     
     const annualIndicator = document.getElementById('annual-performance-indicator');
