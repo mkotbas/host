@@ -168,7 +168,6 @@ function setupEventListeners() {
     const deleteExcelBtn = document.getElementById('delete-excel-btn');
     if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
     
-    // YENİ: "Verileri Sıfırla" butonu için olay dinleyici eklendi.
     const resetDataBtn = document.getElementById('reset-data-btn');
     if(resetDataBtn) resetDataBtn.addEventListener('click', resetMonthlyProgress);
 
@@ -179,7 +178,6 @@ function setupEventListeners() {
     document.getElementById('ilce-filter').addEventListener('change', applyAndRepopulateFilters);
 }
 
-// YENİ: Aylık ilerlemeyi sıfırlayan fonksiyon
 async function resetMonthlyProgress() {
     if (!confirm("Bu işlem, 'Bu Ay Denetlenenler' listesini ve ilgili sayaçları sıfırlayacaktır. Bu ay yapılan tüm denetimler 'Denetlenecek Bayiler' listesine geri taşınır. Onaylıyor musunuz?")) {
         return;
@@ -233,8 +231,8 @@ async function resetMonthlyProgress() {
         if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
             await database.ref('denetimGeriAlinanlar/' + currentMonthKey).set(geriAlinanlar[currentMonthKey]);
         }
-
-        alert("Bu ayki denetim verileri başarıyla sıfırlandı. Sayfa yeniden yükleniyor.");
+        
+        // DEĞİŞİKLİK: Uyarı mesajı bu satırdan kaldırıldı.
         window.location.reload();
 
     } catch (error) {
@@ -302,7 +300,8 @@ async function revertAudit(bayiKodu) {
             if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
                 await database.ref('denetimGeriAlinanlar/' + currentMonthKey).set(geriAlinanlar[currentMonthKey]);
             }
-            alert("Bayi, denetlenenler listesinden kaldırıldı. Sayfa güncelleniyor.");
+            
+            // DEĞİŞİKLİK: Uyarı mesajı bu satırdan kaldırıldı.
             window.location.reload();
         } catch (error) {
             alert("Denetim geri alınırken bir hata oluştu: " + error.message);
