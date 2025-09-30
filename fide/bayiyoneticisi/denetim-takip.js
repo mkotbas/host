@@ -73,6 +73,7 @@ function runDashboard() {
     renderRemainingStores(allStores);
 }
 
+// GÜNCELLENDİ: Artık 'denetimTakipGizle' işaretini kontrol ediyor
 async function loadAuditedStoresData() {
     try {
         let allReports = {};
@@ -92,8 +93,14 @@ async function loadAuditedStoresData() {
         const yearlyCodes = [];
 
         Object.entries(allReports).forEach(([key, value]) => {
+            // Geri Al butonuyla işaretlenmiş kayıtları yok say
+            if (value.data && value.data.denetimTakipGizle) {
+                return;
+            }
+
             const reportDate = new Date(value.timestamp);
             const storeCode = key.replace('store_', '');
+
             if (reportDate.getFullYear() === currentYear) yearlyCodes.push(storeCode);
             if (reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear) monthlyCodes.push(storeCode);
         });
@@ -159,55 +166,67 @@ async function deleteStoreList() {
     }
 }
 
+// GÜNCELLENDİ: Artık silmek yerine 'denetimTakipGizle' olarak işaretliyor
 async function revertAudit(bayiKodu) {
     const store = allStores.find(s => s.bayiKodu === bayiKodu);
     const storeName = store ? store.bayiAdi : bayiKodu;
-    if (confirm(`'${storeName}' bayisinin bu ayki denetimini geri almak istediğinizden emin misiniz?`)) {
+
+    if (confirm(`'${storeName}' bayisinin bu ayki denetimini geri almak istediğinizden emin misiniz? Ana rapor verisi silinmeyecek, sadece bu listeden çıkarılacaktır.`)) {
         const loadingOverlay = document.getElementById('loading-overlay');
         loadingOverlay.style.display = 'flex';
+
         try {
             const storeKey = 'store_' + bayiKodu;
+            const dataToUpdate = { denetimTakipGizle: true };
+
+            // 1. Yerel Hafızayı Güncelle
             const localData = localStorage.getItem('allFideReports');
             if (localData) {
                 let allReports = JSON.parse(localData);
-                if (allReports[storeKey]) {
-                    delete allReports[storeKey];
+                if (allReports[storeKey] && allReports[storeKey].data) {
+                    allReports[storeKey].data.denetimTakipGizle = true;
                     localStorage.setItem('allFideReports', JSON.stringify(allReports));
                 }
             }
+
+            // 2. Bulutu Güncelle (eğer kullanıcı giriş yapmışsa)
             if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-                await database.ref('allFideReports/' + storeKey).remove();
+                // .update() metodu sadece belirtilen alanı günceller, verinin geri kalanına dokunmaz.
+                await database.ref('allFideReports/' + storeKey + '/data').update(dataToUpdate);
             }
+            
             alert("Denetim başarıyla geri alındı. Sayfa güncelleniyor.");
             window.location.reload();
+
         } catch (error) {
             alert("Denetim geri alınırken bir hata oluştu: " + error.message);
+            console.error("Geri alma hatası:", error);
             loadingOverlay.style.display = 'none';
         }
     }
 }
+
 
 function handleStoreExcelUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
-    reader.onload = async function(e) { // Fonksiyonu async yap
+    reader.onload = async function(e) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-            await processStoreExcelData(dataAsArray); // processStoreExcelData'nın bitmesini bekle
+            await processStoreExcelData(dataAsArray);
         } catch (error) {
             alert("Excel dosyası okunurken bir hata oluştu.");
         }
     };
 }
 
-// DÜZELTİLMİŞ FONKSİYON
-async function processStoreExcelData(dataAsArray) { // Fonksiyonu async yap
+async function processStoreExcelData(dataAsArray) {
     if (dataAsArray.length < 2) return alert('Excel dosyası beklenen formatta değil.');
     const headerRow = dataAsArray[0].map(h => String(h).trim());
     const colIndexes = {
@@ -235,18 +254,16 @@ async function processStoreExcelData(dataAsArray) { // Fonksiyonu async yap
     try {
         if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
             loadingOverlay.style.display = 'flex';
-            // await kullanarak buluta kaydetme işleminin bitmesini bekle
             await database.ref('tumBayilerListesi').set(dataToSave);
         }
         alert("Excel listesi başarıyla yüklendi ve kaydedildi.");
-        window.location.reload(); // İşlem bittikten sonra yenile
+        window.location.reload();
     } catch (error) {
         console.error("Buluta kaydetme hatası:", error);
         alert("Liste yerel olarak kaydedildi ancak buluta kaydedilirken bir hata oluştu: " + error.message);
         window.location.reload();
     }
 }
-
 
 function calculateAndDisplayDashboard() {
     const today = new Date();
