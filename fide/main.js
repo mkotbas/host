@@ -206,7 +206,6 @@ function closeManager() {
     document.getElementById('dide-upload-card').style.display = 'block';
     document.querySelector('#load-from-email-section').style.display = 'block';
     
-    // GÜNCELLENDİ: Hangi formun gösterileceği değişkene bağlandı
     if (currentFormMode === 'fide') {
         document.getElementById('form-content').style.display = 'block';
     } else {
@@ -226,7 +225,6 @@ function returnToMainPage() {
     document.getElementById('dide-upload-card').style.display = 'block';
     document.querySelector('#load-from-email-section').style.display = 'block';
     
-    // GÜNCELLENDİ: Hangi formun gösterileceği değişkene bağlandı
     if (currentFormMode === 'fide') {
         document.getElementById('form-content').style.display = 'block';
     } else {
@@ -235,7 +233,6 @@ function returnToMainPage() {
     document.querySelector('.action-button').style.display = 'block';
 }
 
-// GÜNCELLENDİ: Yeni butonların event listener'ları eklendi
 function setupEventListeners() {
     if (document.body.dataset.listenersAttached) return;
     document.body.dataset.listenersAttached = 'true';
@@ -248,9 +245,11 @@ function setupEventListeners() {
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
     document.getElementById('load-from-email-btn').addEventListener('click', parseAndLoadFromEmail);
 
-    // YENİ: Özel ziyaret butonu ve not ekleme butonu için event listener'lar
     document.getElementById('special-visit-btn').addEventListener('click', startSpecialVisit);
     document.getElementById('add-special-note-btn').addEventListener('click', () => addSpecialNoteInput());
+    
+    // YENİ EKLENDİ: Yeni "Standart Denetim Başlat" butonu için event listener
+    document.getElementById('new-fide-audit-btn').addEventListener('click', startNewFideAuditForCurrentStore);
     
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
         const dogruSifreHash = 'ZmRlMDAx';
@@ -361,7 +360,6 @@ function setupEventListeners() {
                    document.getElementById('dide-upload-card').style.display = 'none';
                    document.querySelector('#load-from-email-section').style.display = 'none';
                    document.getElementById('form-content').style.display = 'none';
-                   // YENİ: Özel ziyaret formu da gizlenmeli
                    document.getElementById('special-visit-form').style.display = 'none';
                    document.querySelector('.action-button').style.display = 'none';
                 } else {
@@ -374,7 +372,19 @@ function setupEventListeners() {
     });
 }
 
-// YENİ FONKSİYON: Arayüzü FiDe form moduna geçirir
+// YENİ FONKSİYON: Seçili bayi için özel ziyaret formundan standart FiDe formuna geçiş yapar
+function startNewFideAuditForCurrentStore() {
+    if (!selectedStore) {
+        alert('Bu işlemi yapmak için önce bir bayi seçmelisiniz.');
+        return;
+    }
+    if (confirm('Mevcut özel ziyaret formu temizlenecek ve bu bayi için yeni bir standart FiDe denetimi başlatılacaktır. Onaylıyor musunuz?\n\n(Not: Kayıtlı özel ziyaret verileri silinmez, sadece yeni bir denetime başlanır.)')) {
+        resetForm(); // Bu fonksiyon formu sıfırlar ve standart FiDe görünümüne geçirir.
+        updateFormInteractivity(true); // Formu aktif hale getirir.
+    }
+}
+
+
 function showFiDeForm() {
     currentFormMode = 'fide';
     document.getElementById('form-content').style.display = 'block';
@@ -383,16 +393,14 @@ function showFiDeForm() {
     updateFormInteractivity(selectedStore !== null);
 }
 
-// YENİ FONKSİYON: Arayüzü Özel Ziyaret form moduna geçirir
 function showSpecialVisitForm() {
     currentFormMode = 'special';
     document.getElementById('form-content').style.display = 'none';
     document.getElementById('special-visit-form').style.display = 'block';
-    document.getElementById('load-from-email-section').style.display = 'none'; // E-postadan yükleme özel ziyarette anlamsız
+    document.getElementById('load-from-email-section').style.display = 'none'; 
     updateFormInteractivity(selectedStore !== null);
 }
 
-// YENİ FONKSİYON: Özel ziyaret formunu başlatır
 function startSpecialVisit() {
     if (!selectedStore) {
         alert('Lütfen önce bir bayi seçin.');
@@ -400,11 +408,10 @@ function startSpecialVisit() {
     }
     showSpecialVisitForm();
     const container = document.getElementById('special-notes-container');
-    container.innerHTML = ''; // Önceki notları temizle
-    addSpecialNoteInput(true); // Otomatik olarak bir tane boş not alanı ekle
+    container.innerHTML = ''; 
+    addSpecialNoteInput(true); 
 }
 
-// YENİ FONKSİYON: Özel ziyaret formuna yeni not satırı ekler
 function addSpecialNoteInput(isFirst = false, value = '') {
     const container = document.getElementById('special-notes-container');
     const newItem = document.createElement('div');
@@ -452,7 +459,6 @@ function uploadLocalBackupToCloud() {
     }
 }
 
-// GÜNCELLENDİ: Hem FiDe hem de Özel Ziyaret form durumunu kaydedebilir ve denetim tamamlandığında 'geri alınanlar' listesini temizler
 async function saveFormState(isFinalizing = false) {
     if (!selectedStore) return;
 
@@ -483,23 +489,17 @@ async function saveFormState(isFinalizing = false) {
     if (isFinalizing) {
         reportData.auditCompletedTimestamp = new Date().getTime();
 
-        // --- YENİ EKLENEN BÖLÜM ---
-        // Denetim Takip sayfasındaki sayaçların doğru çalışması için,
-        // tamamlanan bir denetimin "geri alınanlar" listesinden çıkarılması gerekir.
         try {
             const today = new Date();
             const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
             const localGeriAlinanlarJSON = localStorage.getItem('denetimGeriAlinanlar');
             if (localGeriAlinanlarJSON) {
                 let geriAlinanlar = JSON.parse(localGeriAlinanlarJSON);
-                if (geriAlinanlar[currentMonthKey] && geriAlinanlar[currentMonthKey].includes(selectedStore.bayiKodu)) {
-                    // Bayi kodunu bu ayın geri alınanlar listesinden filtrele
-                    geriAlinanlar[currentMonthKey] = geriAlinanlar[currentMonthKey].filter(code => code !== selectedStore.bayiKodu);
+                if (geriAlinanlar[currentMonthKey] && geriAlinanlar[currentMonthKey].includes(String(selectedStore.bayiKodu))) {
+                    geriAlinanlar[currentMonthKey] = geriAlinanlar[currentMonthKey].filter(code => code !== String(selectedStore.bayiKodu));
                     
-                    // Güncellenmiş listeyi yerel hafızaya kaydet
                     localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
                     
-                    // Eğer kullanıcı giriş yapmışsa bulutta da güncelle
                     if (database && auth.currentUser) {
                         const firebaseRef = database.ref('denetimGeriAlinanlar/' + currentMonthKey);
                         await firebaseRef.set(geriAlinanlar[currentMonthKey]);
@@ -509,7 +509,6 @@ async function saveFormState(isFinalizing = false) {
         } catch (error) {
             console.error("Denetim 'geri alınanlar' listesinden çıkarılırken bir hata oluştu:", error);
         }
-        // --- YENİ EKLENEN BÖLÜM SONU ---
     }
 
     const dataToSave = { timestamp: new Date().getTime(), data: reportData };
@@ -550,14 +549,12 @@ function getUnitForProduct(productName) {
     return 'Paket';
 }
 
-// GÜNCELLENDİ: resetForm artık sadece FiDe formunu sıfırlar ve gösterir
 function resetForm() { 
     document.getElementById('form-content').innerHTML = ''; 
     buildForm(); 
     showFiDeForm();
 }
 
-// GÜNCELLENDİ: generateEmail fonksiyonu artık iki farklı türde e-posta oluşturabilir
 async function generateEmail() {
     if (!selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -577,7 +574,6 @@ async function generateEmail() {
     const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
 
     if (currentFormMode === 'special') {
-        // --- ÖZEL ZİYARET E-POSTA TASLAĞI OLUŞTURMA ---
         const notes = [];
         document.querySelectorAll('#special-notes-container input[type="text"]').forEach(input => {
             const noteText = input.value.trim();
@@ -594,7 +590,6 @@ async function generateEmail() {
         finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${notesHtml}`;
 
     } else {
-        // --- STANDART FİDE E-POSTA TASLAĞI OLUŞTURMA (MEVCUT KOD) ---
         const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
         const storeEmail = storeEmails[selectedStore.bayiKodu] || null;
         const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
@@ -692,10 +687,8 @@ async function generateEmail() {
 }
 
 
-// GÜNCELLENDİ: Rapor yüklerken özel ziyaret olup olmadığını kontrol eder
 function loadReport(reportData) {
     try {
-        // YENİ: Rapor bir özel ziyaret ise, özel formu yükle
         if (reportData.isSpecialVisit) {
             selectStore(reportData.selectedStore, false);
             showSpecialVisitForm();
@@ -704,12 +697,11 @@ function loadReport(reportData) {
             if (reportData.notes && reportData.notes.length > 0) {
                 reportData.notes.forEach(note => addSpecialNoteInput(false, note));
             } else {
-                addSpecialNoteInput(true); // Boşsa bir tane ekle
+                addSpecialNoteInput(true); 
             }
-            return; // FiDe formunu yüklememesi için burada bitir
+            return; 
         }
 
-        // --- Mevcut FiDe Rapor Yükleme Kodu ---
         for (const oldId in migrationMap) {
             if (reportData.questions_status[oldId]) {
                 const newId = migrationMap[oldId];
@@ -768,9 +760,8 @@ function loadReport(reportData) {
     } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
 }
 
-// GÜNCELLENDİ: E-postadan yükleme yapıldığında her zaman FiDe formunu gösterir
 function parseAndLoadFromEmail() {
-    showFiDeForm(); // E-posta yüklemesi her zaman FiDe formu içindir
+    showFiDeForm(); 
     const emailText = document.getElementById('load-email-area').value.trim();
     if (!emailText) {
         alert("Lütfen e-posta içeriğini yapıştırın.");
@@ -893,7 +884,6 @@ function startNewReport() {
     updateFormInteractivity(false);
 }
 
-// GÜNCELLENDİ: Bu fonksiyonun adı değişti ve artık sadece FiDe verisini alıyor. Ana kaydetme fonksiyonu saveFormState oldu.
 function getFideFormDataForSaving() {
     let reportData = { selectedStore: selectedStore, questions_status: {} };
      fideQuestions.forEach(q => {
@@ -1019,14 +1009,12 @@ function updateFormInteractivity(enable) {
     const formContent = document.getElementById('form-content');
     if (!formContent) return;
 
-    // Standart form elemanları
     const fideButtons = formContent.querySelectorAll('.add-item-btn, .status-btn, .remove-btn, .delete-bar, .delete-item-btn, .product-adder button');
     const fideInputs = formContent.querySelectorAll('#product-selector, #product-qty');
     
     fideButtons.forEach(btn => btn.disabled = !enable);
     fideInputs.forEach(input => input.disabled = !enable);
 
-    // Özel ziyaret formu elemanları
     const specialVisitForm = document.getElementById('special-visit-form');
     const specialButtons = specialVisitForm.querySelectorAll('button');
     const specialInputs = specialVisitForm.querySelectorAll('input');
@@ -1477,7 +1465,7 @@ function selectStore(store, loadSavedData = true) {
     if (loadSavedData) {
         loadReportForStore(store.bayiKodu);
     } else {
-        resetForm(); // Bu artık FiDe formunu sıfırlayıp gösterecek
+        resetForm(); 
         updateFormInteractivity(true);
     }
 }
