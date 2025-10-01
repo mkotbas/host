@@ -5,6 +5,7 @@ let migrationMap = {}, storeEmails = {};
 const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan veya yerel dosyadan yüklenemedi." }];
 const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 let isFirebaseConnected = false;
+let currentFormMode = 'fide'; // YENİ: Hangi formun aktif olduğunu tutar ('fide' veya 'special')
 
 // --- Ana Uygulama Mantığı ---
 window.onload = initializeApp;
@@ -204,7 +205,14 @@ function closeManager() {
 
     document.getElementById('dide-upload-card').style.display = 'block';
     document.querySelector('#load-from-email-section').style.display = 'block';
-    document.getElementById('form-content').style.display = 'block';
+    
+    // GÜNCELLENDİ: Hangi formun gösterileceği değişkene bağlandı
+    if (currentFormMode === 'fide') {
+        document.getElementById('form-content').style.display = 'block';
+    } else {
+        document.getElementById('special-visit-form').style.display = 'block';
+    }
+
     document.querySelector('.action-button').style.display = 'block';
     
     const emailDraft = document.getElementById('email-draft-container');
@@ -217,10 +225,17 @@ function returnToMainPage() {
     
     document.getElementById('dide-upload-card').style.display = 'block';
     document.querySelector('#load-from-email-section').style.display = 'block';
-    document.getElementById('form-content').style.display = 'block';
+    
+    // GÜNCELLENDİ: Hangi formun gösterileceği değişkene bağlandı
+    if (currentFormMode === 'fide') {
+        document.getElementById('form-content').style.display = 'block';
+    } else {
+        document.getElementById('special-visit-form').style.display = 'block';
+    }
     document.querySelector('.action-button').style.display = 'block';
 }
 
+// GÜNCELLENDİ: Yeni butonların event listener'ları eklendi
 function setupEventListeners() {
     if (document.body.dataset.listenersAttached) return;
     document.body.dataset.listenersAttached = 'true';
@@ -232,6 +247,10 @@ function setupEventListeners() {
     document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
     document.getElementById('load-from-email-btn').addEventListener('click', parseAndLoadFromEmail);
+
+    // YENİ: Özel ziyaret butonu ve not ekleme butonu için event listener'lar
+    document.getElementById('special-visit-btn').addEventListener('click', startSpecialVisit);
+    document.getElementById('add-special-note-btn').addEventListener('click', () => addSpecialNoteInput());
     
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
         const dogruSifreHash = 'ZmRlMDAx';
@@ -342,6 +361,8 @@ function setupEventListeners() {
                    document.getElementById('dide-upload-card').style.display = 'none';
                    document.querySelector('#load-from-email-section').style.display = 'none';
                    document.getElementById('form-content').style.display = 'none';
+                   // YENİ: Özel ziyaret formu da gizlenmeli
+                   document.getElementById('special-visit-form').style.display = 'none';
                    document.querySelector('.action-button').style.display = 'none';
                 } else {
                     alert("Hatalı şifre!");
@@ -352,6 +373,67 @@ function setupEventListeners() {
         }
     });
 }
+
+// YENİ FONKSİYON: Arayüzü FiDe form moduna geçirir
+function showFiDeForm() {
+    currentFormMode = 'fide';
+    document.getElementById('form-content').style.display = 'block';
+    document.getElementById('special-visit-form').style.display = 'none';
+    document.getElementById('load-from-email-section').style.display = 'block';
+    updateFormInteractivity(selectedStore !== null);
+}
+
+// YENİ FONKSİYON: Arayüzü Özel Ziyaret form moduna geçirir
+function showSpecialVisitForm() {
+    currentFormMode = 'special';
+    document.getElementById('form-content').style.display = 'none';
+    document.getElementById('special-visit-form').style.display = 'block';
+    document.getElementById('load-from-email-section').style.display = 'none'; // E-postadan yükleme özel ziyarette anlamsız
+    updateFormInteractivity(selectedStore !== null);
+}
+
+// YENİ FONKSİYON: Özel ziyaret formunu başlatır
+function startSpecialVisit() {
+    if (!selectedStore) {
+        alert('Lütfen önce bir bayi seçin.');
+        return;
+    }
+    showSpecialVisitForm();
+    const container = document.getElementById('special-notes-container');
+    container.innerHTML = ''; // Önceki notları temizle
+    addSpecialNoteInput(true); // Otomatik olarak bir tane boş not alanı ekle
+}
+
+// YENİ FONKSİYON: Özel ziyaret formuna yeni not satırı ekler
+function addSpecialNoteInput(isFirst = false, value = '') {
+    const container = document.getElementById('special-notes-container');
+    const newItem = document.createElement('div');
+    newItem.className = 'dynamic-input-item';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Notu veya eksiği yazın...';
+    input.value = value;
+    input.addEventListener('blur', saveFormState);
+
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'delete-bar btn-danger';
+    deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
+    deleteButton.onclick = function() { 
+        this.parentElement.remove(); 
+        saveFormState();
+    };
+    deleteButton.title = "Bu satırı sil.";
+
+    newItem.appendChild(input);
+    newItem.appendChild(deleteButton);
+    container.appendChild(newItem);
+
+    if (isFirst) {
+        input.focus();
+    }
+}
+
 
 function uploadLocalBackupToCloud() {
     if (!auth.currentUser) { alert("Bu işlem için önce sisteme giriş yapmalısınız."); return; }
@@ -370,20 +452,34 @@ function uploadLocalBackupToCloud() {
     }
 }
 
+// GÜNCELLENDİ: Hem FiDe hem de Özel Ziyaret form durumunu kaydedebilir
 function saveFormState(isFinalizing = false) {
-    if (!document.getElementById('form-content').innerHTML || !selectedStore) return;
+    if (!selectedStore) return;
 
     let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
-    const reportData = getFormDataForSaving();
     const storeKey = `store_${selectedStore.bayiKodu}`;
+    let reportData;
 
-    // Başka bir yerden (örn: eski bir kayıttan) gelme ihtimaline karşı mevcut timestamp'i koru
+    if (currentFormMode === 'special') {
+        const notes = [];
+        document.querySelectorAll('#special-notes-container input[type="text"]').forEach(input => {
+            const noteText = input.value.trim();
+            if (noteText) notes.push(noteText);
+        });
+        reportData = {
+            selectedStore: selectedStore,
+            isSpecialVisit: true,
+            notes: notes
+        };
+    } else { // 'fide' modu
+        reportData = getFideFormDataForSaving();
+    }
+
     const existingReport = allReports[storeKey];
     if (existingReport && existingReport.data && existingReport.data.auditCompletedTimestamp) {
         reportData.auditCompletedTimestamp = existingReport.data.auditCompletedTimestamp;
     }
 
-    // Eğer e-posta oluşturuluyorsa (isFinalizing true ise), timestamp'i ekle/güncelle
     if (isFinalizing) {
         reportData.auditCompletedTimestamp = new Date().getTime();
     }
@@ -398,6 +494,7 @@ function saveFormState(isFinalizing = false) {
             .catch(error => console.error("Firebase'e yazma hatası:", error));
     }
 }
+
 
 function loadReportForStore(bayiKodu) {
     const storeKey = `store_${bayiKodu}`;
@@ -424,7 +521,494 @@ function getUnitForProduct(productName) {
     if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; }
     return 'Paket';
 }
-function resetForm() { document.getElementById('form-content').innerHTML = ''; buildForm(); }
+
+// GÜNCELLENDİ: resetForm artık sadece FiDe formunu sıfırlar ve gösterir
+function resetForm() { 
+    document.getElementById('form-content').innerHTML = ''; 
+    buildForm(); 
+    showFiDeForm();
+}
+
+// GÜNCELLENDİ: generateEmail fonksiyonu artık iki farklı türde e-posta oluşturabilir
+function generateEmail() {
+    if (!selectedStore) {
+        alert('Lütfen denetime başlamadan önce bir bayi seçin!');
+        return;
+    }
+    saveFormState(true); 
+
+    const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
+    if (!storeInfo) {
+        alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
+        return;
+    }
+    
+    let finalEmailBody = '';
+    const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
+    const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
+    const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
+
+    if (currentFormMode === 'special') {
+        // --- ÖZEL ZİYARET E-POSTA TASLAĞI OLUŞTURMA ---
+        const notes = [];
+        document.querySelectorAll('#special-notes-container input[type="text"]').forEach(input => {
+            const noteText = input.value.trim();
+            if (noteText) notes.push(noteText);
+        });
+
+        if (notes.length === 0) {
+            alert("E-posta oluşturmak için en az bir not girmelisiniz.");
+            return;
+        }
+
+        let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>${selectedStore.bayiKodu} ${shortBayiAdi} bayisine yapılan özel ziyarete istinaden notlar aşağıdadır.</p>`;
+        let notesHtml = `<ul>${notes.map(note => `<li>${note}</li>`).join('')}</ul>`;
+        finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${notesHtml}`;
+
+    } else {
+        // --- STANDART FİDE E-POSTA TASLAĞI OLUŞTURMA (MEVCUT KOD) ---
+        const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
+        const storeEmail = storeEmails[selectedStore.bayiKodu] || null;
+        const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
+        let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
+        let fideReportHtml = "";
+        fideQuestions.forEach(q => {
+            const itemDiv = document.getElementById(`fide-item-${q.id}`);
+            if (!itemDiv || itemDiv.classList.contains('question-removed')) return;
+            const titleContainer = itemDiv.querySelector('.fide-title-container');
+            const isQuestionCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
+            let contentHtml = '';
+            if (q.type === 'standard') {
+                const allItems = getCombinedInputs(`fide${q.id}`);
+                const hasDynamicItems = allItems.some(item => item.type === 'dynamic');
+                let itemsForEmail = [];
+                if (hasDynamicItems) {
+                    itemsForEmail = allItems.filter(item => item.type === 'dynamic' || (item.type === 'static' && item.text.includes('<a href')));
+                } else {
+                    itemsForEmail = allItems.filter(item => item.type === 'static');
+                }
+                if (itemsForEmail.length > 0) {
+                    itemsForEmail.sort((a, b) => {
+                        const aIsLink = a.text.includes('<a href');
+                        const bIsLink = b.text.includes('<a href');
+                        if (aIsLink && !bIsLink) return 1;
+                        if (!aIsLink && bIsLink) return -1;
+                        return 0;
+                    });
+                    contentHtml = `<ul>${itemsForEmail.map(item => {
+                        if (item.completed) return `<li>${item.text} <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span></li>`;
+                        return `<li>${item.text}</li>`;
+                    }).join('')}</ul>`;
+                }
+            } else if (q.type === 'product_list') {
+                const productItemsHtml = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => {
+                    const product = productList.find(p => p.code === item.dataset.code);
+                    if(product) { const unit = getUnitForProduct(product.name); return `<li>${product.code} ${product.name}: ${item.dataset.qty} ${unit}</li>`; }
+                }).filter(Boolean);
+                const pleksiItemsHtml = getCombinedInputs(`fide${q.id}_pleksi`).filter(item => !item.completed).map(item => `<li>${item.text}</li>`);
+                if (productItemsHtml.length > 0) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
+                if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
+            } else if (q.type === 'pop_system') {
+                const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+                if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
+            }
+            if (contentHtml !== '' || isQuestionCompleted) {
+                const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
+                let emailTag = '';
+                if (q.type === 'pop_system') {
+                    emailTag = ` <a href="mailto:berkcan_boza@arcelik.com.tr" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@berkcan_boza@arcelik.com.tr</a>`;
+                } else if (q.wantsStoreEmail) {
+                    emailTag = storeEmailTag;
+                }
+                fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
+                if (!isQuestionCompleted || q.type === 'product_list' || (isQuestionCompleted && q.type === 'standard' && contentHtml !== '')) fideReportHtml += contentHtml;
+                fideReportHtml += '<p>&nbsp;</p>';
+            }
+        });
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        let monthHeaders = '';
+        for (let m = 1; m <= currentMonth; m++) monthHeaders += `<th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;">${monthNames[m] || m}</th>`;
+        let dideScores = '';
+        for (let m = 1; m <= currentMonth; m++) dideScores += `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;">${storeInfo.scores[m] || '-'}</td>`;
+        let fideScores = '';
+        for (let m = 1; m <= currentMonth; m++) {
+             const score = (fideStoreInfo && fideStoreInfo.scores && fideStoreInfo.scores[m] !== undefined) ? fideStoreInfo.scores[m] : '-';
+             fideScores += `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;">${score}</td>`;
+        }
+        const tableHtml = `<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #dddddd;"><thead><tr><th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;">${currentYear}</th>${monthHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">DiDe</td>${dideScores}</tr><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">FiDe</td>${fideScores}</tr></tbody></table></div>`;
+        finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
+    }
+    
+    document.getElementById('dide-upload-card').style.display = 'none';
+    document.getElementById('form-content').style.display = 'none';
+    document.getElementById('special-visit-form').style.display = 'none';
+    document.querySelector('.action-button').style.display = 'none';
+    document.querySelector('#load-from-email-section').style.display = 'none';
+
+    const existingDraft = document.getElementById('email-draft-container');
+    if (existingDraft) existingDraft.remove();
+    const draftContainer = document.createElement('div');
+    draftContainer.id = 'email-draft-container';
+    draftContainer.className = 'card';
+    draftContainer.innerHTML = `
+        <h2>
+            <a href="#" onclick="event.preventDefault(); returnToMainPage();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
+                 <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i>
+            </a>
+            <i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı
+        </h2>
+        <p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p>
+        <div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
+    document.querySelector('.container').appendChild(draftContainer);
+}
+
+
+// GÜNCELLENDİ: Rapor yüklerken özel ziyaret olup olmadığını kontrol eder
+function loadReport(reportData) {
+    try {
+        // YENİ: Rapor bir özel ziyaret ise, özel formu yükle
+        if (reportData.isSpecialVisit) {
+            selectStore(reportData.selectedStore, false);
+            showSpecialVisitForm();
+            const container = document.getElementById('special-notes-container');
+            container.innerHTML = '';
+            if (reportData.notes && reportData.notes.length > 0) {
+                reportData.notes.forEach(note => addSpecialNoteInput(false, note));
+            } else {
+                addSpecialNoteInput(true); // Boşsa bir tane ekle
+            }
+            return; // FiDe formunu yüklememesi için burada bitir
+        }
+
+        // --- Mevcut FiDe Rapor Yükleme Kodu ---
+        for (const oldId in migrationMap) {
+            if (reportData.questions_status[oldId]) {
+                const newId = migrationMap[oldId];
+                if (!reportData.questions_status[newId]) {
+                    reportData.questions_status[newId] = reportData.questions_status[oldId];
+                    delete reportData.questions_status[oldId];
+                }
+            }
+        }
+
+        if (reportData.selectedStore) {
+            const storeData = uniqueStores.find(s => s.bayiKodu == reportData.selectedStore.bayiKodu);
+            if(storeData) selectStore(storeData, false);
+        } else {
+             resetForm();
+        }
+        
+        const formContainer = document.getElementById('form-content');
+
+        for (const qId in reportData.questions_status) {
+            let questionItem = document.getElementById(`fide-item-${qId}`);
+
+            if (!questionItem) {
+                const archivedQuestion = fideQuestions.find(q => String(q.id) === String(qId));
+                if (archivedQuestion && archivedQuestion.isArchived) {
+                    const questionHtml = generateQuestionHtml(archivedQuestion);
+                    formContainer.insertAdjacentHTML('beforeend', questionHtml);
+                    questionItem = document.getElementById(`fide-item-${qId}`);
+                }
+            }
+            
+            if (!questionItem) continue;
+
+            const data = reportData.questions_status[qId];
+            const completeButton = questionItem.querySelector('.fide-actions .status-btn');
+            const removeButton = questionItem.querySelector('.fide-actions .remove-btn');
+            if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId);
+            else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId);
+            
+            const questionInfo = fideQuestions.find(q => String(q.id) === qId);
+            if (data.dynamicInputs) {
+                data.dynamicInputs.forEach(input => {
+                    const containerId = (questionInfo && questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
+                    addDynamicInput(containerId, input.text, input.completed);
+                });
+            }
+            
+            if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty)); 
+            
+            if (data.selectedPops) {
+                data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
+                checkExpiredPopCodes();
+            }
+        }
+        updateFormInteractivity(true);
+    } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
+}
+
+// GÜNCELLENDİ: E-postadan yükleme yapıldığında her zaman FiDe formunu gösterir
+function parseAndLoadFromEmail() {
+    showFiDeForm(); // E-posta yüklemesi her zaman FiDe formu içindir
+    const emailText = document.getElementById('load-email-area').value.trim();
+    if (!emailText) {
+        alert("Lütfen e-posta içeriğini yapıştırın.");
+        return;
+    }
+
+    const lines = emailText.split('\n');
+    let storeCodeFound = null;
+    let storeFoundAndSelected = false;
+
+    for (const line of lines) {
+        const match = line.match(/Ziyaret etmiş olduğum (\d{5,})\s/);
+        if (match) {
+            storeCodeFound = match[1];
+            const storeToSelect = uniqueStores.find(s => String(s.bayiKodu) === storeCodeFound);
+            if (storeToSelect) {
+                selectStore(storeToSelect, false);
+                storeFoundAndSelected = true;
+                break;
+            }
+        }
+    }
+
+    if (!storeFoundAndSelected) {
+        if(selectedStore) {
+            resetForm();
+            updateFormInteractivity(true);
+        } else {
+            alert("E-posta metninden bayi bulunamadı ve manuel olarak da bir bayi seçilmedi. Lütfen önce bir bayi seçin.");
+            return;
+        }
+    }
+    
+    const questionHeaderRegex = /^[\s•o-]*FiDe\s+(\d+)\./i;
+    const idsInEmail = new Set();
+    let currentQuestionId = null;
+    
+    const ignorePhrases = [
+        "sipariş verilmesi gerekenler",
+        "pleksiyle sergilenmesi gerekenler",
+        "yanlış pleksi malzeme ile kullanılanlar"
+    ];
+
+    lines.forEach(line => {
+        const trimmedLine = line.trim();
+        const headerMatch = trimmedLine.match(questionHeaderRegex);
+
+        if (headerMatch) {
+            const originalId = headerMatch[1];
+            const finalId = migrationMap[originalId] || originalId;
+            currentQuestionId = finalId;
+            idsInEmail.add(finalId);
+        } else if (currentQuestionId && trimmedLine) {
+            const cleanedLine = trimmedLine.replace(/^[\s•o-]+\s*/, '');
+            if (!cleanedLine) return; 
+
+            const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
+            if (!question || (question.answerType === 'fixed')) {
+                return; 
+            }
+
+            if (question.type === 'product_list') {
+                const productMatch = cleanedLine.match(/^(\d{8,})/); 
+                if (productMatch) {
+                    const productCode = productMatch[1];
+                    let quantity = 1; 
+                    const quantityMatch = cleanedLine.match(/:?\s*(\d+)\s*(paket|adet)/i);
+                    if (quantityMatch && quantityMatch[1]) {
+                        quantity = parseInt(quantityMatch[1], 10);
+                    }
+                    
+                    const productExists = productList.some(p => p.code === productCode);
+                    if (productExists) {
+                        addProductToList(productCode, quantity);
+                        return; 
+                    }
+                }
+            }
+            
+            if (ignorePhrases.some(phrase => cleanedLine.toLowerCase().includes(phrase))) {
+                return; 
+            }
+            
+            const staticItems = question.staticItems || [];
+            const isStatic = staticItems.some(staticItem => {
+                const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
+                return plainStaticItem.includes(cleanedLine);
+            });
+            
+            if (!isStatic) {
+                const containerId = (question.type === 'product_list') ? `fide${currentQuestionId}_pleksi` : `fide${currentQuestionId}`;
+                addDynamicInput(containerId, cleanedLine, false);
+            }
+        }
+    });
+    
+    fideQuestions.forEach(q => {
+        if (q.isArchived) return;
+        if (!idsInEmail.has(String(q.id))) {
+            const questionItem = document.getElementById(`fide-item-${q.id}`);
+            if (questionItem) {
+                const removeButton = questionItem.querySelector('.fide-actions .remove-btn');
+                if (removeButton && !questionItem.classList.contains('question-removed')) {
+                    toggleQuestionRemoved(removeButton, q.id);
+                }
+            }
+        }
+    });
+
+    alert("E-posta içeriği başarıyla forma aktarıldı!");
+    document.getElementById('load-email-area').value = '';
+}
+
+
+function startNewReport() {
+    selectedStore = null;
+    document.getElementById('store-search-input').value = '';
+    localStorage.removeItem('lastSelectedStoreCode');
+    resetForm();
+    updateFormInteractivity(false);
+}
+
+// GÜNCELLENDİ: Bu fonksiyonun adı değişti ve artık sadece FiDe verisini alıyor. Ana kaydetme fonksiyonu saveFormState oldu.
+function getFideFormDataForSaving() {
+    let reportData = { selectedStore: selectedStore, questions_status: {} };
+     fideQuestions.forEach(q => {
+        const itemDiv = document.getElementById(`fide-item-${q.id}`);
+        const isRemoved = itemDiv ? itemDiv.classList.contains('question-removed') : false;
+        const titleContainer = itemDiv ? itemDiv.querySelector('.fide-title-container') : null;
+        const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
+        
+        if (!itemDiv && q.isArchived) { return; }
+
+        const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
+
+        if (itemDiv) {
+            if (q.type === 'standard') questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`);
+            else if (q.type === 'product_list') {
+                document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => questionData.selectedProducts.push({ code: item.dataset.code, qty: item.dataset.qty }));
+                questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}_pleksi`);
+            } else if (q.type === 'pop_system') questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+        }
+        reportData.questions_status[q.id] = questionData;
+    });
+    return reportData;
+}
+function backupAllReports() {
+    const allReports = localStorage.getItem('allFideReports');
+    if (!allReports || Object.keys(JSON.parse(allReports)).length === 0) return alert('Yedeklenecek kayıtlı rapor bulunamadı.');
+    const blob = new Blob([allReports], { type: 'application/json;charset=utf-8' });
+    const today = new Date().toISOString().slice(0, 10);
+    const filename = `fide_rapor_yedek_${today}.json`;
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+function handleRestoreUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (confirm("Bu işlem mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz?")) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const restoredData = e.target.result;
+                JSON.parse(restoredData); 
+                localStorage.setItem('allFideReports', restoredData);
+                alert('Yedek başarıyla geri yüklendi! "Yedekleme Yöneticisi" üzerinden bu yedeği bulutla eşitleyebilirsiniz.');
+                window.location.reload();
+            } catch (error) {
+                alert('Geçersiz veya bozuk yedek dosyası!');
+                console.error("Yedek yükleme hatası:", error);
+            }
+        };
+        reader.readAsText(file);
+    }
+    event.target.value = null; 
+}
+async function handleMergeUpload(event) {
+    const files = event.target.files;
+    if (!files || files.length < 2) { alert("Lütfen birleştirmek için en az 2 yedek dosyası seçin."); return; }
+    let mergedReports = {};
+    let fileReadPromises = [];
+    for (const file of files) {
+        const promise = new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    resolve(data);
+                } catch (err) { reject(`'${file.name}' dosyası okunamadı.`); }
+            };
+            reader.onerror = () => reject(`'${file.name}' dosyası okunurken bir hata oluştu.`);
+            reader.readAsText(file);
+        });
+        fileReadPromises.push(promise);
+    }
+    try {
+        const allBackupData = await Promise.all(fileReadPromises);
+        allBackupData.forEach(backupData => {
+            for (const storeKey in backupData) {
+                if (Object.hasOwnProperty.call(backupData, storeKey)) {
+                    const newReport = backupData[storeKey];
+                    if (!mergedReports[storeKey] || newReport.timestamp > mergedReports[storeKey].timestamp) {
+                        mergedReports[storeKey] = newReport;
+                    }
+                }
+            }
+        });
+        const mergedDataStr = JSON.stringify(mergedReports, null, 2);
+        const blob = new Blob([mergedDataStr], { type: 'application/json;charset=utf-8' });
+        const today = new Date().toISOString().slice(0, 10);
+        const filename = `birlesik_fide_rapor_yedek_${today}.json`;
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        alert(`Başarılı! ${Object.keys(mergedReports).length} adet güncel raporu içeren birleştirilmiş yedek dosyanız '${filename}' adıyla indirildi.`);
+    } catch (error) {
+        alert("Birleştirme sırasında bir hata oluştu:\n" + error);
+        console.error("Yedek birleştirme hatası:", error);
+    } finally {
+        event.target.value = null; 
+    }
+}
+function restoreLastSession() {
+    const lastStoreCode = localStorage.getItem('lastSelectedStoreCode');
+    if (lastStoreCode && uniqueStores.length > 0) {
+        const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode));
+        if (storeToRestore) {
+            selectStore(storeToRestore);
+        }
+    }
+}
+
+function updateFormInteractivity(enable) {
+    const formContent = document.getElementById('form-content');
+    if (!formContent) return;
+
+    // Standart form elemanları
+    const fideButtons = formContent.querySelectorAll('.add-item-btn, .status-btn, .remove-btn, .delete-bar, .delete-item-btn, .product-adder button');
+    const fideInputs = formContent.querySelectorAll('#product-selector, #product-qty');
+    
+    fideButtons.forEach(btn => btn.disabled = !enable);
+    fideInputs.forEach(input => input.disabled = !enable);
+
+    // Özel ziyaret formu elemanları
+    const specialVisitForm = document.getElementById('special-visit-form');
+    const specialButtons = specialVisitForm.querySelectorAll('button');
+    const specialInputs = specialVisitForm.querySelectorAll('input');
+
+    specialButtons.forEach(btn => btn.disabled = !enable);
+    specialInputs.forEach(input => input.disabled = !enable);
+}
+
+
+// --- BU NOKTADAN SONRASI DEĞİŞMEDİ, SADECE OKUNABİLİRLİK İÇİN AYIRDIM ---
 
 function generateQuestionHtml(q) {
     let questionActionsHTML = '';
@@ -865,446 +1449,7 @@ function selectStore(store, loadSavedData = true) {
     if (loadSavedData) {
         loadReportForStore(store.bayiKodu);
     } else {
-        resetForm();
+        resetForm(); // Bu artık FiDe formunu sıfırlayıp gösterecek
         updateFormInteractivity(true);
     }
-}
-
-function generateEmail() {
-    if (!selectedStore) {
-        alert('Lütfen denetime başlamadan önce bir bayi seçin!');
-        return;
-    }
-    saveFormState(true); // Raporu "tamamlandı" olarak işaretleyerek kaydet
-
-    const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
-    const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
-    if (!storeInfo) {
-        alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
-        return;
-    }
-    
-    const storeEmail = storeEmails[selectedStore.bayiKodu] || null;
-    
-    const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
-
-    const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
-    const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
-    const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
-    let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
-    let fideReportHtml = "";
-    fideQuestions.forEach(q => {
-        const itemDiv = document.getElementById(`fide-item-${q.id}`);
-        if (!itemDiv || itemDiv.classList.contains('question-removed')) return;
-        const titleContainer = itemDiv.querySelector('.fide-title-container');
-        const isQuestionCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
-        let contentHtml = '';
-        if (q.type === 'standard') {
-            const allItems = getCombinedInputs(`fide${q.id}`);
-            const hasDynamicItems = allItems.some(item => item.type === 'dynamic');
-            let itemsForEmail = [];
-
-            if (hasDynamicItems) {
-                itemsForEmail = allItems.filter(item => item.type === 'dynamic' || (item.type === 'static' && item.text.includes('<a href')));
-            } else {
-                itemsForEmail = allItems.filter(item => item.type === 'static');
-            }
-            
-            if (itemsForEmail.length > 0) {
-                itemsForEmail.sort((a, b) => {
-                    const aIsLink = a.text.includes('<a href');
-                    const bIsLink = b.text.includes('<a href');
-                    if (aIsLink && !bIsLink) return 1;
-                    if (!aIsLink && bIsLink) return -1;
-                    return 0;
-                });
-
-                contentHtml = `<ul>${itemsForEmail.map(item => {
-                    if (item.completed) return `<li>${item.text} <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span></li>`;
-                    return `<li>${item.text}</li>`;
-                }).join('')}</ul>`;
-            }
-        } else if (q.type === 'product_list') {
-            const productItemsHtml = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => {
-                const product = productList.find(p => p.code === item.dataset.code);
-                if(product) { const unit = getUnitForProduct(product.name); return `<li>${product.code} ${product.name}: ${item.dataset.qty} ${unit}</li>`; }
-            }).filter(Boolean);
-            const pleksiItemsHtml = getCombinedInputs(`fide${q.id}_pleksi`).filter(item => !item.completed).map(item => `<li>${item.text}</li>`);
-            if (productItemsHtml.length > 0) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
-            if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
-        } else if (q.type === 'pop_system') {
-            const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
-            if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
-        }
-        if (contentHtml !== '' || isQuestionCompleted) {
-            const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
-            
-            let emailTag = '';
-            if (q.type === 'pop_system') {
-                emailTag = ` <a href="mailto:berkcan_boza@arcelik.com.tr" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@berkcan_boza@arcelik.com.tr</a>`;
-            } else if (q.wantsStoreEmail) {
-                emailTag = storeEmailTag;
-            }
-
-            fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
-            if (!isQuestionCompleted || q.type === 'product_list' || (isQuestionCompleted && q.type === 'standard' && contentHtml !== '')) fideReportHtml += contentHtml;
-            fideReportHtml += '<p>&nbsp;</p>';
-        }
-    });
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1;
-    let monthHeaders = '';
-    for (let m = 1; m <= currentMonth; m++) monthHeaders += `<th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;">${monthNames[m] || m}</th>`;
-    let dideScores = '';
-    for (let m = 1; m <= currentMonth; m++) dideScores += `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;">${storeInfo.scores[m] || '-'}</td>`;
-    let fideScores = '';
-    for (let m = 1; m <= currentMonth; m++) {
-         const score = (fideStoreInfo && fideStoreInfo.scores && fideStoreInfo.scores[m] !== undefined) ? fideStoreInfo.scores[m] : '-';
-         fideScores += `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;">${score}</td>`;
-    }
-    const tableHtml = `<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #dddddd;"><thead><tr><th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;">${currentYear}</th>${monthHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">DiDe</td>${dideScores}</tr><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">FiDe</td>${fideScores}</tr></tbody></table></div>`;
-    const finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
-    
-    document.getElementById('dide-upload-card').style.display = 'none';
-    document.getElementById('form-content').style.display = 'none';
-    document.querySelector('.action-button').style.display = 'none';
-    document.querySelector('#load-from-email-section').style.display = 'none';
-
-    const existingDraft = document.getElementById('email-draft-container');
-    if (existingDraft) existingDraft.remove();
-    const draftContainer = document.createElement('div');
-    draftContainer.id = 'email-draft-container';
-    draftContainer.className = 'card';
-    draftContainer.innerHTML = `
-        <h2>
-            <a href="#" onclick="event.preventDefault(); returnToMainPage();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
-                 <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i>
-            </a>
-            <i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı
-        </h2>
-        <p>Aşağıdaki metni kopyalayıp e-posta olarak gönderebilirsiniz.</p>
-        <div id="email-draft-area" contenteditable="true" style="width: 100%; min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
-    document.querySelector('.container').appendChild(draftContainer);
-}
-
-function loadReport(reportData) {
-    try {
-        for (const oldId in migrationMap) {
-            if (reportData.questions_status[oldId]) {
-                const newId = migrationMap[oldId];
-                if (!reportData.questions_status[newId]) {
-                    reportData.questions_status[newId] = reportData.questions_status[oldId];
-                    delete reportData.questions_status[oldId];
-                }
-            }
-        }
-
-        if (reportData.selectedStore) {
-            const storeData = uniqueStores.find(s => s.bayiKodu == reportData.selectedStore.bayiKodu);
-            if(storeData) selectStore(storeData, false);
-        } else {
-             resetForm();
-        }
-        
-        const formContainer = document.getElementById('form-content');
-
-        for (const qId in reportData.questions_status) {
-            let questionItem = document.getElementById(`fide-item-${qId}`);
-
-            if (!questionItem) {
-                const archivedQuestion = fideQuestions.find(q => String(q.id) === String(qId));
-                if (archivedQuestion && archivedQuestion.isArchived) {
-                    const questionHtml = generateQuestionHtml(archivedQuestion);
-                    formContainer.insertAdjacentHTML('beforeend', questionHtml);
-                    questionItem = document.getElementById(`fide-item-${qId}`);
-                }
-            }
-            
-            if (!questionItem) continue;
-
-            const data = reportData.questions_status[qId];
-            const completeButton = questionItem.querySelector('.fide-actions .status-btn');
-            const removeButton = questionItem.querySelector('.fide-actions .remove-btn');
-            if (data.removed && removeButton) toggleQuestionRemoved(removeButton, qId);
-            else if (data.completed && completeButton) toggleQuestionCompleted(completeButton, qId);
-            
-            const questionInfo = fideQuestions.find(q => String(q.id) === qId);
-            if (data.dynamicInputs) {
-                data.dynamicInputs.forEach(input => {
-                    const containerId = (questionInfo && questionInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
-                    addDynamicInput(containerId, input.text, input.completed);
-                });
-            }
-            
-            if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty)); 
-            
-            if (data.selectedPops) {
-                data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
-                checkExpiredPopCodes();
-            }
-        }
-        updateFormInteractivity(true);
-    } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
-}
-
-function parseAndLoadFromEmail() {
-    const emailText = document.getElementById('load-email-area').value.trim();
-    if (!emailText) {
-        alert("Lütfen e-posta içeriğini yapıştırın.");
-        return;
-    }
-
-    const lines = emailText.split('\n');
-    let storeCodeFound = null;
-    let storeFoundAndSelected = false;
-
-    for (const line of lines) {
-        const match = line.match(/Ziyaret etmiş olduğum (\d{5,})\s/);
-        if (match) {
-            storeCodeFound = match[1];
-            const storeToSelect = uniqueStores.find(s => String(s.bayiKodu) === storeCodeFound);
-            if (storeToSelect) {
-                selectStore(storeToSelect, false);
-                storeFoundAndSelected = true;
-                break;
-            }
-        }
-    }
-
-    if (!storeFoundAndSelected) {
-        if(selectedStore) {
-            resetForm();
-            updateFormInteractivity(true);
-        } else {
-            alert("E-posta metninden bayi bulunamadı ve manuel olarak da bir bayi seçilmedi. Lütfen önce bir bayi seçin.");
-            return;
-        }
-    }
-    
-    const questionHeaderRegex = /^[\s•o-]*FiDe\s+(\d+)\./i;
-    const idsInEmail = new Set();
-    let currentQuestionId = null;
-    
-    const ignorePhrases = [
-        "sipariş verilmesi gerekenler",
-        "pleksiyle sergilenmesi gerekenler",
-        "yanlış pleksi malzeme ile kullanılanlar"
-    ];
-
-    lines.forEach(line => {
-        const trimmedLine = line.trim();
-        const headerMatch = trimmedLine.match(questionHeaderRegex);
-
-        if (headerMatch) {
-            const originalId = headerMatch[1];
-            const finalId = migrationMap[originalId] || originalId;
-            currentQuestionId = finalId;
-            idsInEmail.add(finalId);
-        } else if (currentQuestionId && trimmedLine) {
-            const cleanedLine = trimmedLine.replace(/^[\s•o-]+\s*/, '');
-            if (!cleanedLine) return; 
-
-            const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
-            if (!question || (question.answerType === 'fixed')) {
-                return; 
-            }
-
-            if (question.type === 'product_list') {
-                const productMatch = cleanedLine.match(/^(\d{8,})/); 
-                if (productMatch) {
-                    const productCode = productMatch[1];
-                    let quantity = 1; 
-                    const quantityMatch = cleanedLine.match(/:?\s*(\d+)\s*(paket|adet)/i);
-                    if (quantityMatch && quantityMatch[1]) {
-                        quantity = parseInt(quantityMatch[1], 10);
-                    }
-                    
-                    const productExists = productList.some(p => p.code === productCode);
-                    if (productExists) {
-                        addProductToList(productCode, quantity);
-                        return; 
-                    }
-                }
-            }
-            
-            if (ignorePhrases.some(phrase => cleanedLine.toLowerCase().includes(phrase))) {
-                return; 
-            }
-            
-            const staticItems = question.staticItems || [];
-            const isStatic = staticItems.some(staticItem => {
-                const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
-                return plainStaticItem.includes(cleanedLine);
-            });
-            
-            if (!isStatic) {
-                const containerId = (question.type === 'product_list') ? `fide${currentQuestionId}_pleksi` : `fide${currentQuestionId}`;
-                addDynamicInput(containerId, cleanedLine, false);
-            }
-        }
-    });
-    
-    fideQuestions.forEach(q => {
-        if (q.isArchived) return;
-        if (!idsInEmail.has(String(q.id))) {
-            const questionItem = document.getElementById(`fide-item-${q.id}`);
-            if (questionItem) {
-                const removeButton = questionItem.querySelector('.fide-actions .remove-btn');
-                if (removeButton && !questionItem.classList.contains('question-removed')) {
-                    toggleQuestionRemoved(removeButton, q.id);
-                }
-            }
-        }
-    });
-
-    alert("E-posta içeriği başarıyla forma aktarıldı!");
-    document.getElementById('load-email-area').value = '';
-}
-
-
-function startNewReport() {
-    selectedStore = null;
-    document.getElementById('store-search-input').value = '';
-    localStorage.removeItem('lastSelectedStoreCode');
-    resetForm();
-    updateFormInteractivity(false);
-}
-function getFormDataForSaving() {
-    let reportData = { selectedStore: selectedStore, questions_status: {} };
-     fideQuestions.forEach(q => {
-        const itemDiv = document.getElementById(`fide-item-${q.id}`);
-        const isRemoved = itemDiv ? itemDiv.classList.contains('question-removed') : false;
-        const titleContainer = itemDiv ? itemDiv.querySelector('.fide-title-container') : null;
-        const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
-        
-        if (!itemDiv && q.isArchived) { return; }
-
-        const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
-
-        if (itemDiv) {
-            if (q.type === 'standard') questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`);
-            else if (q.type === 'product_list') {
-                document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => questionData.selectedProducts.push({ code: item.dataset.code, qty: item.dataset.qty }));
-                questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}_pleksi`);
-            } else if (q.type === 'pop_system') questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
-        }
-        reportData.questions_status[q.id] = questionData;
-    });
-    return reportData;
-}
-function backupAllReports() {
-    const allReports = localStorage.getItem('allFideReports');
-    if (!allReports || Object.keys(JSON.parse(allReports)).length === 0) return alert('Yedeklenecek kayıtlı rapor bulunamadı.');
-    const blob = new Blob([allReports], { type: 'application/json;charset=utf-8' });
-    const today = new Date().toISOString().slice(0, 10);
-    const filename = `fide_rapor_yedek_${today}.json`;
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
-function handleRestoreUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    if (confirm("Bu işlem mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz?")) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const restoredData = e.target.result;
-                JSON.parse(restoredData); 
-                localStorage.setItem('allFideReports', restoredData);
-                alert('Yedek başarıyla geri yüklendi! "Yedekleme Yöneticisi" üzerinden bu yedeği bulutla eşitleyebilirsiniz.');
-                window.location.reload();
-            } catch (error) {
-                alert('Geçersiz veya bozuk yedek dosyası!');
-                console.error("Yedek yükleme hatası:", error);
-            }
-        };
-        reader.readAsText(file);
-    }
-    event.target.value = null; 
-}
-async function handleMergeUpload(event) {
-    const files = event.target.files;
-    if (!files || files.length < 2) { alert("Lütfen birleştirmek için en az 2 yedek dosyası seçin."); return; }
-    let mergedReports = {};
-    let fileReadPromises = [];
-    for (const file of files) {
-        const promise = new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    resolve(data);
-                } catch (err) { reject(`'${file.name}' dosyası okunamadı.`); }
-            };
-            reader.onerror = () => reject(`'${file.name}' dosyası okunurken bir hata oluştu.`);
-            reader.readAsText(file);
-        });
-        fileReadPromises.push(promise);
-    }
-    try {
-        const allBackupData = await Promise.all(fileReadPromises);
-        allBackupData.forEach(backupData => {
-            for (const storeKey in backupData) {
-                if (Object.hasOwnProperty.call(backupData, storeKey)) {
-                    const newReport = backupData[storeKey];
-                    if (!mergedReports[storeKey] || newReport.timestamp > mergedReports[storeKey].timestamp) {
-                        mergedReports[storeKey] = newReport;
-                    }
-                }
-            }
-        });
-        const mergedDataStr = JSON.stringify(mergedReports, null, 2);
-        const blob = new Blob([mergedDataStr], { type: 'application/json;charset=utf-8' });
-        const today = new Date().toISOString().slice(0, 10);
-        const filename = `birlesik_fide_rapor_yedek_${today}.json`;
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        alert(`Başarılı! ${Object.keys(mergedReports).length} adet güncel raporu içeren birleştirilmiş yedek dosyanız '${filename}' adıyla indirildi.`);
-    } catch (error) {
-        alert("Birleştirme sırasında bir hata oluştu:\n" + error);
-        console.error("Yedek birleştirme hatası:", error);
-    } finally {
-        event.target.value = null; 
-    }
-}
-function restoreLastSession() {
-    const lastStoreCode = localStorage.getItem('lastSelectedStoreCode');
-    if (lastStoreCode && uniqueStores.length > 0) {
-        const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode));
-        if (storeToRestore) {
-            selectStore(storeToRestore);
-        }
-    }
-}
-
-function updateFormInteractivity(enable) {
-    const formContent = document.getElementById('form-content');
-    if (!formContent) return;
-
-    const buttons = formContent.querySelectorAll(
-        '.add-item-btn, .status-btn, .remove-btn, .delete-bar, .delete-item-btn, .product-adder button'
-    );
-    const inputs = formContent.querySelectorAll(
-        '#product-selector, #product-qty'
-    );
-
-    buttons.forEach(btn => {
-        btn.disabled = !enable;
-    });
-    inputs.forEach(input => {
-        input.disabled = !enable;
-    });
 }
