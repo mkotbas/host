@@ -12,9 +12,6 @@ async function initializeApp() {
         console.error("Firebase auth başlatılamadı. db-config.js yüklendiğinden emin olun.");
         return;
     }
-    
-    setupEventListeners();
-
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     auth.onAuthStateChanged(async user => { 
         const loginToggleBtn = document.getElementById('login-toggle-btn');
@@ -31,6 +28,7 @@ async function initializeApp() {
         }
         updateConnectionIndicator();
         await loadInitialData();
+        setupEventListeners();
         renderQuestionManager();
     });
 }
@@ -79,18 +77,9 @@ async function loadInitialData() {
         }
     }
     
-    // --- İSTEĞİNİZİ YERİNE GETİREN DEĞİŞİKLİK BURADA ---
     if (!questionsLoaded) {
-        // Soru listesini boşaltıyoruz.
-        fideQuestions = []; 
-        
-        // Sadece kullanıcı giriş yapmış olmasına rağmen yükleme başarısız olursa uyarı gösteriyoruz.
-        // Eğer kullanıcı zaten çıkış yapmışsa (auth.currentUser yoksa), hiçbir uyarı göstermiyoruz.
-        if (auth.currentUser) {
-             alert("Soru listesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.");
-        } else {
-            console.log("Soruları görmek için lütfen giriş yapın.");
-        }
+        fideQuestions = fallbackFideQuestions;
+        alert("Soru listesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin ve sisteme giriş yaptığınızdan emin olun.");
     }
 
     if (database) {
@@ -141,7 +130,7 @@ function setupEventListeners() {
     window.addEventListener('click', function(event) {
         const authControls = document.getElementById('auth-controls');
         if (authControls && !authControls.contains(event.target)) {
-            if(loginPopup) loginPopup.style.display = 'none';
+            loginPopup.style.display = 'none';
         }
     });
 
@@ -220,7 +209,69 @@ function selectScenario(scenario) {
     }
 }
 
-function applyIdChangeScenario() {
+async function migrateQuestionData(oldId, newId) {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+    console.log(`Veri taşıma işlemi başlatıldı: ${oldId} -> ${newId}`);
+
+    try {
+        // 1. Yerel (localStorage) verileri güncelle
+        const localDataString = localStorage.getItem('allFideReports');
+        if (localDataString) {
+            let allReports = JSON.parse(localDataString);
+            let updatedCountLocal = 0;
+            for (const storeKey in allReports) {
+                const report = allReports[storeKey]?.data?.questions_status;
+                if (report && report[oldId]) {
+                    // Hedef ID'de veri varsa üzerine yaz (taşıma işlemi önceliklidir)
+                    report[newId] = report[oldId];
+                    delete report[oldId];
+                    updatedCountLocal++;
+                }
+            }
+            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+            console.log(`${updatedCountLocal} yerel rapor güncellendi.`);
+        }
+
+        // 2. Bulut (Firebase) verilerini güncelle
+        if (auth.currentUser && database) {
+            const reportsRef = database.ref('allFideReports');
+            const snapshot = await reportsRef.once('value');
+            if (snapshot.exists()) {
+                let allCloudReports = snapshot.val();
+                let updates = {};
+                let updatedCountCloud = 0;
+                for (const storeKey in allCloudReports) {
+                    const report = allCloudReports[storeKey]?.data?.questions_status;
+                    if (report && report[oldId]) {
+                        // Firebase'de hem yeni veriyi ekleyip hem eski veriyi silmek için
+                        // bir 'update' objesi hazırlıyoruz.
+                        updates[`${storeKey}/data/questions_status/${newId}`] = report[oldId];
+                        updates[`${storeKey}/data/questions_status/${oldId}`] = null; // null olarak ayarlamak veriyi siler
+                        updatedCountCloud++;
+                    }
+                }
+
+                if (Object.keys(updates).length > 0) {
+                    await reportsRef.update(updates);
+                    console.log(`${updatedCountCloud} bulut raporu güncellendi.`);
+                }
+            }
+        }
+        console.log("Veri taşıma işlemi başarıyla tamamlandı.");
+        return true;
+
+    } catch (error) {
+        console.error("Veri taşıma senaryosu sırasında bir hata oluştu:", error);
+        alert("Kritik bir hata oluştu! Raporlardaki cevaplar taşınamadı. Lütfen konsolu kontrol edin.");
+        return false;
+    } finally {
+        loadingOverlay.style.display = 'none';
+    }
+}
+
+
+async function applyIdChangeScenario() {
     const oldId = document.getElementById('scenario-old-id').value.trim();
     const newId = document.getElementById('scenario-new-id').value.trim();
 
@@ -233,41 +284,41 @@ function applyIdChangeScenario() {
         return;
     }
 
-    const questionToUpdate = fideQuestions.find(q => String(q.id) === oldId);
-    if (!questionToUpdate) {
+    const questionExists = fideQuestions.some(q => String(q.id) === String(oldId));
+    if (!questionExists) {
         alert(`HATA: "${oldId}" ID'li bir soru bulunamadı.`);
         return;
     }
 
-    const isNewIdTaken = fideQuestions.some(q => String(q.id) === newId);
-    if (isNewIdTaken) {
-        alert(`HATA: "${newId}" ID'li bir soru zaten mevcut. Lütfen farklı bir ID seçin veya mevcut soruyu önce değiştirin.`);
+    const targetIdExists = fideQuestions.some(q => String(q.id) === String(newId));
+    if (targetIdExists) {
+        alert(`HATA: "${newId}" ID'si zaten başka bir soru tarafından kullanılıyor. Lütfen önce o sorunun ID'sini değiştirin veya soruyu arşivleyin.`);
+        return;
+    }
+    
+    const confirmation = confirm(`Bu işlem, ${oldId} ID'li soruyu ${newId} olarak güncelleyecek ve TÜM bayi raporlarındaki bu soruya ait cevapları kalıcı olarak yeni ID'ye taşıyacaktır. Devam etmek istiyor musunuz?`);
+    if (!confirmation) {
+        alert("İşlem iptal edildi.");
         return;
     }
 
-    // 1. Arka plandaki asıl veri kaynağını (diziyi) güncelle
-    questionToUpdate.id = parseInt(newId, 10);
+    // 1. Önce tüm raporlardaki cevapları taşı
+    const migrationSuccess = await migrateQuestionData(oldId, newId);
+    if (!migrationSuccess) return; // Taşıma başarısız olursa işlemi durdur
 
-    // 2. Eski raporların yeni ID'yi bulabilmesi için yönlendirme kuralı ekle
-    addMigrationMapping(oldId, newId);
-
-    // 3. Güncellenmiş ve sıralanmış veriye göre tüm yönetici listesini yeniden çiz
-    renderQuestionManager();
-
-    // 4. Kullanıcıya geri bildirim ver ve güncellenen soruyu ekranda göster
-    alert(`Başarılı!\n\n- Soru ${oldId} ID'si, ${newId} olarak güncellendi ve liste yeniden sıralandı.\n- Veri kaybını önlemek için yönlendirme kuralı eklendi.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
-    
-    // Kullanıcı deneyimini iyileştir: güncellenen elemanı bul, ona odaklan ve vurgula
-    const newQuestionItem = document.querySelector(`.manager-item[data-id="${newId}"]`);
-    if (newQuestionItem) {
-        newQuestionItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        newQuestionItem.style.transition = 'background-color 0.5s ease';
-        newQuestionItem.style.backgroundColor = '#dcfce7'; // Vurgu rengi
-        setTimeout(() => {
-            newQuestionItem.style.backgroundColor = ''; // Rengi normale döndür
-        }, 3000);
+    // 2. Arka plandaki ana veri kaynağını (fideQuestions dizisi) güncelle
+    const questionToUpdate = fideQuestions.find(q => String(q.id) === String(oldId));
+    if (questionToUpdate) {
+        questionToUpdate.id = parseInt(newId, 10);
     }
 
+    // 3. Yönlendirme kuralı ekle (her ihtimale karşı)
+    addMigrationMapping(oldId, newId);
+
+    // 4. Ekrani güncel veri kaynağına göre yeniden çiz
+    renderQuestionManager();
+    
+    alert(`Başarılı!\n\n- Soru ${oldId} ID'si, ${newId} olarak güncellendi.\n- Tüm raporlardaki cevaplar kalıcı olarak yeni ID'ye taşındı.\n- Soru listesi yeniden sıralandı.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
     closeScenarioSystem();
 }
 
@@ -461,11 +512,6 @@ function formatText(buttonEl, command) {
 function renderQuestionManager() {
     const managerList = document.getElementById('manager-list');
     managerList.innerHTML = '';
-    if (!fideQuestions || fideQuestions.length === 0) {
-        const isEmpty = !auth.currentUser ? "Soruları görmek için lütfen giriş yapın." : "Yüklenecek soru bulunamadı.";
-        managerList.innerHTML = `<div class="empty-manager-message"><i class="fas fa-info-circle"></i> ${isEmpty}</div>`;
-        return;
-    }
     fideQuestions.sort((a, b) => a.id - b.id).forEach(q => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'manager-item';
