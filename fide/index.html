@@ -118,10 +118,16 @@
             <div id="store-selection-area">
                 <hr style="margin: 20px 0;">
                 <p><b>4. Adım: Denetlenecek Bayiyi Arayın ve Seçin</b></p>
-                <button id="new-report-btn" class="btn-warning btn-sm" title="Mevcut formu boşaltır ve temiz bir rapor sayfası açar."><i class="fas fa-file"></i> Yeni Rapor / Formu Temizle</button>
-                <button id="special-visit-btn" class="btn-info btn-sm" title="Seçili bayi için FiDe soruları olmadan, sadece not ve eksik girişi için özel bir form açar."><i class="fas fa-star"></i> Özel Ziyaret Başlat</button>
-                <button id="new-fide-audit-btn" class="btn-secondary btn-sm" title="Bu bayi için yeni bir standart FiDe denetimi başlatır. Kaydedilmiş özel ziyaret verisi silinmez, sadece yeni bir forma geçilir."><i class="fas fa-file-alt"></i> Standart Denetim Başlat</button>
+
+                <div class="store-action-group">
+                    <button id="special-visit-btn" class="btn-info btn-sm" title="Seçili bayi için FiDe soruları olmadan, sadece not ve eksik girişi için özel bir form açar."><i class="fas fa-star"></i> Özel Ziyaret Başlat</button>
+                    <button id="new-fide-audit-btn" class="btn-secondary btn-sm" title="Bu bayi için yeni bir standart FiDe denetimi başlatır. Kaydedilmiş özel ziyaret verisi silinmez, sadece yeni bir forma geçilir."><i class="fas fa-file-alt"></i> Standart Denetim Başlat</button>
+                </div>
+
                 <input type="text" id="store-search-input" placeholder="Bayi adı veya kodu ile aramaya başlayın...">
+                
+                <button id="new-report-btn" class="btn-warning btn-sm" title="Mevcut formu boşaltır ve temiz bir rapor sayfası açar."><i class="fas fa-file"></i> Yeni Rapor / Formu Temizle</button>
+
                 <div id="store-list"></div>
             </div>
         </div>
