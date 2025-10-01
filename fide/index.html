@@ -62,7 +62,7 @@
                     <button id="backup-btn" class="btn-primary"><i class="fas fa-download"></i> Yedek Dosyasını İndir</button>
                 </div>
                 <div class="backup-option-card">
-                    <h3><i class="fas fa-upload"></i> Yedekten Geri Yükle</h3>
+                    <h3><i class="upload"></i> Yedekten Geri Yükle</h3>
                     <p>Bilgisayarınızdaki `.json` yedek dosyasını seçerek tarayıcı hafızasına yükler. Bu işlem mevcut verilerin üzerine yazar!</p>
                     <button id="restore-from-backup-btn" class="btn-primary"><i class="fas fa-folder-open"></i> Dosya Seç ve Yükle</button>
                 </div>
@@ -118,7 +118,10 @@
             <div id="store-selection-area">
                 <hr style="margin: 20px 0;">
                 <p><b>4. Adım: Denetlenecek Bayiyi Arayın ve Seçin</b></p>
-                <button id="new-report-btn" class="btn-warning btn-sm" style="margin-bottom: 10px; width: 100%;" title="Mevcut formu boşaltır ve temiz bir rapor sayfası açar."><i class="fas fa-file"></i> Yeni Rapor / Formu Temizle</button>
+                <div class="report-type-buttons">
+                    <button id="new-report-btn" class="btn-warning btn-sm" title="Mevcut formu boşaltır ve temiz bir FiDe denetim raporu sayfası açar."><i class="fas fa-file-alt"></i> Yeni FiDe Raporu</button>
+                    <button id="special-visit-btn" class="btn-info btn-sm" title="FiDe soruları olmadan, sadece not ve eksik girişi için özel bir form açar."><i class="fas fa-star"></i> Özel Ziyaret Başlat</button>
+                </div>
                 <input type="text" id="store-search-input" placeholder="Bayi adı veya kodu ile aramaya başlayın...">
                 <div id="store-list"></div>
             </div>
@@ -138,6 +141,16 @@
         </div>
 
         <div id="form-content"></div>
+
+        <div class="card" id="special-visit-form" style="display: none;">
+            <h3><i class="fas fa-star"></i> Özel Ziyaret Notları</h3>
+            <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+                <i class="fas fa-info-circle"></i> Bu ziyarette tespit ettiğiniz eksikleri veya notları ekleyin. E-posta taslağı sadece bu notları içerecektir.
+            </p>
+            <div id="special-notes-container">
+                </div>
+            <button id="add-special-note-btn" class="btn-primary btn-sm" style="margin-top: 15px;"><i class="fas fa-plus"></i> Yeni Not Ekle</button>
+        </div>
 
         <button class="action-button" onclick="generateEmail()" title="Formdaki tüm verileri kullanarak nihai e-posta taslağını oluşturur ve raporu kaydeder.">
             <i class="fas fa-envelope"></i> E-POSTA TASLAĞI OLUŞTUR
