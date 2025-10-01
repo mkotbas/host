@@ -443,31 +443,29 @@ function uploadLocalBackupToCloud() {
     }
 }
 
-// GÜNCELLENDİ: Zaman damgası ekleme mantığı daha basit ve güvenilir hale getirildi.
+// GÜNCELLENDİ: Rapor kaydetme mantığı tüm rapor türleri için birleştirildi ve standartlaştırıldı.
 function saveFormState(isFinalizing = false) {
     if (!selectedStore) return;
 
     let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
     const storeKey = `store_${selectedStore.bayiKodu}`;
-    let reportData;
+    
+    // 1. Her zaman standart FiDe raporu yapısını temel al.
+    let reportData = getFideFormDataForSaving();
 
+    // 2. Eğer özel ziyaret ise, ilgili bilgileri bu standart yapıya ekle.
     if (currentFormMode === 'special') {
         const notes = [];
         document.querySelectorAll('#special-notes-container input[type="text"]').forEach(input => {
             const noteText = input.value.trim();
             if (noteText) notes.push(noteText);
         });
-        reportData = {
-            selectedStore: selectedStore,
-            isSpecialVisit: true,
-            notes: notes
-        };
-    } else { // 'fide' modu
-        reportData = getFideFormDataForSaving();
+        reportData.isSpecialVisit = true;
+        reportData.notes = notes;
     }
 
-    // YENİ MANTIK: Rapor sonlandırılıyorsa, her zaman yeni bir zaman damgası ekle.
-    // Değilse, mevcut raporun eski zaman damgasını korumaya çalış.
+    // 3. Rapor sonlandırılıyorsa, yeni bir tamamlanma zaman damgası ekle.
+    // Değilse (otomatik kaydetme ise), mevcut raporun eski zaman damgasını koru.
     if (isFinalizing) {
         reportData.auditCompletedTimestamp = new Date().getTime();
     } else {
@@ -487,7 +485,6 @@ function saveFormState(isFinalizing = false) {
             .catch(error => console.error("Firebase'e yazma hatası:", error));
     }
 }
-
 
 function loadReportForStore(bayiKodu) {
     const storeKey = `store_${bayiKodu}`;
@@ -521,7 +518,6 @@ function resetForm() {
     showFiDeForm();
 }
 
-// GÜNCELLENDİ: DiDe verisi olmadan da özel ziyaret e-postası oluşturulabilmesi için kontroller güvenli hale getirildi.
 function generateEmail() {
     if (!selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -531,14 +527,12 @@ function generateEmail() {
 
     const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
     
-    // FiDe modundaysak ve DiDe verisi yoksa işlemi durdur. Özel ziyarette bu kontrolü atla.
     if (!storeInfo && currentFormMode === 'fide') {
         alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
         return;
     }
     
     let finalEmailBody = '';
-    // DiDe verisi olmasa bile hata vermemesi için güvenli değişken ataması
     const bayiYonetmeniFullName = storeInfo ? storeInfo['Bayi Yönetmeni'] || '' : '';
     const yonetmenFirstName = bayiYonetmeniFullName ? bayiYonetmeniFullName.split(' ')[0] : '';
     const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
@@ -672,7 +666,7 @@ function loadReport(reportData) {
             return; 
         }
 
-        if (reportData.questions_status) {
+        if(reportData.questions_status){
             for (const oldId in migrationMap) {
                 if (reportData.questions_status[oldId]) {
                     const newId = migrationMap[oldId];
@@ -860,12 +854,12 @@ function getFideFormDataForSaving() {
     let reportData = { selectedStore: selectedStore, questions_status: {} };
      fideQuestions.forEach(q => {
         const itemDiv = document.getElementById(`fide-item-${q.id}`);
+        if (!itemDiv && q.isArchived) { return; }
+
         const isRemoved = itemDiv ? itemDiv.classList.contains('question-removed') : false;
         const titleContainer = itemDiv ? itemDiv.querySelector('.fide-title-container') : null;
         const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
         
-        if (!itemDiv && q.isArchived) { return; }
-
         const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
 
         if (itemDiv) {
