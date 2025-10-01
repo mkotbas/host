@@ -12,6 +12,10 @@ async function initializeApp() {
         console.error("Firebase auth başlatılamadı. db-config.js yüklendiğinden emin olun.");
         return;
     }
+
+    // DEĞİŞİKLİK: setupEventListeners fonksiyonu, her koşulda butonların çalışması için auth kontrolünün dışına, en başa taşındı.
+    setupEventListeners();
+
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     auth.onAuthStateChanged(async user => { 
         const loginToggleBtn = document.getElementById('login-toggle-btn');
@@ -28,7 +32,7 @@ async function initializeApp() {
         }
         updateConnectionIndicator();
         await loadInitialData();
-        setupEventListeners();
+        // setupEventListeners(); // Bu satır yukarı taşındı.
         renderQuestionManager();
     });
 }
@@ -78,8 +82,14 @@ async function loadInitialData() {
     }
     
     if (!questionsLoaded) {
-        fideQuestions = fallbackFideQuestions;
-        alert("Soru listesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin ve sisteme giriş yaptığınızdan emin olun.");
+        // Kullanıcı giriş yapmamışsa veya hata oluşmuşsa, soru listesini boşaltıp uyarı veriyoruz.
+        // renderQuestionManager boş listeyi ekrana yansıtacak.
+        fideQuestions = []; 
+        if (!auth.currentUser) {
+            console.log("Soruları görmek için lütfen giriş yapın.");
+        } else {
+             alert("Soru listesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.");
+        }
     }
 
     if (database) {
@@ -130,7 +140,7 @@ function setupEventListeners() {
     window.addEventListener('click', function(event) {
         const authControls = document.getElementById('auth-controls');
         if (authControls && !authControls.contains(event.target)) {
-            loginPopup.style.display = 'none';
+            if(loginPopup) loginPopup.style.display = 'none';
         }
     });
 
@@ -209,7 +219,6 @@ function selectScenario(scenario) {
     }
 }
 
-// GÜNCELLEME BAŞLANGICI: Bu fonksiyonun tamamı, sıralama ve veri bütünlüğü sorunlarını çözmek için yeniden yazılmıştır.
 function applyIdChangeScenario() {
     const oldId = document.getElementById('scenario-old-id').value.trim();
     const newId = document.getElementById('scenario-new-id').value.trim();
@@ -260,7 +269,6 @@ function applyIdChangeScenario() {
 
     closeScenarioSystem();
 }
-// GÜNCELLEME SONU
 
 function previewQuestionForDelete() {
     const id = document.getElementById('scenario-delete-id').value;
@@ -452,6 +460,12 @@ function formatText(buttonEl, command) {
 function renderQuestionManager() {
     const managerList = document.getElementById('manager-list');
     managerList.innerHTML = '';
+    if (!fideQuestions || fideQuestions.length === 0) {
+        // Sorular yüklenmediyse veya boşsa, kullanıcıya bir mesaj göster.
+        const isEmpty = !auth.currentUser ? "Soruları görmek için lütfen giriş yapın." : "Yüklenecek soru bulunamadı.";
+        managerList.innerHTML = `<div class="empty-manager-message"><i class="fas fa-info-circle"></i> ${isEmpty}</div>`;
+        return;
+    }
     fideQuestions.sort((a, b) => a.id - b.id).forEach(q => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'manager-item';
