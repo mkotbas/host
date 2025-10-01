@@ -432,6 +432,7 @@ function renderQuestionManager() {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'manager-item';
         itemDiv.dataset.id = q.id;
+        itemDiv.dataset.originalId = q.id; // --- DEĞİŞİKLİK 1: Orijinal ID'yi burada saklıyoruz ---
         let staticItemsHtml = (q.staticItems || []).join('<br>'); 
         const typeOptions = ['standard', 'product_list', 'pop_system'];
         const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join('');
@@ -750,6 +751,7 @@ function addNewQuestionUI() {
     itemDiv.className = 'manager-item';
     itemDiv.style.backgroundColor = '#dcfce7';
     itemDiv.dataset.id = newId;
+    itemDiv.dataset.originalId = newId; // Yeni eklenen soru için de originalId ayarlayalım.
     itemDiv.innerHTML = `
         <div class="manager-item-grid">
             <div>
@@ -938,7 +940,9 @@ async function saveQuestions() {
         if (wantsStoreEmail) newQuestion.wantsStoreEmail = true;
 
         if (type === 'pop_system') {
-            const originalPopQuestion = fideQuestions.find(q => q.id === id);
+            // --- DEĞİŞİKLİK 2: Orijinal veriyi bulmak için sakladığımız 'original-id'yi kullanıyoruz ---
+            const originalId = parseInt(item.dataset.originalId);
+            const originalPopQuestion = fideQuestions.find(q => q.id === originalId);
             newQuestion.popCodes = originalPopQuestion ? originalPopQuestion.popCodes : [];
             newQuestion.expiredCodes = originalPopQuestion ? originalPopQuestion.expiredCodes : [];
         }
