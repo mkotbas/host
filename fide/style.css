@@ -87,24 +87,20 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
 #file-name, #fide-file-name { font-style: italic; color: var(--dark); }
 #store-selection-area { margin-top: 20px; }
 
-/* --- ESKİ KODLAR KALDIRILDI --- */
-/* Butonları %49 genişliğe zorlayan eski kodlar buradan kaldırıldı. */
-
-/* --- YENİ EKLENEN STİLLER --- */
 .store-action-group {
     display: flex;
-    gap: 10px; /* Butonlar arası boşluk */
-    margin-bottom: 15px; /* Buton grubu ile arama kutusu arası boşluk */
+    gap: 10px; 
+    margin-bottom: 15px; 
+    margin-top: 20px; /* DEĞİŞİKLİK: Boşluk artırıldı */
 }
 
 #store-selection-area button {
-    width: auto; /* Butonların genişliğini içeriğine göre ayarlar */
+    width: auto; 
 }
 
 #new-report-btn {
-    margin-top: 10px; /* Arama kutusu ile "Yeni Rapor" butonu arasına boşluk koyar */
+    margin-top: 10px; 
 }
-/* --- YENİ STİLLERİN SONU --- */
 
 #store-search-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 16px; }
 #store-list { width: 100%; max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 5px; }
