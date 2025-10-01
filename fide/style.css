@@ -8,7 +8,7 @@
     --danger: #dc2626;
     --light: #f8fafc;
     --dark: #1e293b;
-    --info: #3b82f6; /* Yeni renk */
+    --info: #3b82f6; 
     --gray: #94a3b8;
     --border: #e2e8f0;
     --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -19,7 +19,6 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 
 .container { max-width: 1200px; margin: 0 auto; }
 .card { background: white; border-radius: 12px; box-shadow: var(--card-shadow); padding: 24px; margin-bottom: 24px; transition: var(--transition); }
 h2 { font-size: 20px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;}
-/* YENİ: h3 için genel stil eklendi */
 h3 { font-size: 18px; color: var(--dark); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
 button, .btn-like-label, a.btn-primary, a.btn-warning, a.btn-success, a.btn-danger, .btn-info { text-decoration: none; cursor: pointer; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; }
 button:disabled { background-color: var(--gray); cursor: not-allowed; opacity: 0.7; }
@@ -28,7 +27,7 @@ button i, .btn-like-label i, a.btn-primary i, a.btn-warning i, a.btn-success i, 
 .btn-success { background-color: var(--success); color: white; }
 .btn-danger { background-color: var(--danger); color: white; }
 .btn-warning { background-color: var(--warning); color: var(--dark); }
-.btn-info { background-color: var(--info); color: white; } /* Yeni stil */
+.btn-info { background-color: var(--info); color: white; } 
 .btn-sm { padding: 6px 12px; font-size: 12px; }
 .action-button { width: 100%; padding: 12px; font-size: 15px; margin: 10px 0 30px; border-radius: 10px; background-color: var(--primary); color: white; }
 .fide-item { margin-bottom: 28px; padding: 20px; border-radius: 12px; background-color: white; box-shadow: var(--card-shadow); transition: var(--transition); }
@@ -87,23 +86,18 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
 .file-input-label i { margin-right: 8px; }
 #file-name, #fide-file-name { font-style: italic; color: var(--dark); }
 #store-selection-area { display: none; margin-top: 20px; }
-/* YENİ: Butonlar ve arama kutusu arasına boşluk eklendi */
-#store-selection-area #new-report-btn,
-#store-selection-area #special-visit-btn {
-    margin-bottom: 15px;
-    width: 49%;
-}
-#store-selection-area {
+
+/* YENİ: Buton yerleşimini düzenleyen stiller */
+.report-action-buttons {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: flex-start; /* Butonları sola yaslar */
+    gap: 10px;
+    margin-bottom: 15px; /* Butonlarla arama kutusu arasına boşluk */
 }
-#store-selection-area p {
-    width: 100%;
+.report-action-buttons button {
+    width: 50%; /* Her butonu yarı genişlikte yapar */
 }
-#store-selection-area hr {
-    width: 100%;
-}
+
 #store-search-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 16px; }
 #store-list { width: 100%; max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 5px; }
 .store-item { padding: 10px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; }
@@ -1085,5 +1079,11 @@ input:checked + .slider.green {
     }
     .annual-performance-indicator {
         max-width: none;
+    }
+    .report-action-buttons {
+        flex-direction: column;
+    }
+    .report-action-buttons button {
+        width: 100%;
     }
 }
