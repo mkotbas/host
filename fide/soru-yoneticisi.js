@@ -643,4 +643,351 @@ function parseAndAddProducts() {
             document.getElementById('toggle-detailed-editor-btn').click();
         }
     } else {
-        alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu BOŞLUK Ürün Adı).
+        alert("Hiçbir ürün eklenemedi. Lütfen formatı kontrol edin (Stok Kodu BOŞLUK Ürün Adı).");
+    }
+}
+
+function addCategoryRow(container, category = {}, targetElement = null) {
+    const row = document.createElement('div');
+    row.className = 'category-manager-row';
+    row.dataset.type = 'category';
+    row.draggable = true;
+    row.innerHTML = `
+        <i class="fas fa-grip-vertical drag-handle" title="Sıralamak için sürükleyin"></i>
+        <i class="fas fa-tag category-icon"></i>
+        <input type="text" placeholder="Kategori Adı" value="${category.name || ''}">
+        <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+    `;
+    if (targetElement) {
+        container.insertBefore(row, targetElement.nextSibling);
+    } else {
+        container.appendChild(row);
+    }
+    return row;
+}
+
+function addProductRow(container, product = {}, targetElement = null) {
+    const row = document.createElement('div');
+    row.className = 'product-manager-row';
+    row.dataset.type = 'product';
+    row.draggable = true;
+    row.innerHTML = `
+        <i class="fas fa-grip-vertical drag-handle" title="Sıralamak için sürükleyin"></i>
+        <input type="text" class="product-code" placeholder="Stok Kodu" value="${product.code || ''}">
+        <input type="text" class="product-name" placeholder="Ürün Adı" value="${product.name || ''}">
+        <button class="btn-danger btn-sm" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>
+    `;
+    
+    if (targetElement) {
+        container.insertBefore(row, targetElement.nextSibling);
+    } else {
+        container.appendChild(row);
+    }
+    return row;
+}
+
+function setupProductManagerDragDrop(container) {
+    let draggingElement = null;
+
+    container.addEventListener('dragstart', e => {
+        draggingElement = e.target;
+        setTimeout(() => {
+            e.target.classList.add('dragging');
+        }, 0);
+    });
+
+    container.addEventListener('dragend', e => {
+        if (draggingElement) {
+            draggingElement.classList.remove('dragging');
+            draggingElement = null;
+        }
+    });
+
+    container.addEventListener('dragover', e => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(container, e.clientY);
+        const currentlyDragged = document.querySelector('.dragging');
+        if (currentlyDragged) {
+            if (afterElement == null) {
+                container.appendChild(currentlyDragged);
+            } else {
+                container.insertBefore(currentlyDragged, afterElement);
+            }
+        }
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('[draggable="true"]:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+}
+
+
+function filterManagerView() {
+    const viewActiveBtn = document.getElementById('view-active-btn');
+    const viewArchivedBtn = document.getElementById('view-archived-btn');
+    const addNewBtn = document.getElementById('add-new-question-btn');
+    const deleteAllArchivedBtn = document.getElementById('delete-all-archived-btn');
+    const restoreAllArchivedBtn = document.getElementById('restore-all-archived-btn');
+
+    viewActiveBtn.classList.toggle('active', currentManagerView === 'active');
+    viewArchivedBtn.classList.toggle('active', currentManagerView === 'archived');
+    
+    addNewBtn.style.display = currentManagerView === 'active' ? 'inline-flex' : 'none';
+    deleteAllArchivedBtn.style.display = currentManagerView === 'archived' ? 'inline-flex' : 'none';
+    restoreAllArchivedBtn.style.display = currentManagerView === 'archived' ? 'inline-flex' : 'none';
+
+    const items = document.querySelectorAll('#manager-list .manager-item');
+    let visibleItemCount = 0;
+    items.forEach(item => {
+        const isArchived = item.querySelector('.archive-checkbox').checked;
+        const shouldBeVisible = (currentManagerView === 'active' && !isArchived) || (currentManagerView === 'archived' && isArchived);
+        item.classList.toggle('hidden-question', !shouldBeVisible);
+        if(shouldBeVisible) visibleItemCount++;
+    });
+
+    if (currentManagerView === 'archived') {
+        deleteAllArchivedBtn.disabled = visibleItemCount === 0;
+        restoreAllArchivedBtn.disabled = visibleItemCount === 0;
+    }
+}
+
+function addNewQuestionUI() {
+    if (currentManagerView !== 'active') {
+        alert("Yeni soru eklemek için 'Aktif Sorular' görünümünde olmalısınız.");
+        return;
+    }
+    const managerList = document.getElementById('manager-list');
+    const existingIds = Array.from(managerList.querySelectorAll('.manager-item')).map(item => parseInt(item.querySelector('.manager-id-input').value));
+    const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+    
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'manager-item';
+    itemDiv.style.backgroundColor = '#dcfce7';
+    itemDiv.dataset.id = newId;
+    itemDiv.innerHTML = `
+        <div class="manager-item-grid">
+            <div>
+                <label>Soru ID</label>
+                <input type="number" class="manager-id-input" value="${newId}">
+            </div>
+            <div><label>Soru Başlığı</label><input type="text" class="question-title-input" placeholder="Yeni sorunun başlığını yazın..."></div>
+            <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
+            <div>
+                <label>Cevap Tipi</label>
+                <select class="answer-type-select">
+                    <option value="variable" selected>Değişken</option>
+                    <option value="fixed">Sabit</option>
+                </select>
+            </div>
+            <div class="manager-grid-switch-group">
+                <div class="archive-switch-container">
+                    <label>E-posta Ekle</label>
+                    <label class="switch">
+                        <input type="checkbox" class="wants-email-checkbox">
+                        <span class="slider green"></span>
+                    </label>
+                </div>
+                <div class="archive-switch-container">
+                    <label>Arşivle</label>
+                    <label class="switch">
+                        <input type="checkbox" class="archive-checkbox" onchange="filterManagerView()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div>
+            <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
+            <div class="editor-toolbar">
+               <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
+               <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
+               <button onclick="formatText(this, 'underline')" title="Altı Çizili"><i class="fas fa-underline"></i></button>
+               <button onclick="formatText(this, 'link')" title="Köprü Ekle/Düzenle/Kaldır"><i class="fas fa-link"></i></button>
+            </div>
+            <div class="editable-textarea" contenteditable="true"></div>
+        </div>
+        <div class="product-list-manager" style="display: none;"></div>
+        <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
+    managerList.appendChild(itemDiv);
+    itemDiv.querySelector('input[type="text"]').focus();
+}
+
+function restoreAllArchivedQuestions() {
+    const itemsToRestore = document.querySelectorAll('#manager-list .manager-item:not(.hidden-question)');
+    if (itemsToRestore.length === 0) {
+        alert("Aktif edilecek arşivlenmiş soru bulunamadı.");
+        return;
+    }
+    if (confirm(`Arşivdeki ${itemsToRestore.length} sorunun tümünü aktif hale getirmek istediğinizden emin misiniz?`)) {
+        itemsToRestore.forEach(item => {
+            const checkbox = item.querySelector('.archive-checkbox');
+            if (checkbox) checkbox.checked = false;
+        });
+        filterManagerView();
+        alert("Arşivlenmiş tüm sorular aktif hale getirildi. Değişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna tıklayın.");
+    }
+}
+
+function deleteAllArchivedQuestions() {
+    const itemsToDelete = document.querySelectorAll('#manager-list .manager-item:not(.hidden-question)');
+    if (itemsToDelete.length === 0) {
+        alert("Silinecek arşivlenmiş soru bulunamadı.");
+        return;
+    }
+    if (confirm(`Arşivdeki ${itemsToDelete.length} sorunun tümünü kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+        itemsToDelete.forEach(item => {
+             item.style.transition = 'opacity 0.5s ease';
+            item.style.opacity = '0';
+            setTimeout(() => {
+                item.style.display = 'none';
+                item.classList.add('to-be-deleted');
+            }, 500);
+        });
+         document.getElementById('delete-all-archived-btn').disabled = true;
+         alert("Arşivlenmiş sorular silinmek üzere işaretlendi. Değişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna tıklayın.");
+    }
+}
+
+async function deleteAllAnswersForQuestion(questionId) {
+    const questionTitle = document.querySelector(`.manager-item[data-id="${questionId}"] .question-title-input`).value;
+    const confirmation = confirm(`DİKKAT! Bu işlem geri alınamaz.\n\nFiDe ${questionId} ("${questionTitle}") sorusuna ait TÜM cevapları, BÜTÜN bayi raporlarından kalıcı olarak silmek istediğinizden emin misiniz?`);
+    
+    if (!confirmation) {
+        alert("İşlem iptal edildi.");
+        return;
+    }
+
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+
+    try {
+        const localDataString = localStorage.getItem('allFideReports');
+        if (localDataString) {
+            let allReports = JSON.parse(localDataString);
+            for (const storeKey in allReports) {
+                if (allReports[storeKey] && allReports[storeKey].data && allReports[storeKey].data.questions_status && allReports[storeKey].data.questions_status[questionId]) {
+                    delete allReports[storeKey].data.questions_status[questionId];
+                }
+            }
+            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+        }
+
+        if (auth.currentUser && database) {
+            const reportsRef = database.ref('allFideReports');
+            const snapshot = await reportsRef.once('value');
+            if (snapshot.exists()) {
+                let allCloudReports = snapshot.val();
+                let updates = {};
+                for (const storeKey in allCloudReports) {
+                    if (allCloudReports[storeKey]?.data?.questions_status?.[questionId]) {
+                         updates[`${storeKey}/data/questions_status/${questionId}`] = null;
+                    }
+                }
+                if (Object.keys(updates).length > 0) {
+                    await reportsRef.update(updates);
+                }
+            }
+        }
+        
+        alert(`İşlem tamamlandı!\n\nFiDe ${questionId} sorusuna ait tüm cevaplar bütün raporlardan (hem yerel hem de bulut) başarıyla silindi.`);
+
+    } catch (error) {
+        console.error("Cevapları silerken bir hata oluştu:", error);
+        alert("Bir hata oluştu! Cevaplar silinemedi. Lütfen konsolu kontrol edin.");
+    } finally {
+        loadingOverlay.style.display = 'none';
+    }
+}
+
+
+async function saveQuestions() {
+    if (!auth.currentUser || !database) {
+        alert("Değişiklikleri buluta kaydetmek için lütfen giriş yapın.");
+        return;
+    }
+
+    const newProductList = [];
+    const activeProductManager = document.querySelector('.product-list-manager:not([style*="display: none"])');
+    
+    if (activeProductManager) {
+        const rows = activeProductManager.querySelectorAll('.category-manager-row, .product-manager-row');
+        rows.forEach(row => {
+            if (row.dataset.type === 'category') {
+                const name = row.querySelector('input').value.trim();
+                if (name) newProductList.push({ type: 'header', name });
+            } else if (row.dataset.type === 'product') {
+                const code = row.querySelector('.product-code').value.trim();
+                const name = row.querySelector('.product-name').value.trim();
+                if (code && name) newProductList.push({ code, name });
+            }
+        });
+    } else {
+         productList.forEach(p => newProductList.push(p));
+    }
+
+    const newQuestions = [];
+    const ids = new Set();
+    const items = document.querySelectorAll('#manager-list .manager-item');
+    
+    for (const item of items) {
+        if (item.classList.contains('to-be-deleted')) continue;
+
+        const id = parseInt(item.querySelector('.manager-id-input').value);
+        const title = item.querySelector('.question-title-input').value.trim();
+        const type = item.querySelector('.question-type-select').value;
+        const answerType = item.querySelector('.answer-type-select').value;
+        const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
+        const isArchived = item.querySelector('.archive-checkbox').checked;
+        const wantsStoreEmail = item.querySelector('.wants-email-checkbox').checked;
+
+
+        if (!id && id !== 0 || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
+        if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılamaz.`); return; }
+        ids.add(id);
+
+        const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
+        const newQuestion = { id, title, type, answerType };
+        if (staticItems.length > 0 && type !== 'product_list') newQuestion.staticItems = staticItems;
+        if (isArchived) newQuestion.isArchived = true;
+        if (wantsStoreEmail) newQuestion.wantsStoreEmail = true;
+
+        if (type === 'pop_system') {
+            const originalPopQuestion = fideQuestions.find(q => q.id === id);
+            newQuestion.popCodes = originalPopQuestion ? originalPopQuestion.popCodes : [];
+            newQuestion.expiredCodes = originalPopQuestion ? originalPopQuestion.expiredCodes : [];
+        }
+        newQuestions.push(newQuestion);
+    }
+
+    newQuestions.sort((a, b) => a.id - b.id);
+
+    const finalJsonData = {
+        questions: newQuestions,
+        productList: newProductList
+    };
+
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+
+    try {
+        const questionsRef = database.ref('fideQuestionsData');
+        await questionsRef.set(finalJsonData);
+        alert("Değişiklikler başarıyla buluta kaydedildi. Sayfa yenileniyor...");
+        window.location.reload();
+    } catch (error) {
+        console.error("Sorular buluta kaydedilirken hata oluştu:", error);
+        alert("HATA: Değişiklikler buluta kaydedilemedi. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.");
+    } finally {
+        loadingOverlay.style.display = 'none';
+    }
+}
