@@ -246,14 +246,24 @@ async function applyIdChangeScenario() {
         return;
     }
     
-    // --- DEĞİŞİKLİK: Soruyu bulmak için artık [data-original-id] kullanılıyor ---
-    const questionItem = document.querySelector(`.manager-item[data-original-id="${oldId}"]`);
+    // --- DÜZELTME: Soruyu ekranda görünen mevcut ID'sine göre bul ---
+    let questionItem = null;
+    const allItems = document.querySelectorAll('.manager-item');
+    for (const item of allItems) {
+        if (item.querySelector('.manager-id-input').value === oldId) {
+            questionItem = item;
+            break; 
+        }
+    }
+
     if (!questionItem) {
-        alert(`HATA: Orijinal ID'si "${oldId}" olan bir soru bulunamadı. Lütfen sayfayı yenileyip tekrar deneyin.`);
+        alert(`HATA: Ekranda mevcut ID'si "${oldId}" olan bir soru bulunamadı.`);
         return;
     }
+    // Orijinal ID'yi de bu noktada alalım, çünkü cevap taşıma işlemi için o lazım.
+    const originalIdForAnswers = questionItem.dataset.originalId;
     
-    const confirmationText = `DİKKAT! BU İŞLEM GERİ ALINAMAZ!\n\nBu işlem, '${newId}' ID'sine ait mevcut TÜM cevapları silecek ve '${oldId}' ID'sine ait tüm cevapları '${newId}' ID'sinin altına taşıyacaktır.\n\nTüm raporlardaki veriyi kalıcı olarak değiştirmek istediğinizden emin misiniz?`;
+    const confirmationText = `DİKKAT! BU İŞLEM GERİ ALINAMAZ!\n\nBu işlem, '${newId}' ID'sine ait mevcut TÜM cevapları silecek ve orijinali '${originalIdForAnswers}' olan soruya ait tüm cevapları '${newId}' ID'sinin altına taşıyacaktır.\n\nTüm raporlardaki veriyi kalıcı olarak değiştirmek istediğinizden emin misiniz?`;
     if (!confirm(confirmationText)) {
         alert("İşlem iptal edildi.");
         return;
@@ -271,10 +281,10 @@ async function applyIdChangeScenario() {
             for (const storeKey in allCloudReports) {
                 const status = allCloudReports[storeKey]?.data?.questions_status;
                 if (status) {
-                    const answersToMove = status[oldId];
+                    const answersToMove = status[originalIdForAnswers]; // Cevapları orijinal ID'den al
                     if (answersToMove) {
                         updates[`${storeKey}/data/questions_status/${newId}`] = answersToMove; 
-                        updates[`${storeKey}/data/questions_status/${oldId}`] = null; 
+                        updates[`${storeKey}/data/questions_status/${originalIdForAnswers}`] = null; 
                     } 
                     else if (status.hasOwnProperty(newId)) {
                         updates[`${storeKey}/data/questions_status/${newId}`] = null;
@@ -292,10 +302,10 @@ async function applyIdChangeScenario() {
             for (const storeKey in allLocalReports) {
                 const status = allLocalReports[storeKey]?.data?.questions_status;
                 if (status) {
-                    const answersToMove = status[oldId];
+                    const answersToMove = status[originalIdForAnswers];
                     if (answersToMove) {
                         status[newId] = answersToMove;
-                        delete status[oldId];
+                        delete status[originalIdForAnswers];
                     } else if (status.hasOwnProperty(newId)) {
                         delete status[newId];
                     }
@@ -306,12 +316,13 @@ async function applyIdChangeScenario() {
 
         const idInput = questionItem.querySelector('.manager-id-input');
         idInput.value = newId;
-        questionItem.dataset.id = newId; // Mevcut durum etiketini hala güncelliyoruz.
+        questionItem.dataset.id = newId; 
 
-        addMigrationMapping(oldId, newId);
+        // Yönlendirme haritasına orijinal ID'den yeni ID'ye kural ekle
+        addMigrationMapping(originalIdForAnswers, newId);
         sortManagerUI();
         
-        alert(`İŞLEM TAMAMLANDI!\n\n- Soru ${oldId} ID'si, ${newId} olarak güncellendi.\n- Bu soruya ait TÜM cevaplar, raporlarda yeni ID'ye taşındı.\n- Varsa, ${newId} ID'sinin eski cevapları silindi.\n\nDeğişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna basmayı unutmayın.`);
+        alert(`İŞLEM TAMAMLANDI!\n\n- Soru ID'si, ${newId} olarak güncellendi.\n- Bu soruya ait TÜM cevaplar, raporlarda yeni ID'ye taşındı.\n- Varsa, ${newId} ID'sinin eski cevapları silindi.\n\nDeğişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna basmayı unutmayın.`);
         closeScenarioSystem();
 
     } catch (error) {
@@ -321,6 +332,7 @@ async function applyIdChangeScenario() {
         loadingOverlay.style.display = 'none';
     }
 }
+
 
 function previewQuestionForDelete() {
     const id = document.getElementById('scenario-delete-id').value;
