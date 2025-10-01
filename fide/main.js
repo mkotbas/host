@@ -248,7 +248,6 @@ function setupEventListeners() {
     document.getElementById('special-visit-btn').addEventListener('click', startSpecialVisit);
     document.getElementById('add-special-note-btn').addEventListener('click', () => addSpecialNoteInput());
     
-    // YENİ EKLENDİ: Yeni "Standart Denetim Başlat" butonu için event listener
     document.getElementById('new-fide-audit-btn').addEventListener('click', startNewFideAuditForCurrentStore);
     
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
@@ -372,15 +371,14 @@ function setupEventListeners() {
     });
 }
 
-// YENİ FONKSİYON: Seçili bayi için özel ziyaret formundan standart FiDe formuna geçiş yapar
 function startNewFideAuditForCurrentStore() {
     if (!selectedStore) {
         alert('Bu işlemi yapmak için önce bir bayi seçmelisiniz.');
         return;
     }
     if (confirm('Mevcut özel ziyaret formu temizlenecek ve bu bayi için yeni bir standart FiDe denetimi başlatılacaktır. Onaylıyor musunuz?\n\n(Not: Kayıtlı özel ziyaret verileri silinmez, sadece yeni bir denetime başlanır.)')) {
-        resetForm(); // Bu fonksiyon formu sıfırlar ve standart FiDe görünümüne geçirir.
-        updateFormInteractivity(true); // Formu aktif hale getirir.
+        resetForm(); 
+        updateFormInteractivity(true); 
     }
 }
 
@@ -401,16 +399,40 @@ function showSpecialVisitForm() {
     updateFormInteractivity(selectedStore !== null);
 }
 
+// --- GÜNCELLENEN FONKSİYON ---
+// Artık özel ziyaret başlatmadan önce kaydedilmiş notları kontrol eder ve varsa yükler.
 function startSpecialVisit() {
     if (!selectedStore) {
         alert('Lütfen önce bir bayi seçin.');
         return;
     }
-    showSpecialVisitForm();
+
+    showSpecialVisitForm(); // Formu görünür yap
     const container = document.getElementById('special-notes-container');
-    container.innerHTML = ''; 
-    addSpecialNoteInput(true); 
+    container.innerHTML = ''; // Önce not alanını temizle
+
+    // Kayıtlı raporları kontrol et
+    const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
+    const storeKey = `store_${selectedStore.bayiKodu}`;
+    const existingReport = allReports[storeKey];
+
+    // Eğer bu bayi için daha önce kaydedilmiş bir "özel ziyaret" varsa notlarını yükle
+    if (existingReport && existingReport.data && existingReport.data.isSpecialVisit && existingReport.data.notes) {
+        if (existingReport.data.notes.length > 0) {
+            // Kayıtlı notları forma ekle
+            existingReport.data.notes.forEach(note => {
+                addSpecialNoteInput(false, note);
+            });
+        } else {
+            // Rapor var ama içinde not yoksa, bir tane boş not alanı ekle
+            addSpecialNoteInput(true);
+        }
+    } else {
+        // Eğer kayıtlı özel ziyaret yoksa, yeni bir tane boş not alanı ekle
+        addSpecialNoteInput(true);
+    }
 }
+// --- GÜNCELLEME SONU ---
 
 function addSpecialNoteInput(isFirst = false, value = '') {
     const container = document.getElementById('special-notes-container');
