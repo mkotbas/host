@@ -8,6 +8,7 @@
     --danger: #dc2626;
     --light: #f8fafc;
     --dark: #1e293b;
+    --info: #3b82f6; /* Yeni renk */
     --gray: #94a3b8;
     --border: #e2e8f0;
     --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -18,13 +19,16 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 
 .container { max-width: 1200px; margin: 0 auto; }
 .card { background: white; border-radius: 12px; box-shadow: var(--card-shadow); padding: 24px; margin-bottom: 24px; transition: var(--transition); }
 h2 { font-size: 20px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;}
-button, .btn-like-label, a.btn-primary, a.btn-warning, a.btn-success, a.btn-danger { text-decoration: none; cursor: pointer; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; }
+/* YENİ: h3 için genel stil eklendi */
+h3 { font-size: 18px; color: var(--dark); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+button, .btn-like-label, a.btn-primary, a.btn-warning, a.btn-success, a.btn-danger, .btn-info { text-decoration: none; cursor: pointer; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; }
 button:disabled { background-color: var(--gray); cursor: not-allowed; opacity: 0.7; }
-button i, .btn-like-label i, a.btn-primary i, a.btn-warning i, a.btn-success i, a.btn-danger i { margin-right: 8px; }
+button i, .btn-like-label i, a.btn-primary i, a.btn-warning i, a.btn-success i, a.btn-danger i, .btn-info i { margin-right: 8px; }
 .btn-primary { background-color: var(--primary); color: white; }
 .btn-success { background-color: var(--success); color: white; }
 .btn-danger { background-color: var(--danger); color: white; }
 .btn-warning { background-color: var(--warning); color: var(--dark); }
+.btn-info { background-color: var(--info); color: white; } /* Yeni stil */
 .btn-sm { padding: 6px 12px; font-size: 12px; }
 .action-button { width: 100%; padding: 12px; font-size: 15px; margin: 10px 0 30px; border-radius: 10px; background-color: var(--primary); color: white; }
 .fide-item { margin-bottom: 28px; padding: 20px; border-radius: 12px; background-color: white; box-shadow: var(--card-shadow); transition: var(--transition); }
@@ -83,8 +87,25 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
 .file-input-label i { margin-right: 8px; }
 #file-name, #fide-file-name { font-style: italic; color: var(--dark); }
 #store-selection-area { display: none; margin-top: 20px; }
+/* YENİ: Butonlar ve arama kutusu arasına boşluk eklendi */
+#store-selection-area #new-report-btn,
+#store-selection-area #special-visit-btn {
+    margin-bottom: 15px;
+    width: 49%;
+}
+#store-selection-area {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+#store-selection-area p {
+    width: 100%;
+}
+#store-selection-area hr {
+    width: 100%;
+}
 #store-search-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 16px; }
-#store-list { max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 5px; }
+#store-list { width: 100%; max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 5px; }
 .store-item { padding: 10px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; }
 .store-item:hover { background-color: #f1f5f9; }
 .store-item.selected { background-color: var(--success); color: white; font-weight: bold; }
@@ -948,6 +969,16 @@ input:checked + .slider.green {
 .region-header span {
     display: block;
     margin-bottom: 8px;
+}
+/* YENİ: Özel ziyaret etiketi stili */
+.special-visit-badge {
+    background-color: var(--info);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
 }
 @media (max-width: 900px) {
     .audit-lists-container {
