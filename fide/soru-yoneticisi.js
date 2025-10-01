@@ -229,7 +229,6 @@ function selectScenario(scenario) {
     }
 }
 
-// --- DEĞİŞİKLİK: Bu fonksiyon artık veritabanında büyük bir operasyon yapıyor ---
 async function applyIdChangeScenario() {
     const oldId = document.getElementById('scenario-old-id').value.trim();
     const newId = document.getElementById('scenario-new-id').value.trim();
@@ -247,6 +246,13 @@ async function applyIdChangeScenario() {
         return;
     }
     
+    // --- DEĞİŞİKLİK: Soruyu bulmak için artık [data-original-id] kullanılıyor ---
+    const questionItem = document.querySelector(`.manager-item[data-original-id="${oldId}"]`);
+    if (!questionItem) {
+        alert(`HATA: Orijinal ID'si "${oldId}" olan bir soru bulunamadı. Lütfen sayfayı yenileyip tekrar deneyin.`);
+        return;
+    }
+    
     const confirmationText = `DİKKAT! BU İŞLEM GERİ ALINAMAZ!\n\nBu işlem, '${newId}' ID'sine ait mevcut TÜM cevapları silecek ve '${oldId}' ID'sine ait tüm cevapları '${newId}' ID'sinin altına taşıyacaktır.\n\nTüm raporlardaki veriyi kalıcı olarak değiştirmek istediğinizden emin misiniz?`;
     if (!confirm(confirmationText)) {
         alert("İşlem iptal edildi.");
@@ -257,7 +263,6 @@ async function applyIdChangeScenario() {
     loadingOverlay.style.display = 'flex';
 
     try {
-        // 1. Bulut Veritabanı Operasyonu
         const reportsRef = database.ref('allFideReports');
         const snapshot = await reportsRef.once('value');
         if (snapshot.exists()) {
@@ -267,12 +272,10 @@ async function applyIdChangeScenario() {
                 const status = allCloudReports[storeKey]?.data?.questions_status;
                 if (status) {
                     const answersToMove = status[oldId];
-                    // Eğer eski ID'de taşınacak cevaplar varsa...
                     if (answersToMove) {
-                        updates[`${storeKey}/data/questions_status/${newId}`] = answersToMove; // Cevapları yeni ID'ye kopyala
-                        updates[`${storeKey}/data/questions_status/${oldId}`] = null; // Eski ID'deki cevapları sil
+                        updates[`${storeKey}/data/questions_status/${newId}`] = answersToMove; 
+                        updates[`${storeKey}/data/questions_status/${oldId}`] = null; 
                     } 
-                    // Eğer eski ID'de cevap yoksa ama yeni ID'de varsa (yani sadece üzerine yazılacaksa), o zaman yeni ID'yi sil.
                     else if (status.hasOwnProperty(newId)) {
                         updates[`${storeKey}/data/questions_status/${newId}`] = null;
                     }
@@ -283,7 +286,6 @@ async function applyIdChangeScenario() {
             }
         }
 
-        // 2. Yerel Depolama (LocalStorage) Operasyonu
         const localDataString = localStorage.getItem('allFideReports');
         if (localDataString) {
             let allLocalReports = JSON.parse(localDataString);
@@ -302,13 +304,9 @@ async function applyIdChangeScenario() {
             localStorage.setItem('allFideReports', JSON.stringify(allLocalReports));
         }
 
-        // 3. Arayüz Güncellemesi
-        const questionItem = document.querySelector(`.manager-item[data-id="${oldId}"]`);
-        if (questionItem) {
-            const idInput = questionItem.querySelector('.manager-id-input');
-            idInput.value = newId;
-            questionItem.dataset.id = newId;
-        }
+        const idInput = questionItem.querySelector('.manager-id-input');
+        idInput.value = newId;
+        questionItem.dataset.id = newId; // Mevcut durum etiketini hala güncelliyoruz.
 
         addMigrationMapping(oldId, newId);
         sortManagerUI();
@@ -421,10 +419,13 @@ async function applyDeleteQuestionScenario() {
 function renderMigrationManagerUI() {
     const listContainer = document.getElementById('migration-list-container');
     listContainer.innerHTML = '';
-    if (Object.keys(migrationMap).length === 0) {
+    
+    const sortedKeys = Object.keys(migrationMap).map(Number).sort((a, b) => a - b);
+
+    if (sortedKeys.length === 0) {
         listContainer.innerHTML = '<li class="empty-message">Henüz yönlendirme eklenmemiş.</li>';
     } else {
-        for (const oldId in migrationMap) {
+        sortedKeys.forEach(oldId => {
             const newId = migrationMap[oldId];
             const listItem = document.createElement('li');
             listItem.innerHTML = `
@@ -434,7 +435,7 @@ function renderMigrationManagerUI() {
                 <button class="btn-danger btn-sm" onclick="deleteMigrationMapping('${oldId}')" title="Bu yönlendirmeyi sil."><i class="fas fa-trash"></i></button>
             `;
             listContainer.appendChild(listItem);
-        }
+        });
     }
 }
 
