@@ -452,8 +452,8 @@ function uploadLocalBackupToCloud() {
     }
 }
 
-// GÜNCELLENDİ: Hem FiDe hem de Özel Ziyaret form durumunu kaydedebilir
-function saveFormState(isFinalizing = false) {
+// GÜNCELLENDİ: Hem FiDe hem de Özel Ziyaret form durumunu kaydedebilir ve denetim tamamlandığında 'geri alınanlar' listesini temizler
+async function saveFormState(isFinalizing = false) {
     if (!selectedStore) return;
 
     let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
@@ -482,6 +482,34 @@ function saveFormState(isFinalizing = false) {
 
     if (isFinalizing) {
         reportData.auditCompletedTimestamp = new Date().getTime();
+
+        // --- YENİ EKLENEN BÖLÜM ---
+        // Denetim Takip sayfasındaki sayaçların doğru çalışması için,
+        // tamamlanan bir denetimin "geri alınanlar" listesinden çıkarılması gerekir.
+        try {
+            const today = new Date();
+            const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
+            const localGeriAlinanlarJSON = localStorage.getItem('denetimGeriAlinanlar');
+            if (localGeriAlinanlarJSON) {
+                let geriAlinanlar = JSON.parse(localGeriAlinanlarJSON);
+                if (geriAlinanlar[currentMonthKey] && geriAlinanlar[currentMonthKey].includes(selectedStore.bayiKodu)) {
+                    // Bayi kodunu bu ayın geri alınanlar listesinden filtrele
+                    geriAlinanlar[currentMonthKey] = geriAlinanlar[currentMonthKey].filter(code => code !== selectedStore.bayiKodu);
+                    
+                    // Güncellenmiş listeyi yerel hafızaya kaydet
+                    localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
+                    
+                    // Eğer kullanıcı giriş yapmışsa bulutta da güncelle
+                    if (database && auth.currentUser) {
+                        const firebaseRef = database.ref('denetimGeriAlinanlar/' + currentMonthKey);
+                        await firebaseRef.set(geriAlinanlar[currentMonthKey]);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Denetim 'geri alınanlar' listesinden çıkarılırken bir hata oluştu:", error);
+        }
+        // --- YENİ EKLENEN BÖLÜM SONU ---
     }
 
     const dataToSave = { timestamp: new Date().getTime(), data: reportData };
@@ -530,12 +558,12 @@ function resetForm() {
 }
 
 // GÜNCELLENDİ: generateEmail fonksiyonu artık iki farklı türde e-posta oluşturabilir
-function generateEmail() {
+async function generateEmail() {
     if (!selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
         return;
     }
-    saveFormState(true); 
+    await saveFormState(true); 
 
     const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
     if (!storeInfo) {
