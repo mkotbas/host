@@ -209,67 +209,103 @@ function selectScenario(scenario) {
     }
 }
 
+// --- AKILLI ID DEĞİŞTİRME VE TAKAS SİSTEMİ ---
+
 async function migrateQuestionData(oldId, newId) {
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
-    console.log(`Veri taşıma işlemi başlatıldı: ${oldId} -> ${newId}`);
-
+    console.log(`Veri TAŞIMA işlemi başlatıldı: ${oldId} -> ${newId}`);
     try {
-        // 1. Yerel (localStorage) verileri güncelle
         const localDataString = localStorage.getItem('allFideReports');
         if (localDataString) {
             let allReports = JSON.parse(localDataString);
-            let updatedCountLocal = 0;
             for (const storeKey in allReports) {
                 const report = allReports[storeKey]?.data?.questions_status;
                 if (report && report[oldId]) {
-                    // Hedef ID'de veri varsa üzerine yaz (taşıma işlemi önceliklidir)
                     report[newId] = report[oldId];
                     delete report[oldId];
-                    updatedCountLocal++;
                 }
             }
             localStorage.setItem('allFideReports', JSON.stringify(allReports));
-            console.log(`${updatedCountLocal} yerel rapor güncellendi.`);
         }
 
-        // 2. Bulut (Firebase) verilerini güncelle
         if (auth.currentUser && database) {
             const reportsRef = database.ref('allFideReports');
             const snapshot = await reportsRef.once('value');
             if (snapshot.exists()) {
                 let allCloudReports = snapshot.val();
                 let updates = {};
-                let updatedCountCloud = 0;
                 for (const storeKey in allCloudReports) {
                     const report = allCloudReports[storeKey]?.data?.questions_status;
                     if (report && report[oldId]) {
-                        // Firebase'de hem yeni veriyi ekleyip hem eski veriyi silmek için
-                        // bir 'update' objesi hazırlıyoruz.
                         updates[`${storeKey}/data/questions_status/${newId}`] = report[oldId];
-                        updates[`${storeKey}/data/questions_status/${oldId}`] = null; // null olarak ayarlamak veriyi siler
-                        updatedCountCloud++;
+                        updates[`${storeKey}/data/questions_status/${oldId}`] = null;
                     }
                 }
-
-                if (Object.keys(updates).length > 0) {
-                    await reportsRef.update(updates);
-                    console.log(`${updatedCountCloud} bulut raporu güncellendi.`);
-                }
+                if (Object.keys(updates).length > 0) await reportsRef.update(updates);
             }
         }
-        console.log("Veri taşıma işlemi başarıyla tamamlandı.");
+        console.log("Veri TAŞIMA işlemi başarıyla tamamlandı.");
         return true;
-
     } catch (error) {
-        console.error("Veri taşıma senaryosu sırasında bir hata oluştu:", error);
-        alert("Kritik bir hata oluştu! Raporlardaki cevaplar taşınamadı. Lütfen konsolu kontrol edin.");
+        console.error("Veri taşıma sırasında bir hata oluştu:", error);
+        alert("Kritik Hata: Raporlardaki cevaplar taşınamadı. Lütfen konsolu kontrol edin.");
         return false;
     } finally {
         loadingOverlay.style.display = 'none';
     }
 }
 
+async function swapQuestionData(idA, idB) {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+    console.log(`Veri TAKAS işlemi başlatıldı: ${idA} <-> ${idB}`);
+    try {
+        const localDataString = localStorage.getItem('allFideReports');
+        if (localDataString) {
+            let allReports = JSON.parse(localDataString);
+            for (const storeKey in allReports) {
+                const report = allReports[storeKey]?.data?.questions_status;
+                if (report) {
+                    const answerA = report[idA];
+                    const answerB = report[idB];
+                    delete report[idA];
+                    delete report[idB];
+                    if (answerB) report[idA] = answerB;
+                    if (answerA) report[idB] = answerA;
+                }
+            }
+            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+        }
+
+        if (auth.currentUser && database) {
+            const reportsRef = database.ref('allFideReports');
+            const snapshot = await reportsRef.once('value');
+            if (snapshot.exists()) {
+                let allCloudReports = snapshot.val();
+                let updates = {};
+                for (const storeKey in allCloudReports) {
+                    const report = allCloudReports[storeKey]?.data?.questions_status;
+                    if (report) {
+                        const answerA = report[idA];
+                        const answerB = report[idB];
+                        updates[`${storeKey}/data/questions_status/${idA}`] = answerB || null;
+                        updates[`${storeKey}/data/questions_status/${idB}`] = answerA || null;
+                    }
+                }
+                if (Object.keys(updates).length > 0) await reportsRef.update(updates);
+            }
+        }
+        console.log("Veri TAKAS işlemi başarıyla tamamlandı.");
+        return true;
+    } catch (error) {
+        console.error("Veri takas sırasında bir hata oluştu:", error);
+        alert("Kritik Hata: Raporlardaki cevaplar takas edilemedi. Lütfen konsolu kontrol edin.");
+        return false;
+    } finally {
+        loadingOverlay.style.display = 'none';
+    }
+}
 
 async function applyIdChangeScenario() {
     const oldId = document.getElementById('scenario-old-id').value.trim();
@@ -284,41 +320,47 @@ async function applyIdChangeScenario() {
         return;
     }
 
-    const questionExists = fideQuestions.some(q => String(q.id) === String(oldId));
-    if (!questionExists) {
+    const questionToMove = fideQuestions.find(q => String(q.id) === String(oldId));
+    if (!questionToMove) {
         alert(`HATA: "${oldId}" ID'li bir soru bulunamadı.`);
         return;
     }
 
-    const targetIdExists = fideQuestions.some(q => String(q.id) === String(newId));
-    if (targetIdExists) {
-        alert(`HATA: "${newId}" ID'si zaten başka bir soru tarafından kullanılıyor. Lütfen önce o sorunun ID'sini değiştirin veya soruyu arşivleyin.`);
-        return;
+    const targetQuestion = fideQuestions.find(q => String(q.id) === String(newId));
+
+    if (!targetQuestion) {
+        // --- SENARYO 1: HEDEF ID BOŞ, BASİT TAŞIMA İŞLEMİ ---
+        const confirmation = confirm(`Bu işlem, ${oldId} ID'li soruyu ${newId} olarak güncelleyecek ve TÜM cevapları kalıcı olarak yeni ID'ye taşıyacaktır. Devam etmek istiyor musunuz?`);
+        if (!confirmation) return;
+
+        const migrationSuccess = await migrateQuestionData(oldId, newId);
+        if (!migrationSuccess) return;
+
+        questionToMove.id = parseInt(newId, 10);
+        addMigrationMapping(oldId, newId);
+        
+        alert(`Başarılı!\n\n- Soru ${oldId}, ${newId} ID'sine taşındı.\n- Tüm raporlardaki cevaplar kalıcı olarak taşındı.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
+
+    } else {
+        // --- SENARYO 2: HEDEF ID DOLU, AKILLI TAKAS İŞLEMİ ---
+        const confirmation = confirm(`"${newId}" ID'si zaten başka bir soru tarafından kullanılıyor.\n\nİki sorunun ID'lerini ve kaydedilmiş TÜM cevaplarını birbiriyle DEĞİŞTİRMEK (takas etmek) istediğinizden emin misiniz?`);
+        if (!confirmation) return;
+
+        const swapSuccess = await swapQuestionData(oldId, newId);
+        if (!swapSuccess) return;
+
+        questionToMove.id = parseInt(newId, 10);
+        targetQuestion.id = parseInt(oldId, 10);
+
+        // Takas işleminde eski yönlendirmeler kafa karıştırabilir, temizlemek daha güvenli.
+        delete migrationMap[oldId];
+        delete migrationMap[newId];
+        saveMigrationMap();
+        
+        alert(`Başarılı!\n\n- ${oldId} ve ${newId} ID'li sorular birbiriyle değiştirildi.\n- Her iki soruya ait tüm cevaplar da raporlarda takas edildi.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
     }
-    
-    const confirmation = confirm(`Bu işlem, ${oldId} ID'li soruyu ${newId} olarak güncelleyecek ve TÜM bayi raporlarındaki bu soruya ait cevapları kalıcı olarak yeni ID'ye taşıyacaktır. Devam etmek istiyor musunuz?`);
-    if (!confirmation) {
-        alert("İşlem iptal edildi.");
-        return;
-    }
 
-    // 1. Önce tüm raporlardaki cevapları taşı
-    const migrationSuccess = await migrateQuestionData(oldId, newId);
-    if (!migrationSuccess) return; // Taşıma başarısız olursa işlemi durdur
-
-    // 2. Arka plandaki ana veri kaynağını (fideQuestions dizisi) güncelle
-    const questionToUpdate = fideQuestions.find(q => String(q.id) === String(oldId));
-    if (questionToUpdate) {
-        questionToUpdate.id = parseInt(newId, 10);
-    }
-
-    // 3. Yönlendirme kuralı ekle (her ihtimale karşı)
-    addMigrationMapping(oldId, newId);
-
-    // 4. Ekrani güncel veri kaynağına göre yeniden çiz
     renderQuestionManager();
-    
-    alert(`Başarılı!\n\n- Soru ${oldId} ID'si, ${newId} olarak güncellendi.\n- Tüm raporlardaki cevaplar kalıcı olarak yeni ID'ye taşındı.\n- Soru listesi yeniden sıralandı.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
     closeScenarioSystem();
 }
 
