@@ -102,6 +102,20 @@ function updateConnectionIndicator() {
     statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
 }
 
+function sortManagerUI() {
+    const managerList = document.getElementById('manager-list');
+    const items = Array.from(managerList.querySelectorAll('.manager-item'));
+
+    items.sort((a, b) => {
+        const idA = parseInt(a.querySelector('.manager-id-input').value) || 0;
+        const idB = parseInt(b.querySelector('.manager-id-input').value) || 0;
+        return idA - idB;
+    });
+
+    items.forEach(item => managerList.appendChild(item));
+}
+
+
 function setupEventListeners() {
     if (document.body.dataset.listenersAttached) return;
     document.body.dataset.listenersAttached = 'true';
@@ -147,6 +161,12 @@ function setupEventListeners() {
     document.getElementById('delete-all-archived-btn').addEventListener('click', deleteAllArchivedQuestions);
     document.getElementById('restore-all-archived-btn').addEventListener('click', restoreAllArchivedQuestions);
     
+    document.getElementById('manager-list').addEventListener('change', (event) => {
+        if (event.target.classList.contains('manager-id-input')) {
+            sortManagerUI();
+        }
+    });
+
     document.getElementById('unlock-ids-btn').addEventListener('click', () => {
         const dogruSifreHash = 'ZmRlMDAx';
         const girilenSifre = prompt("ID alanlarını düzenlemeye açmak için lütfen yönetici şifresini tekrar girin:");
@@ -209,7 +229,8 @@ function selectScenario(scenario) {
     }
 }
 
-function applyIdChangeScenario() {
+// --- DEĞİŞİKLİK: Bu fonksiyon artık veritabanında büyük bir operasyon yapıyor ---
+async function applyIdChangeScenario() {
     const oldId = document.getElementById('scenario-old-id').value.trim();
     const newId = document.getElementById('scenario-new-id').value.trim();
 
@@ -221,21 +242,86 @@ function applyIdChangeScenario() {
         alert("Eski ve yeni ID aynı olamaz.");
         return;
     }
-
-    const questionItem = document.querySelector(`.manager-item[data-id="${oldId}"]`);
-    if (!questionItem) {
-        alert(`HATA: "${oldId}" ID'li bir soru bulunamadı.`);
+    if (!auth.currentUser || !database) {
+        alert("Bu kritik işlem için bulut sistemine giriş yapmış olmanız gerekmektedir.");
         return;
     }
     
-    const idInput = questionItem.querySelector('.manager-id-input');
-    idInput.value = newId;
-    questionItem.dataset.id = newId;
+    const confirmationText = `DİKKAT! BU İŞLEM GERİ ALINAMAZ!\n\nBu işlem, '${newId}' ID'sine ait mevcut TÜM cevapları silecek ve '${oldId}' ID'sine ait tüm cevapları '${newId}' ID'sinin altına taşıyacaktır.\n\nTüm raporlardaki veriyi kalıcı olarak değiştirmek istediğinizden emin misiniz?`;
+    if (!confirm(confirmationText)) {
+        alert("İşlem iptal edildi.");
+        return;
+    }
 
-    addMigrationMapping(oldId, newId);
-    
-    alert(`Başarılı!\n\n- Soru ${oldId} ID'si, ${newId} olarak güncellendi.\n- Veri kaybını önlemek için otomatik yönlendirme kuralı eklendi.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
-    closeScenarioSystem();
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+
+    try {
+        // 1. Bulut Veritabanı Operasyonu
+        const reportsRef = database.ref('allFideReports');
+        const snapshot = await reportsRef.once('value');
+        if (snapshot.exists()) {
+            let allCloudReports = snapshot.val();
+            let updates = {};
+            for (const storeKey in allCloudReports) {
+                const status = allCloudReports[storeKey]?.data?.questions_status;
+                if (status) {
+                    const answersToMove = status[oldId];
+                    // Eğer eski ID'de taşınacak cevaplar varsa...
+                    if (answersToMove) {
+                        updates[`${storeKey}/data/questions_status/${newId}`] = answersToMove; // Cevapları yeni ID'ye kopyala
+                        updates[`${storeKey}/data/questions_status/${oldId}`] = null; // Eski ID'deki cevapları sil
+                    } 
+                    // Eğer eski ID'de cevap yoksa ama yeni ID'de varsa (yani sadece üzerine yazılacaksa), o zaman yeni ID'yi sil.
+                    else if (status.hasOwnProperty(newId)) {
+                        updates[`${storeKey}/data/questions_status/${newId}`] = null;
+                    }
+                }
+            }
+            if (Object.keys(updates).length > 0) {
+                await reportsRef.update(updates);
+            }
+        }
+
+        // 2. Yerel Depolama (LocalStorage) Operasyonu
+        const localDataString = localStorage.getItem('allFideReports');
+        if (localDataString) {
+            let allLocalReports = JSON.parse(localDataString);
+            for (const storeKey in allLocalReports) {
+                const status = allLocalReports[storeKey]?.data?.questions_status;
+                if (status) {
+                    const answersToMove = status[oldId];
+                    if (answersToMove) {
+                        status[newId] = answersToMove;
+                        delete status[oldId];
+                    } else if (status.hasOwnProperty(newId)) {
+                        delete status[newId];
+                    }
+                }
+            }
+            localStorage.setItem('allFideReports', JSON.stringify(allLocalReports));
+        }
+
+        // 3. Arayüz Güncellemesi
+        const questionItem = document.querySelector(`.manager-item[data-id="${oldId}"]`);
+        if (questionItem) {
+            const idInput = questionItem.querySelector('.manager-id-input');
+            idInput.value = newId;
+            questionItem.dataset.id = newId;
+        }
+
+        addMigrationMapping(oldId, newId);
+        sortManagerUI();
+        
+        alert(`İŞLEM TAMAMLANDI!\n\n- Soru ${oldId} ID'si, ${newId} olarak güncellendi.\n- Bu soruya ait TÜM cevaplar, raporlarda yeni ID'ye taşındı.\n- Varsa, ${newId} ID'sinin eski cevapları silindi.\n\nDeğişiklikleri kalıcı hale getirmek için 'Kaydet' butonuna basmayı unutmayın.`);
+        closeScenarioSystem();
+
+    } catch (error) {
+        console.error("Cevapları taşırken bir hata oluştu:", error);
+        alert("KRİTİK HATA: Cevaplar taşınamadı. Lütfen konsolu kontrol edin ve işlemi tekrar deneyin.");
+    } finally {
+        loadingOverlay.style.display = 'none';
+    }
 }
 
 function previewQuestionForDelete() {
@@ -432,7 +518,7 @@ function renderQuestionManager() {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'manager-item';
         itemDiv.dataset.id = q.id;
-        itemDiv.dataset.originalId = q.id; // --- DEĞİŞİKLİK 1: Orijinal ID'yi burada saklıyoruz ---
+        itemDiv.dataset.originalId = q.id; 
         let staticItemsHtml = (q.staticItems || []).join('<br>'); 
         const typeOptions = ['standard', 'product_list', 'pop_system'];
         const selectOptionsHTML = typeOptions.map(type => `<option value="${type}" ${q.type === type ? 'selected' : ''}>${type}</option>`).join('');
@@ -751,7 +837,7 @@ function addNewQuestionUI() {
     itemDiv.className = 'manager-item';
     itemDiv.style.backgroundColor = '#dcfce7';
     itemDiv.dataset.id = newId;
-    itemDiv.dataset.originalId = newId; // Yeni eklenen soru için de originalId ayarlayalım.
+    itemDiv.dataset.originalId = newId; 
     itemDiv.innerHTML = `
         <div class="manager-item-grid">
             <div>
@@ -940,7 +1026,6 @@ async function saveQuestions() {
         if (wantsStoreEmail) newQuestion.wantsStoreEmail = true;
 
         if (type === 'pop_system') {
-            // --- DEĞİŞİKLİK 2: Orijinal veriyi bulmak için sakladığımız 'original-id'yi kullanıyoruz ---
             const originalId = parseInt(item.dataset.originalId);
             const originalPopQuestion = fideQuestions.find(q => q.id === originalId);
             newQuestion.popCodes = originalPopQuestion ? originalPopQuestion.popCodes : [];
