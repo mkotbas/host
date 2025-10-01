@@ -85,17 +85,23 @@ textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(
 .file-input-label { background-color: var(--primary); color: white; padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; transition: var(--transition); }
 .file-input-label i { margin-right: 8px; }
 #file-name, #fide-file-name { font-style: italic; color: var(--dark); }
-#store-selection-area { display: none; margin-top: 20px; }
+/* DÜZELTME: Ana kapsayıcıdaki flex stilleri kaldırıldı */
+#store-selection-area { 
+    display: none; 
+    margin-top: 20px; 
+}
 
-/* YENİ: Buton yerleşimini düzenleyen stiller */
+/* YENİ: Butonları gruplayan ve konumlandıran stil */
 .report-action-buttons {
     display: flex;
     justify-content: flex-start; /* Butonları sola yaslar */
-    gap: 10px;
-    margin-bottom: 15px; /* Butonlarla arama kutusu arasına boşluk */
+    gap: 10px; /* Butonlar arası boşluk */
+    margin-bottom: 15px; /* Altındaki arama kutusuyla arasına boşluk */
 }
+
+/* YENİ: Butonların genişliğini ayarlayan stil */
 .report-action-buttons button {
-    width: 50%; /* Her butonu yarı genişlikte yapar */
+    width: calc(50% - 5px); /* Her butonu boşluğu hesaba katarak %50 yapar */
 }
 
 #store-search-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 16px; }
