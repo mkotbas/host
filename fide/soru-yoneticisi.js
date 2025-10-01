@@ -12,8 +12,7 @@ async function initializeApp() {
         console.error("Firebase auth başlatılamadı. db-config.js yüklendiğinden emin olun.");
         return;
     }
-
-    // DEĞİŞİKLİK: setupEventListeners fonksiyonu, her koşulda butonların çalışması için auth kontrolünün dışına, en başa taşındı.
+    
     setupEventListeners();
 
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
@@ -32,7 +31,6 @@ async function initializeApp() {
         }
         updateConnectionIndicator();
         await loadInitialData();
-        // setupEventListeners(); // Bu satır yukarı taşındı.
         renderQuestionManager();
     });
 }
@@ -81,14 +79,17 @@ async function loadInitialData() {
         }
     }
     
+    // --- İSTEĞİNİZİ YERİNE GETİREN DEĞİŞİKLİK BURADA ---
     if (!questionsLoaded) {
-        // Kullanıcı giriş yapmamışsa veya hata oluşmuşsa, soru listesini boşaltıp uyarı veriyoruz.
-        // renderQuestionManager boş listeyi ekrana yansıtacak.
+        // Soru listesini boşaltıyoruz.
         fideQuestions = []; 
-        if (!auth.currentUser) {
-            console.log("Soruları görmek için lütfen giriş yapın.");
-        } else {
+        
+        // Sadece kullanıcı giriş yapmış olmasına rağmen yükleme başarısız olursa uyarı gösteriyoruz.
+        // Eğer kullanıcı zaten çıkış yapmışsa (auth.currentUser yoksa), hiçbir uyarı göstermiyoruz.
+        if (auth.currentUser) {
              alert("Soru listesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.");
+        } else {
+            console.log("Soruları görmek için lütfen giriş yapın.");
         }
     }
 
@@ -461,7 +462,6 @@ function renderQuestionManager() {
     const managerList = document.getElementById('manager-list');
     managerList.innerHTML = '';
     if (!fideQuestions || fideQuestions.length === 0) {
-        // Sorular yüklenmediyse veya boşsa, kullanıcıya bir mesaj göster.
         const isEmpty = !auth.currentUser ? "Soruları görmek için lütfen giriş yapın." : "Yüklenecek soru bulunamadı.";
         managerList.innerHTML = `<div class="empty-manager-message"><i class="fas fa-info-circle"></i> ${isEmpty}</div>`;
         return;
