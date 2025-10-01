@@ -469,7 +469,9 @@ function saveFormState(isFinalizing = false) {
         reportData = {
             selectedStore: selectedStore,
             isSpecialVisit: true,
-            notes: notes
+            notes: notes,
+            // YAPIYI DİĞER RAPORLA AYNI HALE GETİRMEK İÇİN BOŞ BİR NESNE EKLENDİ
+            questions_status: {}
         };
     } else { // 'fide' modu
         reportData = getFideFormDataForSaving();
@@ -538,14 +540,14 @@ function generateEmail() {
     saveFormState(true); 
 
     const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
-    if (!storeInfo) {
+    if (!storeInfo && currentFormMode !== 'special') { // Özel ziyarette DiDe verisi zorunlu değil
         alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
         return;
     }
     
     let finalEmailBody = '';
-    const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
-    const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
+    const bayiYonetmeniFullName = storeInfo ? storeInfo['Bayi Yönetmeni'] : '';
+    const yonetmenFirstName = bayiYonetmeniFullName ? bayiYonetmeniFullName.split(' ')[0] : '';
     const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
 
     if (currentFormMode === 'special') {
@@ -561,7 +563,7 @@ function generateEmail() {
             return;
         }
 
-        let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>${selectedStore.bayiKodu} ${shortBayiAdi} bayisine yapılan özel ziyarete istinaden notlar aşağıdadır.</p>`;
+        let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : 'Merhaba'},</p><p>&nbsp;</p><p>${selectedStore.bayiKodu} ${shortBayiAdi} bayisine yapılan özel ziyarete istinaden notlar aşağıdadır.</p>`;
         let notesHtml = `<ul>${notes.map(note => `<li>${note}</li>`).join('')}</ul>`;
         finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${notesHtml}`;
 
