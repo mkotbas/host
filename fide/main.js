@@ -6,6 +6,7 @@ const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular 
 const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 let isFirebaseConnected = false;
 let currentFormMode = 'fide'; // YENİ: Hangi formun aktif olduğunu tutar ('fide' veya 'special')
+const specialVisitPopQuestionId = 14; // Özel ziyarete eklenecek sorunun orijinal ID'si
 
 // --- Ana Uygulama Mantığı ---
 window.onload = initializeApp;
@@ -246,7 +247,7 @@ function setupEventListeners() {
     document.getElementById('load-from-email-btn').addEventListener('click', parseAndLoadFromEmail);
 
     document.getElementById('special-visit-btn').addEventListener('click', startSpecialVisit);
-    document.getElementById('add-special-note-btn').addEventListener('click', () => addSpecialNoteInput());
+    document.getElementById('add-special-note-btn').addEventListener('click', () => addSpecialNoteInput(true));
     
     document.getElementById('new-fide-audit-btn').addEventListener('click', startNewFideAuditForCurrentStore);
     
@@ -371,17 +372,16 @@ function setupEventListeners() {
     });
 }
 
+// --- GÜNCELLENDİ: Onay penceresi kaldırıldı. ---
 function startNewFideAuditForCurrentStore() {
     if (!selectedStore) {
         alert('Bu işlemi yapmak için önce bir bayi seçmelisiniz.');
         return;
     }
-    if (confirm('Mevcut özel ziyaret formu temizlenecek ve bu bayi için yeni bir standart FiDe denetimi başlatılacaktır. Onaylıyor musunuz?\n\n(Not: Kayıtlı özel ziyaret verileri silinmez, sadece yeni bir denetime başlanır.)')) {
-        resetForm(); 
-        updateFormInteractivity(true); 
-    }
+    // Onay `confirm` penceresi kaldırıldı.
+    resetForm(); 
+    updateFormInteractivity(true); 
 }
-
 
 function showFiDeForm() {
     currentFormMode = 'fide';
@@ -399,41 +399,60 @@ function showSpecialVisitForm() {
     updateFormInteractivity(selectedStore !== null);
 }
 
-// --- GÜNCELLENEN FONKSİYON ---
-// Artık özel ziyaret başlatmadan önce kaydedilmiş notları kontrol eder ve varsa yükler.
+// --- GÜNCELLENDİ: Özel Ziyaret formu artık hem notları yüklüyor hem de POP sorusunu ekliyor ---
 function startSpecialVisit() {
     if (!selectedStore) {
         alert('Lütfen önce bir bayi seçin.');
         return;
     }
 
-    showSpecialVisitForm(); // Formu görünür yap
-    const container = document.getElementById('special-notes-container');
-    container.innerHTML = ''; // Önce not alanını temizle
+    showSpecialVisitForm();
+    const notesContainer = document.getElementById('special-notes-container');
+    const popContainer = document.getElementById('special-visit-pop-question-container');
+    notesContainer.innerHTML = '';
+    popContainer.innerHTML = '';
 
-    // Kayıtlı raporları kontrol et
     const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
     const storeKey = `store_${selectedStore.bayiKodu}`;
     const existingReport = allReports[storeKey];
 
-    // Eğer bu bayi için daha önce kaydedilmiş bir "özel ziyaret" varsa notlarını yükle
+    // Önceki özel ziyaret notlarını yükle
     if (existingReport && existingReport.data && existingReport.data.isSpecialVisit && existingReport.data.notes) {
         if (existingReport.data.notes.length > 0) {
-            // Kayıtlı notları forma ekle
-            existingReport.data.notes.forEach(note => {
-                addSpecialNoteInput(false, note);
-            });
+            existingReport.data.notes.forEach(note => addSpecialNoteInput(false, note));
         } else {
-            // Rapor var ama içinde not yoksa, bir tane boş not alanı ekle
             addSpecialNoteInput(true);
         }
     } else {
-        // Eğer kayıtlı özel ziyaret yoksa, yeni bir tane boş not alanı ekle
         addSpecialNoteInput(true);
     }
-}
-// --- GÜNCELLEME SONU ---
 
+    // Şimdi POP sorusunu bul ve ekle
+    const finalPopQuestionId = getFinalQuestionId(specialVisitPopQuestionId);
+    const popQuestionData = fideQuestions.find(q => String(q.id) === String(finalPopQuestionId));
+    
+    if (popQuestionData) {
+        const questionHtml = generateQuestionHtml(popQuestionData);
+        popContainer.innerHTML = questionHtml;
+        // POP sistemi için gerekli olan checkbox'ları ve olay dinleyicilerini başlat
+        initializePopSystem(`fide-item-${popQuestionData.id}`);
+        // Kayıtlı POP verilerini yükle (eğer varsa)
+        if (existingReport && existingReport.data && existingReport.data.questions_status && existingReport.data.questions_status[finalPopQuestionId]) {
+            const popStatus = existingReport.data.questions_status[finalPopQuestionId];
+            if (popStatus.selectedPops) {
+                popStatus.selectedPops.forEach(popCode => {
+                    const cb = document.querySelector(`#special-visit-pop-question-container .pop-checkbox[value="${popCode}"]`);
+                    if (cb) cb.checked = true;
+                });
+                checkExpiredPopCodes(`fide-item-${popQuestionData.id}`);
+            }
+        }
+    } else {
+        popContainer.innerHTML = `<p style="color: red;">HATA: ID'si ${specialVisitPopQuestionId} olan Basılı Materyal sorusu bulunamadı. Lütfen Soru Yöneticisi'ni kontrol edin.</p>`;
+    }
+}
+
+// --- GÜNCELLENDİ: Enter tuşu ile yeni satır ekleme özelliği eklendi ---
 function addSpecialNoteInput(isFirst = false, value = '') {
     const container = document.getElementById('special-notes-container');
     const newItem = document.createElement('div');
@@ -444,6 +463,14 @@ function addSpecialNoteInput(isFirst = false, value = '') {
     input.placeholder = 'Notu veya eksiği yazın...';
     input.value = value;
     input.addEventListener('blur', saveFormState);
+    
+    // Enter tuşu dinleyicisi eklendi
+    input.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            addSpecialNoteInput(true);
+        }
+    });
 
     const deleteButton = document.createElement('button');
     deleteButton.className = 'delete-bar btn-danger';
@@ -481,6 +508,7 @@ function uploadLocalBackupToCloud() {
     }
 }
 
+// --- GÜNCELLENDİ: Özel ziyaret formu için POP verilerini de kaydedecek şekilde düzenlendi ---
 async function saveFormState(isFinalizing = false) {
     if (!selectedStore) return;
 
@@ -494,11 +522,26 @@ async function saveFormState(isFinalizing = false) {
             const noteText = input.value.trim();
             if (noteText) notes.push(noteText);
         });
+
         reportData = {
             selectedStore: selectedStore,
             isSpecialVisit: true,
-            notes: notes
+            notes: notes,
+            questions_status: {} // POP verilerini saklamak için eklendi
         };
+        
+        // POP verilerini kaydet
+        const finalPopQuestionId = getFinalQuestionId(specialVisitPopQuestionId);
+        const popQuestionContainer = document.getElementById(`fide-item-${finalPopQuestionId}`);
+        if (popQuestionContainer) {
+            const selectedPops = Array.from(popQuestionContainer.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+            reportData.questions_status[finalPopQuestionId] = {
+                removed: false,
+                completed: false, // Özel ziyarette tamamlandı durumu yok
+                selectedPops: selectedPops
+            };
+        }
+
     } else { // 'fide' modu
         reportData = getFideFormDataForSaving();
     }
@@ -577,6 +620,7 @@ function resetForm() {
     showFiDeForm();
 }
 
+// --- GÜNCELLENDİ: Özel ziyaret modu için POP verilerini de e-postaya ekleyecek şekilde düzenlendi ---
 async function generateEmail() {
     if (!selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -601,15 +645,38 @@ async function generateEmail() {
             const noteText = input.value.trim();
             if (noteText) notes.push(noteText);
         });
+        
+        // POP kodlarını al
+        const finalPopQuestionId = getFinalQuestionId(specialVisitPopQuestionId);
+        const popQuestionContainer = document.getElementById(`fide-item-${finalPopQuestionId}`);
+        let popContentHtml = '';
+        let popQuestionTitle = '';
 
-        if (notes.length === 0) {
-            alert("E-posta oluşturmak için en az bir not girmelisiniz.");
+        if(popQuestionContainer) {
+            const popQuestionData = fideQuestions.find(q => String(q.id) === String(finalPopQuestionId));
+            if(popQuestionData) popQuestionTitle = popQuestionData.title;
+
+            const nonExpiredCodes = Array.from(popQuestionContainer.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+            if (nonExpiredCodes.length > 0) {
+                 popContentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
+            }
+        }
+        
+        if (notes.length === 0 && popContentHtml === '') {
+            alert("E-posta oluşturmak için en az bir not girmeli veya malzeme seçimi yapmalısınız.");
             return;
         }
 
         let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>${selectedStore.bayiKodu} ${shortBayiAdi} bayisine yapılan özel ziyarete istinaden notlar aşağıdadır.</p>`;
-        let notesHtml = `<ul>${notes.map(note => `<li>${note}</li>`).join('')}</ul>`;
-        finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${notesHtml}`;
+        let notesHtml = notes.length > 0 ? `<ul>${notes.map(note => `<li>${note}</li>`).join('')}</ul>` : '';
+        
+        finalEmailBody = `${greetingHtml}`;
+        if(notesHtml) finalEmailBody += `<p>&nbsp;</p>${notesHtml}`;
+
+        if(popContentHtml) {
+            const emailTag = ` <a href="mailto:berkcan_boza@arcelik.com.tr" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@berkcan_boza@arcelik.com.tr</a>`;
+            finalEmailBody += `<p>&nbsp;</p><p><b>FiDe ${finalPopQuestionId}. ${popQuestionTitle}</b>${emailTag}</p>${popContentHtml}`;
+        }
 
     } else {
         const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
@@ -708,22 +775,18 @@ async function generateEmail() {
     document.querySelector('.container').appendChild(draftContainer);
 }
 
-
+// --- GÜNCELLENDİ: Özel ziyaret raporu yüklenirken POP verilerini de yükleyecek ---
 function loadReport(reportData) {
     try {
         if (reportData.isSpecialVisit) {
             selectStore(reportData.selectedStore, false);
-            showSpecialVisitForm();
-            const container = document.getElementById('special-notes-container');
-            container.innerHTML = '';
-            if (reportData.notes && reportData.notes.length > 0) {
-                reportData.notes.forEach(note => addSpecialNoteInput(false, note));
-            } else {
-                addSpecialNoteInput(true); 
-            }
-            return; 
+            // startSpecialVisit fonksiyonu zaten hem notları hem de POP seçimlerini yükler.
+            // Bu yüzden burada tekrar çağırmak en doğru yöntem.
+            startSpecialVisit(); 
+            return;
         }
 
+        // --- Mevcut Rapor Yükleme Mantığı (Değişmedi) ---
         for (const oldId in migrationMap) {
             if (reportData.questions_status[oldId]) {
                 const newId = migrationMap[oldId];
@@ -775,7 +838,7 @@ function loadReport(reportData) {
             
             if (data.selectedPops) {
                 data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
-                checkExpiredPopCodes();
+                checkExpiredPopCodes(`fide-item-${qId}`);
             }
         }
         updateFormInteractivity(true);
@@ -1039,10 +1102,20 @@ function updateFormInteractivity(enable) {
 
     const specialVisitForm = document.getElementById('special-visit-form');
     const specialButtons = specialVisitForm.querySelectorAll('button');
-    const specialInputs = specialVisitForm.querySelectorAll('input');
+    const specialInputs = specialVisitForm.querySelectorAll('input, select'); // select eklendi
 
     specialButtons.forEach(btn => btn.disabled = !enable);
     specialInputs.forEach(input => input.disabled = !enable);
+}
+
+// --- YENİ YARDIMCI FONKSİYON: ID yönlendirmelerini takip eder ---
+function getFinalQuestionId(initialId) {
+    let currentId = String(initialId);
+    // Yönlendirme zincirini sonuna kadar takip et
+    while (migrationMap[currentId]) {
+        currentId = migrationMap[currentId];
+    }
+    return currentId;
 }
 
 
@@ -1074,7 +1147,7 @@ function generateQuestionHtml(q) {
         questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
     } else if (q.type === 'pop_system') {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-        questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
+        questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer-${q.id}"></div><div class="warning-message" id="expiredWarning-${q.id}">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes('fide-item-${q.id}')" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes('fide-item-${q.id}')" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes('fide-item-${q.id}')" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft('fide-item-${q.id}')" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
     }
     return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
 }
@@ -1088,7 +1161,13 @@ function buildForm() {
         html += generateQuestionHtml(q);
     });
     formContainer.innerHTML = html;
-    if (document.getElementById('popCodesContainer')) initializePopSystem();
+    
+    // Tüm pop sistemlerini başlat
+    fideQuestions.forEach(q => {
+        if (q.type === 'pop_system' && !q.isArchived) {
+            initializePopSystem(`fide-item-${q.id}`);
+        }
+    });
 }
 function initiateDeleteItem(buttonEl) {
     const itemEl = buttonEl.parentElement;
@@ -1244,10 +1323,13 @@ function getDynamicInputsForSaving(id) {
     });
     return dynamicItems;
 }
-function initializePopSystem() {
-    const popCodesContainer = document.getElementById('popCodesContainer');
+function initializePopSystem(questionItemId) {
+    const questionItem = document.getElementById(questionItemId);
+    if (!questionItem) return;
+    const popCodesContainer = questionItem.querySelector('.pop-container');
     if (!popCodesContainer) return;
-    popCodesContainer.innerHTML = '';
+    
+    popCodesContainer.innerHTML = ''; // Temizle
     popCodes.forEach(code => {
         const label = document.createElement('label');
         label.className = 'checkbox-label';
@@ -1256,7 +1338,7 @@ function initializePopSystem() {
         checkbox.value = code;
         checkbox.className = 'pop-checkbox';
         checkbox.addEventListener('change', () => {
-            checkExpiredPopCodes();
+            checkExpiredPopCodes(questionItemId);
             saveFormState();
         });
         label.appendChild(checkbox);
@@ -1264,29 +1346,39 @@ function initializePopSystem() {
         popCodesContainer.appendChild(label);
     });
 }
-function checkExpiredPopCodes() {
-    const warningMessage = document.getElementById('expiredWarning');
+function checkExpiredPopCodes(questionItemId) {
+    const questionItem = document.getElementById(questionItemId);
+    if (!questionItem) return;
+    const warningMessage = questionItem.querySelector('.warning-message');
     if (!warningMessage) return;
-    const hasExpired = Array.from(document.querySelectorAll('.pop-checkbox:checked')).some(cb => expiredCodes.includes(cb.value));
+    const hasExpired = Array.from(questionItem.querySelectorAll('.pop-checkbox:checked')).some(cb => expiredCodes.includes(cb.value));
     warningMessage.style.display = hasExpired ? 'block' : 'none';
 }
-function copySelectedCodes() {
-    const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+function copySelectedCodes(questionItemId) {
+    const questionItem = document.getElementById(questionItemId);
+    if (!questionItem) return;
+    const nonExpiredCodes = Array.from(questionItem.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
     if (nonExpiredCodes.length === 0) return alert("Kopyalamak için geçerli kod seçin.");
     navigator.clipboard.writeText(nonExpiredCodes.join(', ')).then(() => alert("Seçilen geçerli kodlar kopyalandı!"));
 }
-function clearSelectedCodes() {
-    document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
-    checkExpiredPopCodes();
+function clearSelectedCodes(questionItemId) {
+    const questionItem = document.getElementById(questionItemId);
+    if (!questionItem) return;
+    questionItem.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
+    checkExpiredPopCodes(questionItemId);
     saveFormState();
 }
-function selectExpiredCodes() {
-    document.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = expiredCodes.includes(cb.value); });
-    checkExpiredPopCodes();
+function selectExpiredCodes(questionItemId) {
+    const questionItem = document.getElementById(questionItemId);
+    if (!questionItem) return;
+    questionItem.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = expiredCodes.includes(cb.value); });
+    checkExpiredPopCodes(questionItemId);
     saveFormState();
 }
-function openEmailDraft() {
-    const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+function openEmailDraft(questionItemId) {
+    const questionItem = document.getElementById(questionItemId);
+    if (!questionItem) return;
+    const selectedCodes = Array.from(questionItem.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
     const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
     if (nonExpiredCodes.length === 0) { alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin."); return; }
     const kodSatiri = nonExpiredCodes.join(', ');
