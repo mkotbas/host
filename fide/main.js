@@ -5,9 +5,7 @@ let migrationMap = {}, storeEmails = {};
 const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan veya yerel dosyadan yüklenemedi." }];
 const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 let isFirebaseConnected = false;
-let currentFormMode = 'fide';
-// --- DÜZELTME: Özel ziyarete eklenecek sorunun ID'si doğru olan 14 olarak ayarlandı ---
-const specialVisitPopQuestionId = 14; 
+let currentFormMode = 'fide'; // YENİ: Hangi formun aktif olduğunu tutar ('fide' veya 'special')
 
 // --- Ana Uygulama Mantığı ---
 window.onload = initializeApp;
@@ -129,11 +127,10 @@ async function loadInitialData() {
         }
     }
 
-    // Bu atama, entegre edilecek sorunun POP kodlarını ve süresi dolanları doğru alması için önemli.
-    const popQuestionForSetup = fideQuestions.find(q => String(q.id) === String(getFinalQuestionId(specialVisitPopQuestionId)));
-    if (popQuestionForSetup) {
-        popCodes = popQuestionForSetup.popCodes || [];
-        expiredCodes = popQuestionForSetup.expiredCodes || [];
+    const popSystemQuestion = fideQuestions.find(q => q.type === 'pop_system');
+    if (popSystemQuestion) {
+        popCodes = popSystemQuestion.popCodes || [];
+        expiredCodes = popSystemQuestion.expiredCodes || [];
     }
 
 
@@ -249,7 +246,7 @@ function setupEventListeners() {
     document.getElementById('load-from-email-btn').addEventListener('click', parseAndLoadFromEmail);
 
     document.getElementById('special-visit-btn').addEventListener('click', startSpecialVisit);
-    document.getElementById('add-special-note-btn').addEventListener('click', () => addSpecialNoteInput(true));
+    document.getElementById('add-special-note-btn').addEventListener('click', () => addSpecialNoteInput());
     
     document.getElementById('new-fide-audit-btn').addEventListener('click', startNewFideAuditForCurrentStore);
     
@@ -379,9 +376,12 @@ function startNewFideAuditForCurrentStore() {
         alert('Bu işlemi yapmak için önce bir bayi seçmelisiniz.');
         return;
     }
-    resetForm(); 
-    updateFormInteractivity(true); 
+    if (confirm('Mevcut özel ziyaret formu temizlenecek ve bu bayi için yeni bir standart FiDe denetimi başlatılacaktır. Onaylıyor musunuz?\n\n(Not: Kayıtlı özel ziyaret verileri silinmez, sadece yeni bir denetime başlanır.)')) {
+        resetForm(); 
+        updateFormInteractivity(true); 
+    }
 }
+
 
 function showFiDeForm() {
     currentFormMode = 'fide';
@@ -399,53 +399,40 @@ function showSpecialVisitForm() {
     updateFormInteractivity(selectedStore !== null);
 }
 
+// --- GÜNCELLENEN FONKSİYON ---
+// Artık özel ziyaret başlatmadan önce kaydedilmiş notları kontrol eder ve varsa yükler.
 function startSpecialVisit() {
     if (!selectedStore) {
         alert('Lütfen önce bir bayi seçin.');
         return;
     }
 
-    showSpecialVisitForm();
-    const notesContainer = document.getElementById('special-notes-container');
-    const popContainer = document.getElementById('special-visit-pop-question-container');
-    notesContainer.innerHTML = '';
-    popContainer.innerHTML = '';
+    showSpecialVisitForm(); // Formu görünür yap
+    const container = document.getElementById('special-notes-container');
+    container.innerHTML = ''; // Önce not alanını temizle
 
+    // Kayıtlı raporları kontrol et
     const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
     const storeKey = `store_${selectedStore.bayiKodu}`;
     const existingReport = allReports[storeKey];
 
+    // Eğer bu bayi için daha önce kaydedilmiş bir "özel ziyaret" varsa notlarını yükle
     if (existingReport && existingReport.data && existingReport.data.isSpecialVisit && existingReport.data.notes) {
         if (existingReport.data.notes.length > 0) {
-            existingReport.data.notes.forEach(note => addSpecialNoteInput(false, note));
+            // Kayıtlı notları forma ekle
+            existingReport.data.notes.forEach(note => {
+                addSpecialNoteInput(false, note);
+            });
         } else {
+            // Rapor var ama içinde not yoksa, bir tane boş not alanı ekle
             addSpecialNoteInput(true);
         }
     } else {
+        // Eğer kayıtlı özel ziyaret yoksa, yeni bir tane boş not alanı ekle
         addSpecialNoteInput(true);
     }
-
-    const finalPopQuestionId = getFinalQuestionId(specialVisitPopQuestionId);
-    const popQuestionData = fideQuestions.find(q => String(q.id) === String(finalPopQuestionId));
-    
-    if (popQuestionData) {
-        const questionHtml = generateQuestionHtml(popQuestionData);
-        popContainer.innerHTML = questionHtml;
-        initializePopSystem(`fide-item-${popQuestionData.id}`);
-        if (existingReport && existingReport.data && existingReport.data.questions_status && existingReport.data.questions_status[finalPopQuestionId]) {
-            const popStatus = existingReport.data.questions_status[finalPopQuestionId];
-            if (popStatus.selectedPops) {
-                popStatus.selectedPops.forEach(popCode => {
-                    const cb = document.querySelector(`#special-visit-pop-question-container .pop-checkbox[value="${popCode}"]`);
-                    if (cb) cb.checked = true;
-                });
-                checkExpiredPopCodes(`fide-item-${popQuestionData.id}`);
-            }
-        }
-    } else {
-        popContainer.innerHTML = `<p style="color: red;">HATA: ID'si ${specialVisitPopQuestionId} olan Basılı Materyal sorusu bulunamadı. Lütfen Soru Yöneticisi'ni kontrol edin.</p>`;
-    }
 }
+// --- GÜNCELLEME SONU ---
 
 function addSpecialNoteInput(isFirst = false, value = '') {
     const container = document.getElementById('special-notes-container');
@@ -457,13 +444,6 @@ function addSpecialNoteInput(isFirst = false, value = '') {
     input.placeholder = 'Notu veya eksiği yazın...';
     input.value = value;
     input.addEventListener('blur', saveFormState);
-    
-    input.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            addSpecialNoteInput(true);
-        }
-    });
 
     const deleteButton = document.createElement('button');
     deleteButton.className = 'delete-bar btn-danger';
@@ -514,26 +494,12 @@ async function saveFormState(isFinalizing = false) {
             const noteText = input.value.trim();
             if (noteText) notes.push(noteText);
         });
-
         reportData = {
             selectedStore: selectedStore,
             isSpecialVisit: true,
-            notes: notes,
-            questions_status: {}
+            notes: notes
         };
-        
-        const finalPopQuestionId = getFinalQuestionId(specialVisitPopQuestionId);
-        const popQuestionContainer = document.getElementById(`fide-item-${finalPopQuestionId}`);
-        if (popQuestionContainer) {
-            const selectedPops = Array.from(popQuestionContainer.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
-            reportData.questions_status[finalPopQuestionId] = {
-                removed: false,
-                completed: false,
-                selectedPops: selectedPops
-            };
-        }
-
-    } else {
+    } else { // 'fide' modu
         reportData = getFideFormDataForSaving();
     }
 
@@ -635,37 +601,15 @@ async function generateEmail() {
             const noteText = input.value.trim();
             if (noteText) notes.push(noteText);
         });
-        
-        const finalPopQuestionId = getFinalQuestionId(specialVisitPopQuestionId);
-        const popQuestionContainer = document.getElementById(`fide-item-${finalPopQuestionId}`);
-        let popContentHtml = '';
-        let popQuestionTitle = '';
 
-        if(popQuestionContainer) {
-            const popQuestionData = fideQuestions.find(q => String(q.id) === String(finalPopQuestionId));
-            if(popQuestionData) popQuestionTitle = popQuestionData.title;
-
-            const nonExpiredCodes = Array.from(popQuestionContainer.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
-            if (nonExpiredCodes.length > 0) {
-                 popContentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
-            }
-        }
-        
-        if (notes.length === 0 && popContentHtml === '') {
-            alert("E-posta oluşturmak için en az bir not girmeli veya malzeme seçimi yapmalısınız.");
+        if (notes.length === 0) {
+            alert("E-posta oluşturmak için en az bir not girmelisiniz.");
             return;
         }
 
         let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>${selectedStore.bayiKodu} ${shortBayiAdi} bayisine yapılan özel ziyarete istinaden notlar aşağıdadır.</p>`;
-        let notesHtml = notes.length > 0 ? `<ul>${notes.map(note => `<li>${note}</li>`).join('')}</ul>` : '';
-        
-        finalEmailBody = `${greetingHtml}`;
-        if(notesHtml) finalEmailBody += `<p>&nbsp;</p>${notesHtml}`;
-
-        if(popContentHtml) {
-            const emailTag = ` <a href="mailto:berkcan_boza@arcelik.com.tr" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@berkcan_boza@arcelik.com.tr</a>`;
-            finalEmailBody += `<p>&nbsp;</p><p><b>FiDe ${finalPopQuestionId}. ${popQuestionTitle}</b>${emailTag}</p>${popContentHtml}`;
-        }
+        let notesHtml = `<ul>${notes.map(note => `<li>${note}</li>`).join('')}</ul>`;
+        finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${notesHtml}`;
 
     } else {
         const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
@@ -710,11 +654,8 @@ async function generateEmail() {
                 if (productItemsHtml.length > 0) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
                 if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
             } else if (q.type === 'pop_system') {
-                 const popContainer = document.getElementById(`fide-item-${q.id}`);
-                 if(popContainer){
-                    const nonExpiredCodes = Array.from(popContainer.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
-                    if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
-                 }
+                const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+                if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
             }
             if (contentHtml !== '' || isQuestionCompleted) {
                 const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
@@ -772,7 +713,14 @@ function loadReport(reportData) {
     try {
         if (reportData.isSpecialVisit) {
             selectStore(reportData.selectedStore, false);
-            startSpecialVisit(); 
+            showSpecialVisitForm();
+            const container = document.getElementById('special-notes-container');
+            container.innerHTML = '';
+            if (reportData.notes && reportData.notes.length > 0) {
+                reportData.notes.forEach(note => addSpecialNoteInput(false, note));
+            } else {
+                addSpecialNoteInput(true); 
+            }
             return; 
         }
 
@@ -826,8 +774,8 @@ function loadReport(reportData) {
             if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty)); 
             
             if (data.selectedPops) {
-                data.selectedPops.forEach(popCode => { const cb = document.querySelector(`#fide-item-${qId} .pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
-                checkExpiredPopCodes(`fide-item-${qId}`);
+                data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
+                checkExpiredPopCodes();
             }
         }
         updateFormInteractivity(true);
@@ -975,12 +923,7 @@ function getFideFormDataForSaving() {
             else if (q.type === 'product_list') {
                 document.querySelectorAll('#selected-products-list .selected-product-item').forEach(item => questionData.selectedProducts.push({ code: item.dataset.code, qty: item.dataset.qty }));
                 questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}_pleksi`);
-            } else if (q.type === 'pop_system') {
-                const popContainer = document.getElementById(`fide-item-${q.id}`);
-                if (popContainer) {
-                    questionData.selectedPops = Array.from(popContainer.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
-                }
-            }
+            } else if (q.type === 'pop_system') questionData.selectedPops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
         }
         reportData.questions_status[q.id] = questionData;
     });
@@ -1096,19 +1039,14 @@ function updateFormInteractivity(enable) {
 
     const specialVisitForm = document.getElementById('special-visit-form');
     const specialButtons = specialVisitForm.querySelectorAll('button');
-    const specialInputs = specialVisitForm.querySelectorAll('input, select');
+    const specialInputs = specialVisitForm.querySelectorAll('input');
 
     specialButtons.forEach(btn => btn.disabled = !enable);
     specialInputs.forEach(input => input.disabled = !enable);
 }
 
-function getFinalQuestionId(initialId) {
-    let currentId = String(initialId);
-    while (migrationMap[currentId]) {
-        currentId = migrationMap[currentId];
-    }
-    return currentId;
-}
+
+// --- BU NOKTADAN SONRASI DEĞİŞMEDİ, SADECE OKUNABİLİRLİK İÇİN AYIRDIM ---
 
 function generateQuestionHtml(q) {
     let questionActionsHTML = '';
@@ -1136,7 +1074,7 @@ function generateQuestionHtml(q) {
         questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
     } else if (q.type === 'pop_system') {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-        questionContentHTML = `<div class="input-area"><div class="pop-container"></div><div class="warning-message">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes('fide-item-${q.id}')" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes('fide-item-${q.id}')" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes('fide-item-${q.id}')" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft('fide-item-${q.id}')" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
+        questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
     }
     return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
 }
@@ -1150,12 +1088,7 @@ function buildForm() {
         html += generateQuestionHtml(q);
     });
     formContainer.innerHTML = html;
-    
-    fideQuestions.forEach(q => {
-        if (q.type === 'pop_system' && !q.isArchived) {
-            initializePopSystem(`fide-item-${q.id}`);
-        }
-    });
+    if (document.getElementById('popCodesContainer')) initializePopSystem();
 }
 function initiateDeleteItem(buttonEl) {
     const itemEl = buttonEl.parentElement;
@@ -1311,12 +1244,9 @@ function getDynamicInputsForSaving(id) {
     });
     return dynamicItems;
 }
-function initializePopSystem(questionItemId) {
-    const questionItem = document.getElementById(questionItemId);
-    if (!questionItem) return;
-    const popCodesContainer = questionItem.querySelector('.pop-container');
+function initializePopSystem() {
+    const popCodesContainer = document.getElementById('popCodesContainer');
     if (!popCodesContainer) return;
-    
     popCodesContainer.innerHTML = '';
     popCodes.forEach(code => {
         const label = document.createElement('label');
@@ -1326,7 +1256,7 @@ function initializePopSystem(questionItemId) {
         checkbox.value = code;
         checkbox.className = 'pop-checkbox';
         checkbox.addEventListener('change', () => {
-            checkExpiredPopCodes(questionItemId);
+            checkExpiredPopCodes();
             saveFormState();
         });
         label.appendChild(checkbox);
@@ -1334,39 +1264,29 @@ function initializePopSystem(questionItemId) {
         popCodesContainer.appendChild(label);
     });
 }
-function checkExpiredPopCodes(questionItemId) {
-    const questionItem = document.getElementById(questionItemId);
-    if (!questionItem) return;
-    const warningMessage = questionItem.querySelector('.warning-message');
+function checkExpiredPopCodes() {
+    const warningMessage = document.getElementById('expiredWarning');
     if (!warningMessage) return;
-    const hasExpired = Array.from(questionItem.querySelectorAll('.pop-checkbox:checked')).some(cb => expiredCodes.includes(cb.value));
+    const hasExpired = Array.from(document.querySelectorAll('.pop-checkbox:checked')).some(cb => expiredCodes.includes(cb.value));
     warningMessage.style.display = hasExpired ? 'block' : 'none';
 }
-function copySelectedCodes(questionItemId) {
-    const questionItem = document.getElementById(questionItemId);
-    if (!questionItem) return;
-    const nonExpiredCodes = Array.from(questionItem.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+function copySelectedCodes() {
+    const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
     if (nonExpiredCodes.length === 0) return alert("Kopyalamak için geçerli kod seçin.");
     navigator.clipboard.writeText(nonExpiredCodes.join(', ')).then(() => alert("Seçilen geçerli kodlar kopyalandı!"));
 }
-function clearSelectedCodes(questionItemId) {
-    const questionItem = document.getElementById(questionItemId);
-    if (!questionItem) return;
-    questionItem.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
-    checkExpiredPopCodes(questionItemId);
+function clearSelectedCodes() {
+    document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
+    checkExpiredPopCodes();
     saveFormState();
 }
-function selectExpiredCodes(questionItemId) {
-    const questionItem = document.getElementById(questionItemId);
-    if (!questionItem) return;
-    questionItem.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = expiredCodes.includes(cb.value); });
-    checkExpiredPopCodes(questionItemId);
+function selectExpiredCodes() {
+    document.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = expiredCodes.includes(cb.value); });
+    checkExpiredPopCodes();
     saveFormState();
 }
-function openEmailDraft(questionItemId) {
-    const questionItem = document.getElementById(questionItemId);
-    if (!questionItem) return;
-    const selectedCodes = Array.from(questionItem.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
+function openEmailDraft() {
+    const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
     const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
     if (nonExpiredCodes.length === 0) { alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin."); return; }
     const kodSatiri = nonExpiredCodes.join(', ');
