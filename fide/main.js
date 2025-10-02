@@ -694,18 +694,10 @@ async function generateEmail() {
                         if (!aIsLink && bIsLink) return -1;
                         return 0;
                     });
-                    // --- GÜNCELLEME BAŞLANGICI: Çift madde işareti sorununu düzelten bölüm ---
                     contentHtml = `<ul>${itemsForEmail.map(item => {
-                        if (item.completed) {
-                            return `<li>${item.text} <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span></li>`;
-                        }
-                        // Eğer metin zaten bir <li> etiketiyle başlıyorsa, tekrar <li> ile sarmalama.
-                        if (item.text.trim().startsWith('<li>')) {
-                            return item.text;
-                        }
+                        if (item.completed) return `<li>${item.text} <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span></li>`;
                         return `<li>${item.text}</li>`;
                     }).join('')}</ul>`;
-                    // --- GÜNCELLEME SONU ---
                 }
             } else if (q.type === 'product_list') {
                 const productItemsHtml = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => {
