@@ -371,15 +371,15 @@ function setupEventListeners() {
     });
 }
 
+// --- GÜNCELLENEN FONKSİYON ---
+// Onay penceresi kaldırıldı.
 function startNewFideAuditForCurrentStore() {
     if (!selectedStore) {
         alert('Bu işlemi yapmak için önce bir bayi seçmelisiniz.');
         return;
     }
-    if (confirm('Mevcut özel ziyaret formu temizlenecek ve bu bayi için yeni bir standart FiDe denetimi başlatılacaktır. Onaylıyor musunuz?\n\n(Not: Kayıtlı özel ziyaret verileri silinmez, sadece yeni bir denetime başlanır.)')) {
-        resetForm(); 
-        updateFormInteractivity(true); 
-    }
+    resetForm(); 
+    updateFormInteractivity(true); 
 }
 
 
@@ -400,7 +400,7 @@ function showSpecialVisitForm() {
 }
 
 // --- GÜNCELLENEN FONKSİYON ---
-// Özel Ziyaret formuna FİDE 14 (POP Sistemi) sorusunu ve butonlarını ekler.
+// Materyal sorusunu standart bir soru kutusu (.fide-item) içinde oluşturur.
 function renderSpecialVisitPopSystem() {
     const container = document.getElementById('special-visit-pop-system-container');
     if (!container) return;
@@ -419,22 +419,23 @@ function renderSpecialVisitPopSystem() {
     `).join('');
 
     container.innerHTML = `
-        <hr>
-        <div class="fide-title-container" style="margin-bottom: 15px;">
-            <p><span class="badge">FiDe ${popQuestion.id}</span> ${popQuestion.title}</p>
-        </div>
-        <div class="pop-container">${popCodesHTML}</div>
-        <div class="pop-button-container">
-            <button class="btn-success btn-sm" onclick="copySpecialPopCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button>
-            <button class="btn-danger btn-sm" onclick="clearSpecialPopCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button>
-            <button class="btn-primary btn-sm" onclick="selectSpecialExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button>
-            <button class="btn-primary btn-sm" onclick="openSpecialPopEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button>
+        <div class="fide-item">
+            <div class="fide-title-container">
+                <p><span class="badge">FiDe ${popQuestion.id}</span> ${popQuestion.title}</p>
+            </div>
+            <div class="input-area">
+                <div class="pop-container">${popCodesHTML}</div>
+                <div class="pop-button-container">
+                    <button class="btn-success btn-sm" onclick="copySpecialPopCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button>
+                    <button class="btn-danger btn-sm" onclick="clearSpecialPopCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button>
+                    <button class="btn-primary btn-sm" onclick="selectSpecialExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button>
+                    <button class="btn-primary btn-sm" onclick="openSpecialPopEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button>
+                </div>
+            </div>
         </div>
     `;
 }
 
-// --- GÜNCELLENEN FONKSİYON ---
-// Artık özel ziyaret başlatırken hem notları hem de materyal listesini yükler.
 function startSpecialVisit() {
     if (!selectedStore) {
         alert('Lütfen önce bir bayi seçin.');
@@ -445,7 +446,6 @@ function startSpecialVisit() {
     const notesContainer = document.getElementById('special-notes-container');
     notesContainer.innerHTML = ''; 
 
-    // POP sistemini forma çiz
     renderSpecialVisitPopSystem();
 
     const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
@@ -453,14 +453,11 @@ function startSpecialVisit() {
     const existingReport = allReports[storeKey];
 
     if (existingReport && existingReport.data && existingReport.data.isSpecialVisit) {
-        // Notları yükle
         if (existingReport.data.notes && existingReport.data.notes.length > 0) {
             existingReport.data.notes.forEach(note => addSpecialNoteInput(false, note));
         } else {
             addSpecialNoteInput(true);
         }
-
-        // Kayıtlı POP kodlarını yükle
         if (existingReport.data.specialPopCodes && existingReport.data.specialPopCodes.length > 0) {
             existingReport.data.specialPopCodes.forEach(code => {
                 const cb = document.querySelector(`.special-pop-checkbox[value="${code}"]`);
@@ -468,7 +465,6 @@ function startSpecialVisit() {
             });
         }
     } else {
-        // Eğer kayıtlı özel ziyaret yoksa, bir tane boş not alanı ekle
         addSpecialNoteInput(true);
     }
 }
@@ -521,8 +517,6 @@ function uploadLocalBackupToCloud() {
     }
 }
 
-// --- GÜNCELLENEN FONKSİYON ---
-// Artık özel ziyaret modundayken seçilen materyal kodlarını da kaydeder.
 async function saveFormState(isFinalizing = false) {
     if (!selectedStore) return;
 
@@ -546,9 +540,9 @@ async function saveFormState(isFinalizing = false) {
             selectedStore: selectedStore,
             isSpecialVisit: true,
             notes: notes,
-            specialPopCodes: specialPopCodes // Seçilen materyalleri ekle
+            specialPopCodes: specialPopCodes
         };
-    } else { // 'fide' modu
+    } else { 
         reportData = getFideFormDataForSaving();
     }
 
@@ -626,8 +620,6 @@ function resetForm() {
     showFiDeForm();
 }
 
-// --- GÜNCELLENEN FONKSİYON ---
-// Artık özel ziyaret e-postası oluştururken seçilen materyalleri de ekler.
 async function generateEmail() {
     if (!selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -770,15 +762,12 @@ async function generateEmail() {
     document.querySelector('.container').appendChild(draftContainer);
 }
 
-// --- GÜNCELLENEN FONKSİYON ---
-// Artık özel ziyaret raporu yüklenirken seçili materyalleri de forma getirir.
 function loadReport(reportData) {
     try {
         if (reportData.isSpecialVisit) {
             selectStore(reportData.selectedStore, false);
             showSpecialVisitForm();
             
-            // Notları yükle
             const container = document.getElementById('special-notes-container');
             container.innerHTML = '';
             if (reportData.notes && reportData.notes.length > 0) {
@@ -787,7 +776,6 @@ function loadReport(reportData) {
                 addSpecialNoteInput(true); 
             }
             
-            // Materyal listesini çiz ve seçilenleri işaretle
             renderSpecialVisitPopSystem();
             if (reportData.specialPopCodes && reportData.specialPopCodes.length > 0) {
                 reportData.specialPopCodes.forEach(code => {
