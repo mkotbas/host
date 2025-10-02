@@ -399,8 +399,8 @@ function showSpecialVisitForm() {
     updateFormInteractivity(selectedStore !== null);
 }
 
-// --- YENİ FONKSİYON ---
-// Özel Ziyaret formuna FİDE 14 (POP Sistemi) sorusunu ekler.
+// --- GÜNCELLENEN FONKSİYON ---
+// Özel Ziyaret formuna FİDE 14 (POP Sistemi) sorusunu ve butonlarını ekler.
 function renderSpecialVisitPopSystem() {
     const container = document.getElementById('special-visit-pop-system-container');
     if (!container) return;
@@ -424,6 +424,12 @@ function renderSpecialVisitPopSystem() {
             <p><span class="badge">FiDe ${popQuestion.id}</span> ${popQuestion.title}</p>
         </div>
         <div class="pop-container">${popCodesHTML}</div>
+        <div class="pop-button-container">
+            <button class="btn-success btn-sm" onclick="copySpecialPopCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button>
+            <button class="btn-danger btn-sm" onclick="clearSpecialPopCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button>
+            <button class="btn-primary btn-sm" onclick="selectSpecialExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button>
+            <button class="btn-primary btn-sm" onclick="openSpecialPopEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button>
+        </div>
     `;
 }
 
@@ -1371,6 +1377,41 @@ function openEmailDraft() {
     emailWindow.document.write(emailHTML);
     emailWindow.document.close();
 }
+
+// --- YENİ EKLENEN YARDIMCI FONKSİYONLAR (ÖZEL ZİYARET İÇİN) ---
+function copySpecialPopCodes() {
+    const nonExpiredCodes = Array.from(document.querySelectorAll('.special-pop-checkbox:checked')).map(cb => cb.value).filter(code => !expiredCodes.includes(code));
+    if (nonExpiredCodes.length === 0) return alert("Kopyalamak için geçerli kod seçin.");
+    navigator.clipboard.writeText(nonExpiredCodes.join(', ')).then(() => alert("Seçilen geçerli kodlar kopyalandı!"));
+}
+function clearSpecialPopCodes() {
+    document.querySelectorAll('.special-pop-checkbox').forEach(cb => cb.checked = false);
+    saveFormState();
+}
+function selectSpecialExpiredCodes() {
+    document.querySelectorAll('.special-pop-checkbox').forEach(cb => { cb.checked = expiredCodes.includes(cb.value); });
+    saveFormState();
+}
+function openSpecialPopEmailDraft() {
+    const selectedCodes = Array.from(document.querySelectorAll('.special-pop-checkbox:checked')).map(cb => cb.value);
+    const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
+    if (nonExpiredCodes.length === 0) { alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin."); return; }
+    const kodSatiri = nonExpiredCodes.join(', ');
+    const emailHTML = `
+        <!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>E-Posta Taslağı</title>
+        <style>body { font-family: Arial; padding: 20px; background-color: #fff; } .block { margin-bottom: 15px; } .label { font-weight: bold; color: #555; display: inline-block; margin-bottom: 8px; }</style>
+        </head><body>
+        <div class="block"><span class="label">Kime:</span> berkcan_boza@arcelik.com.tr</div>
+        <div class="block"><span class="label">CC:</span> "ugur.dogan@arcelik.com" &lt;ugur.dogan@arcelik.com.tr&gt;; "aykut.demen@arcelik.com.tr" &lt;aykut.demen@arcelik.com.tr&gt;; "Ahmet.Erol2@arcelik.com.tr" &lt;ahmet.erol2@arcelik.com.tr&gt;</div>
+        <div class="block"><span class="label">Konu:</span> (Boş)</div>
+        <div class="block"><span class="label">İçerik:</span><div style="margin-top: 10px;">${kodSatiri}</div></div>
+        </body></html>`;
+    const emailWindow = window.open('', '_blank');
+    emailWindow.document.write(emailHTML);
+    emailWindow.document.close();
+}
+// --- YENİ FONKSİYONLAR SONU ---
+
 function handleFileSelect(event, type) {
     const file = event.target.files[0];
     if (!file) return;
