@@ -1057,13 +1057,7 @@ async function saveQuestions() {
         if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılamaz.`); return; }
         ids.add(id);
 
-        const staticItems = staticItemsHTML
-            .replace(/<p[^>]*>/gi, '<div>').replace(/<\/p>/gi, '</div>') 
-            .replace(/<br\s*\/?>|<\/div>/gi, '__LINE_BREAK__') 
-            .split('__LINE_BREAK__') 
-            .map(s => s.replace(/<[^>]+>/g, '').trim()) 
-            .filter(s => s); 
-
+        const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
         const newQuestion = { id, title, type, answerType };
         if (staticItems.length > 0 && type !== 'product_list') newQuestion.staticItems = staticItems;
         if (isArchived) newQuestion.isArchived = true;
