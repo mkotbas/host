@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayi Yöneticisi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div id="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>İşlem yapılıyor, lütfen bekleyin...</p>
+    </div>
+
+    <div class="container">
+        
+        <div class="top-controls">
+            <div class="backup-controls">
+                <a href="../index.html" class="btn-primary btn-sm"><i class="fas fa-home"></i> Ana Sayfa</a>
+            </div>
+            <div class="right-controls">
+                <div id="connection-status-container">
+                    <div id="connection-status-switch" class="disconnected">
+                        <div class="thumb"></div>
+                    </div>
+                    <span id="connection-status-text">Bağlı Değil</span>
+                </div>
+                
+                <div id="auth-controls">
+                    <button id="login-toggle-btn" class="btn-success btn-sm"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
+                    <button id="logout-btn" class="btn-danger btn-sm" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
+                    <div id="login-popup">
+                        <h3><i class="fas fa-cloud"></i> Bulut Sistemine Giriş</h3>
+                        <input type="email" id="email-input" placeholder="E-posta">
+                        <input type="password" id="password-input" placeholder="Şifre">
+                        <button id="login-submit-btn" class="btn-primary btn-sm"><i class="fas fa-check"></i> Onayla</button>
+                        <div id="login-error"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="email-manager">
+            <h2>
+                <a href="../index.html" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
+                    <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i> Bayi Yöneticisi
+                </a>
+            </h2>
+            <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+                <i class="fas fa-info-circle"></i> Buradan bayi kodlarına atanmış e-posta adreslerini yönetebilirsiniz. Değişiklikler anında buluta kaydedilir.
+            </p>
+            <div class="manager-actions">
+                 <div class="manager-main-actions">
+                    <a href="denetim-takip.html" class="btn-warning btn-sm"><i class="fas fa-calendar-check"></i> Denetim Takip Sistemi</a>
+                    <button id="bulk-upload-emails-btn" class="btn-success btn-sm"><i class="fas fa-file-upload"></i> Toplu E-posta Yükle (.txt)</button>
+                    <button id="add-new-email-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Yeni E-posta Ekle</button>
+                     <input type="file" id="email-bulk-upload-input" accept=".txt" style="display: none;">
+                </div>
+                 <input type="text" id="email-search-input" placeholder="Bayi kodu veya e-posta ile ara..." style="padding: 10px; border-radius: 6px; border: 1px solid var(--border); width: 100%; max-width: 300px;">
+            </div>
+            <div id="email-manager-list" class="email-manager-list-container"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    
+    <script src="../db-config.js"></script>
+    <script src="bayi-yoneticisi.js"></script>
+</body>
+</html>
