@@ -1084,9 +1084,3 @@ input:checked + .slider.green {
         max-width: none;
     }
 }
-
-/* YENİ EKLENEN KOD - FiDe 16 gibi maddelerde yaşanan hatalı madde işareti (liste noktası) sorununu çözer */
-.static-item .content > li {
-    list-style-type: none;
-    padding-left: 0;
-}
