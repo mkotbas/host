@@ -399,40 +399,74 @@ function showSpecialVisitForm() {
     updateFormInteractivity(selectedStore !== null);
 }
 
+// --- YENİ FONKSİYON ---
+// Özel Ziyaret formuna FİDE 14 (POP Sistemi) sorusunu ekler.
+function renderSpecialVisitPopSystem() {
+    const container = document.getElementById('special-visit-pop-system-container');
+    if (!container) return;
+
+    const popQuestion = fideQuestions.find(q => q.id === 14 && q.type === 'pop_system');
+    if (!popQuestion) {
+        container.innerHTML = '<p>Materyal listesi (FiDe 14) yüklenemedi.</p>';
+        return;
+    }
+
+    let popCodesHTML = popCodes.map(code => `
+        <label class="checkbox-label">
+            <input type="checkbox" value="${code}" class="special-pop-checkbox" onchange="saveFormState()">
+            ${code}
+        </label>
+    `).join('');
+
+    container.innerHTML = `
+        <hr>
+        <div class="fide-title-container" style="margin-bottom: 15px;">
+            <p><span class="badge">FiDe ${popQuestion.id}</span> ${popQuestion.title}</p>
+        </div>
+        <div class="pop-container">${popCodesHTML}</div>
+    `;
+}
+
 // --- GÜNCELLENEN FONKSİYON ---
-// Artık özel ziyaret başlatmadan önce kaydedilmiş notları kontrol eder ve varsa yükler.
+// Artık özel ziyaret başlatırken hem notları hem de materyal listesini yükler.
 function startSpecialVisit() {
     if (!selectedStore) {
         alert('Lütfen önce bir bayi seçin.');
         return;
     }
 
-    showSpecialVisitForm(); // Formu görünür yap
-    const container = document.getElementById('special-notes-container');
-    container.innerHTML = ''; // Önce not alanını temizle
+    showSpecialVisitForm();
+    const notesContainer = document.getElementById('special-notes-container');
+    notesContainer.innerHTML = ''; 
 
-    // Kayıtlı raporları kontrol et
+    // POP sistemini forma çiz
+    renderSpecialVisitPopSystem();
+
     const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
     const storeKey = `store_${selectedStore.bayiKodu}`;
     const existingReport = allReports[storeKey];
 
-    // Eğer bu bayi için daha önce kaydedilmiş bir "özel ziyaret" varsa notlarını yükle
-    if (existingReport && existingReport.data && existingReport.data.isSpecialVisit && existingReport.data.notes) {
-        if (existingReport.data.notes.length > 0) {
-            // Kayıtlı notları forma ekle
-            existingReport.data.notes.forEach(note => {
-                addSpecialNoteInput(false, note);
-            });
+    if (existingReport && existingReport.data && existingReport.data.isSpecialVisit) {
+        // Notları yükle
+        if (existingReport.data.notes && existingReport.data.notes.length > 0) {
+            existingReport.data.notes.forEach(note => addSpecialNoteInput(false, note));
         } else {
-            // Rapor var ama içinde not yoksa, bir tane boş not alanı ekle
             addSpecialNoteInput(true);
         }
+
+        // Kayıtlı POP kodlarını yükle
+        if (existingReport.data.specialPopCodes && existingReport.data.specialPopCodes.length > 0) {
+            existingReport.data.specialPopCodes.forEach(code => {
+                const cb = document.querySelector(`.special-pop-checkbox[value="${code}"]`);
+                if (cb) cb.checked = true;
+            });
+        }
     } else {
-        // Eğer kayıtlı özel ziyaret yoksa, yeni bir tane boş not alanı ekle
+        // Eğer kayıtlı özel ziyaret yoksa, bir tane boş not alanı ekle
         addSpecialNoteInput(true);
     }
 }
-// --- GÜNCELLEME SONU ---
+
 
 function addSpecialNoteInput(isFirst = false, value = '') {
     const container = document.getElementById('special-notes-container');
@@ -481,6 +515,8 @@ function uploadLocalBackupToCloud() {
     }
 }
 
+// --- GÜNCELLENEN FONKSİYON ---
+// Artık özel ziyaret modundayken seçilen materyal kodlarını da kaydeder.
 async function saveFormState(isFinalizing = false) {
     if (!selectedStore) return;
 
@@ -494,10 +530,17 @@ async function saveFormState(isFinalizing = false) {
             const noteText = input.value.trim();
             if (noteText) notes.push(noteText);
         });
+
+        const specialPopCodes = [];
+        document.querySelectorAll('.special-pop-checkbox:checked').forEach(input => {
+            specialPopCodes.push(input.value);
+        });
+
         reportData = {
             selectedStore: selectedStore,
             isSpecialVisit: true,
-            notes: notes
+            notes: notes,
+            specialPopCodes: specialPopCodes // Seçilen materyalleri ekle
         };
     } else { // 'fide' modu
         reportData = getFideFormDataForSaving();
@@ -577,6 +620,8 @@ function resetForm() {
     showFiDeForm();
 }
 
+// --- GÜNCELLENEN FONKSİYON ---
+// Artık özel ziyaret e-postası oluştururken seçilen materyalleri de ekler.
 async function generateEmail() {
     if (!selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -602,14 +647,25 @@ async function generateEmail() {
             if (noteText) notes.push(noteText);
         });
 
-        if (notes.length === 0) {
-            alert("E-posta oluşturmak için en az bir not girmelisiniz.");
+        const selectedSpecialPops = Array.from(document.querySelectorAll('.special-pop-checkbox:checked')).map(cb => cb.value);
+
+        if (notes.length === 0 && selectedSpecialPops.length === 0) {
+            alert("E-posta oluşturmak için en az bir not girmeli veya materyal seçmelisiniz.");
             return;
         }
 
         let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>${selectedStore.bayiKodu} ${shortBayiAdi} bayisine yapılan özel ziyarete istinaden notlar aşağıdadır.</p>`;
-        let notesHtml = `<ul>${notes.map(note => `<li>${note}</li>`).join('')}</ul>`;
-        finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${notesHtml}`;
+        let notesHtml = notes.length > 0 ? `<ul>${notes.map(note => `<li>${note}</li>`).join('')}</ul>` : '';
+        
+        let popHtml = '';
+        if (selectedSpecialPops.length > 0) {
+            const popQuestion = fideQuestions.find(q => q.id === 14);
+            const popTitle = popQuestion ? `FiDe ${popQuestion.id}. ${popQuestion.title}` : 'İstenen Materyaller';
+            const emailTag = ` <a href="mailto:berkcan_boza@arcelik.com.tr" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@berkcan_boza@arcelik.com.tr</a>`;
+            popHtml = `<p>&nbsp;</p><p><b>${popTitle}</b>${emailTag}</p><ul><li>${selectedSpecialPops.join(', ')}</li></ul>`;
+        }
+
+        finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${notesHtml}${popHtml}`;
 
     } else {
         const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
@@ -708,18 +764,30 @@ async function generateEmail() {
     document.querySelector('.container').appendChild(draftContainer);
 }
 
-
+// --- GÜNCELLENEN FONKSİYON ---
+// Artık özel ziyaret raporu yüklenirken seçili materyalleri de forma getirir.
 function loadReport(reportData) {
     try {
         if (reportData.isSpecialVisit) {
             selectStore(reportData.selectedStore, false);
             showSpecialVisitForm();
+            
+            // Notları yükle
             const container = document.getElementById('special-notes-container');
             container.innerHTML = '';
             if (reportData.notes && reportData.notes.length > 0) {
                 reportData.notes.forEach(note => addSpecialNoteInput(false, note));
             } else {
                 addSpecialNoteInput(true); 
+            }
+            
+            // Materyal listesini çiz ve seçilenleri işaretle
+            renderSpecialVisitPopSystem();
+            if (reportData.specialPopCodes && reportData.specialPopCodes.length > 0) {
+                reportData.specialPopCodes.forEach(code => {
+                    const cb = document.querySelector(`.special-pop-checkbox[value="${code}"]`);
+                    if (cb) cb.checked = true;
+                });
             }
             return; 
         }
