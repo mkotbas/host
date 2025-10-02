@@ -551,7 +551,6 @@ function formatText(buttonEl, command) {
     }
 }
 
-// --- GÜNCELLENEN FONKSİYON ---
 function renderQuestionManager() {
     const managerList = document.getElementById('manager-list');
     managerList.innerHTML = '';
@@ -579,7 +578,7 @@ function renderQuestionManager() {
                     <input type="number" class="manager-id-input" value="${q.id}" disabled title="ID değiştirmek veri bütünlüğünü bozabilir. Düzenlemek için şifre gerekir.">
                 </div>
                 <div><label>Soru Başlığı</label><input type="text" class="question-title-input" value="${q.title}"></div>
-                <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleSpecialManagerUI(this)">${selectOptionsHTML}</select></div>
+                <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleProductManager(this)">${selectOptionsHTML}</select></div>
                 <div><label>Cevap Tipi</label><select class="answer-type-select">${answerTypeOptionsHTML}</select></div>
                 <div class="manager-grid-switch-group">
                     <div class="archive-switch-container">
@@ -599,7 +598,7 @@ function renderQuestionManager() {
                 </div>
             </div>
             <div>
-                <label>Statik Maddeler (product_list / pop_system tipi için kullanılmaz)</label>
+                <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
                 <div class="editor-toolbar">
                    <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
                    <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
@@ -608,58 +607,30 @@ function renderQuestionManager() {
                 </div>
                 <div class="editable-textarea" contenteditable="true">${staticItemsHtml}</div>
             </div>
-            <div class="special-manager-container"></div>
+            <div class="product-list-manager" style="display: none;"></div>
             <div class="manager-item-footer">
                 <button class="btn-warning btn-sm" onclick="deleteAllAnswersForQuestion(${q.id})" title="Bu soruya ait TÜM cevapları BÜTÜN bayi raporlarından kalıcı olarak siler."><i class="fas fa-eraser"></i>Cevapları Temizle</button>
             </div>`;
         managerList.appendChild(itemDiv);
 
-        toggleSpecialManagerUI(itemDiv.querySelector('.question-type-select'));
+        if(q.type === 'product_list') {
+            toggleProductManager(itemDiv.querySelector('select'));
+        }
     });
     filterManagerView(); 
 }
 
-// --- YENİ VE GÜNCELLENEN FONKSİYONLAR ---
-function toggleSpecialManagerUI(selectElement) {
+function toggleProductManager(selectElement) {
     const managerItem = selectElement.closest('.manager-item');
-    const specialContainer = managerItem.querySelector('.special-manager-container');
-    const question = fideQuestions.find(q => String(q.id) === managerItem.dataset.id) || {};
-
-    specialContainer.innerHTML = ''; 
-
+    const productManagerContainer = managerItem.querySelector('.product-list-manager');
     if (selectElement.value === 'product_list') {
-        specialContainer.classList.add('product-list-manager');
-        specialContainer.classList.remove('pop-manager-container');
-        renderProductManagerUI(specialContainer);
-    } else if (selectElement.value === 'pop_system') {
-        specialContainer.classList.add('pop-manager-container');
-        specialContainer.classList.remove('product-list-manager');
-        renderPopManagerUI(specialContainer, question);
+        productManagerContainer.style.display = 'block';
+        renderProductManagerUI(productManagerContainer);
     } else {
-        specialContainer.className = 'special-manager-container'; 
+        productManagerContainer.style.display = 'none';
+        productManagerContainer.innerHTML = '';
     }
 }
-
-function renderPopManagerUI(container, questionData) {
-    const popCodes = (questionData.popCodes || []).join(', ');
-    const expiredCodes = (questionData.expiredCodes || []).join(', ');
-
-    container.innerHTML = `
-        <p class="pop-manager-info">
-            <i class="fas fa-info-circle"></i> Kodları aralarına virgül (,) koyarak girin. Boşluklar otomatik olarak temizlenecektir. Bu listeler, ana ekrandaki materyal seçim kutularını ve 'Bitenler' butonunun işlevini belirler.
-        </p>
-        <div class="pop-manager-group">
-            <label for="pop-codes-input-${questionData.id}">Geçerli POP Kodları</label>
-            <textarea id="pop-codes-input-${questionData.id}" class="pop-codes-input" rows="5" placeholder="100001, 100002, 100003...">${popCodes}</textarea>
-        </div>
-        <div class="pop-manager-group">
-            <label for="expired-pop-codes-input-${questionData.id}">Süresi Dolmuş (Biten) POP Kodları</label>
-            <textarea id="expired-pop-codes-input-${questionData.id}" class="expired-pop-codes-input" rows="3" placeholder="900001, 900002...">${expiredCodes}</textarea>
-        </div>
-    `;
-}
-
-function toggleProductManager(selectElement) { /* Bu fonksiyon artık kullanılmıyor, toggleSpecialManagerUI'a entegre edildi */ }
 
 function renderProductManagerUI(container) {
     const categories = productList.filter(p => p.type === 'header');
@@ -912,7 +883,7 @@ function addNewQuestionUI() {
                 <input type="number" class="manager-id-input" value="${newId}">
             </div>
             <div><label>Soru Başlığı</label><input type="text" class="question-title-input" placeholder="Yeni sorunun başlığını yazın..."></div>
-            <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleSpecialManagerUI(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
+            <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
             <div>
                 <label>Cevap Tipi</label>
                 <select class="answer-type-select">
@@ -938,7 +909,7 @@ function addNewQuestionUI() {
             </div>
         </div>
         <div>
-            <label>Statik Maddeler (product_list / pop_system tipi için kullanılmaz)</label>
+            <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
             <div class="editor-toolbar">
                <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
                <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
@@ -947,7 +918,7 @@ function addNewQuestionUI() {
             </div>
             <div class="editable-textarea" contenteditable="true"></div>
         </div>
-        <div class="special-manager-container"></div>
+        <div class="product-list-manager" style="display: none;"></div>
         <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
     managerList.appendChild(itemDiv);
     itemDiv.querySelector('input[type="text"]').focus();
@@ -1046,10 +1017,11 @@ async function saveQuestions() {
         alert("Değişiklikleri buluta kaydetmek için lütfen giriş yapın.");
         return;
     }
-    
+
     const newProductList = [];
-    const activeProductManager = document.querySelector('.product-list-manager');
-    if (activeProductManager && activeProductManager.offsetParent !== null) { // Check if it's visible
+    const activeProductManager = document.querySelector('.product-list-manager:not([style*="display: none"])');
+    
+    if (activeProductManager) {
         const rows = activeProductManager.querySelectorAll('.category-manager-row, .product-manager-row');
         rows.forEach(row => {
             if (row.dataset.type === 'category') {
@@ -1080,27 +1052,27 @@ async function saveQuestions() {
         const isArchived = item.querySelector('.archive-checkbox').checked;
         const wantsStoreEmail = item.querySelector('.wants-email-checkbox').checked;
 
+
         if (!id && id !== 0 || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
         if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılamaz.`); return; }
         ids.add(id);
 
-        const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
+        const staticItems = staticItemsHTML
+            .replace(/<p[^>]*>/gi, '<div>').replace(/<\/p>/gi, '</div>') 
+            .replace(/<br\s*\/?>|<\/div>/gi, '__LINE_BREAK__') 
+            .split('__LINE_BREAK__') 
+            .map(s => s.replace(/<[^>]+>/g, '').trim()) 
+            .filter(s => s); 
+
         const newQuestion = { id, title, type, answerType };
-        if (staticItems.length > 0 && type !== 'product_list' && type !== 'pop_system') newQuestion.staticItems = staticItems;
+        if (staticItems.length > 0 && type !== 'product_list') newQuestion.staticItems = staticItems;
         if (isArchived) newQuestion.isArchived = true;
         if (wantsStoreEmail) newQuestion.wantsStoreEmail = true;
 
         if (type === 'pop_system') {
-            const popInput = item.querySelector('.pop-codes-input');
-            const expiredInput = item.querySelector('.expired-pop-codes-input');
-            if (popInput && expiredInput) {
-                newQuestion.popCodes = popInput.value.split(',').map(c => c.trim()).filter(c => c);
-                newQuestion.expiredCodes = expiredInput.value.split(',').map(c => c.trim()).filter(c => c);
-            } else {
-                 const originalPopQuestion = fideQuestions.find(q => q.id === id);
-                 newQuestion.popCodes = originalPopQuestion ? originalPopQuestion.popCodes : [];
-                 newQuestion.expiredCodes = originalPopQuestion ? originalPopQuestion.expiredCodes : [];
-            }
+            const originalPopQuestion = fideQuestions.find(q => q.id === id);
+            newQuestion.popCodes = originalPopQuestion ? originalPopQuestion.popCodes : [];
+            newQuestion.expiredCodes = originalPopQuestion ? originalPopQuestion.expiredCodes : [];
         }
         newQuestions.push(newQuestion);
     }
