@@ -154,7 +154,6 @@ function closeManager() {
     document.getElementById('backup-manager').style.display = 'none';
 
     document.getElementById('dide-upload-card').style.display = 'block';
-    document.querySelector('#load-from-email-section').style.display = 'block';
     document.getElementById('form-content').style.display = 'block';
     document.querySelector('.action-button').style.display = 'block';
     
@@ -167,7 +166,6 @@ function returnToMainPage() {
     if (emailDraft) emailDraft.remove();
     
     document.getElementById('dide-upload-card').style.display = 'block';
-    document.querySelector('#load-from-email-section').style.display = 'block';
     document.getElementById('form-content').style.display = 'block';
     document.querySelector('.action-button').style.display = 'block';
 }
@@ -182,7 +180,6 @@ function setupEventListeners() {
     document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
     document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
-    document.getElementById('load-from-email-btn').addEventListener('click', parseAndLoadFromEmail);
     
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
         const dogruSifreHash = 'ZmRlMDAx';
@@ -291,7 +288,6 @@ function setupEventListeners() {
                    closeManager();
                    manager.style.display = 'block';
                    document.getElementById('dide-upload-card').style.display = 'none';
-                   document.querySelector('#load-from-email-section').style.display = 'none';
                    document.getElementById('form-content').style.display = 'none';
                    document.querySelector('.action-button').style.display = 'none';
                 } else {
@@ -862,7 +858,6 @@ function generateEmail() {
     document.getElementById('dide-upload-card').style.display = 'none';
     document.getElementById('form-content').style.display = 'none';
     document.querySelector('.action-button').style.display = 'none';
-    document.querySelector('#load-from-email-section').style.display = 'none';
 
     const existingDraft = document.getElementById('email-draft-container');
     if (existingDraft) existingDraft.remove();
@@ -940,121 +935,6 @@ function loadReport(reportData) {
         updateFormInteractivity(true);
     } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
 }
-
-function parseAndLoadFromEmail() {
-    const emailText = document.getElementById('load-email-area').value.trim();
-    if (!emailText) {
-        alert("Lütfen e-posta içeriğini yapıştırın.");
-        return;
-    }
-
-    const lines = emailText.split('\n');
-    let storeCodeFound = null;
-    let storeFoundAndSelected = false;
-
-    for (const line of lines) {
-        const match = line.match(/Ziyaret etmiş olduğum (\d{5,})\s/);
-        if (match) {
-            storeCodeFound = match[1];
-            const storeToSelect = uniqueStores.find(s => String(s.bayiKodu) === storeCodeFound);
-            if (storeToSelect) {
-                selectStore(storeToSelect, false);
-                storeFoundAndSelected = true;
-                break;
-            }
-        }
-    }
-
-    if (!storeFoundAndSelected) {
-        if(selectedStore) {
-            resetForm();
-            updateFormInteractivity(true);
-        } else {
-            alert("E-posta metninden bayi bulunamadı ve manuel olarak da bir bayi seçilmedi. Lütfen önce bir bayi seçin.");
-            return;
-        }
-    }
-    
-    const questionHeaderRegex = /^[\s•o-]*FiDe\s+(\d+)\./i;
-    const idsInEmail = new Set();
-    let currentQuestionId = null;
-    
-    const ignorePhrases = [
-        "sipariş verilmesi gerekenler",
-        "pleksiyle sergilenmesi gerekenler",
-        "yanlış pleksi malzeme ile kullanılanlar"
-    ];
-
-    lines.forEach(line => {
-        const trimmedLine = line.trim();
-        const headerMatch = trimmedLine.match(questionHeaderRegex);
-
-        if (headerMatch) {
-            const originalId = headerMatch[1];
-            const finalId = migrationMap[originalId] || originalId;
-            currentQuestionId = finalId;
-            idsInEmail.add(finalId);
-        } else if (currentQuestionId && trimmedLine) {
-            const cleanedLine = trimmedLine.replace(/^[\s•o-]+\s*/, '');
-            if (!cleanedLine) return; 
-
-            const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
-            if (!question || (question.answerType === 'fixed')) {
-                return; 
-            }
-
-            if (question.type === 'product_list') {
-                const productMatch = cleanedLine.match(/^(\d{8,})/); 
-                if (productMatch) {
-                    const productCode = productMatch[1];
-                    let quantity = 1; 
-                    const quantityMatch = cleanedLine.match(/:?\s*(\d+)\s*(paket|adet)/i);
-                    if (quantityMatch && quantityMatch[1]) {
-                        quantity = parseInt(quantityMatch[1], 10);
-                    }
-                    
-                    const productExists = productList.some(p => p.code === productCode);
-                    if (productExists) {
-                        addProductToList(productCode, quantity);
-                        return; 
-                    }
-                }
-            }
-            
-            if (ignorePhrases.some(phrase => cleanedLine.toLowerCase().includes(phrase))) {
-                return; 
-            }
-            
-            const staticItems = question.staticItems || [];
-            const isStatic = staticItems.some(staticItem => {
-                const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
-                return plainStaticItem.includes(cleanedLine);
-            });
-            
-            if (!isStatic) {
-                const containerId = (question.type === 'product_list') ? `fide${currentQuestionId}_pleksi` : `fide${currentQuestionId}`;
-                addDynamicInput(containerId, cleanedLine, false);
-            }
-        }
-    });
-    
-    fideQuestions.forEach(q => {
-        if (q.isArchived) return;
-        if (!idsInEmail.has(String(q.id))) {
-            const questionItem = document.getElementById(`fide-item-${q.id}`);
-            if (questionItem) {
-                const removeButton = questionItem.querySelector('.fide-actions .remove-btn');
-                if (removeButton && !questionItem.classList.contains('question-removed')) {
-                    toggleQuestionRemoved(removeButton, q.id);
-                }
-            }
-        }
-    });
-
-    alert("E-posta içeriği başarıyla forma aktarıldı!");
-    document.getElementById('load-email-area').value = '';
-}
-
 
 function startNewReport() {
     selectedStore = null;
