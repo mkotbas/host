@@ -3,19 +3,56 @@ let allStores = [];
 let auditedStoreCodesCurrentMonth = [];
 let auditedStoreCodesCurrentYear = [];
 let geriAlinanBayiKodlariBuAy = [];
-let geriAlinanBayiKodlariBuYil = []; // YENİ: Yıl içinde geri alınan tüm bayileri tutacak
-let aylikHedef = 47; // Varsayılan hedef, sonradan ayarlardan yüklenecek
+let geriAlinanBayiKodlariBuYil = [];
+let aylikHedef = 47;
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
 // --- Ana Uygulama Mantığı ---
-window.onload = initializeApp;
+
+// GÜNCELLENDİ: Uygulamanın başlangıç noktası artık Firebase Auth durumuna bağlı.
+// Bu, veri yüklemeden önce kullanıcının giriş yaptığından emin olmamızı sağlar.
+document.addEventListener('DOMContentLoaded', () => {
+    // Firebase auth nesnesi hazır olduğunda dinleyiciyi başlat
+    if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') {
+        firebase.auth().onAuthStateChanged(function(user) {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const dashboardContent = document.getElementById('dashboard-content');
+
+            if (user) {
+                // 1. KULLANICI GİRİŞ YAPMIŞSA:
+                // Uygulamayı normal şekilde başlat.
+                // Dashboard'u göster, giriş uyarısını (varsa) gizle.
+                if(dashboardContent) dashboardContent.style.display = 'block';
+                initializeApp();
+            } else {
+                // 2. KULLANICI GİRİŞ YAPMAMIŞSA:
+                // Yükleme ekranını bir "Giriş Yap" uyarısına dönüştür.
+                if(loadingOverlay) {
+                    loadingOverlay.innerHTML = '<h2><i class="fas fa-sign-in-alt"></i> Lütfen Giriş Yapın</h2><p>Denetim verilerinizi görmek için sisteme giriş yapmalısınız.</p>';
+                    loadingOverlay.style.display = 'flex';
+                }
+                // Dashboard'u gizle.
+                if(dashboardContent) dashboardContent.style.display = 'none';
+            }
+        });
+    } else {
+        // Firebase yüklenememişse hata göster.
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if(loadingOverlay) {
+            loadingOverlay.innerHTML = '<h2><i class="fas fa-exclamation-triangle"></i> Bağlantı Hatası</h2><p>Uygulama başlatılamadı. İnternet bağlantınızı kontrol edin.</p>';
+            loadingOverlay.style.display = 'flex';
+        }
+    }
+});
+
 
 async function initializeApp() {
-    setupEventListeners();
     const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.innerHTML = '<div class="loader"></div><p>Veriler Yükleniyor...</p>';
     loadingOverlay.style.display = 'flex';
+
+    setupEventListeners();
     
-    // GÜNCELLENDİ: Tüm veri yükleme fonksiyonları artık "Bulut Öncelikli" çalışacak
     await loadSettings();
     await loadGeriAlinanBayiler();
     await loadAuditedStoresData();
