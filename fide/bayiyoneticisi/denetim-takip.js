@@ -45,17 +45,21 @@ async function loadStoreList() {
     let storeData = null;
     const sixMonthsAgo = new Date().getTime() - (180 * 24 * 60 * 60 * 1000);
 
-    const localStoreData = localStorage.getItem('tumBayilerListesi');
-    if (localStoreData) {
-        storeData = JSON.parse(localStoreData);
-    }
-    
+    // Öncelik bulutta
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
         const storeListRef = database.ref('tumBayilerListesi');
         const snapshot = await storeListRef.once('value');
         if (snapshot.exists()) {
             storeData = snapshot.val();
             localStorage.setItem('tumBayilerListesi', JSON.stringify(storeData));
+        }
+    }
+
+    // Buluttan gelmediyse veya bağlantı yoksa yerel hafızaya bak
+    if (!storeData) {
+        const localStoreData = localStorage.getItem('tumBayilerListesi');
+        if (localStoreData) {
+            storeData = JSON.parse(localStoreData);
         }
     }
 
@@ -77,35 +81,42 @@ function runDashboard() {
     renderRemainingStores(allStores);
 }
 
-// GÜNCELLENDİ: Bu fonksiyon artık sadece bu ayı değil, yıl içinde geri alınan tüm bayileri de hesaplıyor.
+// GÜNCELLENDİ: Veri senkronizasyon sorunu için yeniden yazıldı. Artık bulutu öncelikli kabul ediyor.
 async function loadGeriAlinanBayiler() {
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonthKey = `${currentYear}-${today.getMonth()}`;
     let geriAlinanlar = {};
 
-    const localData = localStorage.getItem('denetimGeriAlinanlar');
-    if (localData) {
-        geriAlinanlar = JSON.parse(localData);
-    }
-
+    // 1. Öncelikli olarak buluttan veri çek
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
         try {
             const ref = database.ref('denetimGeriAlinanlar');
             const snapshot = await ref.once('value');
             if (snapshot.exists()) {
-                const cloudData = snapshot.val();
-                Object.assign(geriAlinanlar, cloudData);
+                geriAlinanlar = snapshot.val();
+                // Buluttan gelen en güncel veriyi yerel hafızaya da kaydet
                 localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
             }
         } catch (error) {
-            console.error("Geri alınan bayi bilgisi buluttan okunamadı:", error);
+            console.error("Geri alınan bayi bilgisi buluttan okunamadı, yerel hafıza kullanılacak:", error);
+            // Buluttan okuma başarısız olursa yerel hafızadaki veriyi kullan
+            const localData = localStorage.getItem('denetimGeriAlinanlar');
+            if (localData) {
+                geriAlinanlar = JSON.parse(localData);
+            }
+        }
+    } else {
+        // Oturum açılmamışsa sadece yerel hafızayı kullan
+        const localData = localStorage.getItem('denetimGeriAlinanlar');
+        if (localData) {
+            geriAlinanlar = JSON.parse(localData);
         }
     }
 
     geriAlinanBayiKodlariBuAy = geriAlinanlar[currentMonthKey] || [];
     
-    // YENİ: Yıl içindeki tüm geri alınanları topla
+    // Yıl içindeki tüm geri alınanları topla
     const yearlyRevertedCodes = [];
     for (const key in geriAlinanlar) {
         if (key.startsWith(currentYear)) {
@@ -115,19 +126,37 @@ async function loadGeriAlinanBayiler() {
     geriAlinanBayiKodlariBuYil = [...new Set(yearlyRevertedCodes)];
 }
 
-// GÜNCELLENDİ: Yıllık denetim sayısını hesaplarken artık "geriAlinanBayiKodlariBuYil" listesini de dikkate alıyor.
+// GÜNCELLENDİ: Veri senkronizasyon sorunu için yeniden yazıldı. Artık bulutu öncelikli kabul ediyor.
 async function loadAuditedStoresData() {
-    try {
-        let allReports = {};
-        const localData = localStorage.getItem('allFideReports');
-        if (localData) allReports = JSON.parse(localData);
+    let allReports = {};
 
-        if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+    // 1. Öncelikli olarak buluttan veri çek
+    if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+        try {
             const reportsRef = database.ref('allFideReports');
             const snapshot = await reportsRef.once('value');
-            if (snapshot.exists()) Object.assign(allReports, snapshot.val());
+            if (snapshot.exists()) {
+                allReports = snapshot.val();
+                // Buluttan gelen en güncel veriyi yerel hafızaya da kaydet
+                localStorage.setItem('allFideReports', JSON.stringify(allReports));
+            }
+        } catch (error) {
+            console.error("Denetlenen bayi verileri buluttan okunamadı, yerel hafıza kullanılacak:", error);
+             // Buluttan okuma başarısız olursa yerel hafızadaki veriyi kullan
+            const localData = localStorage.getItem('allFideReports');
+            if (localData) {
+                allReports = JSON.parse(localData);
+            }
         }
-        
+    } else {
+        // Oturum açılmamışsa sadece yerel hafızayı kullan
+        const localData = localStorage.getItem('allFideReports');
+        if (localData) {
+            allReports = JSON.parse(localData);
+        }
+    }
+
+    try {
         const today = new Date();
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
@@ -151,12 +180,11 @@ async function loadAuditedStoresData() {
         const uniqueMonthlyCodes = [...new Set(monthlyCodesFromReports)];
         auditedStoreCodesCurrentMonth = uniqueMonthlyCodes.filter(code => !geriAlinanBayiKodlariBuAy.includes(code));
         
-        // Yıllık denetlenenlerden, yıl içinde geri alınanları çıkar
         const uniqueYearlyCodes = [...new Set(yearlyCodes)];
         auditedStoreCodesCurrentYear = uniqueYearlyCodes.filter(code => !geriAlinanBayiKodlariBuYil.includes(code));
 
     } catch (error) {
-        console.error("Denetlenen bayi verileri okunurken hata oluştu:", error);
+        console.error("Denetlenen bayi verileri işlenirken hata oluştu:", error);
     }
 }
 
@@ -178,7 +206,6 @@ function setupEventListeners() {
     const deleteExcelBtn = document.getElementById('delete-excel-btn');
     if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
     
-    // GÜNCELLENDİ: Fonksiyon adı resetProgress olarak değiştirildi
     const resetDataBtn = document.getElementById('reset-data-btn');
     if(resetDataBtn) resetDataBtn.addEventListener('click', resetProgress); 
 
@@ -189,7 +216,7 @@ function setupEventListeners() {
     document.getElementById('ilce-filter').addEventListener('change', applyAndRepopulateFilters);
 }
 
-// GÜNCELLENDİ: Fonksiyon artık sadece aylık değil, yıllık verileri de sıfırlıyor
+// GÜNCELLENDİ: Fonksiyon artık `loadAuditedStoresData` fonksiyonuna güvendiği için daha sade çalışabilir.
 async function resetProgress() {
     if (!confirm("Bu işlem, bu yıla ait TÜM denetim verilerini sıfırlayacaktır. 'Bu Ay Denetlenenler' ve 'Yıllık Hedef' sayaçları sıfırlanır. Onaylıyor musunuz?")) {
         return;
@@ -199,14 +226,17 @@ async function resetProgress() {
     loadingOverlay.style.display = 'flex';
 
     try {
-        // 1. Bu yıl denetim raporu olan tüm bayilerin kodlarını bul
+        // Rapor verilerini bellekten ve buluttan tekrar yükleyerek en güncel halini alalım.
         let allReports = {};
-        const localData = localStorage.getItem('allFideReports');
-        if (localData) allReports = JSON.parse(localData);
         if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
             const reportsRef = database.ref('allFideReports');
             const snapshot = await reportsRef.once('value');
-            if (snapshot.exists()) Object.assign(allReports, snapshot.val());
+            if (snapshot.exists()) {
+                allReports = snapshot.val();
+            }
+        } else {
+             const localData = localStorage.getItem('allFideReports');
+             if (localData) allReports = JSON.parse(localData);
         }
 
         const today = new Date();
@@ -224,9 +254,12 @@ async function resetProgress() {
 
         const uniqueCodesToReset = [...new Set(yearlyCodesToReset)];
 
-        // 2. Bu kodları mevcut ayın "geriAlinanlar" listesine ekle (bu işlem yıllık sayacı etkileyecektir)
         const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
-        let geriAlinanlar = JSON.parse(localStorage.getItem('denetimGeriAlinanlar') || '{}');
+        
+        let geriAlinanlar = {};
+        const localGeriAlinan = localStorage.getItem('denetimGeriAlinanlar');
+        if (localGeriAlinan) geriAlinanlar = JSON.parse(localGeriAlinan);
+        
         if (!geriAlinanlar[currentMonthKey]) {
             geriAlinanlar[currentMonthKey] = [];
         }
@@ -237,7 +270,6 @@ async function resetProgress() {
             }
         });
 
-        // 3. Güncellenmiş listeyi yerel hafızaya ve buluta kaydet
         localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
         if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
             await database.ref('denetimGeriAlinanlar/' + currentMonthKey).set(geriAlinanlar[currentMonthKey]);
