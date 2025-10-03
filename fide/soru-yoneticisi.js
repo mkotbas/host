@@ -12,7 +12,8 @@ async function initializeApp() {
         console.error("Firebase auth başlatılamadı. db-config.js yüklendiğinden emin olun.");
         return;
     }
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    // TALEP: Giriş bilgileri kalıcı lokal depolama yerine oturum süresince saklansın.
+    await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
     auth.onAuthStateChanged(async user => { 
         const loginToggleBtn = document.getElementById('login-toggle-btn');
         const logoutBtn = document.getElementById('logout-btn');
@@ -35,7 +36,7 @@ async function initializeApp() {
 
 async function loadMigrationMap() {
     const user = auth.currentUser;
-    let loadedFromCloud = false;
+    migrationMap = {}; // Her zaman temiz bir harita ile başla
 
     if (user && database) {
         try {
@@ -43,17 +44,11 @@ async function loadMigrationMap() {
             const snapshot = await migrationRef.once('value');
             if (snapshot.exists()) {
                 migrationMap = snapshot.val();
-                localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
-                loadedFromCloud = true;
             }
         } catch (error) {
             console.error("Buluttan veri taşıma ayarları yüklenemedi:", error);
+            alert("Uyarı: Yönlendirme kuralları buluttan yüklenemedi.");
         }
-    }
-
-    if (!loadedFromCloud) {
-        const storedMap = localStorage.getItem('fideMigrationMap');
-        migrationMap = storedMap ? JSON.parse(storedMap) : {};
     }
 }
 
@@ -216,35 +211,26 @@ async function migrateQuestionData(oldId, newId) {
     loadingOverlay.style.display = 'flex';
     console.log(`Veri TAŞIMA işlemi başlatıldı: ${oldId} -> ${newId}`);
     try {
-        const localDataString = localStorage.getItem('allFideReports');
-        if (localDataString) {
-            let allReports = JSON.parse(localDataString);
-            for (const storeKey in allReports) {
-                const report = allReports[storeKey]?.data?.questions_status;
-                if (report && report[oldId]) {
-                    report[newId] = report[oldId];
-                    delete report[oldId];
-                }
-            }
-            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+        if (!auth.currentUser || !database) {
+            alert("Bu işlem için bulut bağlantısı gereklidir.");
+            return false;
         }
 
-        if (auth.currentUser && database) {
-            const reportsRef = database.ref('allFideReports');
-            const snapshot = await reportsRef.once('value');
-            if (snapshot.exists()) {
-                let allCloudReports = snapshot.val();
-                let updates = {};
-                for (const storeKey in allCloudReports) {
-                    const report = allCloudReports[storeKey]?.data?.questions_status;
-                    if (report && report[oldId]) {
-                        updates[`${storeKey}/data/questions_status/${newId}`] = report[oldId];
-                        updates[`${storeKey}/data/questions_status/${oldId}`] = null;
-                    }
+        const reportsRef = database.ref('allFideReports');
+        const snapshot = await reportsRef.once('value');
+        if (snapshot.exists()) {
+            let allCloudReports = snapshot.val();
+            let updates = {};
+            for (const storeKey in allCloudReports) {
+                const report = allCloudReports[storeKey]?.data?.questions_status;
+                if (report && report[oldId]) {
+                    updates[`${storeKey}/data/questions_status/${newId}`] = report[oldId];
+                    updates[`${storeKey}/data/questions_status/${oldId}`] = null;
                 }
-                if (Object.keys(updates).length > 0) await reportsRef.update(updates);
             }
+            if (Object.keys(updates).length > 0) await reportsRef.update(updates);
         }
+        
         console.log("Veri TAŞIMA işlemi başarıyla tamamlandı.");
         return true;
     } catch (error) {
@@ -261,41 +247,28 @@ async function swapQuestionData(idA, idB) {
     loadingOverlay.style.display = 'flex';
     console.log(`Veri TAKAS işlemi başlatıldı: ${idA} <-> ${idB}`);
     try {
-        const localDataString = localStorage.getItem('allFideReports');
-        if (localDataString) {
-            let allReports = JSON.parse(localDataString);
-            for (const storeKey in allReports) {
-                const report = allReports[storeKey]?.data?.questions_status;
+         if (!auth.currentUser || !database) {
+            alert("Bu işlem için bulut bağlantısı gereklidir.");
+            return false;
+        }
+
+        const reportsRef = database.ref('allFideReports');
+        const snapshot = await reportsRef.once('value');
+        if (snapshot.exists()) {
+            let allCloudReports = snapshot.val();
+            let updates = {};
+            for (const storeKey in allCloudReports) {
+                const report = allCloudReports[storeKey]?.data?.questions_status;
                 if (report) {
                     const answerA = report[idA];
                     const answerB = report[idB];
-                    delete report[idA];
-                    delete report[idB];
-                    if (answerB) report[idA] = answerB;
-                    if (answerA) report[idB] = answerA;
+                    updates[`${storeKey}/data/questions_status/${idA}`] = answerB || null;
+                    updates[`${storeKey}/data/questions_status/${idB}`] = answerA || null;
                 }
             }
-            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+            if (Object.keys(updates).length > 0) await reportsRef.update(updates);
         }
-
-        if (auth.currentUser && database) {
-            const reportsRef = database.ref('allFideReports');
-            const snapshot = await reportsRef.once('value');
-            if (snapshot.exists()) {
-                let allCloudReports = snapshot.val();
-                let updates = {};
-                for (const storeKey in allCloudReports) {
-                    const report = allCloudReports[storeKey]?.data?.questions_status;
-                    if (report) {
-                        const answerA = report[idA];
-                        const answerB = report[idB];
-                        updates[`${storeKey}/data/questions_status/${idA}`] = answerB || null;
-                        updates[`${storeKey}/data/questions_status/${idB}`] = answerA || null;
-                    }
-                }
-                if (Object.keys(updates).length > 0) await reportsRef.update(updates);
-            }
-        }
+        
         console.log("Veri TAKAS işlemi başarıyla tamamlandı.");
         return true;
     } catch (error) {
@@ -355,7 +328,7 @@ async function applyIdChangeScenario() {
         // Takas işleminde eski yönlendirmeler kafa karıştırabilir, temizlemek daha güvenli.
         delete migrationMap[oldId];
         delete migrationMap[newId];
-        saveMigrationMap();
+        await saveMigrationMap();
         
         alert(`Başarılı!\n\n- ${oldId} ve ${newId} ID'li sorular birbiriyle değiştirildi.\n- Her iki soruya ait tüm cevaplar da raporlarda takas edildi.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
     }
@@ -411,17 +384,6 @@ async function applyDeleteQuestionScenario() {
     loadingOverlay.style.display = 'flex';
 
     try {
-        const localDataString = localStorage.getItem('allFideReports');
-        if (localDataString) {
-            let allReports = JSON.parse(localDataString);
-            for (const storeKey in allReports) {
-                if (allReports[storeKey]?.data?.questions_status?.[questionIdToDelete]) {
-                    delete allReports[storeKey].data.questions_status[questionIdToDelete];
-                }
-            }
-            localStorage.setItem('allFideReports', JSON.stringify(allReports));
-        }
-
         const reportsRef = database.ref('allFideReports');
         const snapshot = await reportsRef.once('value');
         if (snapshot.exists()) {
@@ -478,7 +440,7 @@ function renderMigrationManagerUI() {
     }
 }
 
-function addMigrationMapping(oldIdValue, newIdValue) {
+async function addMigrationMapping(oldIdValue, newIdValue) {
     const oldId = oldIdValue;
     const newId = newIdValue;
 
@@ -492,24 +454,26 @@ function addMigrationMapping(oldIdValue, newIdValue) {
     }
 
     migrationMap[oldId] = newId;
-    saveMigrationMap();
+    await saveMigrationMap();
 }
 
-function deleteMigrationMapping(oldIdToDelete) {
+async function deleteMigrationMapping(oldIdToDelete) {
     if (confirm(`'${oldIdToDelete}' ID'li yönlendirmeyi silmek istediğinizden emin misiniz?`)) {
         delete migrationMap[oldIdToDelete];
-        saveMigrationMap();
+        await saveMigrationMap();
         renderMigrationManagerUI();
     }
 }
 
-function saveMigrationMap() {
-    localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
+async function saveMigrationMap() {
     const user = auth.currentUser;
     if (user && database) {
-        database.ref('migrationSettings/map').set(migrationMap).catch(error => {
+        try {
+            await database.ref('migrationSettings/map').set(migrationMap);
+        } catch (error) {
             console.error("Veri taşıma ayarları buluta kaydedilemedi:", error);
-        });
+            alert("Hata: Yönlendirme ayarları buluta kaydedilemedi.");
+        }
     }
 }
 
@@ -998,39 +962,31 @@ async function deleteAllAnswersForQuestion(questionId) {
         return;
     }
 
+    if (!auth.currentUser || !database) {
+        alert("Bu işlem için bulut bağlantısı gereklidir.");
+        return;
+    }
+
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
 
     try {
-        const localDataString = localStorage.getItem('allFideReports');
-        if (localDataString) {
-            let allReports = JSON.parse(localDataString);
-            for (const storeKey in allReports) {
-                if (allReports[storeKey] && allReports[storeKey].data && allReports[storeKey].data.questions_status && allReports[storeKey].data.questions_status[questionId]) {
-                    delete allReports[storeKey].data.questions_status[questionId];
+        const reportsRef = database.ref('allFideReports');
+        const snapshot = await reportsRef.once('value');
+        if (snapshot.exists()) {
+            let allCloudReports = snapshot.val();
+            let updates = {};
+            for (const storeKey in allCloudReports) {
+                if (allCloudReports[storeKey]?.data?.questions_status?.[questionId]) {
+                     updates[`${storeKey}/data/questions_status/${questionId}`] = null;
                 }
             }
-            localStorage.setItem('allFideReports', JSON.stringify(allReports));
-        }
-
-        if (auth.currentUser && database) {
-            const reportsRef = database.ref('allFideReports');
-            const snapshot = await reportsRef.once('value');
-            if (snapshot.exists()) {
-                let allCloudReports = snapshot.val();
-                let updates = {};
-                for (const storeKey in allCloudReports) {
-                    if (allCloudReports[storeKey]?.data?.questions_status?.[questionId]) {
-                         updates[`${storeKey}/data/questions_status/${questionId}`] = null;
-                    }
-                }
-                if (Object.keys(updates).length > 0) {
-                    await reportsRef.update(updates);
-                }
+            if (Object.keys(updates).length > 0) {
+                await reportsRef.update(updates);
             }
         }
         
-        alert(`İşlem tamamlandı!\n\nFiDe ${questionId} sorusuna ait tüm cevaplar bütün raporlardan (hem yerel hem de bulut) başarıyla silindi.`);
+        alert(`İşlem tamamlandı!\n\nFiDe ${questionId} sorusuna ait tüm cevaplar bütün raporlardan (bulut) başarıyla silindi.`);
 
     } catch (error) {
         console.error("Cevapları silerken bir hata oluştu:", error);
