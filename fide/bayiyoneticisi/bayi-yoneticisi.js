@@ -10,7 +10,9 @@ async function initializeApp() {
         console.error("Firebase auth başlatılamadı. db-config.js yüklendiğinden emin olun.");
         return;
     }
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    // GÜNCELLENDİ: Giriş bilgileri artık tarayıcıda kalıcı saklanmayacak, sadece oturum süresince geçerli olacak.
+    await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
     auth.onAuthStateChanged(async user => { 
         const loginToggleBtn = document.getElementById('login-toggle-btn');
         const logoutBtn = document.getElementById('logout-btn');
@@ -31,9 +33,10 @@ async function initializeApp() {
     });
 }
 
+// GÜNCELLENDİ: Sadece buluttan veri okuyacak şekilde sadeleştirildi.
 async function loadStoreEmails() {
     const user = auth.currentUser;
-    let loadedFromCloud = false;
+    storeEmails = {}; // Her yüklemede listeyi sıfırla
 
     if (user && database) {
         try {
@@ -41,20 +44,13 @@ async function loadStoreEmails() {
             const snapshot = await emailsRef.once('value');
             if (snapshot.exists()) {
                 storeEmails = snapshot.val();
-                localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails));
-                loadedFromCloud = true;
             }
         } catch (error) {
             console.error("Buluttan bayi e-postaları yüklenemedi:", error);
         }
     }
+    // KALDIRILDI: Tarayıcı hafızasından (localStorage) veri okuma bloğu kaldırıldı.
 
-    if (!loadedFromCloud) {
-        const storedEmails = localStorage.getItem('fideStoreEmails');
-        storeEmails = storedEmails ? JSON.parse(storedEmails) : {};
-        if(!user) alert("E-posta listesi yerel hafızadan yüklendi. Değişiklik yapmak için lütfen sisteme giriş yapın.");
-    }
-    
     if (database) {
         const connectionRef = database.ref('.info/connected');
         connectionRef.on('value', (snapshot) => {
@@ -147,6 +143,7 @@ function renderEmailManager() {
     });
 }
 
+// GÜNCELLENDİ: Sadece buluta yazma işlemi yapıyor.
 async function saveEmail(kodu, isNew = false) {
     if (!auth.currentUser || !database) { alert("Bu işlem için sisteme giriş yapmalısınız."); return; }
     const itemDiv = document.querySelector(`.email-manager-item[data-kodu="${kodu}"]`);
@@ -158,7 +155,7 @@ async function saveEmail(kodu, isNew = false) {
     try {
         await database.ref(`storeEmails/${kodu}`).set(newEmail);
         storeEmails[kodu] = newEmail;
-        localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails));
+        // KALDIRILDI: Tarayıcıya kaydetme (localStorage) satırı kaldırıldı.
         if(isNew) {
            itemDiv.querySelector('.email-manager-code').textContent = kodu;
            itemDiv.dataset.kodu = kodu;
@@ -172,13 +169,14 @@ async function saveEmail(kodu, isNew = false) {
     }
 }
 
+// GÜNCELLENDİ: Sadece buluttan silme işlemi yapıyor.
 async function deleteEmail(kodu) {
      if (!auth.currentUser || !database) { alert("Bu işlem için sisteme giriş yapmalısınız."); return; }
      if (confirm(`'${kodu}' kodlu bayiye ait e-postayı silmek istediğinizden emin misiniz?`)) {
          try {
              await database.ref(`storeEmails/${kodu}`).remove();
              delete storeEmails[kodu];
-             localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails));
+             // KALDIRILDI: Tarayıcıdan silme (localStorage) satırı kaldırıldı.
              document.querySelector(`.email-manager-item[data-kodu="${kodu}"]`).remove();
          } catch(error) {
              alert("E-posta silinirken bir hata oluştu: " + error.message);
@@ -233,6 +231,7 @@ async function saveNewEmail() {
     renderEmailManager();
 }
 
+// GÜNCELLENDİ: Sadece buluta yazma işlemi yapıyor.
 function handleBulkEmailUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -265,7 +264,7 @@ function handleBulkEmailUpload(event) {
             if (confirm(`${count} adet e-posta bulundu. Bu işlem buluttaki mevcut tüm bayi e-posta listesinin üzerine yazılacaktır. Devam etmek istiyor musunuz?`)) {
                 await database.ref('storeEmails').set(newEmailData);
                 storeEmails = newEmailData;
-                localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails));
+                // KALDIRILDI: Tarayıcıya kaydetme (localStorage) satırı kaldırıldı.
                 alert('Toplu e-posta yüklemesi başarıyla tamamlandı!');
                 renderEmailManager();
             }
