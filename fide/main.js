@@ -151,7 +151,6 @@ async function loadInitialData() {
         warningDiv.style.display = 'block';
     }
 
-    // Soruların ilk yüklenmesinden sonra formu oluştur.
     buildForm();
     restoreLastSession();
 }
@@ -379,7 +378,6 @@ function startNewFideAuditForCurrentStore() {
         alert('Bu işlemi yapmak için önce bir bayi seçmelisiniz.');
         return;
     }
-    // Formu sıfırla ve yeniden oluştur.
     resetForm(); 
     updateFormInteractivity(true); 
 }
@@ -407,10 +405,9 @@ function renderSpecialVisitPopSystem() {
     const container = document.getElementById('special-visit-pop-system-container');
     if (!container) return;
 
-    // POP Sistemi tipindeki sorunun ID'si (genellikle 14) aranır.
-    const popQuestion = fideQuestions.find(q => q.type === 'pop_system');
+    const popQuestion = fideQuestions.find(q => q.id === 14 && q.type === 'pop_system');
     if (!popQuestion) {
-        container.innerHTML = '<p>Materyal listesi (POP System) yüklenemedi.</p>';
+        container.innerHTML = '<p>Materyal listesi (FiDe 14) yüklenemedi.</p>';
         return;
     }
 
@@ -618,11 +615,8 @@ function getUnitForProduct(productName) {
 }
 
 function resetForm() { 
-    // Form içeriğini temizle
     document.getElementById('form-content').innerHTML = ''; 
-    // Formu yeniden oluştur
     buildForm(); 
-    // Form görünümünü ayarla
     showFiDeForm();
 }
 
@@ -661,9 +655,9 @@ async function generateEmail() {
         let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>${selectedStore.bayiKodu} ${shortBayiAdi} bayisine yapılan özel ziyarete istinaden notlar aşağıdadır.</p>`;
         let notesHtml = notes.length > 0 ? `<ul>${notes.map(note => `<li>${note}</li>`).join('')}</ul>` : '';
         
-        const popQuestion = fideQuestions.find(q => q.type === 'pop_system');
         let popHtml = '';
         if (selectedSpecialPops.length > 0) {
+            const popQuestion = fideQuestions.find(q => q.id === 14);
             const popTitle = popQuestion ? `FiDe ${popQuestion.id}. ${popQuestion.title}` : 'İstenen Materyaller';
             const emailTag = ` <a href="mailto:berkcan_boza@arcelik.com.tr" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@berkcan_boza@arcelik.com.tr</a>`;
             popHtml = `<p>&nbsp;</p><p><b>${popTitle}</b>${emailTag}</p><ul><li>${selectedSpecialPops.join(', ')}</li></ul>`;
@@ -792,9 +786,8 @@ function loadReport(reportData) {
             return; 
         }
 
-        // Migration Map kullanımı
         for (const oldId in migrationMap) {
-            if (reportData.questions_status && reportData.questions_status[oldId]) {
+            if (reportData.questions_status[oldId]) {
                 const newId = migrationMap[oldId];
                 if (!reportData.questions_status[newId]) {
                     reportData.questions_status[newId] = reportData.questions_status[oldId];
@@ -805,14 +798,9 @@ function loadReport(reportData) {
 
         if (reportData.selectedStore) {
             const storeData = uniqueStores.find(s => s.bayiKodu == reportData.selectedStore.bayiKodu);
-            if(storeData) {
-                // Bayi seçildiğinde formu sıfırla ve yeniden oluştur.
-                resetForm();
-                selectStore(storeData, false);
-            }
+            if(storeData) selectStore(storeData, false);
         } else {
              resetForm();
-             return;
         }
         
         const formContainer = document.getElementById('form-content');
@@ -856,7 +844,6 @@ function loadReport(reportData) {
     } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
 }
 
-// --- GÜNCELLENEN parseAndLoadFromEmail() FONKSİYONU ---
 function parseAndLoadFromEmail() {
     showFiDeForm(); 
     const emailText = document.getElementById('load-email-area').value.trim();
@@ -869,15 +856,12 @@ function parseAndLoadFromEmail() {
     let storeCodeFound = null;
     let storeFoundAndSelected = false;
 
-    // 1. Bayi Kodunu Bulma ve Seçme
     for (const line of lines) {
         const match = line.match(/Ziyaret etmiş olduğum (\d{5,})\s/);
         if (match) {
             storeCodeFound = match[1];
             const storeToSelect = uniqueStores.find(s => String(s.bayiKodu) === storeCodeFound);
             if (storeToSelect) {
-                // Seçilen bayiye geçmeden önce formu sıfırla ve yeniden oluştur
-                resetForm(); 
                 selectStore(storeToSelect, false);
                 storeFoundAndSelected = true;
                 break;
@@ -895,105 +879,69 @@ function parseAndLoadFromEmail() {
         }
     }
     
-    // Regex Tanımlamaları
     const questionHeaderRegex = /^[\s•o-]*FiDe\s+(\d+)\./i;
-    const siparisHeaderRegex = /Sipariş verilmesi gerekenler:/i;
-    const pleksiHeaderRegex = /Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:/i;
-    
     const idsInEmail = new Set();
     let currentQuestionId = null;
     
-    // E-posta metnini işlerken hangi alt konteynere yazacağımızı belirleyen durum
-    let subContainerState = 'none'; // 'none', 'siparis', 'pleksi'
+    const ignorePhrases = [
+        "sipariş verilmesi gerekenler",
+        "pleksiyle sergilenmesi gerekenler",
+        "yanlış pleksi malzeme ile kullanılanlar"
+    ];
 
     lines.forEach(line => {
         const trimmedLine = line.trim();
         const headerMatch = trimmedLine.match(questionHeaderRegex);
-        
+
         if (headerMatch) {
-            // 2. Yeni Soru Başlığı Bulundu
             const originalId = headerMatch[1];
-            // ID Yönlendirme Haritası Kontrolü
-            const finalId = migrationMap[originalId] || originalId; 
+            const finalId = migrationMap[originalId] || originalId;
             currentQuestionId = finalId;
             idsInEmail.add(finalId);
-            
-            const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
-            if (!question) {
-                 console.warn(`parseAndLoadFromEmail: ${originalId} (Haritalanmış: ${finalId}) ID'li soru bulunamadı.`);
-                 currentQuestionId = null;
-                 return;
-            }
-            
-            // Konteyner ayarları resetlenir
-            if (question.type === 'product_list') {
-                subContainerState = 'none'; // product_list sorularında alt başlıkları bekleriz
-            } else {
-                subContainerState = 'none';
-            }
-            
-        } else if (currentQuestionId) {
-            // 3. Soru Başlığı Altındaki İçerik İşleniyor
-            
-            const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
-            if (!question || (question.answerType === 'fixed')) return; 
-
-            // product_list tipi sorular için alt başlık kontrolü
-            if (question.type === 'product_list') {
-                if (siparisHeaderRegex.test(trimmedLine)) {
-                    subContainerState = 'siparis';
-                    return;
-                } else if (pleksiHeaderRegex.test(trimmedLine)) {
-                    subContainerState = 'pleksi';
-                    return;
-                }
-            } else {
-                 subContainerState = 'none';
-            }
-
-            if (!trimmedLine) return;
-
+        } else if (currentQuestionId && trimmedLine) {
             const cleanedLine = trimmedLine.replace(/^[\s•o-]+\s*/, '');
             if (!cleanedLine) return; 
 
-            if (question.type === 'product_list' && subContainerState === 'siparis') {
-                // Sipariş listesi girdisi
-                // Örn: 8905291600 KILÇIK-KEA ETİKETLİK: 1 Paket
-                const productMatch = cleanedLine.match(/^(\d{8,})\s*(.*?)(?:-\s*|:\s*)(\d+)\s*(paket|adet)/i); 
+            const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
+            if (!question || (question.answerType === 'fixed')) {
+                return; 
+            }
+
+            if (question.type === 'product_list') {
+                const productMatch = cleanedLine.match(/^(\d{8,})/); 
                 if (productMatch) {
                     const productCode = productMatch[1];
-                    const quantity = parseInt(productMatch[3], 10);
+                    let quantity = 1; 
+                    const quantityMatch = cleanedLine.match(/:?\s*(\d+)\s*(paket|adet)/i);
+                    if (quantityMatch && quantityMatch[1]) {
+                        quantity = parseInt(quantityMatch[1], 10);
+                    }
                     
                     const productExists = productList.some(p => p.code === productCode);
-                    if (productExists && !isNaN(quantity)) {
+                    if (productExists) {
                         addProductToList(productCode, quantity);
                         return; 
                     }
                 }
-            } else if (question.type === 'product_list' && subContainerState === 'pleksi') {
-                 // Pleksi listesi girdisi (dynamic input)
-                const containerId = `fide${currentQuestionId}_pleksi`;
+            }
+            
+            if (ignorePhrases.some(phrase => cleanedLine.toLowerCase().includes(phrase))) {
+                return; 
+            }
+            
+            const staticItems = question.staticItems || [];
+            const isStatic = staticItems.some(staticItem => {
+                const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
+                return plainStaticItem.includes(cleanedLine);
+            });
+            
+            if (!isStatic) {
+                const containerId = (question.type === 'product_list') ? `fide${currentQuestionId}_pleksi` : `fide${currentQuestionId}`;
                 addDynamicInput(containerId, cleanedLine, false);
-            } else if (question.type === 'standard') {
-                // Standart soru girdisi (dynamic input)
-                const staticItems = question.staticItems || [];
-                
-                // Statik öğelerdeki metinler e-postada olabilir, bu durumda tekrara düşmemek için dinamik eklememeliyiz.
-                const isStatic = staticItems.some(staticItem => {
-                    const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
-                    const plainCleanedLine = cleanedLine.replace(/<[^>]*>/g, '').trim();
-                    return plainStaticItem === plainCleanedLine;
-                });
-                
-                if (!isStatic) {
-                    const containerId = `fide${currentQuestionId}`;
-                    addDynamicInput(containerId, cleanedLine, false);
-                }
             }
         }
     });
     
-    // E-postada bahsedilmeyen ve arşivlenmemiş soruları "Çıkarılmış" olarak işaretle
     fideQuestions.forEach(q => {
         if (q.isArchived) return;
         if (!idsInEmail.has(String(q.id))) {
@@ -1636,7 +1584,6 @@ function selectStore(store, loadSavedData = true) {
     if (loadSavedData) {
         loadReportForStore(store.bayiKodu);
     } else {
-        // Formu sıfırla (eğer 'false' ise yani manuel sıfırlama istenmediyse bile formun oluşmasını sağla)
         resetForm(); 
         updateFormInteractivity(true);
     }
