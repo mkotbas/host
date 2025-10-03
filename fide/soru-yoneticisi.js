@@ -35,7 +35,7 @@ async function initializeApp() {
 
 async function loadMigrationMap() {
     const user = auth.currentUser;
-    let loadedFromCloud = false;
+    migrationMap = {}; // Başlangıçta haritayı sıfırla
 
     if (user && database) {
         try {
@@ -43,17 +43,10 @@ async function loadMigrationMap() {
             const snapshot = await migrationRef.once('value');
             if (snapshot.exists()) {
                 migrationMap = snapshot.val();
-                localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
-                loadedFromCloud = true;
             }
         } catch (error) {
             console.error("Buluttan veri taşıma ayarları yüklenemedi:", error);
         }
-    }
-
-    if (!loadedFromCloud) {
-        const storedMap = localStorage.getItem('fideMigrationMap');
-        migrationMap = storedMap ? JSON.parse(storedMap) : {};
     }
 }
 
@@ -285,17 +278,6 @@ async function applyDeleteQuestionScenario() {
     loadingOverlay.style.display = 'flex';
 
     try {
-        const localDataString = localStorage.getItem('allFideReports');
-        if (localDataString) {
-            let allReports = JSON.parse(localDataString);
-            for (const storeKey in allReports) {
-                if (allReports[storeKey]?.data?.questions_status?.[questionIdToDelete]) {
-                    delete allReports[storeKey].data.questions_status[questionIdToDelete];
-                }
-            }
-            localStorage.setItem('allFideReports', JSON.stringify(allReports));
-        }
-
         const reportsRef = database.ref('allFideReports');
         const snapshot = await reportsRef.once('value');
         if (snapshot.exists()) {
@@ -378,7 +360,6 @@ function deleteMigrationMapping(oldIdToDelete) {
 }
 
 function saveMigrationMap() {
-    localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
     const user = auth.currentUser;
     if (user && database) {
         database.ref('migrationSettings/map').set(migrationMap).catch(error => {
@@ -843,39 +824,31 @@ async function deleteAllAnswersForQuestion(questionId) {
         return;
     }
 
+    if (!auth.currentUser || !database) {
+        alert("Bu işlem için bulut sistemine bağlı olmalısınız.");
+        return;
+    }
+
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
 
     try {
-        const localDataString = localStorage.getItem('allFideReports');
-        if (localDataString) {
-            let allReports = JSON.parse(localDataString);
-            for (const storeKey in allReports) {
-                if (allReports[storeKey] && allReports[storeKey].data && allReports[storeKey].data.questions_status && allReports[storeKey].data.questions_status[questionId]) {
-                    delete allReports[storeKey].data.questions_status[questionId];
+        const reportsRef = database.ref('allFideReports');
+        const snapshot = await reportsRef.once('value');
+        if (snapshot.exists()) {
+            let allCloudReports = snapshot.val();
+            let updates = {};
+            for (const storeKey in allCloudReports) {
+                if (allCloudReports[storeKey]?.data?.questions_status?.[questionId]) {
+                     updates[`${storeKey}/data/questions_status/${questionId}`] = null;
                 }
             }
-            localStorage.setItem('allFideReports', JSON.stringify(allReports));
-        }
-
-        if (auth.currentUser && database) {
-            const reportsRef = database.ref('allFideReports');
-            const snapshot = await reportsRef.once('value');
-            if (snapshot.exists()) {
-                let allCloudReports = snapshot.val();
-                let updates = {};
-                for (const storeKey in allCloudReports) {
-                    if (allCloudReports[storeKey]?.data?.questions_status?.[questionId]) {
-                         updates[`${storeKey}/data/questions_status/${questionId}`] = null;
-                    }
-                }
-                if (Object.keys(updates).length > 0) {
-                    await reportsRef.update(updates);
-                }
+            if (Object.keys(updates).length > 0) {
+                await reportsRef.update(updates);
             }
         }
         
-        alert(`İşlem tamamlandı!\n\nFiDe ${questionId} sorusuna ait tüm cevaplar bütün raporlardan (hem yerel hem de bulut) başarıyla silindi.`);
+        alert(`İşlem tamamlandı!\n\nFiDe ${questionId} sorusuna ait tüm cevaplar bütün bulut raporlarından başarıyla silindi.`);
 
     } catch (error) {
         console.error("Cevapları silerken bir hata oluştu:", error);
