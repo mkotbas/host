@@ -9,29 +9,23 @@ const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Tem
 
 // --- Ana Uygulama Mantığı ---
 
-// GÜNCELLENDİ: Uygulamanın başlangıç noktası artık Firebase Auth durumuna bağlı.
-// Bu, veri yüklemeden önce kullanıcının giriş yaptığından emin olmamızı sağlar.
 document.addEventListener('DOMContentLoaded', () => {
-    // Firebase auth nesnesi hazır olduğunda dinleyiciyi başlat
     if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') {
         firebase.auth().onAuthStateChanged(function(user) {
             const loadingOverlay = document.getElementById('loading-overlay');
             const dashboardContent = document.getElementById('dashboard-content');
 
             if (user) {
-                // 1. KULLANICI GİRİŞ YAPMIŞSA:
-                // Uygulamayı normal şekilde başlat.
-                // Dashboard'u göster, giriş uyarısını (varsa) gizle.
+                // KULLANICI GİRİŞ YAPMIŞSA:
                 if(dashboardContent) dashboardContent.style.display = 'block';
-                initializeApp();
+                // GÜNCELLENDİ: Kullanıcı UID'si ile uygulamayı başlat
+                initializeApp(user.uid);
             } else {
-                // 2. KULLANICI GİRİŞ YAPMAMIŞSA:
-                // Yükleme ekranını bir "Giriş Yap" uyarısına dönüştür.
+                // KULLANICI GİRİŞ YAPMAMIŞSA:
                 if(loadingOverlay) {
                     loadingOverlay.innerHTML = '<h2><i class="fas fa-sign-in-alt"></i> Lütfen Giriş Yapın</h2><p>Denetim verilerinizi görmek için sisteme giriş yapmalısınız.</p>';
                     loadingOverlay.style.display = 'flex';
                 }
-                // Dashboard'u gizle.
                 if(dashboardContent) dashboardContent.style.display = 'none';
             }
         });
@@ -46,98 +40,79 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-async function initializeApp() {
+async function initializeApp(uid) {
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.innerHTML = '<div class="loader"></div><p>Veriler Yükleniyor...</p>';
     loadingOverlay.style.display = 'flex';
 
-    setupEventListeners();
+    // GÜNCELLENDİ: Tüm fonksiyonlara UID parametresi eklendi
+    setupEventListeners(uid);
     
-    await loadSettings();
-    await loadGeriAlinanBayiler();
-    await loadAuditedStoresData();
-    await loadStoreList(); 
+    await loadSettings(uid);
+    await loadGeriAlinanBayiler(uid);
+    await loadAuditedStoresData(uid);
+    await loadStoreList(uid); 
 
     loadingOverlay.style.display = 'none';
 }
 
-// GÜNCELLENDİ: Bulut öncelikli veri yükleme mantığı
-async function loadSettings() {
-    let settings = { aylikHedef: 47 }; // Varsayılan
+// GÜNCELLENDİ: Artık kullanıcıya özel yoldan okuma yapıyor
+async function loadSettings(uid) {
+    let settings = { aylikHedef: 47 };
+    const userSettingsPath = `users/${uid}/denetimAyarlari`;
+    const localSettingsKey = `denetimAyarlari_${uid}`;
 
-    // 1. Her Zaman Önce Buluta Soracak
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
         try {
-            const settingsRef = database.ref('denetimAyarlari');
+            const settingsRef = database.ref(userSettingsPath);
             const snapshot = await settingsRef.once('value');
-            // 2. Buluttan Gelen Veri Esastır
             if (snapshot.exists()) {
                 settings = snapshot.val();
-                // Bilgisayarın hafızasındaki eski veriyi sil ve buluttan gelenle güncelle
-                localStorage.setItem('denetimAyarlari', JSON.stringify(settings)); 
+                localStorage.setItem(localSettingsKey, JSON.stringify(settings)); 
             } else {
-                // Bulutta veri yoksa, son çare olarak bilgisayar hafızasına bak
-                const localSettings = localStorage.getItem('denetimAyarlari');
-                if (localSettings) {
-                    settings = JSON.parse(localSettings);
-                }
+                const localSettings = localStorage.getItem(localSettingsKey);
+                if (localSettings) settings = JSON.parse(localSettings);
             }
         } catch (error) {
-            // 3. İnternet Yoksa (veya başka bir hata oluşursa)
             console.error("Ayarlar buluttan okunamadı, yerel veri kullanılıyor:", error);
-            const localSettings = localStorage.getItem('denetimAyarlari');
-            if (localSettings) {
-                settings = JSON.parse(localSettings);
-            }
+            const localSettings = localStorage.getItem(localSettingsKey);
+            if (localSettings) settings = JSON.parse(localSettings);
         }
     } else {
-        // Oturum açılmamışsa direkt yerel veriyi kullan
-        const localSettings = localStorage.getItem('denetimAyarlari');
-        if (localSettings) {
-            settings = JSON.parse(localSettings);
-        }
+        const localSettings = localStorage.getItem(localSettingsKey);
+        if (localSettings) settings = JSON.parse(localSettings);
     }
 
     aylikHedef = settings.aylikHedef || 47;
     document.getElementById('monthly-target-input').value = aylikHedef;
 }
 
-// GÜNCELLENDİ: Bulut öncelikli veri yükleme mantığı
-async function loadStoreList() {
+// GÜNCELLENDİ: Artık kullanıcıya özel yoldan okuma yapıyor
+async function loadStoreList(uid) {
     let storeData = null;
     const sixMonthsAgo = new Date().getTime() - (180 * 24 * 60 * 60 * 1000);
+    const userStoreListPath = `users/${uid}/tumBayilerListesi`;
+    const localStoreListKey = `tumBayilerListesi_${uid}`;
 
-    // 1. Her Zaman Önce Buluta Soracak
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
         try {
-            const storeListRef = database.ref('tumBayilerListesi');
+            const storeListRef = database.ref(userStoreListPath);
             const snapshot = await storeListRef.once('value');
-            // 2. Buluttan Gelen Veri Esastır
             if (snapshot.exists()) {
                 storeData = snapshot.val();
-                // Bilgisayarın hafızasındaki eski veriyi sil ve buluttan gelenle güncelle
-                localStorage.setItem('tumBayilerListesi', JSON.stringify(storeData)); 
+                localStorage.setItem(localStoreListKey, JSON.stringify(storeData)); 
             } else {
-                // Bulutta veri yoksa, son çare olarak bilgisayar hafızasına bak
-                const localStoreData = localStorage.getItem('tumBayilerListesi');
-                if (localStoreData) {
-                    storeData = JSON.parse(localStoreData);
-                }
+                const localStoreData = localStorage.getItem(localStoreListKey);
+                if (localStoreData) storeData = JSON.parse(localStoreData);
             }
         } catch (error) {
-            // 3. İnternet Yoksa (veya başka bir hata oluşursa)
             console.error("Bayi listesi buluttan okunamadı, yerel veri kullanılıyor:", error);
-            const localStoreData = localStorage.getItem('tumBayilerListesi');
-            if (localStoreData) {
-                storeData = JSON.parse(localStoreData);
-            }
+            const localStoreData = localStorage.getItem(localStoreListKey);
+            if (localStoreData) storeData = JSON.parse(localStoreData);
         }
     } else {
-         // Oturum açılmamışsa direkt yerel veriyi kullan
-        const localStoreData = localStorage.getItem('tumBayilerListesi');
-        if (localStoreData) {
-            storeData = JSON.parse(localStoreData);
-        }
+        const localStoreData = localStorage.getItem(localStoreListKey);
+        if (localStoreData) storeData = JSON.parse(localStoreData);
     }
 
     if (storeData && storeData.stores && storeData.timestamp > sixMonthsAgo) {
@@ -145,9 +120,7 @@ async function loadStoreList() {
         document.getElementById('upload-area').style.display = 'none';
         document.getElementById('loaded-data-area').style.display = 'block';
     } else {
-        if (storeData) {
-             localStorage.removeItem('tumBayilerListesi'); 
-        }
+        if (storeData) localStorage.removeItem(localStoreListKey); 
         document.getElementById('upload-area').style.display = 'block';
         document.getElementById('loaded-data-area').style.display = 'none';
     }
@@ -161,41 +134,31 @@ function runDashboard() {
     renderRemainingStores(allStores);
 }
 
-// GÜNCELLENDİ: Bulut öncelikli veri yükleme mantığı
-async function loadGeriAlinanBayiler() {
+// GÜNCELLENDİ: Artık kullanıcıya özel yoldan okuma yapıyor
+async function loadGeriAlinanBayiler(uid) {
     let geriAlinanlar = {};
+    const userGeriAlinanlarPath = `users/${uid}/denetimGeriAlinanlar`;
+    const localGeriAlinanlarKey = `denetimGeriAlinanlar_${uid}`;
 
-    // 1. Her Zaman Önce Buluta Soracak
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
         try {
-            const ref = database.ref('denetimGeriAlinanlar');
+            const ref = database.ref(userGeriAlinanlarPath);
             const snapshot = await ref.once('value');
-            // 2. Buluttan Gelen Veri Esastır
             if (snapshot.exists()) {
                 geriAlinanlar = snapshot.val();
-                // Bilgisayarın hafızasındaki eski veriyi sil ve buluttan gelenle güncelle
-                localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar)); 
+                localStorage.setItem(localGeriAlinanlarKey, JSON.stringify(geriAlinanlar)); 
             } else {
-                // Bulutta veri yoksa, son çare olarak bilgisayar hafızasına bak
-                const localData = localStorage.getItem('denetimGeriAlinanlar');
-                if (localData) {
-                    geriAlinanlar = JSON.parse(localData);
-                }
+                const localData = localStorage.getItem(localGeriAlinanlarKey);
+                if (localData) geriAlinanlar = JSON.parse(localData);
             }
         } catch (error) {
-            // 3. İnternet Yoksa (veya başka bir hata oluşursa)
             console.error("Geri alınan bayi bilgisi buluttan okunamadı, yerel veri kullanılıyor:", error);
-            const localData = localStorage.getItem('denetimGeriAlinanlar');
-            if (localData) {
-                geriAlinanlar = JSON.parse(localData);
-            }
+            const localData = localStorage.getItem(localGeriAlinanlarKey);
+            if (localData) geriAlinanlar = JSON.parse(localData);
         }
     } else {
-        // Oturum açılmamışsa direkt yerel veriyi kullan
-        const localData = localStorage.getItem('denetimGeriAlinanlar');
-        if (localData) {
-            geriAlinanlar = JSON.parse(localData);
-        }
+        const localData = localStorage.getItem(localGeriAlinanlarKey);
+        if (localData) geriAlinanlar = JSON.parse(localData);
     }
     
     const today = new Date();
@@ -213,44 +176,33 @@ async function loadGeriAlinanBayiler() {
     geriAlinanBayiKodlariBuYil = [...new Set(yearlyRevertedCodes)];
 }
 
-// GÜNCELLENDİ: Bulut öncelikli veri yükleme mantığı
-async function loadAuditedStoresData() {
+// GÜNCELLENDİ: Artık kullanıcıya özel yoldan okuma yapıyor
+async function loadAuditedStoresData(uid) {
     let allReports = {};
-
-    // 1. Her Zaman Önce Buluta Soracak
+    const userAllFideReportsPath = `users/${uid}/allFideReports`;
+    const localAllFideReportsKey = `allFideReports_${uid}`;
+    
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
         try {
-            const reportsRef = database.ref('allFideReports');
+            const reportsRef = database.ref(userAllFideReportsPath);
             const snapshot = await reportsRef.once('value');
-            // 2. Buluttan Gelen Veri Esastır
             if (snapshot.exists()) {
                 allReports = snapshot.val();
-                // Bilgisayarın hafızasındaki eski veriyi sil ve buluttan gelenle güncelle
-                localStorage.setItem('allFideReports', JSON.stringify(allReports)); 
+                localStorage.setItem(localAllFideReportsKey, JSON.stringify(allReports)); 
             } else {
-                // Bulutta veri yoksa, son çare olarak bilgisayar hafızasına bak
-                const localData = localStorage.getItem('allFideReports');
-                if (localData) {
-                    allReports = JSON.parse(localData);
-                }
+                const localData = localStorage.getItem(localAllFideReportsKey);
+                if (localData) allReports = JSON.parse(localData);
             }
         } catch (error) {
-            // 3. İnternet Yoksa (veya başka bir hata oluşursa)
             console.error("Denetlenen bayi verileri buluttan okunamadı, yerel veri kullanılıyor:", error);
-            const localData = localStorage.getItem('allFideReports');
-            if (localData) {
-                allReports = JSON.parse(localData);
-            }
+            const localData = localStorage.getItem(localAllFideReportsKey);
+            if (localData) allReports = JSON.parse(localData);
         }
     } else {
-         // Oturum açılmamışsa direkt yerel veriyi kullan
-        const localData = localStorage.getItem('allFideReports');
-        if (localData) {
-            allReports = JSON.parse(localData);
-        }
+        const localData = localStorage.getItem(localAllFideReportsKey);
+        if (localData) allReports = JSON.parse(localData);
     }
     
-    // Yüklenen veriyi işle
     try {
         const today = new Date();
         const currentMonth = today.getMonth();
@@ -284,51 +236,41 @@ async function loadAuditedStoresData() {
 }
 
 
-function setupEventListeners() {
-    // Yönetim Paneli
+function setupEventListeners(uid) {
     document.getElementById('open-admin-panel-btn').addEventListener('click', () => {
         document.getElementById('admin-panel-overlay').style.display = 'flex';
     });
     document.getElementById('close-admin-panel-btn').addEventListener('click', () => {
         document.getElementById('admin-panel-overlay').style.display = 'none';
     });
-    document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+    document.getElementById('save-settings-btn').onclick = () => saveSettings(uid);
+    document.getElementById('store-list-excel-input').onchange = (event) => handleStoreExcelUpload(event, uid);
+    document.getElementById('delete-excel-btn').onclick = () => deleteStoreList(uid);
+    document.getElementById('reset-data-btn').onclick = () => resetProgress(uid);
     
-    // Ana Fonksiyonlar
-    document.getElementById('store-list-excel-input').addEventListener('change', handleStoreExcelUpload);
-    
-    // Veri Yönetim Butonları
-    const deleteExcelBtn = document.getElementById('delete-excel-btn');
-    if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
-    
-    const resetDataBtn = document.getElementById('reset-data-btn');
-    if(resetDataBtn) resetDataBtn.addEventListener('click', resetProgress); 
-
-    // Filtreler
     document.getElementById('bolge-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('yonetmen-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('sehir-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('ilce-filter').addEventListener('change', applyAndRepopulateFilters);
 }
 
-async function resetProgress() {
-    if (!confirm("Bu işlem, bu yıla ait TÜM denetim verilerini sıfırlayacaktır. 'Bu Ay Denetlenenler' ve 'Yıllık Hedef' sayaçları sıfırlanır. Onaylıyor musunuz?")) {
-        return;
-    }
+// GÜNCELLENDİ: Artık kullanıcıya özel yola yazma ve okuma yapıyor
+async function resetProgress(uid) {
+    if (!confirm("Bu işlem, bu yıla ait TÜM denetim verilerini sıfırlayacaktır. 'Bu Ay Denetlenenler' ve 'Yıllık Hedef' sayaçları sıfırlanır. Onaylıyor musunuz?")) return;
 
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
 
     try {
-        // Bu yıl denetim raporu olan tüm bayilerin kodlarını bul (Bu kısım için önce veriyi tekrar yüklemek en sağlıklısı)
+        const userAllFideReportsPath = `users/${uid}/allFideReports`;
+        const userGeriAlinanlarPath = `users/${uid}/denetimGeriAlinanlar`;
+        const localGeriAlinanlarKey = `denetimGeriAlinanlar_${uid}`;
+
         let allReports = {};
         if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-            const reportsRef = database.ref('allFideReports');
+            const reportsRef = database.ref(userAllFideReportsPath);
             const snapshot = await reportsRef.once('value');
             if (snapshot.exists()) allReports = snapshot.val();
-        } else {
-             const localData = localStorage.getItem('allFideReports');
-             if (localData) allReports = JSON.parse(localData);
         }
        
         const today = new Date();
@@ -346,23 +288,14 @@ async function resetProgress() {
 
         const uniqueCodesToReset = [...new Set(yearlyCodesToReset)];
 
-        // Bu kodları mevcut ayın "geriAlinanlar" listesine ekle
         const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
         
-        // Önce mevcut "geriAlinanlar" verisini buluttan/yerelden al
         let geriAlinanlar = {};
-        if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-            const geriAlinanlarRef = database.ref('denetimGeriAlinanlar');
-            const snapshot = await geriAlinanlarRef.once('value');
-            if(snapshot.exists()) geriAlinanlar = snapshot.val();
-        } else {
-            const localGeriAlinan = localStorage.getItem('denetimGeriAlinanlar');
-            if(localGeriAlinan) geriAlinanlar = JSON.parse(localGeriAlinan);
-        }
-
-        if (!geriAlinanlar[currentMonthKey]) {
-            geriAlinanlar[currentMonthKey] = [];
-        }
+        const geriAlinanlarRef = database.ref(userGeriAlinanlarPath);
+        const snapshot = await geriAlinanlarRef.once('value');
+        if(snapshot.exists()) geriAlinanlar = snapshot.val();
+        
+        if (!geriAlinanlar[currentMonthKey]) geriAlinanlar[currentMonthKey] = [];
 
         uniqueCodesToReset.forEach(code => {
             if (!geriAlinanlar[currentMonthKey].includes(code)) {
@@ -370,11 +303,8 @@ async function resetProgress() {
             }
         });
 
-        // Güncellenmiş listeyi yerel hafızaya ve buluta kaydet
-        localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
-        if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-            await database.ref('denetimGeriAlinanlar/' + currentMonthKey).set(geriAlinanlar[currentMonthKey]);
-        }
+        localStorage.setItem(localGeriAlinanlarKey, JSON.stringify(geriAlinanlar));
+        await database.ref(`${userGeriAlinanlarPath}/${currentMonthKey}`).set(geriAlinanlar[currentMonthKey]);
         
         window.location.reload();
 
@@ -384,17 +314,17 @@ async function resetProgress() {
     }
 }
 
-
-async function saveSettings() {
+// GÜNCELLENDİ: Artık kullanıcıya özel yola yazma yapıyor
+async function saveSettings(uid) {
     const newTarget = parseInt(document.getElementById('monthly-target-input').value);
     if (!newTarget || newTarget < 1) {
         alert("Lütfen geçerli bir hedef girin.");
         return;
     }
     const settings = { aylikHedef: newTarget };
-    localStorage.setItem('denetimAyarlari', JSON.stringify(settings));
+    localStorage.setItem(`denetimAyarlari_${uid}`, JSON.stringify(settings));
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-        await database.ref('denetimAyarlari').set(settings);
+        await database.ref(`users/${uid}/denetimAyarlari`).set(settings);
     }
     aylikHedef = newTarget;
     alert("Ayarlar kaydedildi.");
@@ -402,57 +332,51 @@ async function saveSettings() {
     runDashboard();
 }
 
-async function deleteStoreList() {
+// GÜNCELLENDİ: Artık kullanıcıya özel yoldan silme yapıyor
+async function deleteStoreList(uid) {
     const dogruSifreHash = 'ZmRlMDAx';
     const girilenSifre = prompt("DİKKAT! Bu işlem, yüklenmiş olan Excel bayi listesini hem bilgisayarınızdan hem de buluttan kalıcı olarak siler. Silmek için yönetici şifresini girin:");
-    if (!girilenSifre) return;
-    if (btoa(girilenSifre) !== dogruSifreHash) {
-        alert("Hatalı şifre! İşlem iptal edildi.");
+    if (!girilenSifre || btoa(girilenSifre) !== dogruSifreHash) {
+        if(girilenSifre) alert("Hatalı şifre! İşlem iptal edildi.");
         return;
     }
     if (confirm("Şifre doğru. Excel bayi listesini kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem sonrası yeni bir liste yüklemeniz gerekecektir.")) {
-        localStorage.removeItem('tumBayilerListesi');
+        localStorage.removeItem(`tumBayilerListesi_${uid}`);
         if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-            await database.ref('tumBayilerListesi').remove();
+            await database.ref(`users/${uid}/tumBayilerListesi`).remove();
         }
         alert("Bayi listesi başarıyla silindi. Sayfa yeniden başlatılıyor.");
         window.location.reload();
     }
 }
 
+// GÜNCELLENDİ: Artık kullanıcıya özel yola yazma ve okuma yapıyor
 async function revertAudit(bayiKodu) {
+    const uid = auth.currentUser.uid;
+    if (!uid) return alert("İşlem yapılamadı. Lütfen tekrar giriş yapın.");
+
     const store = allStores.find(s => s.bayiKodu === bayiKodu);
     const storeName = store ? store.bayiAdi : bayiKodu;
-    if (confirm(`'${storeName}' bayisinin bu ayki denetimini listeden kaldırmak istediğinizden emin misiniz?\n\n(Not: Bu işlem raporu silmez, sadece bu listeden gizler ve sayaçları günceller.)`)) {
+    if (confirm(`'${storeName}' bayisinin bu ayki denetimini listeden kaldırmak istediğinizden emin misiniz?`)) {
         const loadingOverlay = document.getElementById('loading-overlay');
         loadingOverlay.style.display = 'flex';
         try {
             const today = new Date();
             const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
+            const userGeriAlinanlarPath = `users/${uid}/denetimGeriAlinanlar`;
 
-            // Önce mevcut "geriAlinanlar" verisini buluttan/yerelden al
             let geriAlinanlar = {};
-             if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-                const geriAlinanlarRef = database.ref('denetimGeriAlinanlar');
-                const snapshot = await geriAlinanlarRef.once('value');
-                if(snapshot.exists()) geriAlinanlar = snapshot.val();
-            } else {
-                const localGeriAlinan = localStorage.getItem('denetimGeriAlinanlar');
-                if(localGeriAlinan) geriAlinanlar = JSON.parse(localGeriAlinan);
-            }
-
-            if (!geriAlinanlar[currentMonthKey]) {
-                geriAlinanlar[currentMonthKey] = [];
-            }
+            const geriAlinanlarRef = database.ref(userGeriAlinanlarPath);
+            const snapshot = await geriAlinanlarRef.once('value');
+            if(snapshot.exists()) geriAlinanlar = snapshot.val();
+            
+            if (!geriAlinanlar[currentMonthKey]) geriAlinanlar[currentMonthKey] = [];
             if (!geriAlinanlar[currentMonthKey].includes(bayiKodu)) {
                 geriAlinanlar[currentMonthKey].push(bayiKodu);
             }
 
-            localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
-
-            if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-                await database.ref('denetimGeriAlinanlar/' + currentMonthKey).set(geriAlinanlar[currentMonthKey]);
-            }
+            localStorage.setItem(`denetimGeriAlinanlar_${uid}`, JSON.stringify(geriAlinanlar));
+            await database.ref(`${userGeriAlinanlarPath}/${currentMonthKey}`).set(geriAlinanlar[currentMonthKey]);
             
             window.location.reload();
         } catch (error) {
@@ -462,7 +386,7 @@ async function revertAudit(bayiKodu) {
     }
 }
 
-function handleStoreExcelUpload(event) {
+function handleStoreExcelUpload(event, uid) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -474,14 +398,15 @@ function handleStoreExcelUpload(event) {
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-            processStoreExcelData(dataAsArray);
+            processStoreExcelData(dataAsArray, uid);
         } catch (error) {
             alert("Excel dosyası okunurken bir hata oluştu.");
         }
     };
 }
 
-function processStoreExcelData(dataAsArray) {
+// GÜNCELLENDİ: Artık kullanıcıya özel yola yazma yapıyor
+function processStoreExcelData(dataAsArray, uid) {
     if (dataAsArray.length < 2) return alert('Excel dosyası beklenen formatta değil.');
     const headerRow = dataAsArray[0].map(h => String(h).trim());
     const colIndexes = {
@@ -502,12 +427,17 @@ function processStoreExcelData(dataAsArray) {
     }).filter(store => store !== null);
 
     const dataToSave = { timestamp: new Date().getTime(), stores: allStores };
-    localStorage.setItem('tumBayilerListesi', JSON.stringify(dataToSave));
+    localStorage.setItem(`tumBayilerListesi_${uid}`, JSON.stringify(dataToSave));
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-        database.ref('tumBayilerListesi').set(dataToSave);
+        database.ref(`users/${uid}/tumBayilerListesi`).set(dataToSave)
+            .then(() => {
+                alert("Excel listesi başarıyla yüklendi ve kaydedildi.");
+                window.location.reload();
+            })
+            .catch(error => {
+                alert("Veri buluta kaydedilirken bir hata oluştu: " + error.message);
+            });
     }
-    alert("Excel listesi başarıyla yüklendi ve kaydedildi.");
-    window.location.reload();
 }
 
 function calculateAndDisplayDashboard() {
