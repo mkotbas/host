@@ -15,6 +15,7 @@ async function initializeApp() {
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
     
+    // GÜNCELLENDİ: Tüm veri yükleme fonksiyonları artık "Bulut Öncelikli" çalışacak
     await loadSettings();
     await loadGeriAlinanBayiler();
     await loadAuditedStoresData();
@@ -23,47 +24,93 @@ async function initializeApp() {
     loadingOverlay.style.display = 'none';
 }
 
+// GÜNCELLENDİ: Bulut öncelikli veri yükleme mantığı
 async function loadSettings() {
-    let settings = { aylikHedef: 47 };
-    const localSettings = localStorage.getItem('denetimAyarlari');
-    if (localSettings) {
-        settings = JSON.parse(localSettings);
-    }
+    let settings = { aylikHedef: 47 }; // Varsayılan
+
+    // 1. Her Zaman Önce Buluta Soracak
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-        const settingsRef = database.ref('denetimAyarlari');
-        const snapshot = await settingsRef.once('value');
-        if (snapshot.exists()) {
-            settings = snapshot.val();
-            localStorage.setItem('denetimAyarlari', JSON.stringify(settings));
+        try {
+            const settingsRef = database.ref('denetimAyarlari');
+            const snapshot = await settingsRef.once('value');
+            // 2. Buluttan Gelen Veri Esastır
+            if (snapshot.exists()) {
+                settings = snapshot.val();
+                // Bilgisayarın hafızasındaki eski veriyi sil ve buluttan gelenle güncelle
+                localStorage.setItem('denetimAyarlari', JSON.stringify(settings)); 
+            } else {
+                // Bulutta veri yoksa, son çare olarak bilgisayar hafızasına bak
+                const localSettings = localStorage.getItem('denetimAyarlari');
+                if (localSettings) {
+                    settings = JSON.parse(localSettings);
+                }
+            }
+        } catch (error) {
+            // 3. İnternet Yoksa (veya başka bir hata oluşursa)
+            console.error("Ayarlar buluttan okunamadı, yerel veri kullanılıyor:", error);
+            const localSettings = localStorage.getItem('denetimAyarlari');
+            if (localSettings) {
+                settings = JSON.parse(localSettings);
+            }
+        }
+    } else {
+        // Oturum açılmamışsa direkt yerel veriyi kullan
+        const localSettings = localStorage.getItem('denetimAyarlari');
+        if (localSettings) {
+            settings = JSON.parse(localSettings);
         }
     }
+
     aylikHedef = settings.aylikHedef || 47;
     document.getElementById('monthly-target-input').value = aylikHedef;
 }
 
+// GÜNCELLENDİ: Bulut öncelikli veri yükleme mantığı
 async function loadStoreList() {
     let storeData = null;
     const sixMonthsAgo = new Date().getTime() - (180 * 24 * 60 * 60 * 1000);
 
-    const localStoreData = localStorage.getItem('tumBayilerListesi');
-    if (localStoreData) {
-        storeData = JSON.parse(localStoreData);
-    }
-    
+    // 1. Her Zaman Önce Buluta Soracak
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
-        const storeListRef = database.ref('tumBayilerListesi');
-        const snapshot = await storeListRef.once('value');
-        if (snapshot.exists()) {
-            storeData = snapshot.val();
-            localStorage.setItem('tumBayilerListesi', JSON.stringify(storeData));
+        try {
+            const storeListRef = database.ref('tumBayilerListesi');
+            const snapshot = await storeListRef.once('value');
+            // 2. Buluttan Gelen Veri Esastır
+            if (snapshot.exists()) {
+                storeData = snapshot.val();
+                // Bilgisayarın hafızasındaki eski veriyi sil ve buluttan gelenle güncelle
+                localStorage.setItem('tumBayilerListesi', JSON.stringify(storeData)); 
+            } else {
+                // Bulutta veri yoksa, son çare olarak bilgisayar hafızasına bak
+                const localStoreData = localStorage.getItem('tumBayilerListesi');
+                if (localStoreData) {
+                    storeData = JSON.parse(localStoreData);
+                }
+            }
+        } catch (error) {
+            // 3. İnternet Yoksa (veya başka bir hata oluşursa)
+            console.error("Bayi listesi buluttan okunamadı, yerel veri kullanılıyor:", error);
+            const localStoreData = localStorage.getItem('tumBayilerListesi');
+            if (localStoreData) {
+                storeData = JSON.parse(localStoreData);
+            }
+        }
+    } else {
+         // Oturum açılmamışsa direkt yerel veriyi kullan
+        const localStoreData = localStorage.getItem('tumBayilerListesi');
+        if (localStoreData) {
+            storeData = JSON.parse(localStoreData);
         }
     }
 
-    if (storeData && storeData.timestamp > sixMonthsAgo) {
+    if (storeData && storeData.stores && storeData.timestamp > sixMonthsAgo) {
         allStores = storeData.stores;
         document.getElementById('upload-area').style.display = 'none';
         document.getElementById('loaded-data-area').style.display = 'block';
     } else {
+        if (storeData) {
+             localStorage.removeItem('tumBayilerListesi'); 
+        }
         document.getElementById('upload-area').style.display = 'block';
         document.getElementById('loaded-data-area').style.display = 'none';
     }
@@ -77,57 +124,97 @@ function runDashboard() {
     renderRemainingStores(allStores);
 }
 
-// GÜNCELLENDİ: Bu fonksiyon artık sadece bu ayı değil, yıl içinde geri alınan tüm bayileri de hesaplıyor.
+// GÜNCELLENDİ: Bulut öncelikli veri yükleme mantığı
 async function loadGeriAlinanBayiler() {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonthKey = `${currentYear}-${today.getMonth()}`;
     let geriAlinanlar = {};
 
-    const localData = localStorage.getItem('denetimGeriAlinanlar');
-    if (localData) {
-        geriAlinanlar = JSON.parse(localData);
-    }
-
+    // 1. Her Zaman Önce Buluta Soracak
     if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
         try {
             const ref = database.ref('denetimGeriAlinanlar');
             const snapshot = await ref.once('value');
+            // 2. Buluttan Gelen Veri Esastır
             if (snapshot.exists()) {
-                const cloudData = snapshot.val();
-                Object.assign(geriAlinanlar, cloudData);
-                localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
+                geriAlinanlar = snapshot.val();
+                // Bilgisayarın hafızasındaki eski veriyi sil ve buluttan gelenle güncelle
+                localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar)); 
+            } else {
+                // Bulutta veri yoksa, son çare olarak bilgisayar hafızasına bak
+                const localData = localStorage.getItem('denetimGeriAlinanlar');
+                if (localData) {
+                    geriAlinanlar = JSON.parse(localData);
+                }
             }
         } catch (error) {
-            console.error("Geri alınan bayi bilgisi buluttan okunamadı:", error);
+            // 3. İnternet Yoksa (veya başka bir hata oluşursa)
+            console.error("Geri alınan bayi bilgisi buluttan okunamadı, yerel veri kullanılıyor:", error);
+            const localData = localStorage.getItem('denetimGeriAlinanlar');
+            if (localData) {
+                geriAlinanlar = JSON.parse(localData);
+            }
+        }
+    } else {
+        // Oturum açılmamışsa direkt yerel veriyi kullan
+        const localData = localStorage.getItem('denetimGeriAlinanlar');
+        if (localData) {
+            geriAlinanlar = JSON.parse(localData);
         }
     }
+    
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonthKey = `${currentYear}-${today.getMonth()}`;
 
     geriAlinanBayiKodlariBuAy = geriAlinanlar[currentMonthKey] || [];
     
-    // YENİ: Yıl içindeki tüm geri alınanları topla
     const yearlyRevertedCodes = [];
     for (const key in geriAlinanlar) {
-        if (key.startsWith(currentYear)) {
+        if (key.startsWith(String(currentYear))) {
             yearlyRevertedCodes.push(...geriAlinanlar[key]);
         }
     }
     geriAlinanBayiKodlariBuYil = [...new Set(yearlyRevertedCodes)];
 }
 
-// GÜNCELLENDİ: Yıllık denetim sayısını hesaplarken artık "geriAlinanBayiKodlariBuYil" listesini de dikkate alıyor.
+// GÜNCELLENDİ: Bulut öncelikli veri yükleme mantığı
 async function loadAuditedStoresData() {
-    try {
-        let allReports = {};
-        const localData = localStorage.getItem('allFideReports');
-        if (localData) allReports = JSON.parse(localData);
+    let allReports = {};
 
-        if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+    // 1. Her Zaman Önce Buluta Soracak
+    if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+        try {
             const reportsRef = database.ref('allFideReports');
             const snapshot = await reportsRef.once('value');
-            if (snapshot.exists()) Object.assign(allReports, snapshot.val());
+            // 2. Buluttan Gelen Veri Esastır
+            if (snapshot.exists()) {
+                allReports = snapshot.val();
+                // Bilgisayarın hafızasındaki eski veriyi sil ve buluttan gelenle güncelle
+                localStorage.setItem('allFideReports', JSON.stringify(allReports)); 
+            } else {
+                // Bulutta veri yoksa, son çare olarak bilgisayar hafızasına bak
+                const localData = localStorage.getItem('allFideReports');
+                if (localData) {
+                    allReports = JSON.parse(localData);
+                }
+            }
+        } catch (error) {
+            // 3. İnternet Yoksa (veya başka bir hata oluşursa)
+            console.error("Denetlenen bayi verileri buluttan okunamadı, yerel veri kullanılıyor:", error);
+            const localData = localStorage.getItem('allFideReports');
+            if (localData) {
+                allReports = JSON.parse(localData);
+            }
         }
-        
+    } else {
+         // Oturum açılmamışsa direkt yerel veriyi kullan
+        const localData = localStorage.getItem('allFideReports');
+        if (localData) {
+            allReports = JSON.parse(localData);
+        }
+    }
+    
+    // Yüklenen veriyi işle
+    try {
         const today = new Date();
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
@@ -151,12 +238,11 @@ async function loadAuditedStoresData() {
         const uniqueMonthlyCodes = [...new Set(monthlyCodesFromReports)];
         auditedStoreCodesCurrentMonth = uniqueMonthlyCodes.filter(code => !geriAlinanBayiKodlariBuAy.includes(code));
         
-        // Yıllık denetlenenlerden, yıl içinde geri alınanları çıkar
         const uniqueYearlyCodes = [...new Set(yearlyCodes)];
         auditedStoreCodesCurrentYear = uniqueYearlyCodes.filter(code => !geriAlinanBayiKodlariBuYil.includes(code));
 
     } catch (error) {
-        console.error("Denetlenen bayi verileri okunurken hata oluştu:", error);
+        console.error("Denetlenen bayi verileri işlenirken hata oluştu:", error);
     }
 }
 
@@ -178,7 +264,6 @@ function setupEventListeners() {
     const deleteExcelBtn = document.getElementById('delete-excel-btn');
     if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
     
-    // GÜNCELLENDİ: Fonksiyon adı resetProgress olarak değiştirildi
     const resetDataBtn = document.getElementById('reset-data-btn');
     if(resetDataBtn) resetDataBtn.addEventListener('click', resetProgress); 
 
@@ -189,7 +274,6 @@ function setupEventListeners() {
     document.getElementById('ilce-filter').addEventListener('change', applyAndRepopulateFilters);
 }
 
-// GÜNCELLENDİ: Fonksiyon artık sadece aylık değil, yıllık verileri de sıfırlıyor
 async function resetProgress() {
     if (!confirm("Bu işlem, bu yıla ait TÜM denetim verilerini sıfırlayacaktır. 'Bu Ay Denetlenenler' ve 'Yıllık Hedef' sayaçları sıfırlanır. Onaylıyor musunuz?")) {
         return;
@@ -199,16 +283,17 @@ async function resetProgress() {
     loadingOverlay.style.display = 'flex';
 
     try {
-        // 1. Bu yıl denetim raporu olan tüm bayilerin kodlarını bul
+        // Bu yıl denetim raporu olan tüm bayilerin kodlarını bul (Bu kısım için önce veriyi tekrar yüklemek en sağlıklısı)
         let allReports = {};
-        const localData = localStorage.getItem('allFideReports');
-        if (localData) allReports = JSON.parse(localData);
         if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
             const reportsRef = database.ref('allFideReports');
             const snapshot = await reportsRef.once('value');
-            if (snapshot.exists()) Object.assign(allReports, snapshot.val());
+            if (snapshot.exists()) allReports = snapshot.val();
+        } else {
+             const localData = localStorage.getItem('allFideReports');
+             if (localData) allReports = JSON.parse(localData);
         }
-
+       
         const today = new Date();
         const currentYear = today.getFullYear();
         const yearlyCodesToReset = [];
@@ -224,9 +309,20 @@ async function resetProgress() {
 
         const uniqueCodesToReset = [...new Set(yearlyCodesToReset)];
 
-        // 2. Bu kodları mevcut ayın "geriAlinanlar" listesine ekle (bu işlem yıllık sayacı etkileyecektir)
+        // Bu kodları mevcut ayın "geriAlinanlar" listesine ekle
         const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
-        let geriAlinanlar = JSON.parse(localStorage.getItem('denetimGeriAlinanlar') || '{}');
+        
+        // Önce mevcut "geriAlinanlar" verisini buluttan/yerelden al
+        let geriAlinanlar = {};
+        if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+            const geriAlinanlarRef = database.ref('denetimGeriAlinanlar');
+            const snapshot = await geriAlinanlarRef.once('value');
+            if(snapshot.exists()) geriAlinanlar = snapshot.val();
+        } else {
+            const localGeriAlinan = localStorage.getItem('denetimGeriAlinanlar');
+            if(localGeriAlinan) geriAlinanlar = JSON.parse(localGeriAlinan);
+        }
+
         if (!geriAlinanlar[currentMonthKey]) {
             geriAlinanlar[currentMonthKey] = [];
         }
@@ -237,7 +333,7 @@ async function resetProgress() {
             }
         });
 
-        // 3. Güncellenmiş listeyi yerel hafızaya ve buluta kaydet
+        // Güncellenmiş listeyi yerel hafızaya ve buluta kaydet
         localStorage.setItem('denetimGeriAlinanlar', JSON.stringify(geriAlinanlar));
         if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
             await database.ref('denetimGeriAlinanlar/' + currentMonthKey).set(geriAlinanlar[currentMonthKey]);
@@ -297,7 +393,17 @@ async function revertAudit(bayiKodu) {
             const today = new Date();
             const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
 
-            let geriAlinanlar = JSON.parse(localStorage.getItem('denetimGeriAlinanlar') || '{}');
+            // Önce mevcut "geriAlinanlar" verisini buluttan/yerelden al
+            let geriAlinanlar = {};
+             if (typeof auth !== 'undefined' && auth.currentUser && typeof database !== 'undefined') {
+                const geriAlinanlarRef = database.ref('denetimGeriAlinanlar');
+                const snapshot = await geriAlinanlarRef.once('value');
+                if(snapshot.exists()) geriAlinanlar = snapshot.val();
+            } else {
+                const localGeriAlinan = localStorage.getItem('denetimGeriAlinanlar');
+                if(localGeriAlinan) geriAlinanlar = JSON.parse(localGeriAlinan);
+            }
+
             if (!geriAlinanlar[currentMonthKey]) {
                 geriAlinanlar[currentMonthKey] = [];
             }
@@ -399,6 +505,7 @@ function calculateAndDisplayDashboard() {
 }
 
 function populateAllFilters(stores) {
+    if (!stores || stores.length === 0) return;
     const filters = { bolge: document.getElementById('bolge-filter'), yonetmen: document.getElementById('yonetmen-filter'), sehir: document.getElementById('sehir-filter'), ilce: document.getElementById('ilce-filter') };
     Object.keys(filters).forEach(key => {
         const selectElement = filters[key];
