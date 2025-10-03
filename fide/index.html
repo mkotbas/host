@@ -58,23 +58,18 @@
             <div class="backup-options-grid">
                 <div class="backup-option-card">
                     <h3><i class="fas fa-cloud-download-alt"></i> Raporları Yedekle</h3>
-                    <p>Tarayıcıda kayıtlı tüm bayi raporlarını tek bir `.json` dosyası olarak bilgisayarınıza indirir.</p>
+                    <p>Bulutta kayıtlı tüm bayi raporlarını tek bir `.json` dosyası olarak bilgisayarınıza indirir.</p>
                     <button id="backup-btn" class="btn-primary"><i class="fas fa-download"></i> Yedek Dosyasını İndir</button>
                 </div>
                 <div class="backup-option-card">
-                    <h3><i class="fas fa-upload"></i> Yedekten Geri Yükle</h3>
-                    <p>Bilgisayarınızdaki `.json` yedek dosyasını seçerek tarayıcı hafızasına yükler. Bu işlem mevcut verilerin üzerine yazar!</p>
+                    <h3><i class="fas fa-cloud-upload-alt"></i> Yedekten Geri Yükle</h3>
+                    <p>Bilgisayarınızdaki `.json` yedek dosyasını seçerek buluta yükler. Bu işlem buluttaki mevcut verilerin üzerine yazar!</p>
                     <button id="restore-from-backup-btn" class="btn-primary"><i class="fas fa-folder-open"></i> Dosya Seç ve Yükle</button>
                 </div>
                 <div class="backup-option-card">
                     <h3><i class="fas fa-compress-arrows-alt"></i> Yedekleri Birleştir</h3>
                     <p>Birden fazla yedek dosyasını seçerek, içlerindeki en güncel raporları içeren tek bir yeni yedek dosyası oluşturur.</p>
                     <button id="merge-backups-btn" class="btn-primary"><i class="fas fa-object-group"></i> Dosyaları Seç ve Birleştir</button>
-                </div>
-                <div class="backup-option-card">
-                    <h3><i class="fas fa-cloud-upload-alt"></i> Buluta Aktar</h3>
-                    <p>Tarayıcı hafızasındaki güncel raporları buluta yükler. Bu işlem buluttaki mevcut raporların üzerine yazar!</p>
-                    <button id="upload-backup-to-cloud-btn" class="btn-success"><i class="fas fa-cloud-upload-alt"></i> Yerel Yedeği Buluta Aktar</button>
                 </div>
             </div>
             <input type="file" id="restore-file-input" accept=".json" style="display: none;">
@@ -83,13 +78,8 @@
         
         <div class="card" id="dide-upload-card">
             <h2><i class="fas fa-chart-line"></i> Puan Entegrasyonu ve Veri Yönetimi</h2>
-            <div id="excel-expiry-warning">
-                <p><i class="fas fa-exclamation-triangle"></i> Veri Uyarısı</p>
-                <span>Aşağıdaki dosyalar 30 günden eski olduğu için hafadan silindi. Lütfen güncel versiyonlarını tekrar yükleyin:</span>
-                <ul id="expired-files-list"></ul>
-            </div>
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
-                <i class="fas fa-info-circle"></i> Raporlarınız artık hem tarayıcı hafızasında saklanır hem de buluta yedeklenir. Düzenli olarak "Yedekleme Yöneticisi"ni kullanmanız yine de tavsiye edilir.
+                <i class="fas fa-info-circle"></i> Tüm raporlarınız ve Excel verileriniz artık doğrudan bulut üzerinde saklanmaktadır. Çalışmaya başlamadan önce sisteme giriş yaptığınızdan emin olun.
             </p>
             <div>
                 <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
@@ -110,9 +100,9 @@
              <div style="margin-top: 20px;">
                 <p><b>3. Adım: Rapor ve Veri Temizleme</b></p>
                  <div class="file-input-wrapper">
-                    <button id="clear-storage-btn" class="btn-danger btn-sm" title="UYARI: Tarayıcı hafızasındaki tüm uygulama verilerini (raporlar, Excel'ler vb.) kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Uygulama Verilerini Sil</button>
-                    <button id="clear-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan DiDe Excel verisini tarayıcı hafızasından ve buluttan temizler."><i class="fas fa-trash-alt"></i> DiDe Excell'i Sil</button>
-                    <button id="clear-fide-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan FiDe Excel verisini tarayıcı hafızasından ve buluttan temizler."><i class="fas fa-trash-alt"></i> FiDe Excell'i Sil</button>
+                    <button id="clear-storage-btn" class="btn-danger btn-sm" title="UYARI: Buluttaki tüm uygulama verilerini (raporlar, Excel'ler vb.) kalıcı olarak siler."><i class="fas fa-eraser"></i> Tüm Bulut Verilerini Sil</button>
+                    <button id="clear-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan DiDe Excel verisini buluttan temizler."><i class="fas fa-trash-alt"></i> DiDe Excell'i Sil</button>
+                    <button id="clear-fide-excel-btn" class="btn-danger btn-sm" title="Yüklenmiş olan FiDe Excel verisini buluttan temizler."><i class="fas fa-trash-alt"></i> FiDe Excell'i Sil</button>
                 </div>
             </div>
             <div id="store-selection-area">
@@ -134,7 +124,7 @@
 
         <div class="card" id="initialization-error">
             <h2><i class="fas fa-exclamation-triangle"></i> Başlatma Hatası</h2>
-            <p><b><code>fide_soru_listesi.json</code></b> dosyası bulunamadı veya okunamadı. Lütfen bu HTML dosyasıyla aynı klasörde olduğundan emin olun. Form, geçici olarak varsayılan sorularla yüklendi.</p>
+            <p><b>FiDe Soru Listesi</b> buluttan okunamadı. Lütfen sisteme giriş yaptığınızdan ve internet bağlantınız olduğundan emin olun. Form, geçici olarak varsayılan sorularla yüklendi.</p>
         </div>
 
         <div id="form-content"></div>
