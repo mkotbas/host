@@ -10,7 +10,8 @@ let isFirebaseConnected = false;
 window.onload = initializeApp;
 
 async function initializeApp() {
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    // GÜNCELLENDİ: Giriş bilgileri artık tarayıcıda kalıcı saklanmayacak.
+    await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
     auth.onAuthStateChanged(async user => { 
         const loginToggleBtn = document.getElementById('login-toggle-btn');
         const logoutBtn = document.getElementById('logout-btn');
@@ -33,9 +34,10 @@ async function initializeApp() {
     });
 }
 
+// GÜNCELLENDİ: Sadece buluttan veri okuyacak.
 async function loadStoreEmails() {
     const user = auth.currentUser;
-    let loadedFromCloud = false;
+    storeEmails = {};
 
     if (user && database) {
         try {
@@ -43,23 +45,17 @@ async function loadStoreEmails() {
             const snapshot = await emailsRef.once('value');
             if (snapshot.exists()) {
                 storeEmails = snapshot.val();
-                localStorage.setItem('fideStoreEmails', JSON.stringify(storeEmails));
-                loadedFromCloud = true;
             }
         } catch (error) {
             console.error("Buluttan bayi e-postaları yüklenemedi:", error);
         }
     }
-
-    if (!loadedFromCloud) {
-        const storedEmails = localStorage.getItem('fideStoreEmails');
-        storeEmails = storedEmails ? JSON.parse(storedEmails) : {};
-    }
 }
 
+// GÜNCELLENDİ: Sadece buluttan veri okuyacak.
 async function loadMigrationMap() {
     const user = auth.currentUser;
-    let loadedFromCloud = false;
+    migrationMap = {};
 
     if (user && database) {
         try {
@@ -67,17 +63,10 @@ async function loadMigrationMap() {
             const snapshot = await migrationRef.once('value');
             if (snapshot.exists()) {
                 migrationMap = snapshot.val();
-                localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
-                loadedFromCloud = true;
             }
         } catch (error) {
             console.error("Buluttan veri taşıma ayarları yüklenemedi:", error);
         }
-    }
-
-    if (!loadedFromCloud) {
-        const storedMap = localStorage.getItem('fideMigrationMap');
-        migrationMap = storedMap ? JSON.parse(storedMap) : {};
     }
 }
 
@@ -132,7 +121,6 @@ async function loadInitialData() {
         expiredCodes = popSystemQuestion.expiredCodes || [];
     }
 
-
     if (database) {
         const connectionRef = database.ref('.info/connected');
         connectionRef.on('value', (snapshot) => {
@@ -151,42 +139,40 @@ async function loadInitialData() {
     }
 
     buildForm();
-    restoreLastSession();
 }
 
+// GÜNCELLENDİ: Sadece buluttan veri okuyacak, tarayıcı hafızasını kullanmayacak.
 async function loadExcelData() {
     const user = auth.currentUser;
-    let dideLoaded = false;
-    let fideLoaded = false;
+    if (!user || !database) return;
 
-    if (user && database) {
-        const dideRef = database.ref('excelData/dide');
-        const dideSnapshot = await dideRef.once('value');
-        if (dideSnapshot.exists()) {
-            const storedData = dideSnapshot.val();
-            const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
-            if (ageInDays <= 30) {
-                if (storedData.filename) { document.getElementById('file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
-                populateDideState(storedData.data);
-                dideLoaded = true;
-            }
-        }
-
-        const fideRef = database.ref('excelData/fide');
-        const fideSnapshot = await fideRef.once('value');
-        if (fideSnapshot.exists()) {
-            const storedData = fideSnapshot.val();
-            const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
-            if (ageInDays <= 30) {
-                if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
-                populateFideState(storedData.data);
-                fideLoaded = true;
-            }
+    const dideRef = database.ref('excelData/dide');
+    const dideSnapshot = await dideRef.once('value');
+    if (dideSnapshot.exists()) {
+        const storedData = dideSnapshot.val();
+        const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+        if (ageInDays <= 30) {
+            if (storedData.filename) { document.getElementById('file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
+            populateDideState(storedData.data);
+        } else {
+            expiredExcelFiles.push('DiDe Puan Excel');
+            dideRef.remove();
         }
     }
 
-    if (!dideLoaded) loadDideDataFromStorage();
-    if (!fideLoaded) loadFideDataFromStorage();
+    const fideRef = database.ref('excelData/fide');
+    const fideSnapshot = await fideRef.once('value');
+    if (fideSnapshot.exists()) {
+        const storedData = fideSnapshot.val();
+        const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
+        if (ageInDays <= 30) {
+            if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
+            populateFideState(storedData.data);
+        } else {
+             expiredExcelFiles.push('FiDe Puan Excel');
+             fideRef.remove();
+        }
+    }
 }
 
 function updateConnectionIndicator() {
@@ -235,13 +221,13 @@ function setupEventListeners() {
     
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
         const dogruSifreHash = 'ZmRlMDAx';
-        const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
+        const girilenSifre = prompt("Bu işlem geri alınamaz. Tarayıcıdaki TÜM uygulama verilerini ve buluttaki size ait TÜM verileri kalıcı olarak silmek için lütfen şifreyi girin:");
 
         if (girilenSifre) { 
             const girilenSifreHash = btoa(girilenSifre);
             if (girilenSifreHash === dogruSifreHash) {
-                if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları, yüklenmiş Excel dosyaları ve son oturum bilgileri dahil olmak üzere tarayıcıda ve bulutta saklanan BÜTÜN uygulama verileri kalıcı olarak silinecektir.")) {
-                    localStorage.clear();
+                if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları, yüklenmiş Excel dosyaları dahil olmak üzere bulutta saklanan BÜTÜN uygulama verileri kalıcı olarak silinecektir.")) {
+                    localStorage.clear(); // Tarayıcıdaki olası artıkları temizler.
                     
                     if(auth.currentUser && database){
                         database.ref('allFideReports').remove();
@@ -259,8 +245,7 @@ function setupEventListeners() {
         }
     });
     document.getElementById('clear-excel-btn').addEventListener('click', () => {
-        if (confirm("Yüklenmiş olan DiDe Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
-            localStorage.removeItem('didePersistenceData');
+        if (confirm("Yüklenmiş olan DiDe Excel verisini buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
             if(auth.currentUser && database) {
                 database.ref('excelData/dide').remove();
             }
@@ -269,8 +254,7 @@ function setupEventListeners() {
         }
     });
      document.getElementById('clear-fide-excel-btn').addEventListener('click', () => {
-        if (confirm("Yüklenmiş olan FiDe Excel verisini hafızadan ve buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
-            localStorage.removeItem('fidePersistenceData');
+        if (confirm("Yüklenmiş olan FiDe Excel verisini buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
             if(auth.currentUser && database) {
                 database.ref('excelData/fide').remove();
             }
@@ -319,7 +303,7 @@ function setupEventListeners() {
             .then(() => { loginPopup.style.display = 'none'; })
             .catch(error => { errorDiv.textContent = 'E-posta veya şifre hatalı.'; });
     });
-    uploadBackupBtn.addEventListener('click', uploadLocalBackupToCloud);
+    // KALDIRILDI: Yerel yedeği buluta yükleme fonksiyonu kaldırıldı.
     window.addEventListener('click', function(event) {
         const authControls = document.getElementById('auth-controls');
         if (authControls && !authControls.contains(event.target)) {
@@ -353,72 +337,45 @@ function setupEventListeners() {
     });
 }
 
-function uploadLocalBackupToCloud() {
-    if (!auth.currentUser) { alert("Bu işlem için önce sisteme giriş yapmalısınız."); return; }
-    const localDataString = localStorage.getItem('allFideReports');
-    if (!localDataString) { alert("Buluta yüklenecek yerel bir yedek bulunamadı."); return; }
-    const confirmation = confirm("DİKKAT! Bu işlem, buluttaki mevcut tüm raporların üzerine yazacaktır. Tarayıcı hafızanızdaki yedek buluta yüklenecektir. Emin misiniz?");
-    if (confirmation) {
-        try {
-            const localData = JSON.parse(localDataString);
-            const firebaseRef = database.ref('allFideReports');
-            
-            firebaseRef.set(localData)
-                .then(() => { alert("Yerel yedek başarıyla buluta yüklendi! Sayfanın yenilenmesi önerilir."); })
-                .catch(error => { alert("Buluta yükleme sırasında bir hata oluştu: " + error.message); console.error("Firebase'e yazma hatası:", error); });
-        } catch (error) { alert("Yerel yedek verisi okunurken bir hata oluştu. Yedek dosyası bozuk olabilir."); console.error("JSON parse hatası:", error); }
-    }
-}
-
+// GÜNCELLENDİ: Sadece buluta yazma işlemi yapıyor.
 function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore) return;
+    if (!auth.currentUser || !database) return; // Sadece giriş yapıldıysa kaydet
 
-    let allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
     const reportData = getFormDataForSaving();
     const storeKey = `store_${selectedStore.bayiKodu}`;
 
-    // Başka bir yerden (örn: eski bir kayıttan) gelme ihtimaline karşı mevcut timestamp'i koru
-    const existingReport = allReports[storeKey];
-    if (existingReport && existingReport.data && existingReport.data.auditCompletedTimestamp) {
-        reportData.auditCompletedTimestamp = existingReport.data.auditCompletedTimestamp;
-    }
-
-    // Eğer e-posta oluşturuluyorsa (isFinalizing true ise), timestamp'i ekle/güncelle
     if (isFinalizing) {
         reportData.auditCompletedTimestamp = new Date().getTime();
     }
 
     const dataToSave = { timestamp: new Date().getTime(), data: reportData };
-    allReports[storeKey] = dataToSave;
-
-    localStorage.setItem('allFideReports', JSON.stringify(allReports));
-    if (database && auth.currentUser) {
-        const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
-        firebaseStoreRef.set(dataToSave)
-            .catch(error => console.error("Firebase'e yazma hatası:", error));
-    }
+    
+    const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
+    firebaseStoreRef.set(dataToSave)
+        .catch(error => console.error("Firebase'e yazma hatası:", error));
 }
 
+// GÜNCELLENDİ: Sadece buluttan okuma yapıyor.
 function loadReportForStore(bayiKodu) {
     const storeKey = `store_${bayiKodu}`;
     if (database && auth.currentUser) {
         const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
         firebaseStoreRef.once('value', (snapshot) => {
-            if (snapshot.exists()) { loadReport(snapshot.val().data); } 
-            else {
-                const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
-                if (allReports[storeKey]) { loadReport(allReports[storeKey].data); } else { resetForm(); }
+            if (snapshot.exists()) {
+                loadReport(snapshot.val().data);
+            } else {
+                resetForm();
             }
         }).catch(error => {
             console.error("Firebase'den okuma hatası:", error);
-            const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
-            if (allReports[storeKey]) { loadReport(allReports[storeKey].data); } else { resetForm(); }
+            resetForm();
         });
     } else {
-        const allReports = JSON.parse(localStorage.getItem('allFideReports')) || {};
-        if (allReports[storeKey]) { loadReport(allReports[storeKey].data); } else { resetForm(); }
+        resetForm();
     }
 }
+
 function getUnitForProduct(productName) {
     const upperCaseName = productName.toUpperCase();
     if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; }
@@ -723,11 +680,10 @@ function processDideExcelData(dataAsArray, saveToStorage = false, filename = '')
     }).filter(d => d);
     if (saveToStorage) {
         const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
-        localStorage.setItem('didePersistenceData', JSON.stringify(persistenceData));
         if (auth.currentUser && database) {
             database.ref('excelData/dide').set(persistenceData);
         }
-        alert('DiDe puan dosyası başarıyla işlendi, tarayıcıya ve buluta kaydedildi.');
+        alert('DiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
     }
     populateDideState(processedData);
 }
@@ -774,11 +730,10 @@ function processFideExcelData(dataAsArray, saveToStorage = false, filename = '')
 
     if (saveToStorage) {
         const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
-        localStorage.setItem('fidePersistenceData', JSON.stringify(persistenceData));
         if (auth.currentUser && database) {
             database.ref('excelData/fide').set(persistenceData);
         }
-        alert('FiDe puan dosyası başarıyla işlendi, tarayıcıya ve buluta kaydedildi.');
+        alert('FiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
     }
     populateFideState(processedData);
 }
@@ -799,36 +754,6 @@ function populateDideState(data) {
 function populateFideState(data) {
     fideData = data;
     document.getElementById('clear-fide-excel-btn').style.display = 'inline-flex';
-}
-function loadDideDataFromStorage() {
-    const storedDataJSON = localStorage.getItem('didePersistenceData');
-    if (!storedDataJSON) return;
-    try {
-        const storedData = JSON.parse(storedDataJSON);
-        const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
-        if (ageInDays > 30) {
-            localStorage.removeItem('didePersistenceData');
-            expiredExcelFiles.push('DiDe Puan Excel');
-            return;
-        }
-        if (storedData.filename) { document.getElementById('file-name').textContent = `Yerel hafızadan yüklendi: ${storedData.filename}`; }
-        populateDideState(storedData.data);
-    } catch (e) { localStorage.removeItem('didePersistenceData'); }
-}
-function loadFideDataFromStorage() {
-    const storedDataJSON = localStorage.getItem('fidePersistenceData');
-    if (!storedDataJSON) return;
-    try {
-        const storedData = JSON.parse(storedDataJSON);
-        const ageInDays = (new Date().getTime() - storedData.timestamp) / (1000 * 60 * 60 * 24);
-        if (ageInDays > 30) {
-            localStorage.removeItem('fidePersistenceData');
-            expiredExcelFiles.push('FiDe Puan Excel');
-            return;
-        }
-        if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Yerel hafızadan yüklendi: ${storedData.filename}`; }
-        populateFideState(storedData.data);
-    } catch(e) { localStorage.removeItem('fidePersistenceData'); }
 }
 function displayStores(stores) {
     const storeListDiv = document.getElementById('store-list');
@@ -853,7 +778,6 @@ function selectStore(store, loadSavedData = true) {
     if (storeItem) storeItem.classList.add('selected');
     
     selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi };
-    localStorage.setItem('lastSelectedStoreCode', store.bayiKodu);
     
     const searchInput = document.getElementById('store-search-input');
     let shortBayiAdi = store.bayiAdi.length > 20 ? store.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
@@ -1161,11 +1085,9 @@ function parseAndLoadFromEmail() {
     document.getElementById('load-email-area').value = '';
 }
 
-
 function startNewReport() {
     selectedStore = null;
     document.getElementById('store-search-input').value = '';
-    localStorage.removeItem('lastSelectedStoreCode');
     resetForm();
     updateFormInteractivity(false);
 }
@@ -1192,33 +1114,52 @@ function getFormDataForSaving() {
     });
     return reportData;
 }
-function backupAllReports() {
-    const allReports = localStorage.getItem('allFideReports');
-    if (!allReports || Object.keys(JSON.parse(allReports)).length === 0) return alert('Yedeklenecek kayıtlı rapor bulunamadı.');
-    const blob = new Blob([allReports], { type: 'application/json;charset=utf-8' });
-    const today = new Date().toISOString().slice(0, 10);
-    const filename = `fide_rapor_yedek_${today}.json`;
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+// GÜNCELLENDİ: Yedekleme işlemi veriyi tarayıcıdan değil, doğrudan buluttan çeker.
+async function backupAllReports() {
+    if (!auth.currentUser || !database) return alert('Bu işlem için önce sisteme giriş yapmalısınız.');
+    try {
+        const reportsRef = database.ref('allFideReports');
+        const snapshot = await reportsRef.once('value');
+
+        if (!snapshot.exists()) {
+            return alert('Yedeklenecek kayıtlı rapor bulunamadı.');
+        }
+
+        const allReports = JSON.stringify(snapshot.val());
+        const blob = new Blob([allReports], { type: 'application/json;charset=utf-8' });
+        const today = new Date().toISOString().slice(0, 10);
+        const filename = `fide_rapor_yedek_${today}.json`;
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        alert("Yedekleme sırasında bir hata oluştu: " + error.message);
+    }
 }
+// GÜNCELLENDİ: Yedekten geri yükleme işlemi, veriyi tarayıcıya değil, doğrudan buluta yazar.
 function handleRestoreUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-    if (confirm("Bu işlem mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz?")) {
+    if (!auth.currentUser || !database) {
+        alert("Bu işlem için önce sisteme giriş yapmalısınız.");
+        event.target.value = null; 
+        return;
+    }
+
+    if (confirm("Bu işlem buluttaki mevcut tüm raporların üzerine yazılacaktır. Devam etmek istediğinizden emin misiniz?")) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             try {
                 const restoredData = e.target.result;
-                JSON.parse(restoredData); 
-                localStorage.setItem('allFideReports', restoredData);
-                alert('Yedek başarıyla geri yüklendi! "Yedekleme Yöneticisi" üzerinden bu yedeği bulutla eşitleyebilirsiniz.');
+                const jsonData = JSON.parse(restoredData);
+                await database.ref('allFideReports').set(jsonData);
+                alert('Yedek başarıyla buluta geri yüklendi!');
                 window.location.reload();
             } catch (error) {
                 alert('Geçersiz veya bozuk yedek dosyası!');
@@ -1278,15 +1219,6 @@ async function handleMergeUpload(event) {
         console.error("Yedek birleştirme hatası:", error);
     } finally {
         event.target.value = null; 
-    }
-}
-function restoreLastSession() {
-    const lastStoreCode = localStorage.getItem('lastSelectedStoreCode');
-    if (lastStoreCode && uniqueStores.length > 0) {
-        const storeToRestore = uniqueStores.find(s => String(s.bayiKodu) === String(lastStoreCode));
-        if (storeToRestore) {
-            selectStore(storeToRestore);
-        }
     }
 }
 
