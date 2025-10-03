@@ -836,7 +836,7 @@ function loadReport(reportData) {
             if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty)); 
             
             if (data.selectedPops) {
-                data.selectedPops.forEach(popCode => { const cb = document.querySelector('.pop-checkbox[value="${popCode}"]'); if(cb) cb.checked = true; });
+                data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
                 checkExpiredPopCodes();
             }
         }
@@ -844,7 +844,7 @@ function loadReport(reportData) {
     } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
 }
 
-// --- GÜNCELLENEN FONKSİYON: Göç haritası kontrolü eklendi ---
+// --- GÜNCELLENMİŞ FONKSİYON ---
 function parseAndLoadFromEmail() {
     showFiDeForm(); 
     const emailText = document.getElementById('load-email-area').value.trim();
@@ -901,7 +901,7 @@ function parseAndLoadFromEmail() {
 
         if (headerMatch) {
             const originalId = headerMatch[1];
-            // BURADA GÖÇ HARİTASINI KONTROL EDEREK ID'Yİ GÜNCELLE
+            // GÖÇ HARİTASINI KONTROL ET
             const finalId = migrationMap[originalId] || originalId;
             currentQuestionId = finalId;
             idsInEmail.add(finalId);
@@ -910,41 +910,47 @@ function parseAndLoadFromEmail() {
             if (!cleanedLine) return; 
 
             const question = fideQuestions.find(q => String(q.id) === currentQuestionId);
-            if (!question || (question.answerType === 'fixed')) {
+            if (!question) {
                 return; 
             }
+            // Sabit tipli (fixed) soruları e-postadan yükleme mantığından çıkar
+            if (question.answerType === 'fixed') {
+                return;
+            }
 
+            // --- GÜNCELLENEN ÜRÜN LİSTESİ AYRIŞTIRMA MANTIĞI ---
             if (question.type === 'product_list') {
-                const productMatch = cleanedLine.match(/^(\d{8,})/); 
+                // Ürün kodu: 8-10 haneli bir sayı ile başlayan, miktarı ve birimi olan satırları yakalamaya çalış
+                // Örnek: 9220161600 PLEKSİ KEA ETİKETLİK: 2 Paket
+                const productMatch = cleanedLine.match(/^(\d{8,10})\s+([^\:]+)(?:\:\s*|\s+)(\d+)\s*(paket|adet)/i); 
+                
                 if (productMatch) {
                     const productCode = productMatch[1];
-                    let quantity = 1; 
-                    const quantityMatch = cleanedLine.match(/:?\s*(\d+)\s*(paket|adet)/i);
-                    if (quantityMatch && quantityMatch[1]) {
-                        quantity = parseInt(quantityMatch[1], 10);
-                    }
+                    let quantity = parseInt(productMatch[3], 10);
                     
                     const productExists = productList.some(p => p.code === productCode);
-                    if (productExists) {
+                    if (productExists && !isNaN(quantity) && quantity > 0) {
                         addProductToList(productCode, quantity);
-                        return; 
+                        return; // Ürün olarak eklendi, dinamik not olarak ekleme.
                     }
                 }
             }
-            
+            // --- ÜRÜN LİSTESİ AYRIŞTIRMA MANTIĞI SONU ---
+
+
             if (ignorePhrases.some(phrase => cleanedLine.toLowerCase().includes(phrase))) {
                 return; 
             }
             
-            // Statik maddelerin tamamlanıp tamamlanmadığını kontrol et
+            // Statik madde kontrolü
             const staticItemFound = (question.staticItems || []).find(staticItem => {
                 const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
+                // E-posta'dan gelen satırın, statik maddelerden birini içerip içermediğini kontrol et
                 return plainStaticItem.includes(cleanedLine);
             });
             
             if (staticItemFound) {
-                 // Statik maddeyi görmezden gel ve dinamik olarak ekleme.
-                 return;
+                 return; // Statik madde bulundu, dinamik not olarak ekleme.
             }
             
             // Statik madde bulunamazsa, dinamik (ekstra not/eksik) olarak ekle
@@ -956,7 +962,6 @@ function parseAndLoadFromEmail() {
     // E-postada bulunmayan soruları gizle
     fideQuestions.forEach(q => {
         if (q.isArchived) return;
-        // Migration'dan etkilenen eski ID'ler, zaten idsInEmail setine yeni ID olarak eklenmiştir.
         if (!idsInEmail.has(String(q.id))) {
             const questionItem = document.getElementById(`fide-item-${q.id}`);
             if (questionItem) {
