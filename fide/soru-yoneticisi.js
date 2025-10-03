@@ -35,7 +35,7 @@ async function initializeApp() {
 
 async function loadMigrationMap() {
     const user = auth.currentUser;
-    migrationMap = {}; // Başlangıçta haritayı sıfırla
+    let loadedFromCloud = false;
 
     if (user && database) {
         try {
@@ -43,10 +43,17 @@ async function loadMigrationMap() {
             const snapshot = await migrationRef.once('value');
             if (snapshot.exists()) {
                 migrationMap = snapshot.val();
+                localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
+                loadedFromCloud = true;
             }
         } catch (error) {
             console.error("Buluttan veri taşıma ayarları yüklenemedi:", error);
         }
+    }
+
+    if (!loadedFromCloud) {
+        const storedMap = localStorage.getItem('fideMigrationMap');
+        migrationMap = storedMap ? JSON.parse(storedMap) : {};
     }
 }
 
@@ -202,7 +209,105 @@ function selectScenario(scenario) {
     }
 }
 
-function applyIdChangeScenario() {
+// --- AKILLI ID DEĞİŞTİRME VE TAKAS SİSTEMİ ---
+
+async function migrateQuestionData(oldId, newId) {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+    console.log(`Veri TAŞIMA işlemi başlatıldı: ${oldId} -> ${newId}`);
+    try {
+        const localDataString = localStorage.getItem('allFideReports');
+        if (localDataString) {
+            let allReports = JSON.parse(localDataString);
+            for (const storeKey in allReports) {
+                const report = allReports[storeKey]?.data?.questions_status;
+                if (report && report[oldId]) {
+                    report[newId] = report[oldId];
+                    delete report[oldId];
+                }
+            }
+            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+        }
+
+        if (auth.currentUser && database) {
+            const reportsRef = database.ref('allFideReports');
+            const snapshot = await reportsRef.once('value');
+            if (snapshot.exists()) {
+                let allCloudReports = snapshot.val();
+                let updates = {};
+                for (const storeKey in allCloudReports) {
+                    const report = allCloudReports[storeKey]?.data?.questions_status;
+                    if (report && report[oldId]) {
+                        updates[`${storeKey}/data/questions_status/${newId}`] = report[oldId];
+                        updates[`${storeKey}/data/questions_status/${oldId}`] = null;
+                    }
+                }
+                if (Object.keys(updates).length > 0) await reportsRef.update(updates);
+            }
+        }
+        console.log("Veri TAŞIMA işlemi başarıyla tamamlandı.");
+        return true;
+    } catch (error) {
+        console.error("Veri taşıma sırasında bir hata oluştu:", error);
+        alert("Kritik Hata: Raporlardaki cevaplar taşınamadı. Lütfen konsolu kontrol edin.");
+        return false;
+    } finally {
+        loadingOverlay.style.display = 'none';
+    }
+}
+
+async function swapQuestionData(idA, idB) {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+    console.log(`Veri TAKAS işlemi başlatıldı: ${idA} <-> ${idB}`);
+    try {
+        const localDataString = localStorage.getItem('allFideReports');
+        if (localDataString) {
+            let allReports = JSON.parse(localDataString);
+            for (const storeKey in allReports) {
+                const report = allReports[storeKey]?.data?.questions_status;
+                if (report) {
+                    const answerA = report[idA];
+                    const answerB = report[idB];
+                    delete report[idA];
+                    delete report[idB];
+                    if (answerB) report[idA] = answerB;
+                    if (answerA) report[idB] = answerA;
+                }
+            }
+            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+        }
+
+        if (auth.currentUser && database) {
+            const reportsRef = database.ref('allFideReports');
+            const snapshot = await reportsRef.once('value');
+            if (snapshot.exists()) {
+                let allCloudReports = snapshot.val();
+                let updates = {};
+                for (const storeKey in allCloudReports) {
+                    const report = allCloudReports[storeKey]?.data?.questions_status;
+                    if (report) {
+                        const answerA = report[idA];
+                        const answerB = report[idB];
+                        updates[`${storeKey}/data/questions_status/${idA}`] = answerB || null;
+                        updates[`${storeKey}/data/questions_status/${idB}`] = answerA || null;
+                    }
+                }
+                if (Object.keys(updates).length > 0) await reportsRef.update(updates);
+            }
+        }
+        console.log("Veri TAKAS işlemi başarıyla tamamlandı.");
+        return true;
+    } catch (error) {
+        console.error("Veri takas sırasında bir hata oluştu:", error);
+        alert("Kritik Hata: Raporlardaki cevaplar takas edilemedi. Lütfen konsolu kontrol edin.");
+        return false;
+    } finally {
+        loadingOverlay.style.display = 'none';
+    }
+}
+
+async function applyIdChangeScenario() {
     const oldId = document.getElementById('scenario-old-id').value.trim();
     const newId = document.getElementById('scenario-new-id').value.trim();
 
@@ -215,19 +320,47 @@ function applyIdChangeScenario() {
         return;
     }
 
-    const questionItem = document.querySelector(`.manager-item[data-id="${oldId}"]`);
-    if (!questionItem) {
+    const questionToMove = fideQuestions.find(q => String(q.id) === String(oldId));
+    if (!questionToMove) {
         alert(`HATA: "${oldId}" ID'li bir soru bulunamadı.`);
         return;
     }
-    
-    const idInput = questionItem.querySelector('.manager-id-input');
-    idInput.value = newId;
-    questionItem.dataset.id = newId;
 
-    addMigrationMapping(oldId, newId);
-    
-    alert(`Başarılı!\n\n- Soru ${oldId} ID'si, ${newId} olarak güncellendi.\n- Veri kaybını önlemek için otomatik yönlendirme kuralı eklendi.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
+    const targetQuestion = fideQuestions.find(q => String(q.id) === String(newId));
+
+    if (!targetQuestion) {
+        // --- SENARYO 1: HEDEF ID BOŞ, BASİT TAŞIMA İŞLEMİ ---
+        const confirmation = confirm(`Bu işlem, ${oldId} ID'li soruyu ${newId} olarak güncelleyecek ve TÜM cevapları kalıcı olarak yeni ID'ye taşıyacaktır. Devam etmek istiyor musunuz?`);
+        if (!confirmation) return;
+
+        const migrationSuccess = await migrateQuestionData(oldId, newId);
+        if (!migrationSuccess) return;
+
+        questionToMove.id = parseInt(newId, 10);
+        addMigrationMapping(oldId, newId);
+        
+        alert(`Başarılı!\n\n- Soru ${oldId}, ${newId} ID'sine taşındı.\n- Tüm raporlardaki cevaplar kalıcı olarak taşındı.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
+
+    } else {
+        // --- SENARYO 2: HEDEF ID DOLU, AKILLI TAKAS İŞLEMİ ---
+        const confirmation = confirm(`"${newId}" ID'si zaten başka bir soru tarafından kullanılıyor.\n\nİki sorunun ID'lerini ve kaydedilmiş TÜM cevaplarını birbiriyle DEĞİŞTİRMEK (takas etmek) istediğinizden emin misiniz?`);
+        if (!confirmation) return;
+
+        const swapSuccess = await swapQuestionData(oldId, newId);
+        if (!swapSuccess) return;
+
+        questionToMove.id = parseInt(newId, 10);
+        targetQuestion.id = parseInt(oldId, 10);
+
+        // Takas işleminde eski yönlendirmeler kafa karıştırabilir, temizlemek daha güvenli.
+        delete migrationMap[oldId];
+        delete migrationMap[newId];
+        saveMigrationMap();
+        
+        alert(`Başarılı!\n\n- ${oldId} ve ${newId} ID'li sorular birbiriyle değiştirildi.\n- Her iki soruya ait tüm cevaplar da raporlarda takas edildi.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
+    }
+
+    renderQuestionManager();
     closeScenarioSystem();
 }
 
@@ -278,6 +411,17 @@ async function applyDeleteQuestionScenario() {
     loadingOverlay.style.display = 'flex';
 
     try {
+        const localDataString = localStorage.getItem('allFideReports');
+        if (localDataString) {
+            let allReports = JSON.parse(localDataString);
+            for (const storeKey in allReports) {
+                if (allReports[storeKey]?.data?.questions_status?.[questionIdToDelete]) {
+                    delete allReports[storeKey].data.questions_status[questionIdToDelete];
+                }
+            }
+            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+        }
+
         const reportsRef = database.ref('allFideReports');
         const snapshot = await reportsRef.once('value');
         if (snapshot.exists()) {
@@ -360,6 +504,7 @@ function deleteMigrationMapping(oldIdToDelete) {
 }
 
 function saveMigrationMap() {
+    localStorage.setItem('fideMigrationMap', JSON.stringify(migrationMap));
     const user = auth.currentUser;
     if (user && database) {
         database.ref('migrationSettings/map').set(migrationMap).catch(error => {
@@ -406,6 +551,7 @@ function formatText(buttonEl, command) {
     }
 }
 
+// --- GÜNCELLENEN FONKSİYON ---
 function renderQuestionManager() {
     const managerList = document.getElementById('manager-list');
     managerList.innerHTML = '';
@@ -433,7 +579,7 @@ function renderQuestionManager() {
                     <input type="number" class="manager-id-input" value="${q.id}" disabled title="ID değiştirmek veri bütünlüğünü bozabilir. Düzenlemek için şifre gerekir.">
                 </div>
                 <div><label>Soru Başlığı</label><input type="text" class="question-title-input" value="${q.title}"></div>
-                <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleProductManager(this)">${selectOptionsHTML}</select></div>
+                <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleSpecialManagerUI(this)">${selectOptionsHTML}</select></div>
                 <div><label>Cevap Tipi</label><select class="answer-type-select">${answerTypeOptionsHTML}</select></div>
                 <div class="manager-grid-switch-group">
                     <div class="archive-switch-container">
@@ -453,7 +599,7 @@ function renderQuestionManager() {
                 </div>
             </div>
             <div>
-                <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
+                <label>Statik Maddeler (product_list / pop_system tipi için kullanılmaz)</label>
                 <div class="editor-toolbar">
                    <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
                    <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
@@ -462,30 +608,58 @@ function renderQuestionManager() {
                 </div>
                 <div class="editable-textarea" contenteditable="true">${staticItemsHtml}</div>
             </div>
-            <div class="product-list-manager" style="display: none;"></div>
+            <div class="special-manager-container"></div>
             <div class="manager-item-footer">
                 <button class="btn-warning btn-sm" onclick="deleteAllAnswersForQuestion(${q.id})" title="Bu soruya ait TÜM cevapları BÜTÜN bayi raporlarından kalıcı olarak siler."><i class="fas fa-eraser"></i>Cevapları Temizle</button>
             </div>`;
         managerList.appendChild(itemDiv);
 
-        if(q.type === 'product_list') {
-            toggleProductManager(itemDiv.querySelector('select'));
-        }
+        toggleSpecialManagerUI(itemDiv.querySelector('.question-type-select'));
     });
     filterManagerView(); 
 }
 
-function toggleProductManager(selectElement) {
+// --- YENİ VE GÜNCELLENEN FONKSİYONLAR ---
+function toggleSpecialManagerUI(selectElement) {
     const managerItem = selectElement.closest('.manager-item');
-    const productManagerContainer = managerItem.querySelector('.product-list-manager');
+    const specialContainer = managerItem.querySelector('.special-manager-container');
+    const question = fideQuestions.find(q => String(q.id) === managerItem.dataset.id) || {};
+
+    specialContainer.innerHTML = ''; 
+
     if (selectElement.value === 'product_list') {
-        productManagerContainer.style.display = 'block';
-        renderProductManagerUI(productManagerContainer);
+        specialContainer.classList.add('product-list-manager');
+        specialContainer.classList.remove('pop-manager-container');
+        renderProductManagerUI(specialContainer);
+    } else if (selectElement.value === 'pop_system') {
+        specialContainer.classList.add('pop-manager-container');
+        specialContainer.classList.remove('product-list-manager');
+        renderPopManagerUI(specialContainer, question);
     } else {
-        productManagerContainer.style.display = 'none';
-        productManagerContainer.innerHTML = '';
+        specialContainer.className = 'special-manager-container'; 
     }
 }
+
+function renderPopManagerUI(container, questionData) {
+    const popCodes = (questionData.popCodes || []).join(', ');
+    const expiredCodes = (questionData.expiredCodes || []).join(', ');
+
+    container.innerHTML = `
+        <p class="pop-manager-info">
+            <i class="fas fa-info-circle"></i> Kodları aralarına virgül (,) koyarak girin. Boşluklar otomatik olarak temizlenecektir. Bu listeler, ana ekrandaki materyal seçim kutularını ve 'Bitenler' butonunun işlevini belirler.
+        </p>
+        <div class="pop-manager-group">
+            <label for="pop-codes-input-${questionData.id}">Geçerli POP Kodları</label>
+            <textarea id="pop-codes-input-${questionData.id}" class="pop-codes-input" rows="5" placeholder="100001, 100002, 100003...">${popCodes}</textarea>
+        </div>
+        <div class="pop-manager-group">
+            <label for="expired-pop-codes-input-${questionData.id}">Süresi Dolmuş (Biten) POP Kodları</label>
+            <textarea id="expired-pop-codes-input-${questionData.id}" class="expired-pop-codes-input" rows="3" placeholder="900001, 900002...">${expiredCodes}</textarea>
+        </div>
+    `;
+}
+
+function toggleProductManager(selectElement) { /* Bu fonksiyon artık kullanılmıyor, toggleSpecialManagerUI'a entegre edildi */ }
 
 function renderProductManagerUI(container) {
     const categories = productList.filter(p => p.type === 'header');
@@ -738,7 +912,7 @@ function addNewQuestionUI() {
                 <input type="number" class="manager-id-input" value="${newId}">
             </div>
             <div><label>Soru Başlığı</label><input type="text" class="question-title-input" placeholder="Yeni sorunun başlığını yazın..."></div>
-            <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleProductManager(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
+            <div><label>Soru Tipi</label><select class="question-type-select" onchange="toggleSpecialManagerUI(this)"><option value="standard" selected>standard</option><option value="product_list">product_list</option><option value="pop_system">pop_system</option></select></div>
             <div>
                 <label>Cevap Tipi</label>
                 <select class="answer-type-select">
@@ -764,7 +938,7 @@ function addNewQuestionUI() {
             </div>
         </div>
         <div>
-            <label>Statik Maddeler (product_list tipi için kullanılmaz)</label>
+            <label>Statik Maddeler (product_list / pop_system tipi için kullanılmaz)</label>
             <div class="editor-toolbar">
                <button onclick="formatText(this, 'bold')" title="Kalın"><i class="fas fa-bold"></i></button>
                <button onclick="formatText(this, 'italic')" title="İtalik"><i class="fas fa-italic"></i></button>
@@ -773,7 +947,7 @@ function addNewQuestionUI() {
             </div>
             <div class="editable-textarea" contenteditable="true"></div>
         </div>
-        <div class="product-list-manager" style="display: none;"></div>
+        <div class="special-manager-container"></div>
         <div class="manager-item-footer"><button class="btn-sm" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i> İptal Et</button></div>`;
     managerList.appendChild(itemDiv);
     itemDiv.querySelector('input[type="text"]').focus();
@@ -824,31 +998,39 @@ async function deleteAllAnswersForQuestion(questionId) {
         return;
     }
 
-    if (!auth.currentUser || !database) {
-        alert("Bu işlem için bulut sistemine bağlı olmalısınız.");
-        return;
-    }
-
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
 
     try {
-        const reportsRef = database.ref('allFideReports');
-        const snapshot = await reportsRef.once('value');
-        if (snapshot.exists()) {
-            let allCloudReports = snapshot.val();
-            let updates = {};
-            for (const storeKey in allCloudReports) {
-                if (allCloudReports[storeKey]?.data?.questions_status?.[questionId]) {
-                     updates[`${storeKey}/data/questions_status/${questionId}`] = null;
+        const localDataString = localStorage.getItem('allFideReports');
+        if (localDataString) {
+            let allReports = JSON.parse(localDataString);
+            for (const storeKey in allReports) {
+                if (allReports[storeKey] && allReports[storeKey].data && allReports[storeKey].data.questions_status && allReports[storeKey].data.questions_status[questionId]) {
+                    delete allReports[storeKey].data.questions_status[questionId];
                 }
             }
-            if (Object.keys(updates).length > 0) {
-                await reportsRef.update(updates);
+            localStorage.setItem('allFideReports', JSON.stringify(allReports));
+        }
+
+        if (auth.currentUser && database) {
+            const reportsRef = database.ref('allFideReports');
+            const snapshot = await reportsRef.once('value');
+            if (snapshot.exists()) {
+                let allCloudReports = snapshot.val();
+                let updates = {};
+                for (const storeKey in allCloudReports) {
+                    if (allCloudReports[storeKey]?.data?.questions_status?.[questionId]) {
+                         updates[`${storeKey}/data/questions_status/${questionId}`] = null;
+                    }
+                }
+                if (Object.keys(updates).length > 0) {
+                    await reportsRef.update(updates);
+                }
             }
         }
         
-        alert(`İşlem tamamlandı!\n\nFiDe ${questionId} sorusuna ait tüm cevaplar bütün bulut raporlarından başarıyla silindi.`);
+        alert(`İşlem tamamlandı!\n\nFiDe ${questionId} sorusuna ait tüm cevaplar bütün raporlardan (hem yerel hem de bulut) başarıyla silindi.`);
 
     } catch (error) {
         console.error("Cevapları silerken bir hata oluştu:", error);
@@ -864,11 +1046,10 @@ async function saveQuestions() {
         alert("Değişiklikleri buluta kaydetmek için lütfen giriş yapın.");
         return;
     }
-
-    const newProductList = [];
-    const activeProductManager = document.querySelector('.product-list-manager:not([style*="display: none"])');
     
-    if (activeProductManager) {
+    const newProductList = [];
+    const activeProductManager = document.querySelector('.product-list-manager');
+    if (activeProductManager && activeProductManager.offsetParent !== null) { // Check if it's visible
         const rows = activeProductManager.querySelectorAll('.category-manager-row, .product-manager-row');
         rows.forEach(row => {
             if (row.dataset.type === 'category') {
@@ -899,21 +1080,27 @@ async function saveQuestions() {
         const isArchived = item.querySelector('.archive-checkbox').checked;
         const wantsStoreEmail = item.querySelector('.wants-email-checkbox').checked;
 
-
         if (!id && id !== 0 || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
         if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılamaz.`); return; }
         ids.add(id);
 
         const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
         const newQuestion = { id, title, type, answerType };
-        if (staticItems.length > 0 && type !== 'product_list') newQuestion.staticItems = staticItems;
+        if (staticItems.length > 0 && type !== 'product_list' && type !== 'pop_system') newQuestion.staticItems = staticItems;
         if (isArchived) newQuestion.isArchived = true;
         if (wantsStoreEmail) newQuestion.wantsStoreEmail = true;
 
         if (type === 'pop_system') {
-            const originalPopQuestion = fideQuestions.find(q => q.id === id);
-            newQuestion.popCodes = originalPopQuestion ? originalPopQuestion.popCodes : [];
-            newQuestion.expiredCodes = originalPopQuestion ? originalPopQuestion.expiredCodes : [];
+            const popInput = item.querySelector('.pop-codes-input');
+            const expiredInput = item.querySelector('.expired-pop-codes-input');
+            if (popInput && expiredInput) {
+                newQuestion.popCodes = popInput.value.split(',').map(c => c.trim()).filter(c => c);
+                newQuestion.expiredCodes = expiredInput.value.split(',').map(c => c.trim()).filter(c => c);
+            } else {
+                 const originalPopQuestion = fideQuestions.find(q => q.id === id);
+                 newQuestion.popCodes = originalPopQuestion ? originalPopQuestion.popCodes : [];
+                 newQuestion.expiredCodes = originalPopQuestion ? originalPopQuestion.expiredCodes : [];
+            }
         }
         newQuestions.push(newQuestion);
     }
