@@ -836,7 +836,7 @@ function loadReport(reportData) {
             if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty)); 
             
             if (data.selectedPops) {
-                data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
+                data.selectedPops.forEach(popCode => { const cb = document.querySelector('.pop-checkbox[value="${popCode}"]'); if(cb) cb.checked = true; });
                 checkExpiredPopCodes();
             }
         }
@@ -844,6 +844,7 @@ function loadReport(reportData) {
     } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
 }
 
+// --- GÜNCELLENEN FONKSİYON: Göç haritası kontrolü eklendi ---
 function parseAndLoadFromEmail() {
     showFiDeForm(); 
     const emailText = document.getElementById('load-email-area').value.trim();
@@ -856,6 +857,7 @@ function parseAndLoadFromEmail() {
     let storeCodeFound = null;
     let storeFoundAndSelected = false;
 
+    // 1. Bayi Kodunu Bulma ve Seçme
     for (const line of lines) {
         const match = line.match(/Ziyaret etmiş olduğum (\d{5,})\s/);
         if (match) {
@@ -879,6 +881,10 @@ function parseAndLoadFromEmail() {
         }
     }
     
+    // 2. Formu Sıfırlama ve Etkileşimi Güncelleme
+    resetForm(); // Bayi seçildiyse formu sıfırla
+    updateFormInteractivity(true);
+
     const questionHeaderRegex = /^[\s•o-]*FiDe\s+(\d+)\./i;
     const idsInEmail = new Set();
     let currentQuestionId = null;
@@ -895,6 +901,7 @@ function parseAndLoadFromEmail() {
 
         if (headerMatch) {
             const originalId = headerMatch[1];
+            // BURADA GÖÇ HARİTASINI KONTROL EDEREK ID'Yİ GÜNCELLE
             const finalId = migrationMap[originalId] || originalId;
             currentQuestionId = finalId;
             idsInEmail.add(finalId);
@@ -929,21 +936,27 @@ function parseAndLoadFromEmail() {
                 return; 
             }
             
-            const staticItems = question.staticItems || [];
-            const isStatic = staticItems.some(staticItem => {
+            // Statik maddelerin tamamlanıp tamamlanmadığını kontrol et
+            const staticItemFound = (question.staticItems || []).find(staticItem => {
                 const plainStaticItem = staticItem.replace(/<[^>]*>/g, '').trim();
                 return plainStaticItem.includes(cleanedLine);
             });
             
-            if (!isStatic) {
-                const containerId = (question.type === 'product_list') ? `fide${currentQuestionId}_pleksi` : `fide${currentQuestionId}`;
-                addDynamicInput(containerId, cleanedLine, false);
+            if (staticItemFound) {
+                 // Statik maddeyi görmezden gel ve dinamik olarak ekleme.
+                 return;
             }
+            
+            // Statik madde bulunamazsa, dinamik (ekstra not/eksik) olarak ekle
+            const containerId = (question.type === 'product_list') ? `fide${currentQuestionId}_pleksi` : `fide${currentQuestionId}`;
+            addDynamicInput(containerId, cleanedLine, false);
         }
     });
     
+    // E-postada bulunmayan soruları gizle
     fideQuestions.forEach(q => {
         if (q.isArchived) return;
+        // Migration'dan etkilenen eski ID'ler, zaten idsInEmail setine yeni ID olarak eklenmiştir.
         if (!idsInEmail.has(String(q.id))) {
             const questionItem = document.getElementById(`fide-item-${q.id}`);
             if (questionItem) {
