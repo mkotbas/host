@@ -907,6 +907,18 @@ function parseAndLoadFromEmail() {
                 return; 
             }
 
+            // --- HATA DÜZELTME BAŞLANGICI ---
+            // E-postadaki satırın bir ürün koduna benzediğini test et.
+            const isProductLine = /^(\d{8,})/.test(cleanedLine);
+
+            // Eğer satır bir ürün gibi görünüyorsa AMA hedeflenen yeni soru bir "product_list" DEĞİLSE,
+            // bu satırı atla. Bu, eski ürün cevaplarının yeni standart sorulara eklenmesini engeller.
+            if (isProductLine && question.type !== 'product_list') {
+                console.warn(`Ürün satırı atlanıyor: "${cleanedLine}". Hedef soru ${currentQuestionId} bir ürün listesi değil ('${question.type}').`);
+                return;
+            }
+            // --- HATA DÜZELTME SONU ---
+
             if (question.type === 'product_list') {
                 const productMatch = cleanedLine.match(/^(\d{8,})/); 
                 if (productMatch) {
