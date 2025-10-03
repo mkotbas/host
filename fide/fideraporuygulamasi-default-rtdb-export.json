@@ -6,11 +6,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -85,11 +80,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -164,11 +154,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -253,11 +238,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -338,11 +318,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -415,7 +390,7 @@
           "bayiKodu": "22128008"
         }
       },
-      "timestamp": 1758880569850
+      "timestamp": 1759129257091
     },
     "store_22128112": {
       "data": {
@@ -423,11 +398,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": true
-          },
           {
             "completed": false,
             "removed": true
@@ -518,11 +488,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -619,17 +584,118 @@
       },
       "timestamp": 1758791526942
     },
+    "store_22128123": {
+      "data": {
+        "questions_status": [
+          null,
+          null,
+          null,
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Çamaşır Makinesi standında aspiratör bulunmamalıdır."
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Ankastre davlumbazlar"
+              },
+              {
+                "completed": false,
+                "text": "Ankastre fırınlar"
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": true,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "TV fiyat etiketleri katlanmamalı, fiyat gözükecek şekilde sergilenmelidir."
+              },
+              {
+                "completed": false,
+                "text": "KEA fiyat etiketleri pleksiye tam uyum sağlayacak şekilde çıktı alınmalıdır. Mevcut etiketler küçüktür."
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Siyah renk pantolon ve yaka kartı tercih edilmelidir."
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          }
+        ],
+        "selectedStore": {
+          "bayiAdi": " TOMAK DAYANIKLI TUKETIM MALLARI GIDA INSAATNAKLIYE SANAYI VE TICARET LTD. STI.",
+          "bayiKodu": "22128123"
+        }
+      },
+      "timestamp": 1759133173088
+    },
     "store_22128502": {
       "data": {
         "questions_status": [
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -651,7 +717,11 @@
               },
               {
                 "completed": false,
-                "text": "Buzdolapları (en geniş olandan başlamalı ve dara doğru sıralanmalıdır. (müşteri giriş yoluna göre)"
+                "text": "Süpürgelerin altında kutulu ürünler bulunmamalıdır."
+              },
+              {
+                "completed": true,
+                "text": "Buzdolapları genişliklerine göre sıralanmalıdır."
               }
             ],
             "removed": false
@@ -674,10 +744,26 @@
           },
           {
             "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "TV fiyat etiketleri katlanmamalı, fiyat gözükecek şekilde sergilenmelidir."
+              },
+              {
+                "completed": false,
+                "text": "KEA fiyat etiketleri pleksiye tam uyum sağlayacak şekilde çıktı alınmalıdır. Mevcut etiketler küçüktür."
+              }
+            ],
             "removed": true
           },
           {
             "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Mağaza müdürü statüsünde puan verilmiştir."
+              }
+            ],
             "removed": false
           },
           {
@@ -685,11 +771,7 @@
             "dynamicInputs": [
               {
                 "completed": false,
-                "text": "Ankastre frıınların enerji etiketleri"
-              },
-              {
-                "completed": false,
-                "text": "Solo Fırınların Enerji etiketleri"
+                "text": "Ankastre fırınların enerji etiketleri"
               }
             ],
             "removed": false,
@@ -710,7 +792,7 @@
           },
           {
             "completed": false,
-            "removed": false
+            "removed": true
           },
           {
             "completed": false,
@@ -722,7 +804,7 @@
           "bayiKodu": "22128502"
         }
       },
-      "timestamp": 1758652019593
+      "timestamp": 1759149100195
     },
     "store_22128503": {
       "data": {
@@ -730,11 +812,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -881,11 +958,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -960,11 +1032,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -1047,98 +1114,14 @@
     },
     "store_22152007": {
       "data": {
-        "questions_status": [
-          null,
-          null,
-          null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": false
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "dynamicInputs": [
-              {
-                "completed": false,
-                "text": "Ankastre setler"
-              },
-              {
-                "completed": false,
-                "text": "Kurutma Makineleri ve çamaşır makineleri KG ve renklerine göre sıralanmalıdır."
-              }
-            ],
-            "removed": false
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "dynamicInputs": [
-              {
-                "completed": false,
-                "text": "Ankastre fırınlar (eksik olanlar)"
-              }
-            ],
-            "removed": false
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": false
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": false
-          },
-          {
-            "completed": false,
-            "removed": true
-          }
-        ],
+        "auditCompletedTimestamp": 1759337406079,
+        "isSpecialVisit": true,
         "selectedStore": {
           "bayiAdi": " BULUS ELEKTRONIK MARKET INS. TURIZM TIC. VE SAN.KOLL.STI.- UYGAR KELER VE ORTAGI",
           "bayiKodu": "22152007"
         }
       },
-      "timestamp": 1758652135768
+      "timestamp": 1759337406079
     },
     "store_22152009": {
       "data": {
@@ -1146,11 +1129,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -1247,15 +1225,11 @@
     },
     "store_22152104": {
       "data": {
+        "auditCompletedTimestamp": 1759337615182,
         "questions_status": [
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -1269,7 +1243,7 @@
             "removed": true
           },
           {
-            "completed": false,
+            "completed": true,
             "dynamicInputs": [
               {
                 "completed": false,
@@ -1319,7 +1293,7 @@
             "removed": true
           },
           {
-            "completed": false,
+            "completed": true,
             "removed": false
           },
           {
@@ -1332,7 +1306,7 @@
           "bayiKodu": "22152104"
         }
       },
-      "timestamp": 1758652173240
+      "timestamp": 1759337615182
     },
     "store_22152126": {
       "data": {
@@ -1340,11 +1314,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -1461,11 +1430,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -1552,106 +1516,14 @@
     },
     "store_22153003": {
       "data": {
-        "questions_status": [
-          null,
-          null,
-          null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "dynamicInputs": [
-              {
-                "completed": false,
-                "text": "1. ​katta yer alan bulaşık makinelerinin üzerinde mini set üstü ocaklar bulunmamalıdır."
-              },
-              {
-                "completed": false,
-                "text": "1.katta yer alan buzdolapları, TV standı TV standının önünü kesmemelidir"
-              },
-              {
-                "completed": false,
-                "text": "Süpürge standında altında tost makineleri bulunmamalıdır."
-              }
-            ],
-            "removed": false
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "dynamicInputs": [
-              {
-                "completed": false,
-                "text": "Termosifonlar"
-              },
-              {
-                "completed": false,
-                "text": "Ankastre fırınlar (eksik olanlar)"
-              }
-            ],
-            "removed": false
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": true
-          },
-          {
-            "completed": false,
-            "removed": false
-          },
-          {
-            "completed": false,
-            "removed": true
-          }
-        ],
+        "auditCompletedTimestamp": 1759336582970,
+        "isSpecialVisit": true,
         "selectedStore": {
           "bayiAdi": " ASNUR ELEKTR.EV ALET. TIC.VE SAN.A.S.",
           "bayiKodu": "22153003"
         }
       },
-      "timestamp": 1758652086121
+      "timestamp": 1759336582970
     },
     "store_22153116": {
       "data": {
@@ -1659,11 +1531,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -1766,11 +1633,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -1855,11 +1717,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -1948,15 +1805,11 @@
     },
     "store_22155001": {
       "data": {
+        "auditCompletedTimestamp": 1759408579403,
         "questions_status": [
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -2023,19 +1876,15 @@
           "bayiKodu": "22155001"
         }
       },
-      "timestamp": 1758650560689
+      "timestamp": 1759412953663
     },
     "store_22155004": {
       "data": {
+        "auditCompletedTimestamp": 1759406542250,
         "questions_status": [
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -2102,12 +1951,12 @@
           "bayiKodu": "22155004"
         }
       },
-      "timestamp": 1758651768287
+      "timestamp": 1759407831788
     },
-    "store_22155018": {
+    "store_22155009": {
       "data": {
+        "auditCompletedTimestamp": 1759403752326,
         "questions_status": [
-          null,
           null,
           null,
           null,
@@ -2115,6 +1964,152 @@
             "completed": false,
             "removed": false
           },
+          {
+            "completed": false,
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Ankastre setler"
+              },
+              {
+                "completed": false,
+                "text": "TV'ler kendi stantlarında sergilenmelidir."
+              },
+              {
+                "completed": false,
+                "text": "Çamaşır makinesi"
+              },
+              {
+                "completed": false,
+                "text": "Derin dondurucu"
+              },
+              {
+                "completed": false,
+                "text": "Set üstü ocaklar bulaşık makinelerinin üzerinde bulunmamalıdır."
+              },
+              {
+                "completed": false,
+                "text": "Mikrodalga fırın-Mini Fırınlar çamaşır makinelerinin üzerinde olmamalıdır."
+              },
+              {
+                "completed": false,
+                "text": "Ankastre davlumbazlar, solo fırınların üzerinde olmamalıdır."
+              },
+              {
+                "completed": false,
+                "text": "Bulaşık Makinelerinin üzerinde süpürge bulunmamalıdır."
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Mağaza müdürü statüsünde puan verilmiştir."
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": true,
+                "text": "Termosifonlar"
+              },
+              {
+                "completed": false,
+                "text": "Çamaşır Makinelerinin enerji etiketleri"
+              },
+              {
+                "completed": false,
+                "text": "Ankastre davlumbazların enerji etiketleri pleksi içerisinde sergilenmelidir."
+              },
+              {
+                "completed": false,
+                "text": "KEA ürün grubunun fiyat etiketleri"
+              }
+            ],
+            "removed": false,
+            "selectedProducts": [
+              {
+                "code": "8905291600",
+                "qty": "1"
+              },
+              {
+                "code": "9220161600",
+                "qty": "2"
+              },
+              {
+                "code": "9220451600",
+                "qty": "1"
+              },
+              {
+                "code": "9245771600",
+                "qty": "5"
+              }
+            ]
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          }
+        ],
+        "selectedStore": {
+          "bayiAdi": " OZTOTUKLAR KOLL.STI ALI TARIK TOTUK-AYKUT TOTUK",
+          "bayiKodu": "22155009"
+        }
+      },
+      "timestamp": 1759404922986
+    },
+    "store_22155018": {
+      "data": {
+        "questions_status": [
+          null,
+          null,
+          null,
           {
             "completed": false,
             "removed": true
@@ -2223,17 +2218,93 @@
       },
       "timestamp": 1758650546845
     },
+    "store_22155023": {
+      "data": {
+        "auditCompletedTimestamp": 1759399394886,
+        "questions_status": [
+          null,
+          null,
+          null,
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Mağaza sahibi statüsünde puan verilmiştir."
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          }
+        ],
+        "selectedStore": {
+          "bayiAdi": "ARKE TICARET - OSMAN OGUZ KEFELI",
+          "bayiKodu": "22155023"
+        }
+      },
+      "timestamp": 1759402131079
+    },
     "store_22155107": {
       "data": {
         "questions_status": [
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -2316,17 +2387,23 @@
       },
       "timestamp": 1758650568245
     },
+    "store_22155114": {
+      "data": {
+        "auditCompletedTimestamp": 1759343033215,
+        "isSpecialVisit": true,
+        "selectedStore": {
+          "bayiAdi": " EKMEKCILER KOLLEKTIF SIRKETI AHMET EKMEKCI VEORTAKLARI",
+          "bayiKodu": "22155114"
+        }
+      },
+      "timestamp": 1759343033215
+    },
     "store_22155123": {
       "data": {
         "questions_status": [
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -2435,11 +2512,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -2520,11 +2592,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -2609,17 +2676,108 @@
       },
       "timestamp": 1758651699181
     },
+    "store_22155507": {
+      "data": {
+        "questions_status": [
+          null,
+          null,
+          null,
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Ankastre setler Tamamlandı"
+              },
+              {
+                "completed": false,
+                "text": "Buzdolapları"
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Güncel Arçelik kıyafetleri tercih edilmelidir."
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": false,
+            "selectedProducts": [
+              {
+                "code": "9220161600",
+                "qty": "2"
+              }
+            ]
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          }
+        ],
+        "selectedStore": {
+          "bayiAdi": " KUCUKERLER ELEKTRIKLI EV ALETLERI BEYAZ ESYAMOBILYA SANAYI VE TICARET LIMITED SIRKETI",
+          "bayiKodu": "22155507"
+        }
+      },
+      "timestamp": 1759419423189
+    },
     "store_22155509": {
       "data": {
         "questions_status": [
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -2726,17 +2884,108 @@
       },
       "timestamp": 1758652035837
     },
+    "store_22155533": {
+      "data": {
+        "questions_status": [
+          null,
+          null,
+          null,
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Ankastre setler"
+              },
+              {
+                "completed": false,
+                "text": "Buzdolapları Tamamlandı"
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Ankastre fırınlar (eksik olanlar)"
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "dynamicInputs": [
+              {
+                "completed": false,
+                "text": "Güncel Arçelik kostümü, siyah pantolon tercih edilmelidir."
+              }
+            ],
+            "removed": false
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          },
+          {
+            "completed": false,
+            "removed": true
+          }
+        ],
+        "selectedStore": {
+          "bayiAdi": " HAMDIYE HALIDE ALVER- UGURLU TICARET (SUBE)",
+          "bayiKodu": "22155533"
+        }
+      },
+      "timestamp": 1759413322459
+    },
     "store_22161005": {
       "data": {
         "questions_status": [
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -2821,11 +3070,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -2900,11 +3144,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -2983,7 +3222,7 @@
           "bayiKodu": "22161007"
         }
       },
-      "timestamp": 1758652080902
+      "timestamp": 1759144681285
     },
     "store_22161009": {
       "data": {
@@ -2991,11 +3230,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -3086,11 +3320,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -3189,11 +3418,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -3284,11 +3508,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -3379,11 +3598,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": true
-          },
           {
             "completed": false,
             "removed": true
@@ -3458,11 +3672,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -3547,11 +3756,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -3642,11 +3846,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -3761,11 +3960,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -3852,11 +4046,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -3931,11 +4120,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -4028,7 +4212,7 @@
           "bayiKodu": "22161507"
         }
       },
-      "timestamp": 1758903070465
+      "timestamp": 1759339625674
     },
     "store_22161508": {
       "data": {
@@ -4036,11 +4220,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -4131,11 +4310,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -4220,11 +4394,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -4301,7 +4470,7 @@
           "bayiKodu": "22161513"
         }
       },
-      "timestamp": 1758652029661
+      "timestamp": 1759337076699
     },
     "store_22161514": {
       "data": {
@@ -4309,11 +4478,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": true
-          },
           {
             "completed": false,
             "removed": true
@@ -4388,11 +4552,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -4479,11 +4638,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -4578,11 +4732,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -4685,11 +4834,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -4770,11 +4914,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -4877,11 +5016,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -4984,11 +5118,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -5063,11 +5192,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -5148,11 +5272,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -5239,11 +5358,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -5324,11 +5438,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -5417,11 +5526,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -5506,11 +5610,6 @@
           null,
           null,
           null,
-          null,
-          {
-            "completed": false,
-            "removed": false
-          },
           {
             "completed": false,
             "removed": true
@@ -5592,7 +5691,26 @@
         }
       },
       "timestamp": 1758652047028
+    },
+    "store_22319118": {
+      "data": {
+        "auditCompletedTimestamp": 1759336738799,
+        "isSpecialVisit": true,
+        "selectedStore": {
+          "bayiAdi": " CIFTCILER TICARET KOLLEKTIF SIRKETI",
+          "bayiKodu": "22319118"
+        }
+      },
+      "timestamp": 1759336738799
     }
+  },
+  "denetimGeriAlinanlar": {
+    "2025-9": [
+      "22319118",
+      "22152007",
+      "22153003",
+      "22155023"
+    ]
   },
   "excelData": {
     "dide": {
@@ -5611,7 +5729,8 @@
             75,
             83,
             101,
-            87
+            87,
+            91
           ]
         },
         {
@@ -5628,7 +5747,8 @@
             82,
             85,
             91,
-            94
+            94,
+            ""
           ]
         },
         {
@@ -5645,7 +5765,8 @@
             67,
             70,
             75,
-            78
+            78,
+            ""
           ]
         },
         {
@@ -5662,7 +5783,8 @@
             75,
             84,
             80,
-            64
+            64,
+            ""
           ]
         },
         {
@@ -5679,7 +5801,8 @@
             61,
             79,
             80,
-            76
+            76,
+            ""
           ]
         },
         {
@@ -5693,6 +5816,7 @@
             "",
             72,
             59,
+            "",
             "",
             "",
             "",
@@ -5713,7 +5837,8 @@
             87,
             87,
             97,
-            93
+            93,
+            ""
           ]
         },
         {
@@ -5730,7 +5855,8 @@
             95,
             85,
             80,
-            81
+            81,
+            ""
           ]
         },
         {
@@ -5747,7 +5873,8 @@
             75,
             84,
             82,
-            86
+            86,
+            ""
           ]
         },
         {
@@ -5759,6 +5886,7 @@
             47,
             57,
             25,
+            "",
             "",
             "",
             "",
@@ -5781,7 +5909,8 @@
             "",
             "",
             77,
-            47
+            47,
+            ""
           ]
         },
         {
@@ -5798,7 +5927,8 @@
             79,
             83,
             88,
-            87
+            87,
+            ""
           ]
         },
         {
@@ -5815,7 +5945,8 @@
             73,
             81,
             83,
-            77
+            77,
+            ""
           ]
         },
         {
@@ -5832,7 +5963,8 @@
             78,
             73,
             92,
-            96
+            96,
+            ""
           ]
         },
         {
@@ -5849,7 +5981,8 @@
             90,
             90,
             97,
-            93
+            93,
+            ""
           ]
         },
         {
@@ -5866,7 +5999,8 @@
             74,
             81,
             83,
-            82
+            82,
+            ""
           ]
         },
         {
@@ -5883,7 +6017,8 @@
             85,
             90,
             91,
-            96
+            96,
+            ""
           ]
         },
         {
@@ -5900,7 +6035,8 @@
             93,
             93,
             100,
-            100
+            100,
+            ""
           ]
         },
         {
@@ -5917,7 +6053,8 @@
             75,
             84,
             82,
-            82
+            82,
+            ""
           ]
         },
         {
@@ -5932,6 +6069,7 @@
             51,
             47,
             41,
+            "",
             "",
             "",
             ""
@@ -5951,7 +6089,8 @@
             "",
             "",
             51,
-            67
+            67,
+            ""
           ]
         },
         {
@@ -5968,7 +6107,8 @@
             69,
             90,
             91,
-            88
+            88,
+            ""
           ]
         },
         {
@@ -5985,7 +6125,8 @@
             100,
             87,
             98,
-            98
+            98,
+            ""
           ]
         },
         {
@@ -6002,7 +6143,8 @@
             73,
             78,
             74,
-            75
+            75,
+            ""
           ]
         },
         {
@@ -6019,6 +6161,7 @@
             57,
             65,
             34,
+            66,
             ""
           ]
         },
@@ -6036,7 +6179,8 @@
             96,
             96,
             101,
-            102
+            102,
+            ""
           ]
         },
         {
@@ -6053,7 +6197,8 @@
             81,
             90,
             87,
-            90
+            90,
+            ""
           ]
         },
         {
@@ -6070,7 +6215,8 @@
             88,
             93,
             96,
-            93
+            93,
+            ""
           ]
         },
         {
@@ -6087,7 +6233,8 @@
             69,
             70,
             69,
-            76
+            76,
+            ""
           ]
         },
         {
@@ -6104,7 +6251,8 @@
             103,
             96,
             103,
-            97
+            97,
+            ""
           ]
         },
         {
@@ -6121,7 +6269,8 @@
             90,
             76,
             79,
-            85
+            85,
+            ""
           ]
         },
         {
@@ -6138,6 +6287,7 @@
             46,
             53,
             40,
+            36,
             ""
           ]
         },
@@ -6155,7 +6305,8 @@
             57,
             65,
             54,
-            64
+            64,
+            ""
           ]
         },
         {
@@ -6167,6 +6318,7 @@
             57,
             57,
             54,
+            "",
             "",
             "",
             "",
@@ -6189,7 +6341,8 @@
             41,
             56,
             63,
-            48
+            48,
+            ""
           ]
         },
         {
@@ -6206,7 +6359,8 @@
             92,
             96,
             96,
-            95
+            95,
+            ""
           ]
         },
         {
@@ -6223,7 +6377,8 @@
             96,
             100,
             101,
-            98
+            98,
+            ""
           ]
         },
         {
@@ -6240,6 +6395,7 @@
             70,
             78,
             80,
+            81,
             ""
           ]
         },
@@ -6257,7 +6413,8 @@
             85,
             89,
             101,
-            101
+            101,
+            ""
           ]
         },
         {
@@ -6274,7 +6431,8 @@
             93,
             101,
             104,
-            95
+            95,
+            97
           ]
         },
         {
@@ -6291,7 +6449,8 @@
             88,
             92,
             92,
-            91
+            91,
+            ""
           ]
         },
         {
@@ -6308,7 +6467,8 @@
             81,
             90,
             97,
-            87
+            87,
+            ""
           ]
         },
         {
@@ -6325,7 +6485,8 @@
             103,
             90,
             99,
-            99
+            99,
+            ""
           ]
         },
         {
@@ -6342,7 +6503,8 @@
             80,
             87,
             91,
-            91
+            91,
+            ""
           ]
         },
         {
@@ -6359,7 +6521,8 @@
             88,
             84,
             91,
-            99
+            99,
+            ""
           ]
         },
         {
@@ -6376,7 +6539,8 @@
             61,
             65,
             78,
-            69
+            69,
+            ""
           ]
         },
         {
@@ -6393,7 +6557,8 @@
             75,
             84,
             75,
-            68
+            68,
+            ""
           ]
         },
         {
@@ -6410,7 +6575,8 @@
             70,
             76,
             77,
-            78
+            78,
+            ""
           ]
         },
         {
@@ -6427,7 +6593,8 @@
             58,
             70,
             67,
-            69
+            69,
+            ""
           ]
         },
         {
@@ -6444,7 +6611,8 @@
             53,
             65,
             62,
-            64
+            64,
+            ""
           ]
         },
         {
@@ -6461,7 +6629,8 @@
             81,
             79,
             77,
-            63
+            63,
+            ""
           ]
         },
         {
@@ -6477,6 +6646,7 @@
             69,
             "",
             67,
+            "",
             "",
             ""
           ]
@@ -6495,7 +6665,8 @@
             "",
             "",
             75,
-            81
+            81,
+            ""
           ]
         },
         {
@@ -6512,7 +6683,8 @@
             96,
             93,
             94,
-            97
+            97,
+            ""
           ]
         },
         {
@@ -6529,7 +6701,8 @@
             93,
             93,
             96,
-            94
+            94,
+            ""
           ]
         },
         {
@@ -6546,7 +6719,8 @@
             70,
             70,
             79,
-            80
+            80,
+            ""
           ]
         },
         {
@@ -6563,7 +6737,8 @@
             98,
             100,
             102,
-            99
+            99,
+            ""
           ]
         },
         {
@@ -6580,7 +6755,8 @@
             80,
             81,
             86,
-            95
+            95,
+            ""
           ]
         },
         {
@@ -6597,7 +6773,8 @@
             89,
             90,
             94,
-            83
+            83,
+            ""
           ]
         },
         {
@@ -6614,7 +6791,8 @@
             106,
             90,
             98,
-            91
+            91,
+            ""
           ]
         },
         {
@@ -6631,7 +6809,8 @@
             100,
             90,
             90,
-            95
+            95,
+            ""
           ]
         },
         {
@@ -6648,7 +6827,8 @@
             74,
             82,
             84,
-            88
+            88,
+            ""
           ]
         },
         {
@@ -6660,6 +6840,7 @@
             57,
             96,
             82,
+            "",
             "",
             "",
             "",
@@ -6682,7 +6863,8 @@
             85,
             90,
             97,
-            84
+            84,
+            ""
           ]
         },
         {
@@ -6699,7 +6881,8 @@
             80,
             91,
             90,
-            90
+            90,
+            ""
           ]
         },
         {
@@ -6716,7 +6899,8 @@
             87,
             73,
             64,
-            71
+            71,
+            ""
           ]
         },
         {
@@ -6733,7 +6917,8 @@
             58,
             73,
             58,
-            68
+            68,
+            ""
           ]
         },
         {
@@ -6750,7 +6935,8 @@
             63,
             76,
             81,
-            81
+            81,
+            ""
           ]
         },
         {
@@ -6767,7 +6953,8 @@
             81,
             94,
             94,
-            92
+            92,
+            ""
           ]
         },
         {
@@ -6784,7 +6971,8 @@
             73,
             84,
             98,
-            99
+            99,
+            ""
           ]
         },
         {
@@ -6801,7 +6989,8 @@
             62,
             66,
             69,
-            71
+            71,
+            ""
           ]
         },
         {
@@ -6818,7 +7007,8 @@
             73,
             85,
             80,
-            84
+            84,
+            ""
           ]
         },
         {
@@ -6832,6 +7022,7 @@
             79,
             80,
             71,
+            "",
             "",
             "",
             "",
@@ -6852,7 +7043,8 @@
             67,
             76,
             75,
-            79
+            79,
+            ""
           ]
         },
         {
@@ -6869,7 +7061,26 @@
             85,
             87,
             99,
-            93
+            93,
+            ""
+          ]
+        },
+        {
+          "Bayi": " RUKIYE YUKSEL",
+          "Bayi Kodu": "22128122",
+          "Bayi Yönetmeni": "Mustafa Arslan",
+          "scores": [
+            null,
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            0,
+            ""
           ]
         },
         {
@@ -6886,7 +7097,8 @@
             103,
             92,
             99,
-            104
+            104,
+            ""
           ]
         },
         {
@@ -6903,7 +7115,8 @@
             103,
             94,
             103,
-            101
+            101,
+            ""
           ]
         },
         {
@@ -6920,7 +7133,8 @@
             86,
             90,
             94,
-            83
+            83,
+            ""
           ]
         },
         {
@@ -6937,7 +7151,8 @@
             62,
             65,
             72,
-            78
+            78,
+            ""
           ]
         },
         {
@@ -6954,7 +7169,8 @@
             96,
             94,
             95,
-            95
+            95,
+            ""
           ]
         },
         {
@@ -6971,6 +7187,7 @@
             78,
             66,
             86,
+            "",
             ""
           ]
         },
@@ -6988,7 +7205,8 @@
             44,
             61,
             66,
-            76
+            76,
+            ""
           ]
         },
         {
@@ -7005,7 +7223,8 @@
             85,
             93,
             99,
-            97
+            97,
+            ""
           ]
         },
         {
@@ -7022,7 +7241,8 @@
             90,
             93,
             100,
-            100
+            100,
+            ""
           ]
         },
         {
@@ -7039,7 +7259,8 @@
             70,
             96,
             90,
-            80
+            80,
+            ""
           ]
         },
         {
@@ -7056,7 +7277,8 @@
             96,
             99,
             102,
-            102
+            102,
+            ""
           ]
         },
         {
@@ -7073,7 +7295,8 @@
             92,
             79,
             89,
-            91
+            91,
+            ""
           ]
         },
         {
@@ -7090,7 +7313,8 @@
             76,
             89,
             94,
-            88
+            88,
+            ""
           ]
         },
         {
@@ -7107,7 +7331,8 @@
             78,
             91,
             89,
-            89
+            89,
+            ""
           ]
         },
         {
@@ -7124,7 +7349,8 @@
             85,
             99,
             95,
-            98
+            98,
+            ""
           ]
         },
         {
@@ -7141,7 +7367,8 @@
             99,
             97,
             104,
-            82
+            82,
+            ""
           ]
         },
         {
@@ -7158,7 +7385,8 @@
             67,
             68,
             65,
-            67
+            67,
+            ""
           ]
         },
         {
@@ -7175,7 +7403,8 @@
             75,
             86,
             86,
-            86
+            86,
+            ""
           ]
         },
         {
@@ -7192,7 +7421,8 @@
             69,
             76,
             66,
-            81
+            81,
+            ""
           ]
         },
         {
@@ -7209,7 +7439,8 @@
             82,
             78,
             90,
-            85
+            85,
+            ""
           ]
         },
         {
@@ -7226,7 +7457,8 @@
             89,
             90,
             91,
-            89
+            89,
+            ""
           ]
         },
         {
@@ -7243,7 +7475,8 @@
             82,
             79,
             83,
-            84
+            84,
+            ""
           ]
         },
         {
@@ -7260,7 +7493,8 @@
             75,
             87,
             86,
-            86
+            86,
+            ""
           ]
         },
         {
@@ -7277,7 +7511,8 @@
             81,
             79,
             81,
-            84
+            84,
+            ""
           ]
         },
         {
@@ -7294,7 +7529,8 @@
             106,
             106,
             102,
-            102
+            102,
+            ""
           ]
         },
         {
@@ -7311,7 +7547,8 @@
             82,
             84,
             90,
-            82
+            82,
+            ""
           ]
         },
         {
@@ -7328,7 +7565,8 @@
             82,
             84,
             84,
-            73
+            73,
+            ""
           ]
         },
         {
@@ -7345,7 +7583,8 @@
             90,
             72,
             78,
-            78
+            78,
+            ""
           ]
         },
         {
@@ -7362,7 +7601,8 @@
             87,
             87,
             86,
-            82
+            82,
+            ""
           ]
         },
         {
@@ -7379,7 +7619,8 @@
             48,
             57,
             52,
-            52
+            52,
+            ""
           ]
         },
         {
@@ -7396,7 +7637,8 @@
             93,
             93,
             98,
-            100
+            100,
+            ""
           ]
         },
         {
@@ -7413,7 +7655,8 @@
             106,
             99,
             104,
-            87
+            87,
+            ""
           ]
         },
         {
@@ -7430,7 +7673,8 @@
             75,
             73,
             86,
-            93
+            93,
+            ""
           ]
         },
         {
@@ -7447,7 +7691,8 @@
             101,
             99,
             104,
-            95
+            95,
+            ""
           ]
         },
         {
@@ -7464,7 +7709,8 @@
             95,
             99,
             97,
-            104
+            104,
+            ""
           ]
         },
         {
@@ -7481,7 +7727,8 @@
             73,
             73,
             75,
-            75
+            75,
+            ""
           ]
         },
         {
@@ -7498,7 +7745,8 @@
             87,
             93,
             94,
-            92
+            92,
+            83
           ]
         },
         {
@@ -7515,7 +7763,8 @@
             89,
             84,
             84,
-            87
+            87,
+            ""
           ]
         },
         {
@@ -7532,7 +7781,8 @@
             86,
             84,
             98,
-            96
+            96,
+            ""
           ]
         },
         {
@@ -7549,7 +7799,8 @@
             106,
             99,
             102,
-            97
+            97,
+            ""
           ]
         },
         {
@@ -7566,6 +7817,7 @@
             68,
             68,
             48,
+            "",
             ""
           ]
         },
@@ -7583,7 +7835,8 @@
             83,
             87,
             91,
-            90
+            90,
+            ""
           ]
         },
         {
@@ -7600,7 +7853,8 @@
             52,
             53,
             57,
-            72
+            72,
+            ""
           ]
         },
         {
@@ -7617,7 +7871,8 @@
             85,
             81,
             82,
-            93
+            93,
+            ""
           ]
         },
         {
@@ -7634,7 +7889,8 @@
             86,
             96,
             94,
-            95
+            95,
+            ""
           ]
         },
         {
@@ -7651,7 +7907,8 @@
             87,
             90,
             93,
-            96
+            96,
+            ""
           ]
         },
         {
@@ -7668,7 +7925,8 @@
             81,
             87,
             81,
-            90
+            90,
+            ""
           ]
         },
         {
@@ -7685,7 +7943,8 @@
             75,
             87,
             80,
-            85
+            85,
+            ""
           ]
         },
         {
@@ -7702,7 +7961,8 @@
             96,
             96,
             101,
-            99
+            99,
+            ""
           ]
         },
         {
@@ -7716,6 +7976,7 @@
             86,
             86,
             85,
+            "",
             "",
             "",
             "",
@@ -7736,7 +7997,8 @@
             81,
             84,
             91,
-            89
+            89,
+            ""
           ]
         },
         {
@@ -7753,7 +8015,8 @@
             98,
             88,
             102,
-            96
+            96,
+            ""
           ]
         },
         {
@@ -7770,7 +8033,8 @@
             85,
             90,
             99,
-            93
+            93,
+            ""
           ]
         },
         {
@@ -7787,7 +8051,8 @@
             90,
             89,
             92,
-            92
+            92,
+            ""
           ]
         },
         {
@@ -7804,7 +8069,8 @@
             82,
             87,
             90,
-            82
+            82,
+            ""
           ]
         },
         {
@@ -7821,7 +8087,8 @@
             103,
             103,
             101,
-            99
+            99,
+            ""
           ]
         },
         {
@@ -7838,7 +8105,8 @@
             85,
             90,
             93,
-            88
+            88,
+            ""
           ]
         },
         {
@@ -7855,7 +8123,8 @@
             93,
             96,
             91,
-            92
+            92,
+            ""
           ]
         },
         {
@@ -7871,6 +8140,7 @@
             "",
             "",
             0,
+            "",
             "",
             ""
           ]
@@ -7889,7 +8159,8 @@
             75,
             84,
             87,
-            78
+            78,
+            ""
           ]
         },
         {
@@ -7906,7 +8177,8 @@
             70,
             78,
             80,
-            86
+            86,
+            ""
           ]
         },
         {
@@ -7923,7 +8195,8 @@
             83,
             93,
             97,
-            95
+            95,
+            ""
           ]
         },
         {
@@ -7940,7 +8213,8 @@
             82,
             82,
             90,
-            97
+            97,
+            ""
           ]
         },
         {
@@ -7957,7 +8231,8 @@
             57,
             68,
             50,
-            47
+            47,
+            ""
           ]
         },
         {
@@ -7974,7 +8249,8 @@
             81,
             96,
             95,
-            97
+            97,
+            ""
           ]
         },
         {
@@ -7991,7 +8267,8 @@
             67,
             87,
             90,
-            86
+            86,
+            ""
           ]
         },
         {
@@ -8008,7 +8285,8 @@
             85,
             70,
             84,
-            93
+            93,
+            ""
           ]
         },
         {
@@ -8025,7 +8303,8 @@
             78,
             87,
             86,
-            92
+            92,
+            ""
           ]
         },
         {
@@ -8042,7 +8321,8 @@
             64,
             76,
             77,
-            79
+            79,
+            ""
           ]
         },
         {
@@ -8059,7 +8339,8 @@
             70,
             76,
             78,
-            81
+            81,
+            ""
           ]
         },
         {
@@ -8076,7 +8357,8 @@
             76,
             73,
             73,
-            80
+            80,
+            ""
           ]
         },
         {
@@ -8093,7 +8375,8 @@
             75,
             68,
             66,
-            64
+            64,
+            ""
           ]
         },
         {
@@ -8110,7 +8393,8 @@
             82,
             87,
             88,
-            88
+            88,
+            ""
           ]
         },
         {
@@ -8127,7 +8411,8 @@
             106,
             93,
             100,
-            101
+            101,
+            ""
           ]
         },
         {
@@ -8144,7 +8429,8 @@
             85,
             90,
             91,
-            92
+            92,
+            ""
           ]
         },
         {
@@ -8161,7 +8447,8 @@
             88,
             90,
             94,
-            94
+            94,
+            ""
           ]
         },
         {
@@ -8178,7 +8465,8 @@
             101,
             96,
             104,
-            104
+            104,
+            ""
           ]
         },
         {
@@ -8195,7 +8483,8 @@
             100,
             100,
             106,
-            106
+            106,
+            ""
           ]
         },
         {
@@ -8212,7 +8501,8 @@
             90,
             100,
             97,
-            101
+            101,
+            ""
           ]
         },
         {
@@ -8229,7 +8519,8 @@
             79,
             90,
             73,
-            79
+            79,
+            ""
           ]
         },
         {
@@ -8246,7 +8537,8 @@
             94,
             99,
             92,
-            101
+            101,
+            ""
           ]
         },
         {
@@ -8263,7 +8555,8 @@
             92,
             90,
             99,
-            99
+            99,
+            ""
           ]
         },
         {
@@ -8280,7 +8573,8 @@
             88,
             91,
             97,
-            96
+            96,
+            ""
           ]
         },
         {
@@ -8297,7 +8591,8 @@
             99,
             100,
             104,
-            106
+            106,
+            ""
           ]
         },
         {
@@ -8314,7 +8609,8 @@
             88,
             "",
             100,
-            100
+            100,
+            ""
           ]
         },
         {
@@ -8331,7 +8627,8 @@
             70,
             74,
             74,
-            78
+            78,
+            ""
           ]
         },
         {
@@ -8348,7 +8645,8 @@
             93,
             95,
             102,
-            99
+            99,
+            94
           ]
         },
         {
@@ -8365,7 +8663,8 @@
             88,
             96,
             104,
-            104
+            104,
+            93
           ]
         },
         {
@@ -8382,7 +8681,8 @@
             88,
             93,
             90,
-            96
+            96,
+            ""
           ]
         },
         {
@@ -8399,7 +8699,8 @@
             85,
             87,
             97,
-            97
+            97,
+            ""
           ]
         },
         {
@@ -8416,7 +8717,8 @@
             98,
             87,
             97,
-            99
+            99,
+            ""
           ]
         },
         {
@@ -8433,7 +8735,8 @@
             100,
             99,
             "",
-            102
+            102,
+            ""
           ]
         },
         {
@@ -8450,7 +8753,8 @@
             106,
             86,
             86,
-            98
+            98,
+            ""
           ]
         },
         {
@@ -8467,7 +8771,8 @@
             70,
             81,
             62,
-            78
+            78,
+            ""
           ]
         },
         {
@@ -8484,7 +8789,8 @@
             61,
             "",
             86,
-            88
+            88,
+            ""
           ]
         },
         {
@@ -8500,6 +8806,7 @@
             68,
             74,
             76,
+            "",
             "",
             ""
           ]
@@ -8518,7 +8825,8 @@
             67,
             76,
             75,
-            77
+            77,
+            ""
           ]
         },
         {
@@ -8535,7 +8843,8 @@
             103,
             93,
             100,
-            98
+            98,
+            ""
           ]
         },
         {
@@ -8552,7 +8861,8 @@
             57,
             65,
             62,
-            64
+            64,
+            ""
           ]
         },
         {
@@ -8569,7 +8879,8 @@
             57,
             70,
             55,
-            65
+            65,
+            ""
           ]
         },
         {
@@ -8586,7 +8897,8 @@
             100,
             95,
             98,
-            98
+            98,
+            ""
           ]
         },
         {
@@ -8603,7 +8915,8 @@
             106,
             99,
             106,
-            106
+            106,
+            ""
           ]
         },
         {
@@ -8620,7 +8933,8 @@
             96,
             95,
             101,
-            94
+            94,
+            ""
           ]
         },
         {
@@ -8637,7 +8951,8 @@
             82,
             85,
             82,
-            88
+            88,
+            ""
           ]
         },
         {
@@ -8654,7 +8969,8 @@
             77,
             70,
             82,
-            84
+            84,
+            ""
           ]
         },
         {
@@ -8671,7 +8987,8 @@
             85,
             93,
             93,
-            88
+            88,
+            ""
           ]
         },
         {
@@ -8688,7 +9005,8 @@
             88,
             93,
             103,
-            87
+            87,
+            ""
           ]
         },
         {
@@ -8705,7 +9023,8 @@
             82,
             84,
             84,
-            83
+            83,
+            ""
           ]
         },
         {
@@ -8722,7 +9041,8 @@
             106,
             102,
             104,
-            104
+            104,
+            ""
           ]
         },
         {
@@ -8739,7 +9059,8 @@
             82,
             84,
             86,
-            90
+            90,
+            ""
           ]
         },
         {
@@ -8756,7 +9077,8 @@
             85,
             90,
             70,
-            83
+            83,
+            ""
           ]
         },
         {
@@ -8773,7 +9095,8 @@
             82,
             96,
             88,
-            91
+            91,
+            ""
           ]
         },
         {
@@ -8788,6 +9111,7 @@
             55,
             30,
             0,
+            "",
             "",
             "",
             ""
@@ -8807,7 +9131,8 @@
             83,
             93,
             96,
-            86
+            86,
+            ""
           ]
         },
         {
@@ -8824,7 +9149,8 @@
             75,
             87,
             90,
-            81
+            81,
+            ""
           ]
         },
         {
@@ -8841,7 +9167,8 @@
             75,
             84,
             78,
-            90
+            90,
+            ""
           ]
         },
         {
@@ -8858,7 +9185,8 @@
             94,
             81,
             74,
-            90
+            90,
+            ""
           ]
         },
         {
@@ -8875,7 +9203,8 @@
             88,
             87,
             94,
-            91
+            91,
+            ""
           ]
         },
         {
@@ -8892,7 +9221,8 @@
             75,
             76,
             86,
-            88
+            88,
+            ""
           ]
         },
         {
@@ -8909,12 +9239,13 @@
             80,
             81,
             81,
-            88
+            88,
+            ""
           ]
         }
       ],
-      "filename": "dide puan.xlsx",
-      "timestamp": 1758647920110
+      "filename": "Kota Primi Hakediş Raporu.xlsx",
+      "timestamp": 1759384720563
     },
     "fide": {
       "data": [
@@ -10316,7 +10647,7 @@
         }
       ],
       "filename": "fide puanlar.xlsx",
-      "timestamp": 1758647924396
+      "timestamp": 1759010866880
     }
   },
   "fideQuestionsData": {
@@ -10484,20 +10815,8 @@
     ],
     "questions": [
       {
-        "answerType": "fixed",
-        "id": 4,
-        "staticItems": [
-          "55 inç ve üzeri TV'lerin öne çıkarılması amacıyla <b>standınızın 2 rafa düşürülmesini</b> rica ederim. Konuyla ilgili detaylı bilgi <b>77 numaralı</b> sirküde mevcut olup, iş birliğiniz için şimdiden teşekkür ederim.",
-          "<b><u><a href=\"https://drive.google.com/file/d/1UnGsb7_Nc8Bu-I7caAcUtrzhY5xr8kQ8/view?usp=drive_link\" target=\"_blank\">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>",
-          "<b><u><a href=\"https://drive.google.com/file/d/1tPoIEPX1O1LXM9ByXFpybcM-UMBF2afF/view?usp=drive_link\" target=\"_blank\">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>"
-        ],
-        "title": "28 Ocak tarihinde yayınlanmış olan TV Teşhir Sirküsü hakkında bayiye bilgi verildi mi?",
-        "type": "standard",
-        "wantsStoreEmail": true
-      },
-      {
         "answerType": "variable",
-        "id": 5,
+        "id": 3,
         "staticItems": [
           "Ön camda kullanılan kampanya görseli 8 numaralı sirküye uygun konumlandırılmalıdır. (Vitrinde bulunana ürünlerin görünürlüğünü engellememelidir.)"
         ],
@@ -10507,10 +10826,10 @@
       },
       {
         "answerType": "fixed",
-        "id": 6,
+        "id": 4,
         "staticItems": [
-          "Mağaza önünde kampanyaları daha aktif duyurabileceğiniz <i>Dış Poster Tutucu</i>’nun kullanılmasını rica ederiz.",
-          "<b><u><a href=\"https://drive.google.com/file/d/1DD8kT7HRTmbMM7HYpwMJRsn3GuiVrhnJ/view?usp=drive_link\" target=\"_blank\">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>"
+          "Mağaza önünde kampanyaları daha aktif duyurabileceğiniz Dış Poster Tutucu’nun kullanılmasını rica ederiz.",
+          "<a href=\"https://drive.google.com/file/d/1DD8kT7HRTmbMM7HYpwMJRsn3GuiVrhnJ/view?usp=drive_link\" target=\"_blank\">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a>"
         ],
         "title": "Dış mekan kampanyalarında kullanılan kampanya posterleri 8905801600 stok kodlu Dış Poster Tutucu ile sergileniyor mu?",
         "type": "standard",
@@ -10518,10 +10837,10 @@
       },
       {
         "answerType": "variable",
-        "id": 7,
+        "id": 5,
         "staticItems": [
           "Enerji etiketi kullanılması yasal bir zorunluluktur. İlgili ürün kodu 8908661600 üzerinden sipariş vererek, TV alanında enerji etiketi kullanılmasını rica ederiz.",
-          "<b><u><a href=\"https://drive.google.com/file/d/1m-i8scUYzfqxhlweHHno1o-j-EDleAyc/view?usp=drive_link\" target=\"_blank\">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>"
+          "<a href=\"https://drive.google.com/file/d/1m-i8scUYzfqxhlweHHno1o-j-EDleAyc/view?usp=drive_link\" target=\"_blank\">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a>"
         ],
         "title": "Televizyonların enerji etiketi 8908661600 stok kodlu Enerji Etiketi Standı ürünü ile sergileniyor mu?",
         "type": "standard",
@@ -10529,17 +10848,20 @@
       },
       {
         "answerType": "variable",
-        "id": 8,
+        "id": 6,
+        "staticItems": [
+          "<a href=\"https://drive.google.com/file/d/1XI98h_60KPl_hKeMO43UBmW1DEVfEcVf/view?usp=drive_link\" target=\"_blank\">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a>"
+        ],
         "title": "Ürünler teşhir ürün dizilim kılavuzuna göre sergilenmiş mi? Aşağıdaki ürünlerin teşhir ürün dizilim kılavuzuna (5 nolu sirkü) göre düzenlenmesini rica ederim.",
         "type": "standard",
         "wantsStoreEmail": true
       },
       {
         "answerType": "variable",
-        "id": 9,
+        "id": 7,
         "staticItems": [
-          "Mağaza içerisinde kampanyaları uygulayabileceğiniz, fırsat algısını yaratan <i>Fırsat Bazası</i>nın kullanılmasını rica ederiz.",
-          "<b><u><a href=\"https://drive.google.com/file/d/1nPXpxwp-88gYrHFPOxr-UuizhHqDZbaN/view?usp=drive_link\" target=\"_blank\">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>"
+          "Mağaza içerisinde kampanyaları uygulayabileceğiniz, fırsat algısını yaratan Fırsat Bazasının kullanılmasını rica ederiz.",
+          "<a href=\"https://drive.google.com/file/d/1nPXpxwp-88gYrHFPOxr-UuizhHqDZbaN/view?usp=drive_link\" target=\"_blank\">ÖRNEK\n     FOTOĞRAF İÇİN TIKLAYINIZ.</a>"
         ],
         "title": "Kampanyalı olarak sergilenen ürünlerde, 8900881600 stok kodlu Fırsat Bazası kullanılıyor mu?",
         "type": "standard",
@@ -10547,10 +10869,10 @@
       },
       {
         "answerType": "variable",
-        "id": 10,
+        "id": 8,
         "staticItems": [
           "ABS &gt; 29 numaralı Föy'de bulunan kampanya şablonlarının kullanımını rica ederim.",
-          "<b><u><a href=\"https://drive.google.com/file/d/1sStAyhgjr_n1w7FTtmItsyPsGWLK-jtg/view?usp=drive_link\" target=\"_blank\">ÖRNEK FOTOĞRAF İÇİN TIKLAYINIZ.</a></u></b>"
+          "<a href=\"https://drive.google.com/file/d/1sStAyhgjr_n1w7FTtmItsyPsGWLK-jtg/view?usp=drive_link\" target=\"_blank\" style=\"font-family: inherit;\">ÖRNEK\n     FOTOĞRAF İÇİN TIKLAYINIZ.</a>"
         ],
         "title": "Yeni Kampanya şablonu A4 veya A5 olarak kullanılıyor mu?",
         "type": "standard",
@@ -10558,23 +10880,23 @@
       },
       {
         "answerType": "variable",
-        "id": 11,
+        "id": 9,
         "title": "Tüm ürünlerde fiyat etiketi var mı? Aşağıdaki ürünlerin fiyat etiketlerinin tamamlanmasını rica ederim.",
         "type": "standard",
         "wantsStoreEmail": true
       },
       {
         "answerType": "variable",
-        "id": 12,
+        "id": 10,
         "title": "Tüm ürünlerde enerji etiketi var mı? Aşağıdaki ürünlerin enerji etiketlerinin tamamlanmasını rica ederim.",
         "type": "standard",
         "wantsStoreEmail": true
       },
       {
         "answerType": "variable",
-        "id": 13,
+        "id": 11,
         "staticItems": [
-          "<b><u><a href=\"https://drive.google.com/file/d/1yx8Gj53zUzvtyF0vAulr9vzPFw98PEXj/view?usp=drive_link\" target=\"_blank\">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>"
+          "<a href=\"https://drive.google.com/file/d/1yx8Gj53zUzvtyF0vAulr9vzPFw98PEXj/view?usp=drive_link\" target=\"_blank\">SİRKÜYÜ\n     İNCELEMEK İÇİN TIKLAYINIZ.</a>"
         ],
         "title": "Aşağıdaki ürünlere ait fiyat etiketlerinin Marka Basılı Materyal Kılavuzunda (7 nolu sirkü) yer alan",
         "type": "standard",
@@ -10582,10 +10904,9 @@
       },
       {
         "answerType": "variable",
-        "id": 14,
+        "id": 12,
         "staticItems": [
-          "Güncel Arçelik kostümü, yaka kartı, siyah pantolon ve siyah ayakkabı tercih edilmelidir.",
-          "<b><u><a href=\"https://drive.google.com/file/d/1FZ3s3MYjq-1wtG1SVsf9o40u8S-byIwW/view?usp=drive_link\" target=\"_blank\">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>"
+          "<a href=\"https://drive.google.com/file/d/1e8QFWmoc7S2thT7ecP-hNiOSXoUzTkkY/view?usp=drive_link\" target=\"_blank\">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a>"
         ],
         "title": "Personel görünüm kılavuzuna uygun giyiliyor mu? (Örnek görünüm ve sipariş için 1. Sirkü)",
         "type": "standard",
@@ -10593,7 +10914,7 @@
       },
       {
         "answerType": "variable",
-        "id": 15,
+        "id": 13,
         "title": "Perakende Malzemelerin kullanımı ve siparişi: Aşağıdaki malzemelerin siparişini rica ederim.",
         "type": "product_list",
         "wantsStoreEmail": true
@@ -10610,7 +10931,7 @@
           "100064",
           "100065"
         ],
-        "id": 16,
+        "id": 14,
         "popCodes": [
           "100001",
           "100004",
@@ -10684,9 +11005,9 @@
       },
       {
         "answerType": "variable",
-        "id": 17,
+        "id": 15,
         "staticItems": [
-          "<b><u><a href=\"https://drive.google.com/file/d/10XKhb6YQw2wbzML0TMDb1qdRo0Wv66rX/view?usp=drive_link\" target=\"_blank\">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>"
+          "<a href=\"https://drive.google.com/file/d/1y_xh8Lpt_3sH6LjxGvSlrJOPgwhGdI1B/view?usp=drive_link\" target=\"_blank\">SİRKÜYÜ\nİNCELEMEK İÇİN TIKLAYINIZ.</a>"
         ],
         "title": "DS-TV yayını Kullanılıyor mu?",
         "type": "standard",
@@ -10694,10 +11015,10 @@
       },
       {
         "answerType": "fixed",
-        "id": 18,
+        "id": 16,
         "staticItems": [
-          "Mağaza içerisinde sıcak bir ev atmosferi sunarak şıklık katmak, ürünlerin çekiciliğini artırmak ve mağazada geçirilen süreyi uzatarak satışa katkı sağlamak amacıyla hazırlanan 11 no'lu <i>Styling Kılavuzu</i>'nu inceleyebilir ve sipariş verebilirsiniz.",
-          "<b><u><a href=\"https://drive.google.com/file/d/1pk7yfpWOsPVU5N_hswr101Qn-tDG5glW/view?usp=drive_link\" target=\"_blank\">SİRKÜYÜ İNCELEMEK İÇİN TIKLAYINIZ.</a></u></b>"
+          "Mağaza içerisinde sıcak bir ev atmosferi sunarak şıklık katmak, ürünlerin çekiciliğini artırmak ve mağazada geçirilen süreyi uzatarak satışa katkı sağlamak amacıyla hazırlanan 11 no'lu Styling Kılavuzu'nu inceleyebilir ve sipariş verebilirsiniz.",
+          "<a href=\"https://drive.google.com/file/d/1vjrjkRAHRJXoqo9DVJqtEtyeHcv2FLA6/view?usp=drive_link\" target=\"_blank\" style=\"font-family: inherit;\">SİRKÜYÜ\n     İNCELEMEK İÇİN TIKLAYINIZ.</a>"
         ],
         "title": "Styling Kullanılıyor mu? (11. sirkü)",
         "type": "standard",
@@ -10705,11 +11026,35 @@
       },
       {
         "answerType": "variable",
-        "id": 19,
+        "id": 17,
         "title": "Elektronik ürünler stant üzerinde sergileniyor mu?",
         "type": "standard",
         "wantsStoreEmail": true
       }
+    ]
+  },
+  "migrationSettings": {
+    "map": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17"
     ]
   },
   "storeEmails": {

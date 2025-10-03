@@ -118,19 +118,19 @@
             <div id="store-selection-area">
                 <hr style="margin: 20px 0;">
                 <p><b>4. Adım: Denetlenecek Bayiyi Arayın ve Seçin</b></p>
-
-                <div class="store-action-group">
-                    <button id="new-fide-audit-btn" class="btn-secondary btn-sm" title="Bu bayi için yeni bir standart FiDe denetimi başlatır. Kaydedilmiş özel ziyaret verisi silinmez, sadece yeni bir forma geçilir."><i class="fas fa-file-alt"></i> Standart Denetim Başlat</button>
-                    <button id="special-visit-btn" class="btn-info btn-sm" title="Seçili bayi için FiDe soruları olmadan, sadece not ve eksik girişi için özel bir form açar."><i class="fas fa-star"></i> Özel Ziyaret Başlat</button>
-                </div>
-
+                <button id="new-report-btn" class="btn-warning btn-sm" style="margin-bottom: 10px; width: 100%;" title="Mevcut formu boşaltır ve temiz bir rapor sayfası açar."><i class="fas fa-file"></i> Yeni Rapor / Formu Temizle</button>
                 <input type="text" id="store-search-input" placeholder="Bayi adı veya kodu ile aramaya başlayın...">
-                
-                <button id="new-report-btn" class="btn-warning btn-sm" title="Mevcut formu boşaltır ve temiz bir rapor sayfası açar."><i class="fas fa-file"></i> Yeni Rapor / Formu Temizle</button>
-
                 <div id="store-list"></div>
             </div>
         </div>
+        
+        <div class="card" id="load-from-email-section">
+            <h2><i class="fas fa-paste"></i> E-Posta Taslağından Yükle</h2>
+            <p>Bir bayi raporu e-postasının içeriğini bu alana yapıştırın ve butona basarak formu doldurun.</p>
+            <textarea id="load-email-area" placeholder="Rapor e-postasının içeriğini bu alana yapıştırın..."></textarea>
+            <button class="btn-primary" id="load-from-email-btn" title="Yapıştırılan e-posta metnini analiz ederek formu otomatik doldurur."><i class="fas fa-check"></i> E-Posta ile Yükle</button>
+        </div>
+
 
         <div class="card" id="initialization-error">
             <h2><i class="fas fa-exclamation-triangle"></i> Başlatma Hatası</h2>
@@ -139,28 +139,6 @@
 
         <div id="form-content"></div>
 
-        <div id="special-visit-form" style="display: none;">
-            
-            <div class="fide-item">
-                <div class="fide-title-container">
-                    <p style="display: flex; align-items: center; gap: 8px;"><i class="fas fa-star" style="color: var(--warning);"></i> Özel Ziyaret Notları</p>
-                </div>
-                <div class="input-area">
-                    <p style="font-size: 12px; color: var(--secondary); margin-bottom: 15px;">
-                        <i class="fas fa-info-circle"></i> Bu ziyarette tespit ettiğiniz eksikleri veya notları ekleyin. E-posta taslağı sadece bu notları içerecektir.
-                    </p>
-                    <div id="special-notes-container">
-                    </div>
-                </div>
-                <div class="fide-actions">
-                     <button id="add-special-note-btn" class="add-item-btn btn-sm"><i class="fas fa-plus"></i> Yeni Not Ekle</button>
-                </div>
-            </div>
-            
-            <div id="special-visit-pop-system-container">
-            </div>
-
-        </div>
         <button class="action-button" onclick="generateEmail()" title="Formdaki tüm verileri kullanarak nihai e-posta taslağını oluşturur ve raporu kaydeder.">
             <i class="fas fa-envelope"></i> E-POSTA TASLAĞI OLUŞTUR
         </button>
