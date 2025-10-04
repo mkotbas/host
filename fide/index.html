@@ -10,107 +10,116 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
     
-    <div id="loading-overlay" class="hidden"></div>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p>İşlem yapılıyor, lütfen bekleyin...</p>
+    </div>
 
     <div class="container">
+        
         <header class="system-header">
-            <h1>Denetim Sistemi</h1>
-            <nav class="header-nav">
-                <a href="soru-yoneticisi.html"><i class="fas fa-edit"></i> Soru Yöneticisi</a>
-                <a href="bayiyoneticisi/bayi-yoneticisi.html"><i class="fas fa-at"></i> Bayi Yöneticisi</a>
-            </nav>
+            <div class="backup-controls">
+                <a href="soru-yoneticisi.html" class="btn-warning btn-sm btn-like"><i class="fas fa-edit"></i> Soru Yöneticisi</a>
+                <a href="bayiyoneticisi/bayi-yoneticisi.html" class="btn-warning btn-sm btn-like"><i class="fas fa-at"></i> Bayi Yöneticisi</a>
+                <button id="toggle-backup-manager-btn" class="btn-secondary btn-sm"><i class="fas fa-archive"></i> Yedekleme</button>
+            </div>
+            <div class="right-controls">
+                <div id="connection-status-container">
+                    <div id="connection-status-switch" class="disconnected">
+                        <div class="thumb"></div>
+                    </div>
+                    <span id="connection-status-text">Bağlı Değil</span>
+                </div>
+                <div id="auth-controls" style="position: relative;">
+                    <button id="login-toggle-btn" class="btn-success btn-sm"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
+                    <button id="logout-btn" class="btn-danger btn-sm" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
+                    <div id="login-popup">
+                        <h3><i class="fas fa-cloud"></i> Bulut Sistemine Giriş</h3>
+                        <input type="email" id="email-input" placeholder="E-posta">
+                        <input type="password" id="password-input" placeholder="Şifre">
+                        <button id="login-submit-btn" class="btn-primary btn-sm"><i class="fas fa-check"></i> Onayla</button>
+                        <div id="login-error"></div>
+                    </div>
+                </div>
+            </div>
         </header>
         
+        <div class="card" id="backup-manager" style="display: none;">
+            </div>
+
         <div class="main-layout">
-            
+
             <main class="main-content">
-                
-                <section class="card">
-                    <div class="card-header">
-                        <div class="icon-badge"><i class="fas fa-tasks"></i></div>
-                        <h2>Denetim Formu</h2>
+                <div class="card" id="denetim-formu-karti">
+                    <h2>
+                        <span class="icon-badge"><i class="fas fa-tasks"></i></span>
+                        Denetim Formu
+                    </h2>
+                    <div id="initialization-error">
+                        <p><b>FiDe Soru Listesi</b> buluttan okunamadı. Lütfen sisteme giriş yaptığınızdan ve internet bağlantınız olduğundan emin olun.</p>
                     </div>
                     <div id="form-content">
-                        <div class="empty-state">
-                            <i class="fas fa-folder-open"></i>
-                            <span>Lütfen sağdaki panelden bir bayi seçerek denetim formunu yükleyin.</span>
                         </div>
-                    </div>
-                </section>
-
+                </div>
             </main>
-            
+
             <aside class="sidebar">
                 
-                <section class="card">
-                    <div class="card-header">
-                        <div class="icon-badge"><i class="fas fa-file-upload"></i></div>
-                        <h2>1. Adım: Veri Yükleme</h2>
-                    </div>
+                <div class="card" id="dide-upload-card">
+                    <h2>
+                        <span class="icon-badge"><i class="fas fa-file-upload"></i></span>
+                        1. Adım: Veri Yükleme
+                    </h2>
                     <p>Denetime başlamadan önce güncel Excel dosyalarını sisteme yükleyin.</p>
                     
-                    <div class="file-input-group">
+                    <div class="file-input-wrapper">
                         <p><b>DiDe Puan Excel Dosyası</b></p>
-                        <div class="file-input-wrapper">
-                            <label for="excel-file-input" class="file-input-label"><i class="fas fa-file-excel"></i> Dosya Seç</label>
-                            <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="hidden">
-                            <span id="file-name" class="file-name-display">Henüz dosya seçilmedi.</span>
-                        </div>
+                        <label for="excel-file-input" class="btn btn-secondary btn-sm btn-like"><i class="fas fa-file-excel"></i> Dosya Seç</label>
+                        <input type="file" id="excel-file-input" accept=".xlsx, .xls" style="display: none;">
+                        <span id="file-name">Henüz dosya seçilmedi.</span>
                     </div>
-                    
-                    <div class="file-input-group">
+                     <div class="file-input-wrapper" style="margin-top: 15px;">
                         <p><b>FiDe Puan Excel Dosyası</b></p>
-                        <div class="file-input-wrapper">
-                            <label for="fide-excel-file-input" class="file-input-label"><i class="fas fa-file-excel"></i> Dosya Seç</label>
-                            <input type="file" id="fide-excel-file-input" accept=".xlsx, .xls" class="hidden">
-                            <span id="fide-file-name" class="file-name-display">Henüz dosya seçilmedi.</span>
-                        </div>
+                        <label for="fide-excel-file-input" class="btn btn-secondary btn-sm btn-like"><i class="fas fa-file-excel"></i> Dosya Seç</label>
+                        <input type="file" id="fide-excel-file-input" accept=".xlsx, .xls" style="display: none;">
+                        <span id="fide-file-name">Henüz dosya seçilmedi.</span>
                     </div>
-                    
-                    <div class="action-buttons">
-                        <button id="clear-excel-btn" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i> DiDe Excel'i Sil</button>
-                        <button id="clear-fide-excel-btn" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i> FiDe Excel'i Sil</button>
+                    <div style="display: flex; gap: 8px; margin-top: 15px;">
+                         <button id="clear-excel-btn" class="btn btn-danger btn-sm" title="Yüklenmiş olan DiDe Excel verisini buluttan temizler."><i class="fas fa-trash-alt"></i> DiDe Sil</button>
+                         <button id="clear-fide-excel-btn" class="btn btn-danger btn-sm" title="Yüklenmiş olan FiDe Excel verisini buluttan temizler."><i class="fas fa-trash-alt"></i> FiDe Sil</button>
                     </div>
-                </section>
-                
-                <section class="card">
-                    <div class="card-header">
-                        <div class="icon-badge"><i class="fas fa-store"></i></div>
-                        <h2>2. Adım: Bayi Seçimi</h2>
-                    </div>
-                    <button id="new-report-btn" class="btn btn-secondary btn-full" style="margin-bottom: 15px;">
-                        <i class="fas fa-file"></i> Yeni Rapor / Formu Temizle
-                    </button>
+                </div>
+
+                <div class="card" id="bayi-secimi-karti">
+                     <h2>
+                        <span class="icon-badge"><i class="fas fa-store"></i></span>
+                        2. Adım: Bayi Seçimi
+                    </h2>
                     <div id="store-selection-area">
-                        <input type="text" id="store-search-input" class="search-input" placeholder="Bayi adı veya kodu ile arayın...">
-                        <div id="store-list" class="store-list-container"></div>
+                        <button id="new-report-btn" class="btn btn-secondary btn-full" style="margin-bottom: 15px;"><i class="fas fa-file"></i> Yeni Rapor / Formu Temizle</button>
+                        <input type="text" id="store-search-input" placeholder="Bayi adı veya kodu ile arayın...">
+                        <div id="store-list"></div>
                     </div>
-                </section>
-                
-                <section class="card">
-                    <div class="card-header">
-                        <div class="icon-badge"><i class="fas fa-paper-plane"></i></div>
-                        <h2>3. Adım: Raporu Oluştur</h2>
-                    </div>
-                    <p>Formu doldurduktan sonra e-posta taslağını oluşturmak ve raporu kaydetmek için butona tıklayın.</p>
-                    <button class="btn btn-primary btn-full" onclick="generateEmail()">
-                        <i class="fas fa-envelope"></i> E-POSTA OLUŞTUR
-                    </button>
-                </section>
+                </div>
+
+                <div class="card" id="form-actions-card">
+                    <h2>
+                        <span class="icon-badge"><i class="fas fa-paper-plane"></i></span>
+                        3. Adım: Rapor Oluştur
+                    </h2>
+                     <p>Formu doldurduktan sonra e-posta taslağını oluşturmak için butona tıklayın.</p>
+                    <button class="btn btn-primary btn-full" onclick="generateEmail()"><i class="fas fa-envelope"></i> E-POSTA TASLAĞI OLUŞTUR</button>
+                </div>
 
             </aside>
-            
         </div>
-        
-        <div id="initialization-error" class="hidden"></div>
-        <div id="backup-manager" class="hidden"></div>
-        <div id="login-popup" class="hidden"></div>
-        
+        <button id="clear-storage-btn" style="display:none;"></button>
+
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
