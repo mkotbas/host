@@ -180,10 +180,6 @@ function setupEventListeners() {
     document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
     document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
-    // YENİ EKLENDİ: Özel ziyaret verilerini temizleme butonu için olay dinleyici
-    if (document.getElementById('clean-special-visits-btn')) {
-        document.getElementById('clean-special-visits-btn').addEventListener('click', cleanSpecialVisitData);
-    }
     
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
         const dogruSifreHash = 'ZmRlMDAx';
@@ -303,63 +299,6 @@ function setupEventListeners() {
         }
     });
 }
-
-// --- YENİ EKLENEN FONKSİYON ---
-async function cleanSpecialVisitData() {
-    if (!auth.currentUser || !database) {
-        return alert('Bu işlem için giriş yapmalısınız.');
-    }
-
-    const confirmation = confirm(
-        "Bu işlem, tüm raporlardaki 'Özel Ziyaret' ile ilgili eski verileri ('isSpecialVisit' ve 'notes' alanlarını) kalıcı olarak silecektir.\n\nBu işlem geri alınamaz. Devam etmek istediğinizden emin misiniz?"
-    );
-
-    if (!confirmation) {
-        alert("Temizleme işlemi iptal edildi.");
-        return;
-    }
-
-    const loadingOverlay = document.getElementById('loading-overlay');
-    if (loadingOverlay) loadingOverlay.style.display = 'flex';
-
-    try {
-        const reportsRef = database.ref('allFideReports');
-        const snapshot = await reportsRef.once('value');
-
-        if (!snapshot.exists()) {
-            if (loadingOverlay) loadingOverlay.style.display = 'none';
-            return alert('Temizlenecek rapor bulunamadı.');
-        }
-
-        const updates = {};
-        let cleanedCount = 0;
-
-        snapshot.forEach(childSnapshot => {
-            const reportKey = childSnapshot.key;
-            const reportData = childSnapshot.child('data').val();
-
-            if (reportData && (reportData.hasOwnProperty('isSpecialVisit') || reportData.hasOwnProperty('notes'))) {
-                updates[`/${reportKey}/data/isSpecialVisit`] = null;
-                updates[`/${reportKey}/data/notes`] = null;
-                cleanedCount++;
-            }
-        });
-
-        if (cleanedCount > 0) {
-            await reportsRef.update(updates);
-            alert(`${cleanedCount} adet rapordaki eski 'Özel Ziyaret' verileri başarıyla temizlendi.`);
-        } else {
-            alert("Temizlenecek 'Özel Ziyaret' verisi bulunamadı. Raporlarınız zaten temiz.");
-        }
-
-    } catch (error) {
-        console.error("Özel ziyaret verileri temizlenirken hata oluştu:", error);
-        alert("Temizleme sırasında bir hata oluştu. Lütfen konsolu kontrol edin.");
-    } finally {
-        if (loadingOverlay) loadingOverlay.style.display = 'none';
-    }
-}
-
 
 function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore || !auth.currentUser || !database) return;
