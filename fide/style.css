@@ -170,7 +170,7 @@ button:hover:not(:disabled), .btn:hover, a.btn-like:hover {
 .btn-sm { padding: 8px 14px; font-size: 12px; }
 .btn-full { width: 100%; }
 .action-button { width: 100%; background-color: var(--primary-color); color: white; font-size: 16px; padding: 14px; }
-.top-controls a, .top-controls button { text-decoration: none; } /* Eski sistemden kalan linkleri düzelt */
+.top-controls a, .top-controls button { text-decoration: none; } 
 
 /* --- FORM ELEMANLARI --- */
 input[type="text"], input[type="email"], input[type="password"], input[type="number"], select, textarea {
@@ -192,9 +192,26 @@ input:focus, select:focus, textarea:focus {
 .file-input-label { /* Buton stilini kullanacak */ }
 #file-name, #fide-file-name { color: var(--secondary-color); font-style: italic; font-size: 13px; margin-left: 10px; }
 #store-list { max-height: 280px; overflow-y: auto; margin-top: 10px; }
-.store-item { padding: 12px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; transition: all var(--transition-speed); border: 1px solid transparent; }
-.store-item:hover { background-color: var(--primary-light); border-color: #c4b5fd; }
-.store-item.selected { background-color: var(--primary-color); color: white; font-weight: 600; border-color: var(--primary-color); }
+
+/* DÜZELTME: '.store-list-item' olan isim, JS ile uyumlu olması için '.store-item' olarak değiştirildi */
+.store-item { 
+    padding: 12px; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    margin-bottom: 4px; 
+    transition: all var(--transition-speed); 
+    border: 1px solid transparent; 
+}
+.store-item:hover { 
+    background-color: var(--primary-light); 
+    border-color: #c4b5fd; 
+}
+.store-item.selected { 
+    background-color: var(--primary-color); 
+    color: white; 
+    font-weight: 600; 
+    border-color: var(--primary-color); 
+}
 
 /* --- FiDe SORU KARTLARI --- */
 .fide-item {
