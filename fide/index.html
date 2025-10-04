@@ -16,13 +16,26 @@
         <p>İşlem yapılıyor, lütfen bekleyin...</p>
     </div>
 
+    <div id="maintenance-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h3 id="modal-title"></h3>
+            </div>
+            <div class="modal-body" id="modal-body">
+            </div>
+            <div class="modal-footer" id="modal-footer">
+            </div>
+        </div>
+    </div>
+
+
     <div class="container">
         
         <div class="top-controls">
             <div class="backup-controls">
                 <a href="soru-yoneticisi.html" class="btn-warning btn-sm"><i class="fas fa-edit"></i> Soru Yöneticisi</a>
                 <a href="bayiyoneticisi/bayi-yoneticisi.html" class="btn-warning btn-sm"><i class="fas fa-at"></i> Bayi Yöneticisi</a>
-                <button id="toggle-backup-manager-btn" class="btn-primary btn-sm"><i class="fas fa-archive"></i> Yedekleme</button>
+                <button id="toggle-backup-manager-btn" class="btn-primary btn-sm"><i class="fas fa-tools"></i> Yönetim Paneli</button>
             </div>
             <div class="right-controls">
                 <div id="connection-status-container">
@@ -49,29 +62,52 @@
         <div class="card" id="backup-manager" style="display: none;">
             <h2>
                 <a href="#" onclick="event.preventDefault(); closeManager();" style="text-decoration: none; color: inherit; cursor: pointer;" title="Ana Sayfaya Dön">
-                    <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i> Yedekleme Yöneticisi
+                    <i class="fas fa-arrow-left" style="margin-right: 10px; font-size: 16px;"></i> Yönetim Paneli
                 </a>
             </h2>
-            <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 25px;">
-                <i class="fas fa-info-circle"></i> Buradan rapor verilerinizi yönetebilir, bilgisayarınıza indirebilir veya bulut ile eşitleyebilirsiniz.
-            </p>
-            <div class="backup-options-grid">
-                <div class="backup-option-card">
-                    <h3><i class="fas fa-cloud-download-alt"></i> Raporları Yedekle</h3>
-                    <p>Bulutta kayıtlı tüm bayi raporlarını tek bir `.json` dosyası olarak bilgisayarınıza indirir.</p>
-                    <button id="backup-btn" class="btn-primary"><i class="fas fa-download"></i> Yedek Dosyasını İndir</button>
-                </div>
-                <div class="backup-option-card">
-                    <h3><i class="fas fa-cloud-upload-alt"></i> Yedekten Geri Yükle</h3>
-                    <p>Bilgisayarınızdaki `.json` yedek dosyasını seçerek buluta yükler. Bu işlem buluttaki mevcut verilerin üzerine yazar!</p>
-                    <button id="restore-from-backup-btn" class="btn-primary"><i class="fas fa-folder-open"></i> Dosya Seç ve Yükle</button>
-                </div>
-                <div class="backup-option-card">
-                    <h3><i class="fas fa-compress-arrows-alt"></i> Yedekleri Birleştir</h3>
-                    <p>Birden fazla yedek dosyasını seçerek, içlerindeki en güncel raporları içeren tek bir yeni yedek dosyası oluşturur.</p>
-                    <button id="merge-backups-btn" class="btn-primary"><i class="fas fa-object-group"></i> Dosyaları Seç ve Birleştir</button>
+            
+            <div class="management-section">
+                <h4><i class="fas fa-archive"></i> Yedekleme ve Geri Yükleme</h4>
+                <div class="backup-options-grid">
+                    <div class="backup-option-card">
+                        <h3><i class="fas fa-cloud-download-alt"></i> Raporları Yedekle</h3>
+                        <p>Bulutta kayıtlı tüm bayi raporlarını tek bir `.json` dosyası olarak bilgisayarınıza indirir.</p>
+                        <button id="backup-btn" class="btn-primary"><i class="fas fa-download"></i> Yedek Dosyasını İndir</button>
+                    </div>
+                    <div class="backup-option-card">
+                        <h3><i class="fas fa-cloud-upload-alt"></i> Yedekten Geri Yükle</h3>
+                        <p>Bilgisayarınızdaki `.json` yedek dosyasını seçerek buluta yükler. Bu işlem buluttaki mevcut verilerin üzerine yazar!</p>
+                        <button id="restore-from-backup-btn" class="btn-primary"><i class="fas fa-folder-open"></i> Dosya Seç ve Yükle</button>
+                    </div>
+                    <div class="backup-option-card">
+                        <h3><i class="fas fa-compress-arrows-alt"></i> Yedekleri Birleştir</h3>
+                        <p>Birden fazla yedek dosyasını seçerek, içlerindeki en güncel raporları içeren tek bir yeni yedek dosyası oluşturur.</p>
+                        <button id="merge-backups-btn" class="btn-primary"><i class="fas fa-object-group"></i> Dosyaları Seç ve Birleştir</button>
+                    </div>
                 </div>
             </div>
+
+            <div class="management-section">
+                <h4><i class="fas fa-database"></i> Veri Bakım Araçları</h4>
+                <div class="backup-options-grid">
+                     <div class="backup-option-card">
+                        <h3><i class="fas fa-user-slash"></i> Kalıntı Rapor Analizi</h3>
+                        <p>Ana bayi listesinden silinmiş ancak raporları hala veritabanında duran "kalıntı" (orphan) verileri bulur ve silmenizi sağlar.</p>
+                        <button id="analyze-orphan-reports-btn" class="btn-warning"><i class="fas fa-search"></i> Analizi Başlat</button>
+                    </div>
+                    <div class="backup-option-card">
+                        <h3><i class="fas fa-link-slash"></i> Veri Tutarlılığı Kontrolü</h3>
+                        <p>Bayi listesi, e-posta listesi gibi farklı tablolar arasındaki uyumsuzlukları tespit eder ve raporlar.</p>
+                        <button id="check-consistency-btn" class="btn-warning"><i class="fas fa-check-double"></i> Kontrol Et</button>
+                    </div>
+                    <div class="backup-option-card">
+                        <h3><i class="fas fa-eraser"></i> Gereksiz Alan Temizleyici</h3>
+                        <p>Tüm raporlardan, artık kullanılmayan belirli bir veri alanını (ör: 'isSpecialVisit') kalıcı olarak temizler.</p>
+                        <button id="clean-field-btn" class="btn-warning"><i class="fas fa-broom"></i> Alan Temizleyiciyi Aç</button>
+                    </div>
+                </div>
+            </div>
+
             <input type="file" id="restore-file-input" accept=".json" style="display: none;">
             <input type="file" id="merge-file-input" accept=".json" style="display: none;" multiple>
         </div>
