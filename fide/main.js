@@ -536,6 +536,7 @@ function saveFormState(isFinalizing = false) {
     const reportData = getFormDataForSaving();
     const storeKey = `store_${selectedStore.bayiKodu}`;
     const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
+    const bayiKodu = String(selectedStore.bayiKodu); // Bayi kodunu al
 
     firebaseStoreRef.once('value').then(snapshot => {
         const existingReport = snapshot.val();
@@ -549,8 +550,43 @@ function saveFormState(isFinalizing = false) {
 
         const dataToSave = { timestamp: new Date().getTime(), data: reportData };
         firebaseStoreRef.set(dataToSave)
+            .then(() => {
+                // YENİ EKLENEN KOD BAŞLANGICI
+                if (isFinalizing) {
+                    removeStoreCodeFromRevertedList(bayiKodu);
+                }
+                // YENİ EKLENEN KOD BİTİŞİ
+            })
             .catch(error => console.error("Firebase'e yazma hatası:", error));
     });
+}
+
+// YENİ FONKSİYON
+async function removeStoreCodeFromRevertedList(bayiKodu) {
+    if (!auth.currentUser || !database) return;
+
+    const today = new Date();
+    const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
+    const geriAlinanlarRef = database.ref('denetimGeriAlinanlar');
+
+    try {
+        const snapshot = await geriAlinanlarRef.once('value');
+        let geriAlinanlar = snapshot.exists() ? snapshot.val() : {};
+
+        if (geriAlinanlar[currentMonthKey]) {
+            const index = geriAlinanlar[currentMonthKey].indexOf(bayiKodu);
+            if (index > -1) {
+                // Bayi kodunu diziden çıkar
+                geriAlinanlar[currentMonthKey].splice(index, 1);
+                
+                // Güncellenmiş listeyi Firebase'e yaz
+                await geriAlinanlarRef.set(geriAlinanlar);
+                console.log(`Bayi ${bayiKodu} geri alınanlar listesinden başarıyla çıkarıldı.`);
+            }
+        }
+    } catch (error) {
+        console.error("Geri alınanlar listesi güncellenirken hata oluştu:", error);
+    }
 }
 // ... (Diğer tüm mevcut fonksiyonlarınız burada değişmeden kalacak)
 // ... Bu fonksiyonların tamamını buraya kopyalamak yerine, sadece yeni eklenenleri ve değişiklikleri gösteriyorum.
