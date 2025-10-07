@@ -200,7 +200,6 @@ function setupEventListeners() {
     document.getElementById('analyze-orphan-reports-btn').addEventListener('click', analyzeOrphanReports);
     document.getElementById('check-consistency-btn').addEventListener('click', checkDataConsistency);
     document.getElementById('clean-field-btn').addEventListener('click', openFieldCleaner);
-    // YENİ EKLENEN BUTONUN OLAY DİNLEYİCİSİ
     document.getElementById('analyze-corrupt-reports-btn').addEventListener('click', analyzeCorruptReports);
 
     
@@ -532,7 +531,6 @@ async function cleanObsoleteField() {
     }
 }
 
-// --- YENİ EKLENEN BOZUK VERİ TEMİZLEME FONKSİYONLARI ---
 async function analyzeCorruptReports() {
     if (!backupReminder()) return;
     showModal(
@@ -553,10 +551,8 @@ async function analyzeCorruptReports() {
 
         for (const reportKey in allReports) {
             const report = allReports[reportKey];
-            // Bir raporun bozuk sayılması için 'data' objesinin veya 'data' içindeki 'questions_status' objesinin olmaması gerekir.
             if (!report.data || !report.data.questions_status) {
                 const bayiKodu = reportKey.replace('store_', '');
-                // Bayi adını bulmak için uniqueStores listesini kullanalım
                 const storeInfo = uniqueStores.find(s => s.bayiKodu == bayiKodu);
                 const bayiAdi = storeInfo ? storeInfo.bayiAdi : 'Bilinmeyen Bayi';
 
@@ -625,7 +621,6 @@ async function deleteSelectedCorruptReports() {
     }
 }
 
-
 // --- MEVCUT FONKSİYONLAR ---
 function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore || !auth.currentUser || !database) return;
@@ -633,7 +628,7 @@ function saveFormState(isFinalizing = false) {
     const reportData = getFormDataForSaving();
     const storeKey = `store_${selectedStore.bayiKodu}`;
     const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
-    const bayiKodu = String(selectedStore.bayiKodu); // Bayi kodunu al
+    const bayiKodu = String(selectedStore.bayiKodu);
 
     firebaseStoreRef.once('value').then(snapshot => {
         const existingReport = snapshot.val();
@@ -648,17 +643,14 @@ function saveFormState(isFinalizing = false) {
         const dataToSave = { timestamp: new Date().getTime(), data: reportData };
         firebaseStoreRef.set(dataToSave)
             .then(() => {
-                // YENİ EKLENEN KOD BAŞLANGICI
                 if (isFinalizing) {
                     removeStoreCodeFromRevertedList(bayiKodu);
                 }
-                // YENİ EKLENEN KOD BİTİŞİ
             })
             .catch(error => console.error("Firebase'e yazma hatası:", error));
     });
 }
 
-// YENİ FONKSİYON
 async function removeStoreCodeFromRevertedList(bayiKodu) {
     if (!auth.currentUser || !database) return;
 
@@ -673,10 +665,8 @@ async function removeStoreCodeFromRevertedList(bayiKodu) {
         if (geriAlinanlar[currentMonthKey]) {
             const index = geriAlinanlar[currentMonthKey].indexOf(bayiKodu);
             if (index > -1) {
-                // Bayi kodunu diziden çıkar
                 geriAlinanlar[currentMonthKey].splice(index, 1);
                 
-                // Güncellenmiş listeyi Firebase'e yaz
                 await geriAlinanlarRef.set(geriAlinanlar);
                 console.log(`Bayi ${bayiKodu} geri alınanlar listesinden başarıyla çıkarıldı.`);
             }
@@ -685,9 +675,6 @@ async function removeStoreCodeFromRevertedList(bayiKodu) {
         console.error("Geri alınanlar listesi güncellenirken hata oluştu:", error);
     }
 }
-// ... (Diğer tüm mevcut fonksiyonlarınız burada değişmeden kalacak)
-// ... Bu fonksiyonların tamamını buraya kopyalamak yerine, sadece yeni eklenenleri ve değişiklikleri gösteriyorum.
-// ... Lütfen bu yeni fonksiyonları mevcut main.js dosyanızın uygun yerlerine ekleyin veya dosyanın tamamını değiştirin.
 
 function loadReportForStore(bayiKodu) {
     const storeKey = `store_${bayiKodu}`;
@@ -1067,6 +1054,7 @@ function processFideExcelData(dataAsArray, saveToCloud = false, filename = '') {
     }
     populateFideState(processedData);
 }
+
 function populateDideState(data) {
     dideData = data;
     const storeMap = new Map();
@@ -1080,7 +1068,10 @@ function populateDideState(data) {
     document.getElementById('store-selection-area').style.display = 'block';
     document.getElementById('clear-storage-btn').style.display = 'inline-flex';
     document.getElementById('clear-excel-btn').style.display = 'inline-flex';
+
+    restoreLastSession();
 }
+
 function populateFideState(data) {
     fideData = data;
     document.getElementById('clear-fide-excel-btn').style.display = 'inline-flex';
@@ -1103,12 +1094,19 @@ function displayStores(stores) {
         storeListDiv.appendChild(item);
     });
 }
+
 function selectStore(store, loadSavedData = true) {
     document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
     const storeItem = document.querySelector(`.store-item[data-bayi-kodu="${store.bayiKodu}"]`);
     if (storeItem) storeItem.classList.add('selected');
     
     selectedStore = { bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi };
+    
+    const lastStoreState = {
+        bayiKodu: store.bayiKodu,
+        timestamp: new Date().getTime()
+    };
+    localStorage.setItem('lastSelectedStore', JSON.stringify(lastStoreState));
     
     const searchInput = document.getElementById('store-search-input');
     let shortBayiAdi = store.bayiAdi.length > 20 ? store.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
@@ -1130,7 +1128,7 @@ function generateEmail() {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
         return;
     }
-    saveFormState(true); // Raporu "tamamlandı" olarak işaretleyerek kaydet
+    saveFormState(true);
 
     const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
     const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
@@ -1313,7 +1311,9 @@ function startNewReport() {
     document.getElementById('store-search-input').value = '';
     resetForm();
     updateFormInteractivity(false);
+    localStorage.removeItem('lastSelectedStore');
 }
+
 function getFormDataForSaving() {
     let reportData = { selectedStore: selectedStore, questions_status: {} };
      fideQuestions.forEach(q => {
@@ -1343,7 +1343,7 @@ async function backupAllReports() {
         return alert('Yedekleme yapmak için giriş yapmalısınız.');
     }
     try {
-        const reportsRef = database.ref(); // Tüm veritabanını yedekle
+        const reportsRef = database.ref();
         const snapshot = await reportsRef.once('value');
         if (!snapshot.exists()) {
             return alert('Yedeklenecek veri bulunamadı.');
@@ -1403,7 +1403,6 @@ async function handleMergeUpload(event) {
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    // Beklenen format 'allFideReports' ise onu al, değilse dosyayı olduğu gibi kabul et
                     const reportData = data.allFideReports ? data.allFideReports : data;
                     resolve(reportData);
                 } catch (err) { reject(`'${file.name}' dosyası okunamadı.`); }
@@ -1425,7 +1424,6 @@ async function handleMergeUpload(event) {
                 }
             }
         });
-        // Birleştirilmiş veriyi 'allFideReports' anahtarı altına koy
         const finalMergedData = { allFideReports: mergedReports };
         const mergedDataStr = JSON.stringify(finalMergedData, null, 2);
         const blob = new Blob([mergedDataStr], { type: 'application/json;charset=utf-8' });
@@ -1465,4 +1463,23 @@ function updateFormInteractivity(enable) {
     inputs.forEach(input => {
         input.disabled = !enable;
     });
+}
+
+function restoreLastSession() {
+    const savedStateJSON = localStorage.getItem('lastSelectedStore');
+    if (!savedStateJSON) return;
+
+    const savedState = JSON.parse(savedStateJSON);
+    const now = new Date().getTime();
+    const twentyMinutes = 20 * 60 * 1000;
+
+    if ((now - savedState.timestamp) < twentyMinutes) {
+        const storeToSelect = uniqueStores.find(s => s.bayiKodu == savedState.bayiKodu);
+        if (storeToSelect) {
+            console.log(`20 dakikadan az süre geçtiği için son bayi (${storeToSelect.bayiAdi}) otomatik olarak seçiliyor.`);
+            selectStore(storeToSelect);
+        }
+    } else {
+        localStorage.removeItem('lastSelectedStore');
+    }
 }
