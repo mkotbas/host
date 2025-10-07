@@ -121,7 +121,7 @@ async function loadModule(moduleId) {
     try {
         // 1. HTML'i Yükle
         const htmlResponse = await fetch(`${module.path}${module.id}.html`);
-        if (!htmlResponse.ok) throw new Error(`${module.id}.html yüklenemedi`);
+        if (!htmlResponse.ok) throw new Error(`Dosya bulunamadı veya okunamadı: ${module.id}.html (HTTP ${htmlResponse.status})`);
         container.innerHTML = await htmlResponse.text();
 
         // 2. CSS'i Yükle (Eğer zaten yüklenmemişse)
@@ -135,7 +135,6 @@ async function loadModule(moduleId) {
         }
 
         // 3. JavaScript'i Yükle
-        // Önceki modülün script'ini kaldır (fonksiyon çakışmalarını önlemek için)
         const oldScript = document.getElementById('module-script');
         if (oldScript) oldScript.remove();
         
@@ -143,8 +142,6 @@ async function loadModule(moduleId) {
         script.id = 'module-script';
         script.src = `${module.path}${module.id}.js`;
         script.onload = () => {
-            // Script yüklendikten sonra, modülün başlatma fonksiyonunu çağır.
-            // Bu fonksiyonun modülün kendi .js dosyasında tanımlı olması gerekir.
             const initFunctionName = `initialize${module.id.charAt(0).toUpperCase() + module.id.slice(1)}Module`;
             if (typeof window[initFunctionName] === 'function') {
                 window[initFunctionName]();
@@ -155,8 +152,16 @@ async function loadModule(moduleId) {
         document.body.appendChild(script);
 
     } catch (error) {
+        // HATA MESAJINI DAHA DETAYLI GÖSTERMEK İÇİN BU BÖLÜMÜ GÜNCELLEDİK
         console.error("Modül yüklenirken hata oluştu:", error);
-        container.innerHTML = `<p style="color: var(--danger);">"${module.name}" yüklenirken bir hata oluştu. Lütfen konsolu kontrol edin.</p>`;
+        container.innerHTML = `
+            <div style="color: #fca5a5; background-color: #450a0a; border: 1px solid #991b1b; border-radius: 8px; padding: 15px;">
+                <p style="font-weight: bold; font-size: 16px;">"${module.name}" yüklenirken bir hata oluştu.</p>
+                <p style="font-size: 12px; margin-top: 10px; color: #fda4af;">Sunucunuzda dosya yolu, dosya izni veya başka bir konfigürasyon sorunu olabilir.</p>
+                <hr style="border-color: #991b1b; margin: 15px 0;">
+                <p style="font-size: 12px; font-family: monospace; color: #fecaca;"><b>Teknik Hata Detayı:</b><br>${error.toString()}</p>
+            </div>
+        `;
     }
 }
 
