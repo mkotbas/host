@@ -1,6 +1,7 @@
 // --- Global Değişkenler ---
 let isFirebaseConnected = false;
 let currentModuleScript = null; // Halihazırda yüklenmiş modül script'ini takip etmek için
+let currentModuleStyle = null; // Halihazırda yüklenmiş modül stilini takip etmek için
 
 // --- Ana Uygulama Mantığı ---
 window.onload = initializeAdminPanel;
@@ -9,16 +10,13 @@ window.onload = initializeAdminPanel;
  * Yönetim panelini başlatan ana fonksiyon.
  */
 async function initializeAdminPanel() {
-    // Firebase'in oturum bilgilerini yerel olarak saklamasını sağlar.
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-    // Kullanıcının giriş/çıkış durumundaki değişiklikleri dinler.
     auth.onAuthStateChanged(user => {
         updateAuthUI(user);
         setupEventListeners();
     });
 
-    // Firebase veritabanı bağlantı durumunu dinler.
     if (database) {
         const connectionRef = database.ref('.info/connected');
         connectionRef.on('value', (snapshot) => {
@@ -29,8 +27,7 @@ async function initializeAdminPanel() {
 }
 
 /**
- * Kullanıcının oturum durumuna göre arayüzü (butonlar, göstergeler) günceller.
- * @param {object|null} user - Firebase'den gelen kullanıcı nesnesi.
+ * Kullanıcının oturum durumuna göre arayüzü günceller.
  */
 function updateAuthUI(user) {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
@@ -64,8 +61,7 @@ function updateConnectionIndicator() {
 }
 
 /**
- * Sayfadaki tüm olay dinleyicilerini (buton tıklamaları vb.) ayarlar.
- * Sadece bir kere çalışmasını sağlamak için body'e bir işaret koyar.
+ * Olay dinleyicilerini ayarlar.
  */
 function setupEventListeners() {
     if (document.body.dataset.listenersAttached) return;
@@ -76,21 +72,17 @@ function setupEventListeners() {
     const loginSubmitBtn = document.getElementById('login-submit-btn');
     const loginPopup = document.getElementById('login-popup');
 
-    // Giriş yap butonuna tıklandığında açılır pencereyi göster/gizle
     loginToggleBtn.addEventListener('click', (event) => {
         event.stopPropagation();
         loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
     });
 
-    // Çıkış yap butonuna tıklandığında oturumu kapat ve sayfayı yenile
     logoutBtn.addEventListener('click', () => {
         auth.signOut().then(() => window.location.reload());
     });
 
-    // Açılır penceredeki onayla butonuna tıklandığında giriş yapmayı dene
     loginSubmitBtn.addEventListener('click', handleLogin);
 
-    // Açılır pencere dışına tıklandığında pencereyi kapat
     window.addEventListener('click', (event) => {
         const authControls = document.getElementById('auth-controls');
         if (authControls && !authControls.contains(event.target)) {
@@ -98,10 +90,9 @@ function setupEventListeners() {
         }
     });
 
-    // Sol menüdeki modül linklerine tıklama olaylarını ekle
     document.querySelectorAll('.nav-menu a[data-module]').forEach(link => {
         link.addEventListener('click', (e) => {
-            e.preventDefault(); // href="#"'in sayfayı yukarı kaydırmasını engelle
+            e.preventDefault();
             const moduleName = e.currentTarget.dataset.module;
             loadModule(moduleName, e.currentTarget);
         });
@@ -109,19 +100,17 @@ function setupEventListeners() {
 }
 
 /**
- * Kullanıcı adı ve şifre ile Firebase'e giriş yapmayı dener.
+ * Firebase'e giriş yapmayı dener.
  */
 function handleLogin() {
     const email = document.getElementById('email-input').value;
     const password = document.getElementById('password-input').value;
     const errorDiv = document.getElementById('login-error');
     errorDiv.textContent = '';
-
     if (!email || !password) {
         errorDiv.textContent = 'Lütfen tüm alanları doldurun.';
         return;
     }
-
     auth.signInWithEmailAndPassword(email, password)
         .then(() => {
             document.getElementById('login-popup').style.display = 'none';
@@ -134,43 +123,51 @@ function handleLogin() {
 }
 
 /**
- * Belirtilen modülün HTML ve JS dosyalarını dinamik olarak yükler.
- * @param {string} moduleName - Yüklenecek modülün adı (örn: "database-manager").
- * @param {HTMLElement} clickedLink - Tıklanan menü linki elemanı.
+ * Belirtilen modülün HTML, JS ve CSS dosyalarını dinamik olarak yükler.
  */
 async function loadModule(moduleName, clickedLink) {
     const contentArea = document.getElementById('module-content');
     
-    // Önceki modülün script'ini kaldırarak çakışmaları önle
+    // Önceki modülün script ve stil dosyalarını kaldırarak çakışmaları önle
     if (currentModuleScript) {
         document.body.removeChild(currentModuleScript);
         currentModuleScript = null;
     }
+    if (currentModuleStyle) {
+        document.head.removeChild(currentModuleStyle);
+        currentModuleStyle = null;
+    }
 
-    // Menüdeki aktif link stilini güncelle
     document.querySelectorAll('.nav-menu a.active').forEach(link => link.classList.remove('active'));
     clickedLink.classList.add('active');
 
-    // Modül dosyalarının yollarını belirle (Örn: database-manager -> database.html)
     const moduleBaseName = moduleName.split('-')[0];
     const htmlPath = `../modules/${moduleName}/${moduleBaseName}.html`;
     const jsPath = `../modules/${moduleName}/${moduleBaseName}.js`;
+    const cssPath = `../modules/${moduleName}/${moduleBaseName}.css`;
 
     contentArea.innerHTML = `<div class="placeholder"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Yükleniyor...</p></div>`;
 
     try {
+        // Modülün CSS dosyasını yükle
+        const styleLink = document.createElement('link');
+        styleLink.id = 'module-style';
+        styleLink.rel = 'stylesheet';
+        styleLink.href = cssPath;
+        document.head.appendChild(styleLink);
+        currentModuleStyle = styleLink;
+        
         // Modülün HTML içeriğini çek ve ekrana bas
         const response = await fetch(htmlPath);
         if (!response.ok) throw new Error(`HTML dosyası bulunamadı: ${response.statusText}`);
         const htmlContent = await response.text();
         contentArea.innerHTML = htmlContent;
 
-        // Modülün JavaScript dosyasını yeni bir script etiketi oluşturarak yükle ve çalıştır
-        // Bu yöntem, script'in doğru şekilde çalışmasını sağlar.
+        // Modülün JavaScript dosyasını yükle ve çalıştır
         const script = document.createElement('script');
         script.src = jsPath;
         script.onerror = () => { throw new Error('JS dosyası yüklenemedi.'); };
-        currentModuleScript = script; // Yeni script'i takip et
+        currentModuleScript = script;
         document.body.appendChild(script);
 
     } catch (error) {
