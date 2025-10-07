@@ -124,17 +124,16 @@ body {
 /* --- YENİ BAŞLIK BANDI STİLİ --- */
 .content-header {
     background-color: var(--bg-dark);
-    /* Yükseklik ayarı için dikey padding güncellendi */
     padding: 17px 25px; 
     border-bottom: 1px solid var(--border-color);
 }
 
 .content-header h2 {
-    max-width: 1600px;
-    margin: 0 auto;
+    /* Hizalama ve genişlik kodları kaldırıldı, ortalama eklendi */
     font-size: 22px;
     display: flex;
     align-items: center;
+    justify-content: center; /* Yazıyı ve ikonu tam ortalar */
     gap: 12px;
     color: var(--primary-text);
 }
