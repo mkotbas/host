@@ -1,40 +1,36 @@
-<div class="module-container">
+<div class="module-content-container">
     <div class="module-header">
-        <h1><i class="fas fa-database"></i> Veritabanı Ayarları</h1>
-        <p>Veritabanı sağlığını kontrol etmek ve bakım yapmak için aşağıdaki araçları kullanın.</p>
+        <h2><i class="fas fa-database"></i> Veritabanı Bakım Araçları</h2>
+        <p>Veritabanı sağlığını kontrol etmek, kalıntı verileri temizlemek ve tutarlılığı denetlemek için bu araçları kullanın.</p>
     </div>
 
-    <div class="module-content">
-        <div class="maintenance-grid">
-            
-            <div class="tool-card">
-                <i class="fas fa-user-slash tool-icon"></i>
-                <h3>Kalıntı Rapor Analizi</h3>
-                <p>Ana bayi listesinden silinmiş olmasına rağmen veritabanında kaydı kalmış olan "kalıntı" (orphan) raporları bulur ve silmenizi sağlar.</p>
-                <button id="analyze-orphan-reports-btn" class="btn-primary">Analizi Başlat</button>
-            </div>
+    <div class="tools-grid">
+        <div class="tool-card">
+            <i class="fas fa-user-slash tool-icon"></i>
+            <h3>Kalıntı Raporları Analizi</h3>
+            <p>Ana bayi listesinde artık var olmayan bayilere ait eski rapor kayıtlarını bulur ve silme imkanı sunar.</p>
+            <button id="analyze-orphan-reports-btn" class="btn-primary"><i class="fas fa-search"></i> Analizi Başlat</button>
+        </div>
 
-            <div class="tool-card">
-                <i class="fas fa-heart-crack tool-icon"></i>
-                <h3>Bozuk Rapor Analizi</h3>
-                <p>İçeriği boş veya yapısı bozulmuş olan "hayalet" raporları tespit eder. Bu raporlar hatalara neden olabilir.</p>
-                <button id="analyze-corrupt-reports-btn" class="btn-primary">Analizi Başlat</button>
-            </div>
+        <div class="tool-card">
+            <i class="fas fa-heart-crack tool-icon"></i>
+            <h3>Bozuk/Hayalet Rapor Taraması</h3>
+            <p>İçeriği boş veya hatalı yapıdaki "hayalet" raporları tespit eder. Bu raporlar sistemsel hatalara yol açabilir.</p>
+            <button id="analyze-corrupt-reports-btn" class="btn-primary"><i class="fas fa-ghost"></i> Taramayı Başlat</button>
+        </div>
+        
+        <div class="tool-card">
+            <i class="fas fa-check-double tool-icon"></i>
+            <h3>Veri Tutarlılığı Kontrolü</h3>
+            <p>Bayi ana listesi ile bayi e-posta listesi arasındaki uyuşmazlıkları (eksik veya fazla kayıtları) raporlar.</p>
+            <button id="check-consistency-btn" class="btn-primary"><i class="fas fa-sync-alt"></i> Kontrol Et</button>
+        </div>
 
-            <div class="tool-card">
-                <i class="fas fa-check-double tool-icon"></i>
-                <h3>Veri Tutarlılığı Kontrolü</h3>
-                <p>Bayi ana listesi ile bayi e-posta listesi arasındaki uyuşmazlıkları (örn: e-postası eksik bayi) raporlar.</p>
-                <button id="check-consistency-btn" class="btn-primary">Kontrol Et</button>
-            </div>
-            
-            <div class="tool-card">
-                <i class="fas fa-broom tool-icon"></i>
-                <h3>Gereksiz Alan Temizleyici</h3>
-                <p>Tüm raporlardan, artık kullanılmayan eski bir veri alanını (örn: "isSpecialVisit") toplu olarak temizler.</p>
-                <button id="clean-field-btn" class="btn-warning">Temizleyiciyi Aç</button>
-            </div>
-
+        <div class="tool-card warning-card">
+            <i class="fas fa-broom tool-icon"></i>
+            <h3>Gereksiz Alan Temizleyici</h3>
+            <p>Tüm raporlardan, belirttiğiniz bir alan adını (örneğin eski bir özellikten kalan veri) kalıcı olarak temizler.</p>
+            <button id="clean-field-btn" class="btn-danger"><i class="fas fa-eraser"></i> Temizleyiciyi Aç</button>
         </div>
     </div>
 </div>
@@ -45,10 +41,8 @@
             <h3 id="modal-title">Modal Başlığı</h3>
         </div>
         <div class="modal-body" id="modal-body">
-            <p>Modal içeriği buraya gelecek...</p>
-        </div>
+            </div>
         <div class="modal-footer" id="modal-footer">
-            <button class="btn-secondary" onclick="hideModal()">Kapat</button>
-        </div>
+            </div>
     </div>
 </div>
