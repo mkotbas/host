@@ -186,12 +186,6 @@ function setupEventListeners() {
     document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
     
-    // YÖNETİM PANELİ BUTONU GÜNCELLENDİ
-    document.getElementById('toggle-backup-manager-btn').addEventListener('click', () => {
-        // Yeni admin panelini yeni bir sekmede açar.
-        window.open('admin/admin.html', '_blank');
-    });
-    
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
         const dogruSifreHash = 'ZmRlMDAx';
         const girilenSifre = prompt("Bu işlem geri alınamaz. Buluttaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
@@ -285,10 +279,15 @@ function setupEventListeners() {
             loginPopup.style.display = 'none';
         }
     });
+
+    // YÖNETİM PANELİ BUTONU GÜNCELLENDİ
+    document.getElementById('toggle-backup-manager-btn').addEventListener('click', () => {
+        // Yeni admin panelini yeni bir sekmede açar.
+        window.open('admin/admin.html', '_blank');
+    });
 }
 
-// --- VERİ BAKIM ARAÇLARI FONKSİYONLARI VE İLGİLİ DİĞER FONKSİYONLAR BURADAN KALDIRILDI ---
-// --- BU FONKSİYONLAR ARTIK modules/veritabani/veritabani.js İÇİNDE YER ALIYOR ---
+// --- VERİ BAKIM ARAÇLARI FONKSİYONLARI BU BÖLÜMDEN TAMAMEN KALDIRILDI ---
 
 // --- MEVCUT FONKSİYONLAR ---
 function saveFormState(isFinalizing = false) {
@@ -297,7 +296,7 @@ function saveFormState(isFinalizing = false) {
     const reportData = getFormDataForSaving();
     const storeKey = `store_${selectedStore.bayiKodu}`;
     const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
-    const bayiKodu = String(selectedStore.bayiKodu);
+    const bayiKodu = String(selectedStore.bayiKodu); // Bayi kodunu al
 
     firebaseStoreRef.once('value').then(snapshot => {
         const existingReport = snapshot.val();
@@ -335,6 +334,7 @@ async function removeStoreCodeFromRevertedList(bayiKodu) {
             const index = geriAlinanlar[currentMonthKey].indexOf(bayiKodu);
             if (index > -1) {
                 geriAlinanlar[currentMonthKey].splice(index, 1);
+                
                 await geriAlinanlarRef.set(geriAlinanlar);
                 console.log(`Bayi ${bayiKodu} geri alınanlar listesinden başarıyla çıkarıldı.`);
             }
@@ -785,7 +785,7 @@ function generateEmail() {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
         return;
     }
-    saveFormState(true); 
+    saveFormState(true); // Raporu "tamamlandı" olarak işaretleyerek kaydet
 
     const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
     const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
@@ -998,7 +998,7 @@ async function backupAllReports() {
         return alert('Yedekleme yapmak için giriş yapmalısınız.');
     }
     try {
-        const reportsRef = database.ref();
+        const reportsRef = database.ref(); // Tüm veritabanını yedekle
         const snapshot = await reportsRef.once('value');
         if (!snapshot.exists()) {
             return alert('Yedeklenecek veri bulunamadı.');
@@ -1058,6 +1058,7 @@ async function handleMergeUpload(event) {
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
+                    // Beklenen format 'allFideReports' ise onu al, değilse dosyayı olduğu gibi kabul et
                     const reportData = data.allFideReports ? data.allFideReports : data;
                     resolve(reportData);
                 } catch (err) { reject(`'${file.name}' dosyası okunamadı.`); }
@@ -1079,6 +1080,7 @@ async function handleMergeUpload(event) {
                 }
             }
         });
+        // Birleştirilmiş veriyi 'allFideReports' anahtarı altına koy
         const finalMergedData = { allFideReports: mergedReports };
         const mergedDataStr = JSON.stringify(finalMergedData, null, 2);
         const blob = new Blob([mergedDataStr], { type: 'application/json;charset=utf-8' });
