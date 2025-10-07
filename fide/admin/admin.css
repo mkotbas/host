@@ -140,10 +140,10 @@ body {
 }
 
 .content-body {
-    background-color: var(--bg-dark);
+    background-color: #e9e9e9; /* İsteğiniz üzerine arka plan rengi değiştirildi */
     padding: 20px;
     border-radius: 8px;
-    color: var(--secondary-text);
+    color: #1e293b; /* Okunabilirlik için yazı rengi koyu yapıldı */
 }
 
 
