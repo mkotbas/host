@@ -157,7 +157,6 @@ async function loadExcelData() {
     }
 }
 
-
 function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
@@ -177,11 +176,15 @@ function returnToMainPage() {
 }
 
 function setupEventListeners() {
+    // Bu kontrol, olay dinleyicilerinin birden fazla kez eklenmesini önler.
     if (document.body.dataset.listenersAttached) return;
     document.body.dataset.listenersAttached = 'true';
 
     document.getElementById('excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'dide'));
     document.getElementById('fide-excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'fide'));
+    
+    // Not: "backup-manager" içindeki butonların event listener'ları kaldırılmıştır.
+    // Sadece ana sayfada görünen butonlar kalmıştır.
     document.getElementById('backup-btn').addEventListener('click', backupAllReports);
     document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
     document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
@@ -281,8 +284,8 @@ function setupEventListeners() {
         }
     });
 
+    // YÖNETİM PANELİ BUTONU GÜNCELLENDİ
     document.getElementById('toggle-backup-manager-btn').addEventListener('click', () => {
-        // ESKİ KOD SİLİNDİ, YENİ KOD EKLENDİ
         // Bu kod, yeni admin panelini yeni bir sekmede açar.
         window.open('admin/admin.html', '_blank');
     });
@@ -291,7 +294,7 @@ function setupEventListeners() {
 // --- VERİ BAKIM ARAÇLARI FONKSİYONLARI (BU BÖLÜMÜN TAMAMI SİLİNDİ) ---
 
 
-// --- MEVCUT FONKSİYONLAR ---
+// --- DİĞER TÜM FONKSİYONLAR DEĞİŞMEDEN KALDI ---
 function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore || !auth.currentUser || !database) return;
 
@@ -1124,4 +1127,5 @@ function updateFormInteractivity(enable) {
     });
 }
 }
-Soru Yöneticisi ve Bayi Yöneticisi butonları kalsın. Yönetim paneli butonunu admin paneli olarak değiştir.
+bu dosyayı da eski haline çevir. bu dosya yedekleme ve veri bakım araçlarını barındıracak.
+Kısacası, en başa dönelim. bu index dosyası kalsın ve main.js dosyasını da ilk verdiğim haline geri çevir. Hiçbir değişiklik yapma. Sadece bu index dosyasına Soru Yöneticisi ve Bayi Yöneticisi butonlarının yanına bir de admin paneli butonu ekle. Bu buton admin/admin.html dosyasını açacak. Tüm fonksiyonlar (yedekleme, veri bakım vb.) bu index dosyasında kalacak.
