@@ -1,0 +1,213 @@
+/* --- Kök Değişkenler ve Genel Stiller --- */
+:root {
+    --sidebar-bg: #1e293b; /* Koyu lacivert */
+    --main-bg: #111827; /* Çok koyu gri */
+    --accent-color: #0d9488; /* Turkuaz */
+    --accent-color-hover: #14b8a6;
+    --text-color: #e2e8f0; /* Açık gri */
+    --text-muted: #94a3b8; /* Orta gri */
+    --border-color: #334155;
+    --success-color: #22c55e;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --primary-color: #3b82f6;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body, html {
+    height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--main-bg);
+    color: var(--text-color);
+    font-size: 16px;
+}
+
+/* --- Ana Panel Yapısı --- */
+.admin-container {
+    display: flex;
+    height: 100%;
+}
+
+/* --- Sol Menü (Sidebar) --- */
+.sidebar {
+    width: 260px;
+    background-color: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 1px solid var(--border-color);
+    padding: 1rem 0;
+}
+
+.sidebar-header h1 {
+    font-size: 1.25rem;
+    color: var(--text-color);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-header h1 i {
+    margin-right: 10px;
+    color: var(--accent-color);
+}
+
+.nav-menu {
+    list-style: none;
+    flex-grow: 1;
+}
+
+.nav-menu li a {
+    display: flex;
+    align-items: center;
+    padding: 0.9rem 1.5rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: background-color 0.2s, color 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.nav-menu li a:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+}
+
+.nav-menu li a.active {
+    background-color: rgba(13, 148, 136, 0.2); /* Accent color with transparency */
+    color: var(--text-color);
+    font-weight: 500;
+    border-left: 3px solid var(--accent-color);
+}
+
+.nav-menu li a i {
+    width: 30px;
+    text-align: center;
+    margin-right: 10px;
+    font-size: 0.9rem;
+}
+
+
+/* --- Ana İçerik Alanı --- */
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+#module-content .placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+#module-content .placeholder i {
+    color: var(--border-color);
+    margin-bottom: 1rem;
+}
+
+/* --- Bağlantı ve Giriş Kontrolleri --- */
+.connection-controls {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+#connection-status-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+#connection-status-switch {
+    width: 40px;
+    height: 20px;
+    background-color: var(--border-color);
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    margin-right: 10px;
+}
+#connection-status-switch .thumb {
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s ease-in-out;
+}
+#connection-status-switch.connected { background-color: var(--success-color); }
+#connection-status-switch.connected .thumb { transform: translateX(20px); }
+
+#connection-status-text {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+#auth-controls {
+    position: relative;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    width: 100%;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-success { background-color: var(--success-color); }
+.btn-danger { background-color: var(--danger-color); }
+.btn-primary { background-color: var(--primary-color); }
+
+#login-popup {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 0;
+    width: 100%;
+    background-color: var(--sidebar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 1rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+#login-popup h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+#login-popup input {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--main-bg);
+    color: var(--text-color);
+}
+#login-popup #login-submit-btn { margin-top: 0.5rem; }
+#login-error {
+    color: var(--danger-color);
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    text-align: center;
+}
