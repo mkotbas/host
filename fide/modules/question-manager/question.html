@@ -1,0 +1,97 @@
+<div class="card" id="question-manager">
+    <h2>
+        <i class="fas fa-edit"></i> FiDe Soru Yöneticisi
+    </h2>
+    <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+        <i class="fas fa-info-circle"></i> Buradan FİDE sorularını ve ürün listesini düzenleyebilirsiniz. <b>Kaydet</b> tuşuna bastığınızda tüm değişiklikler anında buluta kaydedilecek ve sayfa yenilenecektir.
+    </p>
+    <div class="manager-actions">
+        <div class="manager-view-controls">
+            <button id="view-active-btn" class="btn-primary btn-sm active"><i class="fas fa-check-circle"></i> Aktif Sorular</button>
+            <button id="view-archived-btn" class="btn-warning btn-sm"><i class="fas fa-archive"></i> Arşivlenmiş Sorular</button>
+        </div>
+        <div class="manager-main-actions">
+            <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Soru Ekle</button>
+            <button id="open-scenario-system-btn" class="btn-primary btn-sm" title="Sık yapılan değişiklikleri otomatikleştirmek için hazır senaryoları kullanın."><i class="fas fa-magic"></i> Hazır Senaryo Sistemi</button>
+            <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenle</button>
+            <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Arşivi Sil</button>
+            <button id="restore-all-archived-btn" class="btn-success btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları aktif hale getirir."><i class="fas fa-undo"></i> Arşivi Geri Yükle</button>
+            <button id="save-questions-btn" class="btn-success btn-sm"><i class="fas fa-save"></i>Kaydet</button>
+        </div>
+    </div>
+    <div id="manager-list"></div>
+    
+    <div id="migration-manager-overlay" class="modal-overlay" style="display: none;">
+        <div class="modal-panel">
+            <div class="modal-header">
+                 <h3><i class="fas fa-ruler-combined"></i> Yönlendirme Kuralları</h3>
+                <p>
+                    Burada, "Hazır Senaryo Sistemi" ile oluşturulmuş ID yönlendirme kurallarını görebilir ve silebilirsiniz. Yeni kural eklemek için "Hazır Senaryo Sistemi"ni kullanın.
+                </p>
+            </div>
+            <div class="modal-body">
+                <h4>Mevcut Yönlendirmeler</h4>
+                <ul id="migration-list-container" class="migration-list">
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button id="close-migration-manager-btn" class="btn-danger btn-sm">Paneli Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scenario-system-overlay" class="modal-overlay" style="display: none;">
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h3><i class="fas fa-magic"></i> Hazır Senaryo Sistemi</h3>
+                <p>Sık yapılan işlemleri otomatikleştirmek için bir senaryo seçin. Sistem gerekli adımları sizin için atacaktır.</p>
+            </div>
+            <div class="modal-body">
+                <div class="scenario-selection">
+                    <div class="scenario-group">
+                        <button class="scenario-btn" data-scenario="id-change">
+                            <i class="fas fa-random"></i>
+                            <span>Bir Sorunun Numarası (ID) Değişti</span>
+                            <small>ID'yi günceller ve yönlendirme ekler.</small>
+                        </button>
+                        <button id="open-migration-manager-from-scenario-btn" class="scenario-related-btn" title="Mevcut ID yönlendirme kurallarını görüntüleyin veya silin.">
+                            <i class="fas fa-ruler-combined"></i>
+                            <span>Yönlendirmeler</span>
+                        </button>
+                    </div>
+                    <button class="scenario-btn" data-scenario="delete-question">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Bir Soruyu Kalıcı Olarak Sil</span>
+                        <small>Soruyu ve tüm raporlardaki cevaplarını siler.</small>
+                    </button>
+                </div>
+                <div id="scenario-id-change-form" class="scenario-form" style="display: none;">
+                    <h4>Senaryo: Soru Numarası Değişikliği</h4>
+                    <div class="migration-form">
+                        <input type="number" id="scenario-old-id" placeholder="Eski Soru ID">
+                        <i class="fas fa-long-arrow-alt-right"></i>
+                        <input type="number" id="scenario-new-id" placeholder="Yeni Soru ID">
+                    </div>
+                    <button id="apply-id-change-btn" class="btn-success"><i class="fas fa-check"></i> Değişikliği Uygula</button>
+                </div>
+                <div id="scenario-delete-question-form" class="scenario-form" style="display: none;">
+                    <h4>Senaryo: Soruyu Kalıcı Olarak Sil</h4>
+                    <p class="product-manager-info" style="border-color: var(--danger); background-color: #fee2e2;">
+                        <i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i>
+                        <strong>UYARI:</strong> Bu işlem geri alınamaz. Soru ve bu soruya ait <strong>TÜM</strong> bayi raporlarındaki cevaplar kalıcı olarak silinecektir.
+                    </p>
+                    <div class="migration-form">
+                        <input type="number" id="scenario-delete-id" placeholder="Silinecek Soru ID">
+                    </div>
+                    <div id="scenario-delete-preview" style="margin-bottom: 15px; padding: 10px; background-color: var(--light); border-radius: 6px; min-height: 40px; font-style: italic; color: var(--secondary);">
+                        Lütfen silmek istediğiniz sorunun ID'sini girin.
+                    </div>
+                    <button id="apply-delete-question-btn" class="btn-danger"><i class="fas fa-trash-alt"></i> Soruyu ve Tüm Cevaplarını Sil</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="close-scenario-system-btn" class="btn-danger btn-sm">Paneli Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
