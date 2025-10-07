@@ -4,7 +4,6 @@ const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular 
 let currentManagerView = 'active'; 
 
 // --- MODÜL BAŞLATMA FONKSİYONU ---
-// Bu fonksiyon, modül admin paneline yüklendiğinde admin.js tarafından çağrılır.
 async function initializeSoruYoneticisiModule() {
     await loadInitialData();
     setupModuleEventListeners();
@@ -29,9 +28,11 @@ async function loadMigrationMap() {
     }
 }
 
+// --- TEŞHİS İÇİN GÜNCELLENEN FONKSİYON ---
 async function loadInitialData() {
     await loadMigrationMap();
     let questionsLoaded = false;
+    alert("1. Adım: Soru verileri buluttan çekilmeye başlanıyor...");
 
     if (auth.currentUser && database) {
         try {
@@ -39,21 +40,35 @@ async function loadInitialData() {
             const snapshot = await questionsRef.once('value');
             if (snapshot.exists()) {
                 const cloudData = snapshot.val();
-                fideQuestions = cloudData.questions || [];
-                productList = cloudData.productList || [];
-                console.log("Sorular ve ürün listesi başarıyla buluttan yüklendi.");
-                questionsLoaded = true;
+                // Gelen verinin içinde 'questions' anahtarı var mı ve bir dizi mi diye kontrol ediyoruz.
+                if (cloudData && Array.isArray(cloudData.questions)) {
+                    fideQuestions = cloudData.questions;
+                    productList = cloudData.productList || [];
+                    questionsLoaded = true;
+                    alert(`2. Adım: Başarılı! Bulutta veri bulundu ve içinde ${fideQuestions.length} adet soru mevcut.`);
+                } else {
+                    alert("2. Adım: HATA! Bulutta 'fideQuestionsData' bulundu ancak içinde beklenen formatta ('questions' listesi) veri yok.");
+                    fideQuestions = fallbackFideQuestions;
+                }
+            } else {
+                 alert("2. Adım: HATA! Bulutta 'fideQuestionsData' yolu bulunamadı. Veritabanı boş veya yol yanlış olabilir.");
+                 fideQuestions = fallbackFideQuestions;
             }
         } catch (error) {
             console.error("Firebase'den soru verisi okunurken hata oluştu:", error);
+            alert(`2. Adım: KRİTİK HATA! Firebase'den veri okunurken bir hata oluştu: ${error.message}`);
+            fideQuestions = fallbackFideQuestions;
         }
+    } else {
+        alert("Bulut bağlantısı veya kullanıcı girişi olmadığı için soru verileri çekilemedi.");
+        fideQuestions = fallbackFideQuestions;
     }
     
-    if (!questionsLoaded) {
-        fideQuestions = fallbackFideQuestions;
-        alert("Soru listesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin ve sisteme giriş yaptığınızdan emin olun.");
+    if (!questionsLoaded && fideQuestions.length === 0) {
+        alert("Sonuç: Soru listesi yüklenemedi.");
     }
 }
+
 
 function setupModuleEventListeners() {
     // Bu fonksiyon sadece bir kere çalışmalı.
@@ -112,6 +127,9 @@ function setupModuleEventListeners() {
     document.getElementById('apply-delete-question-btn').addEventListener('click', applyDeleteQuestionScenario);
 }
 
+// Geri kalan tüm fonksiyonlar aynı, burada tekrar listelemeye gerek yok...
+// ... (Diğer tüm fonksiyonlar değişmeden kalır) ...
+
 function openScenarioSystem() {
     document.getElementById('scenario-system-overlay').style.display = 'flex';
     document.querySelector('.scenario-selection').style.display = 'flex';
@@ -134,8 +152,6 @@ function selectScenario(scenario) {
         document.getElementById('scenario-delete-question-form').style.display = 'block';
     }
 }
-
-// --- AKILLI ID DEĞİŞTİRME VE TAKAS SİSTEMİ ---
 
 async function migrateQuestionData(oldId, newId) {
     const loadingOverlay = document.getElementById('loading-overlay');
