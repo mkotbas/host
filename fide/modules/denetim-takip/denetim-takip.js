@@ -7,28 +7,24 @@ let geriAlinanBayiKodlariBuYil = [];
 let aylikHedef = 47;
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
-// --- Ana Uygulama Mantığı ---
-window.onload = initializeApp;
-
-async function initializeApp() {
-    setupEventListeners();
+// --- MODÜL BAŞLATMA FONKSİYONU ---
+async function initializeDenetimTakipModule() {
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
+
+    if (auth.currentUser) {
+        setupModuleEventListeners();
+        await loadSettings();
+        await loadGeriAlinanBayiler();
+        await loadAuditedStoresData();
+        await loadStoreList(); // Bu fonksiyon içinde runDashboard() çağrılıyor.
+    } else {
+        console.log("Verileri yüklemek için lütfen giriş yapın.");
+        document.getElementById('upload-area').innerHTML = '<p style="text-align: center; color: var(--danger);">Denetim takip sistemini kullanmak için lütfen sisteme giriş yapın.</p>';
+        document.getElementById('upload-area').style.display = 'block';
+    }
     
-    // Auth durumunu bekleyip, giriş yapılmışsa verileri yükle
-    auth.onAuthStateChanged(async user => {
-        if (user) {
-            await loadSettings();
-            await loadGeriAlinanBayiler();
-            await loadAuditedStoresData();
-            await loadStoreList();
-        } else {
-            console.log("Verileri yüklemek için lütfen giriş yapın.");
-            document.getElementById('upload-area').innerHTML = '<p style="text-align: center; color: var(--danger);">Denetim takip sistemini kullanmak için lütfen Ana Sayfa\'dan sisteme giriş yapın.</p>';
-            document.getElementById('upload-area').style.display = 'block';
-        }
-        loadingOverlay.style.display = 'none';
-    });
+    loadingOverlay.style.display = 'none';
 }
 
 async function loadSettings() {
@@ -156,7 +152,10 @@ async function loadAuditedStoresData() {
     }
 }
 
-function setupEventListeners() {
+function setupModuleEventListeners() {
+    if (document.body.dataset.denetimTakipListenersAttached) return;
+    document.body.dataset.denetimTakipListenersAttached = 'true';
+
     document.getElementById('open-admin-panel-btn').addEventListener('click', () => {
         document.getElementById('admin-panel-overlay').style.display = 'flex';
     });
@@ -165,12 +164,8 @@ function setupEventListeners() {
     });
     document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
     document.getElementById('store-list-excel-input').addEventListener('change', handleStoreExcelUpload);
-    
-    const deleteExcelBtn = document.getElementById('delete-excel-btn');
-    if(deleteExcelBtn) deleteExcelBtn.addEventListener('click', deleteStoreList);
-    
-    const resetDataBtn = document.getElementById('reset-data-btn');
-    if(resetDataBtn) resetDataBtn.addEventListener('click', resetProgress); 
+    document.getElementById('delete-excel-btn').addEventListener('click', deleteStoreList);
+    document.getElementById('reset-data-btn').addEventListener('click', resetProgress); 
 
     document.getElementById('bolge-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('yonetmen-filter').addEventListener('change', applyAndRepopulateFilters);
@@ -266,7 +261,7 @@ async function deleteStoreList() {
         alert("Hatalı şifre! İşlem iptal edildi.");
         return;
     }
-    if (confirm("Şifre doğru. Excel bayi listesini buluttan kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem sonrası yeni bir liste yüklemeniz gerekecektir.")) {
+    if (confirm("Şifre doğru. Excel bayi listesini buluttan kalıcı olarak silmek istediğinizden emin misiniz?")) {
         await database.ref('tumBayilerListesi').remove();
         alert("Bayi listesi başarıyla silindi. Sayfa yeniden başlatılıyor.");
         window.location.reload();
@@ -277,7 +272,7 @@ async function revertAudit(bayiKodu) {
     if (!auth.currentUser || !database) return alert("Bu işlem için giriş yapmalısınız.");
     const store = allStores.find(s => s.bayiKodu === bayiKodu);
     const storeName = store ? store.bayiAdi : bayiKodu;
-    if (confirm(`'${storeName}' bayisinin bu ayki denetimini listeden kaldırmak istediğinizden emin misiniz?\n\n(Not: Bu işlem raporu silmez, sadece bu listeden gizler ve sayaçları günceller.)`)) {
+    if (confirm(`'${storeName}' bayisinin bu ayki denetimini listeden kaldırmak istediğinizden emin misiniz?`)) {
         const loadingOverlay = document.getElementById('loading-overlay');
         loadingOverlay.style.display = 'flex';
         try {
@@ -314,8 +309,7 @@ function handleStoreExcelUpload(event) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
             const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
             processStoreExcelData(dataAsArray);
         } catch (error) {
@@ -357,7 +351,6 @@ async function processStoreExcelData(dataAsArray) {
 
 function calculateAndDisplayDashboard() {
     const today = new Date();
-    const currentYear = today.getFullYear();
     const auditedMonthlyCount = auditedStoreCodesCurrentMonth.length;
     const remainingToTarget = aylikHedef - auditedMonthlyCount;
     const remainingWorkDays = getRemainingWorkdays();
@@ -365,22 +358,20 @@ function calculateAndDisplayDashboard() {
     const auditedYearlyCount = auditedStoreCodesCurrentYear.length;
     const annualProgress = totalStores > 0 ? (auditedYearlyCount / totalStores) * 100 : 0;
     
-    document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-calendar-day"></i> ${currentYear} ${monthNames[today.getMonth()]} Ayı Performansı`;
+    document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-calendar-day"></i> ${today.getFullYear()} ${monthNames[today.getMonth()]} Ayı Performansı`;
     document.getElementById('work-days-count').textContent = remainingWorkDays;
     document.getElementById('total-stores-count').textContent = aylikHedef;
     document.getElementById('audited-stores-count').textContent = auditedMonthlyCount;
     document.getElementById('remaining-stores-count').textContent = remainingToTarget > 0 ? remainingToTarget : 0;
     
-    const annualIndicator = document.getElementById('annual-performance-indicator');
-    annualIndicator.innerHTML = `
+    document.getElementById('annual-performance-indicator').innerHTML = `
         <div class="annual-header">
-             <h4><i class="fas fa-calendar-alt"></i> ${currentYear} Yıllık Hedef</h4>
+             <h4><i class="fas fa-calendar-alt"></i> ${today.getFullYear()} Yıllık Hedef</h4>
              <p class="annual-progress-text">${auditedYearlyCount} / ${totalStores}</p>
         </div>
         <div class="progress-bar">
             <div class="progress-bar-fill" style="width: ${annualProgress.toFixed(2)}%; background-color: var(--primary);">${annualProgress.toFixed(0)}%</div>
-        </div>
-    `;
+        </div>`;
 
     renderAuditedStores();
     document.getElementById('dashboard-content').style.display = 'block';
