@@ -4,85 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yönetim Paneli</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
     <style id="module-styles"></style>
 </head>
 <body>
-    <div class="panel-container">
-        <aside class="sidebar">
+    <div class="admin-layout">
+        <nav class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-tools"></i> Yönetim Paneli</h2>
+                <h1>Yönetim Paneli</h1>
             </div>
-            <nav class="sidebar-nav">
-                <ul>
-                    <li>
-                        <a href="#" class="nav-link active" data-module="database">
-                            <i class="fas fa-database"></i>
-                            <span>Veritabanı Ayarları</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="nav-link" data-module="questions">
-                            <i class="fas fa-question-circle"></i>
-                            <span>Soru Yöneticisi</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="nav-link" data-module="stores">
-                            <i class="fas fa-store"></i>
-                            <span>Bayi Yöneticisi</span>
-                        </a>
-                    </li>
-                     <li>
-                        <a href="#" class="nav-link" data-module="email">
-                            <i class="fas fa-envelope"></i>
-                            <span>E-posta Yöneticisi</span>
-                        </a>
-                    </li>
+            <ul class="module-menu" id="module-menu">
                 </ul>
-            </nav>
             <div class="sidebar-footer">
-                <a href="../index.html" class="nav-link back-link">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Ana Sayfaya Dön</span>
-                </a>
-                <div id="connection-status-container">
-                    <span id="connection-status-text">Bağlanıyor...</span>
-                    <div id="connection-status-switch" class="disconnected">
-                        <div class="thumb"></div>
+                <div id="auth-controls">
+                    <div id="connection-status-container">
+                        <div id="connection-status-switch" class="disconnected">
+                            <div class="thumb"></div>
+                        </div>
+                        <span id="connection-status-text">Bağlı Değil</span>
+                    </div>
+                    <button id="login-toggle-btn" class="login-btn"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
+                    <button id="logout-btn" class="logout-btn" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
+                    
+                    <div id="login-popup">
+                        <h3><i class="fas fa-lock"></i> Yönetici Girişi</h3>
+                        <input type="email" id="email-input" placeholder="E-posta Adresi">
+                        <input type="password" id="password-input" placeholder="Şifre">
+                        <button id="login-submit-btn">Giriş Yap</button>
+                        <div id="login-error"></div>
                     </div>
                 </div>
-                <button id="login-toggle-btn" class="auth-btn"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
-                <button id="logout-btn" class="auth-btn" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
             </div>
-            <div id="login-popup">
-                <h3>Yönetici Girişi</h3>
-                <input type="email" id="email-input" placeholder="E-posta Adresi">
-                <input type="password" id="password-input" placeholder="Şifre">
-                <button id="login-submit-btn">Giriş Yap</button>
-                <div id="login-error"></div>
-            </div>
-        </aside>
-
+        </nav>
         <main class="main-content">
-            <header class="content-header">
-                <h1 id="module-title">Modül Yöneticisi</h1>
-            </header>
-            <section id="module-content">
-                <div class="placeholder">
-                    <i class="fas fa-cogs fa-3x"></i>
-                    <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
-                </div>
-            </section>
+            <div class="module-header" id="module-header">
+                <i class="fas fa-cogs"></i>
+                <h2 id="module-title">Modül Yöneticisi</h2>
+            </div>
+            <div class="module-body" id="module-body">
+                <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
+            </div>
         </main>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="../firebase-config.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-
-    <script src="admin.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    
+    <script src="../firebase-config.js"></script> <script src="admin.js"></script>
+    
+    <script id="module-script"></script>
 </body>
 </html>
