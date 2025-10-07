@@ -118,8 +118,8 @@ body {
 .main-content {
     flex-grow: 1;
     padding: 25px;
-    /* Ana arkaplan rengi en koyu tona ayarlandı */
-    background-color: var(--sidebar-bg, #111827); 
+    /* Ana arkaplan rengi orta tona ayarlandı */
+    background-color: var(--bg-dark-accent, #2c3a4f); 
 }
 
 .content-header {
@@ -139,7 +139,7 @@ body {
 .content-body {
     /* Bu alan artık şeffaf, arkaplanı main-content'ten alacak */
     background-color: transparent; 
-    padding: 0; /* İç boşlukları modüllerin kendi stilleri yönetecek */
+    padding: 0;
     border-radius: 0;
     color: var(--secondary-text);
 }
@@ -171,7 +171,7 @@ body {
     border-radius: 12px;
     position: relative;
     cursor: default;
-    transition: background-color 0.4s ease;
+    transition: background-color: 0.4s ease;
 }
 
 #connection-status-switch .thumb {
