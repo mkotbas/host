@@ -1,13 +1,14 @@
 :root {
-    --bg-dark: #1e293b;
-    --bg-dark-accent: #2c3a4f;
-    --sidebar-bg: #111827;
-    --primary-text: #f8fafc;
-    --secondary-text: #94a3b8;
-    --border-color: #374151;
-    --primary-accent: #3b82f6;
-    --success: #16a34a;
-    --danger: #dc2626;
+    --bg-dark: #1e293b; /* Kartlar, modüller gibi ana içerik kutularının arka planı */
+    --bg-dark-accent: #0f172a; /* Sayfanın en dış, genel arka plan rengi */
+    --sidebar-bg: #111827; /* Sol menünün arka planı */
+    --primary-text: #f8fafc; /* Ana metin rengi (beyaz) */
+    --secondary-text: #94a3b8; /* İkincil, daha soluk metin rengi */
+    --border-color: #374151; /* Kenarlıklar ve ayırıcı çizgilerin rengi */
+    --primary-accent: #3b82f6; /* Ana vurgu rengi (mavi) */
+    --success: #22c55e; /* Başarı rengi (yeşil) */
+    --danger: #ef4444; /* Tehlike/Silme rengi (kırmızı) */
+    --warning: #f59e0b; /* Uyarı rengi (turuncu) */
     --transition: all 0.3s ease;
 }
 
@@ -19,7 +20,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-dark);
+    background-color: var(--bg-dark-accent); /* Sayfa geneli arka planı en koyu renk yapıldı */
     color: var(--primary-text);
     font-size: 14px;
     line-height: 1.6;
@@ -60,12 +61,10 @@ body {
     overflow-y: auto;
 }
 
-/* --- DÜZELTİLMİŞ ALT MENÜ STİLLERİ --- */
 .sidebar-menu li a {
     display: flex;
-    /* justify-content: space-between;  <-- HATALI KOD KALDIRILDI */
     align-items: center;
-    gap: 12px; /* <-- İKON VE YAZI ARASINA BOŞLUK EKLENDİ */
+    gap: 12px;
     padding: 12px 15px;
     color: var(--secondary-text);
     text-decoration: none;
@@ -76,7 +75,7 @@ body {
 }
 
 .sidebar-menu li a:hover {
-    background-color: var(--bg-dark-accent);
+    background-color: var(--bg-dark);
     color: var(--primary-text);
 }
 
@@ -87,12 +86,12 @@ body {
 }
 
 .sidebar-menu .has-submenu > a::after {
-    content: '\f054'; /* FontAwesome arrow icon */
+    content: '\f054';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
     font-size: 10px;
     transition: transform 0.3s ease;
-    margin-left: auto; /* <-- OK İŞARETİNİ SAĞA YASLAMAK İÇİN EKLENDİ */
+    margin-left: auto;
 }
 
 .sidebar-menu .has-submenu.open > a::after {
@@ -102,27 +101,25 @@ body {
 .submenu {
     list-style-type: none;
     padding-left: 20px;
-    display: none; /* Başlangıçta gizli */
+    display: none;
     margin-top: 5px;
 }
 
 .submenu.open {
-    display: block; /* Tıklandığında görünür */
+    display: block;
 }
 
 .submenu li a {
-    padding-left: 25px; /* Daha içeriden başlasın */
+    padding-left: 25px;
     font-size: 13px;
-    gap: 10px; /* Alt menü ikon-yazı arası boşluk */
+    gap: 10px;
 }
-/* -------------------------------------- */
-
 
 /* --- Sağ İçerik Alanı --- */
 .main-content {
     flex-grow: 1;
     padding: 25px;
-    background-color: var(--bg-dark-accent);
+    background-color: var(--bg-dark-accent); /* Ana içerik alanı arka planı */
 }
 
 .content-header {
@@ -140,10 +137,11 @@ body {
 }
 
 .content-body {
-    background-color: var(--bg-dark);
+    background-color: var(--bg-dark); /* Modül içeriğinin yüklendiği alanın arka planı */
     padding: 20px;
     border-radius: 8px;
     color: var(--secondary-text);
+    border: 1px solid var(--border-color); /* Tasarıma uygun kenarlık eklendi */
 }
 
 
@@ -161,7 +159,7 @@ body {
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    background-color: var(--bg-dark-accent);
+    background-color: var(--bg-dark);
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
