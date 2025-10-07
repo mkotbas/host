@@ -106,6 +106,7 @@ button, a.btn-primary, a.btn-warning, a.btn-success, a.btn-danger { text-decorat
 .btn-warning { background-color: var(--warning-color); color: #1e293b; }
 .btn-secondary { background-color: var(--text-muted); }
 
+
 /* --- Giriş Pop-up Stilleri --- */
 #login-popup {
     display: none; position: absolute;
@@ -168,7 +169,6 @@ button, a.btn-primary, a.btn-warning, a.btn-success, a.btn-danger { text-decorat
     margin-top: .5rem;
 }
 .modal-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; }
-
 .maintenance-info {
     background-color: rgba(59, 130, 246, 0.1);
     border-left: 3px solid var(--primary-color);
@@ -211,4 +211,19 @@ button, a.btn-primary, a.btn-warning, a.btn-success, a.btn-danger { text-decorat
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* --- ORTAK KULLANILAN Modül Bölüm Stilleri --- */
+.management-section {
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+}
+.management-section h4 {
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.75rem;
 }
