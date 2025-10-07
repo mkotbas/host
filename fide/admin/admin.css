@@ -1,14 +1,15 @@
 :root {
-    --bg-main: #f1f5f9; /* Sayfanın en dış, genel arka plan rengi (Açık Gri) */
-    --bg-card: #ffffff; /* Kartlar, modüller gibi ana içerik kutularının arka planı (Beyaz) */
-    --primary-text: #1e293b; /* Ana metin rengi (Koyu Gri/Siyah) */
-    --secondary-text: #64748b; /* İkincil, daha soluk metin rengi */
-    --border-color: #e2e8f0; /* Kenarlıklar ve ayırıcı çizgilerin rengi */
-    --primary-accent: #3b82f6; /* Ana vurgu rengi (Mavi) */
-    --success: #16a34a; /* Başarı rengi (Yeşil) */
-    --danger: #ef4444; /* Tehlike/Silme rengi (Kırmızı) */
-    --warning: #f59e0b; /* Uyarı rengi (Turuncu) */
-    --card-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Kart gölgesi */
+    --bg-main: #f1f5f9; /* Sayfanın ana arka planı (açık gri) */
+    --bg-card: #ffffff; /* Tüm kartların ve kutuların arka planı (beyaz) */
+    --primary-text: #1e293b; /* Ana başlık ve metin rengi (koyu lacivert/siyah) */
+    --secondary-text: #64748b; /* İkincil metinler (gri) */
+    --border-color: #e2e8f0; /* Kenarlık ve ayırıcı çizgiler */
+    --primary-accent: #3b82f6; /* "Yönetim Paneli" butonu gibi ana mavi renk */
+    --danger: #ef4444; /* "Sil" butonu gibi kırmızı renk */
+    --warning: #f59e0b; /* "Geri Al" butonu gibi turuncu renk */
+    --info-bg: #eff6ff;     /* Bilgi çubuğu mavi arka planı */
+    --info-border: #dbeafe; /* Bilgi çubuğu mavi kenarlığı */
+    --card-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Kartlara verilen hafif gölge */
     --transition: all 0.3s ease;
 }
 
@@ -46,19 +47,10 @@ body {
     border-bottom: 1px solid var(--border-color);
 }
 
-.sidebar-header h3 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 18px;
-    margin: 0;
-}
-
 .sidebar-menu {
     list-style-type: none;
     padding: 15px;
     flex-grow: 1;
-    overflow-y: auto;
 }
 
 .sidebar-menu li a {
@@ -71,33 +63,17 @@ body {
     border-radius: 6px;
     transition: var(--transition);
     font-weight: 500;
-    cursor: pointer;
 }
 
 .sidebar-menu li a:hover {
-    background-color: #f8fafc;
+    background-color: var(--bg-main);
     color: var(--primary-text);
 }
 
 .sidebar-menu li a.active {
     background-color: var(--primary-accent);
     color: white;
-    font-weight: 600;
 }
-
-.sidebar-menu .has-submenu > a::after {
-    content: '\f054';
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
-    font-size: 10px;
-    transition: transform 0.3s ease;
-    margin-left: auto;
-}
-
-.sidebar-menu .has-submenu.open > a::after { transform: rotate(90deg); }
-.submenu { list-style-type: none; padding-left: 20px; display: none; margin-top: 5px; }
-.submenu.open { display: block; }
-.submenu li a { padding-left: 25px; font-size: 13px; gap: 10px; }
 
 /* --- Sağ İçerik Alanı --- */
 .main-content {
@@ -105,22 +81,15 @@ body {
     padding: 25px;
 }
 
-.content-header {
-    padding-bottom: 15px;
+.content-header h2 {
+    font-size: 24px;
+    font-weight: 600;
     margin-bottom: 25px;
 }
 
-.content-header h2 {
-    font-size: 22px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--primary-text);
-}
-
+/* Modülün kendi stilini kullanması için bu alanı boşaltıyoruz */
 .content-body {
-    background-color: transparent;
+    background: none;
     padding: 0;
     border: none;
-    color: var(--primary-text);
 }
