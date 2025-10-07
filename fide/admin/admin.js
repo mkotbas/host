@@ -1,15 +1,30 @@
 // --- Global Değişkenler ---
 let currentModule = null; // Aktif olarak yüklenmiş modülün adını tutar
 
-// --- Firebase Yapılandırması (Ana uygulamadaki ile aynı) ---
+// --- Firebase Yapılandırması ve Başlatma ---
+
+// YENİ EKLENEN/GÜNCELLENEN BÖLÜM BAŞLANGICI
+// firebase-config.js'den gelen değişkenin varlığını kontrol edip Firebase'i başlatıyoruz.
+if (typeof firebaseConfig !== 'undefined') {
+  firebase.initializeApp(firebaseConfig);
+} else {
+  // Bu hata, eğer firebase-config.js yüklenemezse veya içinde firebaseConfig değişkeni yoksa görünür.
+  console.error("Firebase yapılandırma bilgisi (firebaseConfig) bulunamadı.");
+  document.body.innerHTML = '<div style="color:red; text-align:center; padding: 40px;"><h1>HATA</h1><p>Firebase yapılandırması yüklenemedi. Lütfen ana dizinde firebase-config.js dosyasının bulunduğundan ve doğru olduğundan emin olun.</p></div>';
+}
+// YENİ EKLENEN/GÜNCELLENEN BÖLÜM BİTİŞİ
+
 const auth = firebase.auth();
 const database = firebase.database();
 let isFirebaseConnected = false;
 
 // --- Uygulama Başlatma ---
 document.addEventListener('DOMContentLoaded', () => {
-    initializeAuth();
-    setupModuleMenuListeners();
+    // typeof kontrolü hata durumunda scriptin devam etmesini engeller.
+    if (typeof firebaseConfig !== 'undefined') {
+        initializeAuth();
+        setupModuleMenuListeners();
+    }
 });
 
 /**
