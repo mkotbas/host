@@ -1,188 +1,209 @@
-// --- Global Değişkenler ---
-let currentModule = null; // Aktif olarak yüklenmiş modülün adını tutar
-
-// --- Firebase Yapılandırması ve Başlatma ---
-
-// YENİ EKLENEN/GÜNCELLENEN BÖLÜM BAŞLANGICI
-// firebase-config.js'den gelen değişkenin varlığını kontrol edip Firebase'i başlatıyoruz.
-if (typeof firebaseConfig !== 'undefined') {
-  firebase.initializeApp(firebaseConfig);
-} else {
-  // Bu hata, eğer firebase-config.js yüklenemezse veya içinde firebaseConfig değişkeni yoksa görünür.
-  console.error("Firebase yapılandırma bilgisi (firebaseConfig) bulunamadı.");
-  document.body.innerHTML = '<div style="color:red; text-align:center; padding: 40px;"><h1>HATA</h1><p>Firebase yapılandırması yüklenemedi. Lütfen ana dizinde firebase-config.js dosyasının bulunduğundan ve doğru olduğundan emin olun.</p></div>';
-}
-// YENİ EKLENEN/GÜNCELLENEN BÖLÜM BİTİŞİ
-
-const auth = firebase.auth();
-const database = firebase.database();
-let isFirebaseConnected = false;
-
-// --- Uygulama Başlatma ---
 document.addEventListener('DOMContentLoaded', () => {
-    // typeof kontrolü hata durumunda scriptin devam etmesini engeller.
-    if (typeof firebaseConfig !== 'undefined') {
-        initializeAuth();
-        setupModuleMenuListeners();
-    }
-});
 
-/**
- * Firebase Authentication durumunu dinler ve arayüzü günceller.
- */
-function initializeAuth() {
-    auth.onAuthStateChanged(user => {
-        const loginToggleBtn = document.getElementById('login-toggle-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const loginPopup = document.getElementById('login-popup');
-        
-        if (user) {
-            // Kullanıcı giriş yapmış
-            loginToggleBtn.style.display = 'none';
-            logoutBtn.style.display = 'inline-flex';
-            loginPopup.style.display = 'none';
-        } else {
-            // Kullanıcı çıkış yapmış
-            loginToggleBtn.style.display = 'inline-flex';
-            logoutBtn.style.display = 'none';
+    // --- GLOBAL DEĞİŞKENLER VE MODÜL TANIMLAMALARI ---
+
+    // Sisteme eklenecek olan tüm modüller bu liste üzerinden yönetilecek.
+    // Yeni bir modül eklemek istediğimizde buraya yeni bir nesne eklememiz yeterli olacak.
+    const modules = [
+        {
+            id: 'veritabani',
+            name: 'Veritabanı Ayarları',
+            icon: 'fas fa-database',
+            html: '../modules/veritabani/veritabani.html',
+            css: '../modules/veritabani/veritabani.css',
+            js: '../modules/veritabani/veritabani.js'
         }
-        updateConnectionIndicator();
-    });
+        // Gelecekteki modüller buraya eklenecek...
+    ];
 
-    // Bağlantı durumunu dinle
-    const connectionRef = database.ref('.info/connected');
-    connectionRef.on('value', (snapshot) => {
-        isFirebaseConnected = snapshot.val();
-        updateConnectionIndicator();
-    });
+    const moduleMenu = document.getElementById('module-menu');
+    const moduleContainer = document.getElementById('module-container');
+    let isFirebaseConnected = false;
 
-    // Login/Logout buton olayları
-    setupAuthEventListeners();
-}
 
-/**
- * Giriş/Çıkış butonları için olay dinleyicilerini kurar.
- */
-function setupAuthEventListeners() {
-    const loginToggleBtn = document.getElementById('login-toggle-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const loginPopup = document.getElementById('login-popup');
-    const loginSubmitBtn = document.getElementById('login-submit-btn');
+    // --- MODÜL YÖNETİMİ ---
 
-    loginToggleBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
-    });
+    /**
+     * Tanımlı modülleri sol menüye (sidebar) ekler ve tıklama olaylarını ayarlar.
+     */
+    function renderModuleMenu() {
+        moduleMenu.innerHTML = ''; // Menüyü temizle
+        modules.forEach(module => {
+            const li = document.createElement('li');
+            li.innerHTML = `<a href="#" data-module-id="${module.id}">
+                              <i class="${module.icon}"></i>
+                              <span>${module.name}</span>
+                            </a>`;
+            moduleMenu.appendChild(li);
+        });
+    }
 
-    logoutBtn.addEventListener('click', () => {
-        auth.signOut();
-    });
-
-    loginSubmitBtn.addEventListener('click', () => {
-        const email = document.getElementById('email-input').value;
-        const password = document.getElementById('password-input').value;
-        const errorDiv = document.getElementById('login-error');
-        errorDiv.textContent = '';
-        if (!email || !password) {
-            errorDiv.textContent = 'Lütfen tüm alanları doldurun.';
+    /**
+     * ID'si verilen modülü ana içerik alanına yükler.
+     * @param {string} moduleId Yüklenecek modülün ID'si
+     */
+    async function loadModule(moduleId) {
+        const module = modules.find(m => m.id === moduleId);
+        if (!module) {
+            console.error(`'${moduleId}' ID'li modül bulunamadı.`);
+            moduleContainer.innerHTML = '<p>Hata: Modül yüklenemedi.</p>';
             return;
         }
-        auth.signInWithEmailAndPassword(email, password)
-            .catch(error => {
-                errorDiv.textContent = 'E-posta veya şifre hatalı.';
-            });
-    });
 
-    window.addEventListener('click', function(event) {
-        if (loginPopup && !loginPopup.contains(event.target) && !loginToggleBtn.contains(event.target)) {
-            loginPopup.style.display = 'none';
+        try {
+            // 1. Önceki modülün stillerini ve script'lerini kaldır
+            document.getElementById('module-style')?.remove();
+            document.getElementById('module-script')?.remove();
+
+            // 2. Modülün HTML içeriğini yükle
+            const response = await fetch(module.html);
+            if (!response.ok) throw new Error(`HTML dosyası yüklenemedi: ${response.statusText}`);
+            moduleContainer.innerHTML = await response.text();
+
+            // 3. Modülün CSS dosyasını <head> içine ekle
+            const styleLink = document.createElement('link');
+            styleLink.id = 'module-style';
+            styleLink.rel = 'stylesheet';
+            styleLink.href = module.css;
+            document.head.appendChild(styleLink);
+
+            // 4. Modülün JS dosyasını <body> sonuna ekle
+            const scriptElement = document.createElement('script');
+            scriptElement.id = 'module-script';
+            scriptElement.src = module.js;
+            scriptElement.defer = true;
+            document.body.appendChild(scriptElement);
+
+            // 5. Aktif menü öğesini güncelle
+            updateActiveMenu(moduleId);
+
+        } catch (error) {
+            console.error(`Modül yüklenirken hata oluştu: `, error);
+            moduleContainer.innerHTML = `<div class="module-placeholder">
+                                            <i class="fas fa-exclamation-triangle fa-3x"></i>
+                                            <h2>Modül Yüklenemedi</h2>
+                                            <p>${module.name} modülü yüklenirken bir sorun oluştu. Lütfen konsolu kontrol edin.</p>
+                                         </div>`;
         }
-    });
-}
-
-
-/**
- * Sol menüdeki modül linkleri için tıklama olaylarını ayarlar.
- */
-function setupModuleMenuListeners() {
-    const moduleLinks = document.querySelectorAll('#module-menu a[data-module]');
-    moduleLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const moduleName = link.getAttribute('data-module');
-
-            // Aktif menü öğesini güncelle
-            document.querySelectorAll('#module-menu a').forEach(a => a.classList.remove('active'));
-            link.classList.add('active');
-            
-            loadModule(moduleName);
+    }
+    
+    /**
+     * Sol menüde aktif olan modülün görsel olarak işaretlenmesini sağlar.
+     * @param {string} moduleId Aktif olan modülün ID'si
+     */
+    function updateActiveMenu(moduleId) {
+        const menuLinks = moduleMenu.querySelectorAll('a');
+        menuLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.dataset.moduleId === moduleId) {
+                link.classList.add('active');
+            }
         });
-    });
-}
-
-/**
- * İstenen modülün HTML, CSS ve JS dosyalarını dinamik olarak yükler.
- * @param {string} moduleName - Yüklenecek modülün adı (örn: "veritabani")
- */
-async function loadModule(moduleName) {
-    if (currentModule === moduleName && document.getElementById(`module-${moduleName}-script`)) return; // Modül zaten yüklü
-    currentModule = moduleName;
-
-    const mainContent = document.getElementById('main-content');
-    mainContent.innerHTML = '<div class="loading-spinner"></div>'; // Yükleniyor animasyonu
-
-    // Önceki modülün stil dosyasını kaldır
-    const oldStyle = document.querySelector('link[data-module-style]');
-    if (oldStyle) {
-        oldStyle.remove();
     }
+
+
+    // --- FIREBASE AUTH VE BAĞLANTI YÖNETİMİ (Ana uygulamadan uyarlandı) ---
     
-    // Önceki modülün script'ini kaldır (opsiyonel, ama temiz bir başlangıç için iyi)
-    const oldScript = document.querySelector('script[data-module-script]');
-    if(oldScript) {
-        oldScript.remove();
+    function setupAuthAndConnection() {
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // Bağlantı durumunu izle
+        const connectionRef = database.ref('.info/connected');
+        connectionRef.on('value', (snapshot) => {
+            isFirebaseConnected = snapshot.val();
+            updateConnectionIndicator(auth.currentUser);
+        });
+
+        // Kullanıcı giriş/çıkış durumunu izle
+        auth.onAuthStateChanged(user => {
+            updateConnectionIndicator(user);
+            const loginToggleBtn = document.getElementById('login-toggle-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            if (user) {
+                loginToggleBtn.style.display = 'none';
+                logoutBtn.style.display = 'inline-flex';
+            } else {
+                loginToggleBtn.style.display = 'inline-flex';
+                logoutBtn.style.display = 'none';
+                // Kullanıcı çıkış yaptıysa, modül içeriğini temizle ve başlangıç ekranını göster.
+                moduleContainer.innerHTML = `<div class="module-placeholder">
+                                                <i class="fas fa-cogs fa-3x"></i>
+                                                <h2>Modül Yöneticisi</h2>
+                                                <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
+                                             </div>`;
+                updateActiveMenu(null);
+            }
+        });
+
+        // Butonlara olay dinleyicileri ekle
+        document.getElementById('login-toggle-btn').addEventListener('click', (event) => {
+            event.stopPropagation();
+            const loginPopup = document.getElementById('login-popup');
+            loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        document.getElementById('login-submit-btn').addEventListener('click', () => {
+            const email = document.getElementById('email-input').value;
+            const password = document.getElementById('password-input').value;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.textContent = '';
+            if (!email || !password) {
+                errorDiv.textContent = 'Lütfen tüm alanları doldurun.';
+                return;
+            }
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(error => {
+                    errorDiv.textContent = 'E-posta veya şifre hatalı.';
+                });
+        });
+
+        window.addEventListener('click', (event) => {
+            if (!document.getElementById('auth-controls').contains(event.target)) {
+                document.getElementById('login-popup').style.display = 'none';
+            }
+        });
+    }
+
+    /**
+     * Ekranın sol alt köşesindeki bağlantı durumu göstergesini günceller.
+     * @param {object|null} user Mevcut Firebase kullanıcısı
+     */
+    function updateConnectionIndicator(user) {
+        const statusSwitch = document.getElementById('connection-status-switch');
+        const statusText = document.getElementById('connection-status-text');
+        const isOnline = isFirebaseConnected && user;
+        
+        statusSwitch.classList.toggle('connected', isOnline);
+        statusSwitch.classList.toggle('disconnected', !isOnline);
+        statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
     }
 
 
-    try {
-        // 1. Modülün HTML'ini yükle
-        const htmlResponse = await fetch(`modules/${moduleName}/${moduleName}.html`);
-        if (!htmlResponse.ok) throw new Error(`${moduleName} HTML dosyası yüklenemedi.`);
-        const htmlContent = await htmlResponse.text();
-        mainContent.innerHTML = htmlContent;
+    // --- UYGULAMAYI BAŞLATMA ---
 
-        // 2. Modülün CSS'ini yükle
-        const cssLink = document.createElement('link');
-        cssLink.rel = 'stylesheet';
-        cssLink.href = `modules/${moduleName}/${moduleName}.css`;
-        cssLink.setAttribute('data-module-style', 'true'); // Kaldırmak için işaretle
-        document.head.appendChild(cssLink);
+    function initializeAdminPanel() {
+        renderModuleMenu();
+        setupAuthAndConnection();
 
-        // 3. Modülün JS'ini yükle
-        const script = document.createElement('script');
-        script.src = `modules/${moduleName}/${moduleName}.js`;
-        script.id = `module-${moduleName}-script`; // Scriptin zaten var olup olmadığını kontrol etmek için
-        script.setAttribute('data-module-script', 'true'); // Kaldırmak için işaretle
-        document.body.appendChild(script);
-
-    } catch (error) {
-        mainContent.innerHTML = `<div class="error-message">Modül yüklenirken bir hata oluştu: ${error.message}</div>`;
-        console.error(error);
+        // Menüdeki linklere tıklama olayını ata
+        moduleMenu.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (link && link.dataset.moduleId) {
+                e.preventDefault();
+                if (firebase.auth().currentUser) {
+                    loadModule(link.dataset.moduleId);
+                } else {
+                    alert("Lütfen modülleri görüntülemek için giriş yapın.");
+                }
+            }
+        });
     }
-}
 
-
-/**
- * Bağlantı durumu göstergesini (switch) günceller.
- */
-function updateConnectionIndicator() {
-    const statusSwitch = document.getElementById('connection-status-switch');
-    const statusText = document.getElementById('connection-status-text');
-    if (!statusSwitch || !statusText) return;
-
-    const isOnline = isFirebaseConnected && auth.currentUser;
-    
-    statusSwitch.classList.toggle('connected', isOnline);
-    statusSwitch.classList.toggle('disconnected', !isOnline);
-    statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
-}
+    initializeAdminPanel();
+});
