@@ -9,147 +9,41 @@
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-    <div id="loading-overlay" style="display: none;">
-        <div class="spinner"></div>
-        <p>İşlem yapılıyor, lütfen bekleyin...</p>
-    </div>
-
-    <div id="maintenance-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-panel">
-            <div class="modal-header">
-                <h3 id="modal-title"></h3>
-            </div>
-            <div class="modal-body" id="modal-body">
-            </div>
-            <div class="modal-footer" id="modal-footer">
-            </div>
-        </div>
-    </div>
+    <div id="loading-overlay" style="display: none;"><div class="spinner"></div><p>İşlem yapılıyor...</p></div>
+    <div id="maintenance-modal" class="modal-overlay" style="display: none;"><div class="modal-panel"><div class="modal-header"><h3 id="modal-title"></h3></div><div class="modal-body" id="modal-body"></div><div class="modal-footer" id="modal-footer"></div></div></div>
 
     <div class="admin-container">
-        <aside class="admin-sidebar">
-            <div class="sidebar-header">
-                <h3><i class="fas fa-shield-alt"></i> Admin Paneli</h3>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-link active" data-target="veritabani-ayarlari"><i class="fas fa-database"></i> Veritabanı Ayarları</a>
-                <a href="#" class="nav-link" data-target="soru-yoneticisi"><i class="fas fa-edit"></i> Soru Yöneticisi</a>
-                <a href="#" class="nav-link" data-target="bayi-yoneticisi"><i class="fas fa-at"></i> Bayi Yöneticisi</a>
-                <a href="../index.html" class="nav-link nav-link-back"><i class="fas fa-arrow-left"></i> Ana Sayfaya Dön</a>
-            </nav>
-            <div class="sidebar-footer">
-                <div id="connection-status-container">
-                    <div id="connection-status-switch" class="disconnected">
-                        <div class="thumb"></div>
-                    </div>
-                    <span id="connection-status-text">Bağlı Değil</span>
-                </div>
-                 <div id="auth-controls">
-                    <button id="login-toggle-btn" class="btn-success btn-sm"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
-                    <button id="logout-btn" class="btn-danger btn-sm" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
-                    <div id="login-popup">
-                        <h3><i class="fas fa-cloud"></i> Bulut Sistemine Giriş</h3>
-                        <input type="email" id="email-input" placeholder="E-posta">
-                        <input type="password" id="password-input" placeholder="Şifre">
-                        <button id="login-submit-btn" class="btn-primary btn-sm"><i class="fas fa-check"></i> Onayla</button>
-                        <div id="login-error"></div>
-                    </div>
-                </div>
-            </div>
-        </aside>
+        <aside class="admin-sidebar"></aside>
 
         <main class="admin-content">
             <div id="veritabani-ayarlari-panel" class="content-panel active">
-                <div class="card">
-                    <h2><i class="fas fa-database"></i> Veritabanı Ayarları</h2>
-                    <div class="management-section">
-                        <h4><i class="fas fa-archive"></i> Yedekleme ve Geri Yükleme</h4>
-                        <div class="backup-options-grid">
-                            <div class="backup-option-card">
-                                <h3><i class="fas fa-cloud-download-alt"></i> Raporları Yedekle</h3>
-                                <p>Bulutta kayıtlı tüm verileri (raporlar, ayarlar vb.) tek bir `.json` dosyası olarak bilgisayarınıza indirir.</p>
-                                <button id="backup-btn" class="btn-primary"><i class="fas fa-download"></i> Yedek Dosyasını İndir</button>
-                            </div>
-                            <div class="backup-option-card">
-                                <h3><i class="fas fa-cloud-upload-alt"></i> Yedekten Geri Yükle</h3>
-                                <p>Bilgisayarınızdaki `.json` yedek dosyasını seçerek buluta yükler. Bu işlem buluttaki mevcut verilerin üzerine yazar!</p>
-                                <button id="restore-from-backup-btn" class="btn-primary"><i class="fas fa-folder-open"></i> Dosya Seç ve Yükle</button>
-                            </div>
-                            <div class="backup-option-card">
-                                <h3><i class="fas fa-compress-arrows-alt"></i> Yedekleri Birleştir</h3>
-                                <p>Birden fazla yedek dosyasını seçerek, içlerindeki en güncel raporları içeren tek bir yeni yedek dosyası oluşturur.</p>
-                                <button id="merge-backups-btn" class="btn-primary"><i class="fas fa-object-group"></i> Dosyaları Seç ve Birleştir</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="management-section">
-                        <h4><i class="fas fa-tools"></i> Veri Bakım Araçları</h4>
-                        <div class="backup-options-grid">
-                            <div class="backup-option-card">
-                                <h3><i class="fas fa-user-slash"></i> Kalıntı Rapor Analizi</h3>
-                                <p>Ana bayi listesinden silinmiş ancak raporları hala veritabanında duran "kalıntı" (orphan) verileri bulur ve silmenizi sağlar.</p>
-                                <button id="analyze-orphan-reports-btn" class="btn-warning"><i class="fas fa-search"></i> Analizi Başlat</button>
-                            </div>
-                            <div class="backup-option-card">
-                                <h3><i class="fas fa-link-slash"></i> Veri Tutarlılığı Kontrolü</h3>
-                                <p>Bayi listesi, e-posta listesi gibi farklı tablolar arasındaki uyumsuzlukları tespit eder ve raporlar.</p>
-                                <button id="check-consistency-btn" class="btn-warning"><i class="fas fa-check-double"></i> Kontrol Et</button>
-                            </div>
-                            <div class="backup-option-card">
-                                <h3><i class="fas fa-eraser"></i> Gereksiz Alan Temizleyici</h3>
-                                <p>Tüm raporlardan, artık kullanılmayan belirli bir veri alanını (ör: 'isSpecialVisit') kalıcı olarak temizler.</p>
-                                <button id="clean-field-btn" class="btn-warning"><i class="fas fa-broom"></i> Alan Temizleyiciyi Aç</button>
-                            </div>
-                            <div class="backup-option-card">
-                                <h3><i class="fas fa-heart-crack"></i> Bozuk Rapor Temizliği</h3>
-                                <p>İçi boş veya hatalı yapıdaki "hayalet" raporları tespit eder. Bu kayıtlar "Geçersiz rapor verisi" hatasına neden olabilir.</p>
-                                <button id="analyze-corrupt-reports-btn" class="btn-warning"><i class="fas fa-search-dollar"></i> Analiz Et ve Temizle</button>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="file" id="restore-file-input" accept=".json" style="display: none;">
-                    <input type="file" id="merge-file-input" accept=".json" style="display: none;" multiple>
                 </div>
-            </div>
 
             <div id="soru-yoneticisi-panel" class="content-panel">
-                 <div class="card" id="question-manager">
-                    <h2><i class="fas fa-edit"></i> FiDe Soru Yöneticisi</h2>
-                    <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
-                        <i class="fas fa-info-circle"></i> Buradan FİDE sorularını ve ürün listesini düzenleyebilirsiniz. <b>Kaydet</b> tuşuna bastığınızda tüm değişiklikler anında buluta kaydedilecek ve sayfa yenilenecektir.
-                    </p>
-                    <div class="manager-actions">
-                        <div class="manager-view-controls">
-                            <button id="view-active-btn" class="btn-primary btn-sm active"><i class="fas fa-check-circle"></i> Aktif Sorular</button>
-                            <button id="view-archived-btn" class="btn-warning btn-sm"><i class="fas fa-archive"></i> Arşivlenmiş Sorular</button>
-                        </div>
-                        <div class="manager-main-actions">
-                            <button id="add-new-question-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Soru Ekle</button>
-                            <button id="open-scenario-system-btn" class="btn-primary btn-sm" title="Sık yapılan değişiklikleri otomatikleştirmek için hazır senaryoları kullanın."><i class="fas fa-magic"></i> Hazır Senaryo Sistemi</button>
-                            <button id="unlock-ids-btn" class="btn-primary btn-sm" title="Mevcut soruların ID'lerini değiştirebilmek için kilidi açar."><i class="fas fa-key"></i> ID Düzenle</button>
-                            <button id="delete-all-archived-btn" class="btn-danger btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları kalıcı olarak siler. Bu işlem geri alınamaz."><i class="fas fa-bomb"></i> Arşivi Sil</button>
-                            <button id="restore-all-archived-btn" class="btn-success btn-sm" style="display: none;" title="Arşivlenmiş TÜM soruları aktif hale getirir."><i class="fas fa-undo"></i> Arşivi Geri Yükle</button>
-                            <button id="save-questions-btn" class="btn-success btn-sm"><i class="fas fa-save"></i>Kaydet</button>
-                        </div>
-                    </div>
-                    <div id="manager-list"></div>
-                </div>
-            </div>
+                 </div>
             
             <div id="bayi-yoneticisi-panel" class="content-panel">
-                 <div class="card">
+                 <div class="card" id="email-manager">
                     <h2><i class="fas fa-at"></i> Bayi Yöneticisi</h2>
-                    <p>Bayi listesi ve bayi e-posta yönetimi ile ilgili araçlar ileride buraya eklenecektir.</p>
-                 </div>
+                    <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+                        <i class="fas fa-info-circle"></i> Buradan bayi kodlarına atanmış e-posta adreslerini yönetebilirsiniz. Değişiklikler anında buluta kaydedilir.
+                    </p>
+                    <div class="manager-actions">
+                         <div class="manager-main-actions">
+                            <button id="bulk-upload-emails-btn" class="btn-success btn-sm"><i class="fas fa-file-upload"></i> Toplu E-posta Yükle (.txt)</button>
+                            <button id="add-new-email-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Yeni E-posta Ekle</button>
+                             <input type="file" id="email-bulk-upload-input" accept=".txt" style="display: none;">
+                        </div>
+                         <input type="text" id="email-search-input" placeholder="Bayi kodu veya e-posta ile ara..." style="padding: 10px; border-radius: 6px; border: 1px solid var(--border); width: 100%; max-width: 300px;">
+                    </div>
+                    <div id="email-manager-list" class="email-manager-list-container"></div>
+                </div>
             </div>
-
         </main>
     </div>
 
-    <div id="migration-manager-overlay" class="modal-overlay" style="display: none;">
-        </div>
-    <div id="scenario-system-overlay" class="modal-overlay" style="display: none;">
-        </div>
+    <div id="migration-manager-overlay" class="modal-overlay" style="display: none;"></div>
+    <div id="scenario-system-overlay" class="modal-overlay" style="display: none;"></div>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
