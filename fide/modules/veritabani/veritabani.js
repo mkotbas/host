@@ -1,263 +1,331 @@
-(function() {
-    // Bu yapı, modülün kodlarının diğer kodlarla çakışmasını engeller.
+// --- Veritabanı Modülü Ana Betiği ---
 
-    // --- MODÜL BAŞLANGICI ---
-    // Modülün çalışması için gerekli olan her şeyi başlatan fonksiyon.
-    function init() {
-        // HTML'deki elemanlara erişim
-        const dideFileInput = document.getElementById('dide-excel-file-input');
-        const fideFileInput = document.getElementById('fide-excel-file-input');
-        const clearDideBtn = document.getElementById('clear-dide-excel-btn');
-        const clearFideBtn = document.getElementById('clear-fide-excel-btn');
-        const clearAllDataBtn = document.getElementById('clear-storage-btn');
+/**
+ * Bu fonksiyon, admin.js tarafından modül yüklendikten sonra otomatik olarak çağrılır.
+ * Modülün olay dinleyicilerini (event listeners) ve başlangıç ayarlarını yapar.
+ */
+window.initializeModule = function() {
+    // Butonlara tıklama olaylarını ilgili fonksiyonlara bağla
+    document.getElementById('analyze-orphan-reports-btn').addEventListener('click', analyzeOrphanReports);
+    document.getElementById('check-consistency-btn').addEventListener('click', checkDataConsistency);
+    document.getElementById('clean-field-btn').addEventListener('click', openFieldCleaner);
+    document.getElementById('analyze-corrupt-reports-btn').addEventListener('click', analyzeCorruptReports);
 
-        // Olay dinleyicilerini ata
-        dideFileInput.addEventListener('change', (e) => handleFileSelect(e, 'dide'));
-        fideFileInput.addEventListener('change', (e) => handleFileSelect(e, 'fide'));
-
-        clearDideBtn.addEventListener('click', clearDideData);
-        clearFideBtn.addEventListener('click', clearFideData);
-        clearAllDataBtn.addEventListener('click', clearAllData);
-
-        // Modül yüklendiğinde, bulutta kayıtlı dosya isimlerini göster
-        displayCurrentFilenames();
-    }
-
-    // --- VERİ YÜKLEME VE İŞLEME ---
-
-    /**
-     * Kullanıcı bir Excel dosyası seçtiğinde tetiklenir.
-     * @param {Event} event Olay nesnesi
-     * @param {string} type 'dide' veya 'fide'
-     */
-    function handleFileSelect(event, type) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.readAsArrayBuffer(file);
-        reader.onload = function(e) {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-                
-                if (type === 'dide') {
-                    processDideExcelData(dataAsArray, true, file.name);
-                } else {
-                    processFideExcelData(dataAsArray, true, file.name);
-                }
-            } catch (error) {
-                alert("Excel dosyası okunurken bir hata oluştu.");
-                console.error("Excel okuma hatası:", error);
+    // Modal penceresi dışına tıklandığında kapatma
+    const modal = document.getElementById('maintenance-modal');
+    if (modal) {
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                hideModal();
             }
-        };
-        event.target.value = ''; // Aynı dosyayı tekrar seçebilmek için inputu sıfırla
+        });
     }
-    
-    /**
-     * DiDe Excel verisini işler ve buluta kaydeder.
-     * Bu fonksiyon main.js'ten direkt olarak alınmıştır.
-     */
-    function processDideExcelData(dataAsArray, saveToCloud = false, filename = '') {
-        // ... (main.js'teki fonksiyonun içeriği buraya kopyalanacak)
-        if (dataAsArray.length < 2) return alert('DiDe Excel dosyası beklenen formatta değil (en az 2 satır gerekli).');
-        let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
-        if (headerRowIndex === -1) return alert('DiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
-        const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h);
-        const dataRows = dataAsArray.slice(headerRowIndex + 1);
-        const bayiKoduIndex = headerRow.indexOf('Bayi Kodu');
-        const bayiIndex = headerRow.indexOf('Bayi');
-        const bayiYonetmeniIndex = headerRow.indexOf('Bayi Yönetmeni');
-        if ([bayiKoduIndex, bayiIndex, bayiYonetmeniIndex].includes(-1)) return alert('DiDe Excel dosyasında "Bayi Kodu", "Bayi" veya "Bayi Yönetmeni" sütunlarından biri bulunamadı.');
-        const processedData = dataRows.map(row => {
-            if (!row[bayiKoduIndex]) return null;
-            const scores = {};
-            headerRow.forEach((header, index) => {
-                const monthNumber = parseInt(header);
-                if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
-                    if(row[index] !== null && row[index] !== undefined) scores[monthNumber] = row[index];
-                }
+};
+
+// --- Modal (Açılır Pencere) Yönetim Fonksiyonları ---
+
+function showModal(title, body, footer) {
+    document.getElementById('modal-title').innerHTML = title;
+    document.getElementById('modal-body').innerHTML = body;
+    document.getElementById('modal-footer').innerHTML = footer;
+    document.getElementById('maintenance-modal').style.display = 'flex';
+}
+
+function hideModal() {
+    document.getElementById('maintenance-modal').style.display = 'none';
+}
+
+function backupReminder() {
+    // Bu fonksiyon artık ana uygulama yerine yedekleme modülünden çağrılmalı,
+    // ancak veri bakım araçları için hala bir uyarı mekanizması olarak kalabilir.
+    return confirm(
+        "ÖNEMLİ UYARI:\n\nBu işlem veritabanında kalıcı değişiklikler yapacaktır. " +
+        "İşleme başlamadan önce verilerinizin tamamını yedeklemeniz şiddetle tavsiye edilir.\n\n" +
+        "Bu riski kabul ederek devam etmek istiyor musunuz?"
+    );
+}
+
+
+// --- Veri Bakım Araçları Fonksiyonları (main.js'ten taşındı) ---
+
+async function analyzeOrphanReports() {
+    if (!backupReminder()) return;
+    showModal(
+        '<i class="fas fa-spinner fa-spin"></i> Kalıntı Raporlar Analiz Ediliyor...',
+        '<p>Lütfen bekleyin. Ana bayi listesi ile tüm raporlar karşılaştırılıyor...</p>',
+        '<button class="btn-secondary" onclick="hideModal()">Kapat</button>'
+    );
+
+    try {
+        const reportsSnapshot = await database.ref('allFideReports').once('value');
+        const storesSnapshot = await database.ref('tumBayilerListesi/stores').once('value');
+
+        if (!reportsSnapshot.exists() || !storesSnapshot.exists()) {
+            showModal('<i class="fas fa-info-circle"></i> Analiz Tamamlandı', '<p>Analiz için yeterli veri bulunamadı (Raporlar veya ana bayi listesi boş).</p>', '<button class="btn-primary" onclick="hideModal()">Tamam</button>');
+            return;
+        }
+
+        const allReports = reportsSnapshot.val();
+        const validStoreCodes = new Set(storesSnapshot.val().map(store => String(store.bayiKodu)));
+        const orphanReports = [];
+
+        for (const reportKey in allReports) {
+            const bayiKodu = reportKey.replace('store_', '');
+            if (!validStoreCodes.has(bayiKodu)) {
+                const reportData = allReports[reportKey].data;
+                orphanReports.push({
+                    key: reportKey,
+                    bayiKodu: bayiKodu,
+                    bayiAdi: reportData.selectedStore ? reportData.selectedStore.bayiAdi : 'Bilinmeyen Bayi'
+                });
+            }
+        }
+
+        if (orphanReports.length === 0) {
+            showModal('<i class="fas fa-check-circle"></i> Analiz Sonucu', '<p>Harika! Sistemde hiç kalıntı (orphan) rapor bulunamadı. Veritabanınız temiz.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+        } else {
+            let listHtml = `<div class="maintenance-info"><i class="fas fa-info-circle"></i> Ana bayi listesinde bulunmayan ${orphanReports.length} adet rapora ait kayıt bulundu. Silmek istediklerinizi seçin.</div>`;
+            listHtml += '<div class="maintenance-list">';
+            orphanReports.forEach(report => {
+                listHtml += `
+                    <div class="maintenance-list-item">
+                        <label>
+                            <input type="checkbox" class="orphan-checkbox" value="${report.key}">
+                            <div>
+                                <p>${report.bayiAdi}</p>
+                                <span>Kod: ${report.bayiKodu}</span>
+                            </div>
+                        </label>
+                    </div>`;
             });
-            return { 'Bayi Kodu': row[bayiKoduIndex], 'Bayi': row[bayiIndex], 'Bayi Yönetmeni': row[bayiYonetmeniIndex], 'scores': scores };
-        }).filter(d => d);
-        
-        if (saveToCloud && firebase.auth().currentUser && firebase.database()) {
-            const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
-            firebase.database().ref('excelData/dide').set(persistenceData)
-                .then(() => {
-                    alert('DiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
-                    displayCurrentFilenames(); // Arayüzü güncelle
-                });
+            listHtml += '</div>';
+
+            const footerHtml = `
+                <button class="btn-secondary" onclick="hideModal()">İptal</button>
+                <button class="btn-danger" onclick="deleteSelectedOrphans()"><i class="fas fa-trash"></i> Seçilenleri Kalıcı Olarak Sil</button>
+            `;
+            showModal('<i class="fas fa-user-slash"></i> Kalıntı Rapor Analizi Sonuçları', listHtml, footerHtml);
+        }
+
+    } catch (error) {
+        console.error("Kalıntı rapor analizi hatası:", error);
+        showModal('<i class="fas fa-exclamation-triangle"></i> Hata', '<p>Analiz sırasında bir hata oluştu. Lütfen konsolu kontrol edin.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+    }
+}
+
+async function deleteSelectedOrphans() {
+    const selectedOrphans = Array.from(document.querySelectorAll('.orphan-checkbox:checked')).map(cb => cb.value);
+    if (selectedOrphans.length === 0) {
+        return alert("Lütfen silmek için en az bir rapor seçin.");
+    }
+    if (confirm(`${selectedOrphans.length} adet kalıntı rapor kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`)) {
+        showModal(
+            '<i class="fas fa-spinner fa-spin"></i> Siliniyor...',
+            `<p>${selectedOrphans.length} adet rapor siliniyor, lütfen bekleyin...</p>`,
+            ''
+        );
+        try {
+            const updates = {};
+            selectedOrphans.forEach(key => {
+                updates[`/allFideReports/${key}`] = null;
+            });
+            await database.ref().update(updates);
+            showModal('<i class="fas fa-check-circle"></i> Başarılı', `<p>${selectedOrphans.length} adet kalıntı rapor başarıyla silindi.</p>`, '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+        } catch (error) {
+            console.error("Kalıntı rapor silme hatası:", error);
+            showModal('<i class="fas fa-exclamation-triangle"></i> Hata', '<p>Raporlar silinirken bir hata oluştu. Lütfen konsolu kontrol edin.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
         }
     }
+}
 
-    /**
-     * FiDe Excel verisini işler ve buluta kaydeder.
-     * Bu fonksiyon main.js'ten direkt olarak alınmıştır.
-     */
-    function processFideExcelData(dataAsArray, saveToCloud = false, filename = '') {
-        // ... (main.js'teki fonksiyonun içeriği buraya kopyalanacak)
-        if (dataAsArray.length < 3) return alert('FiDe Excel dosyası beklenen formatta değil (en az 3 satır gerekli).');
-        const currentYear = new Date().getFullYear();
-        let yearRowIndex = -1;
-        for(let i = 0; i < dataAsArray.length; i++) {
-            if(dataAsArray[i].some(cell => String(cell).trim() == currentYear)) {
-                yearRowIndex = i;
-                break;
-            }
-        }
-        if (yearRowIndex === -1) return alert(`FiDe Excel dosyasında '${currentYear}' yılını içeren bir satır bulunamadı.`);
-        const yearRow = dataAsArray[yearRowIndex];
-        const filledYearRow = [];
-        let lastKnownYear = null;
-        for (const cell of yearRow) {
-            if (cell !== null && cell !== undefined && String(cell).trim() !== "") { lastKnownYear = String(cell).trim(); }
-            filledYearRow.push(lastKnownYear);
-        }
-        let monthRowIndex = yearRowIndex + 1;
-        if (monthRowIndex >= dataAsArray.length) return alert('FiDe Excel dosyasında ay bilgileri (yıl satırının altında) bulunamadı.');
-        const monthRow = dataAsArray[monthRowIndex];
-        let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
-        if (headerRowIndex === -1) return alert('FiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
-        const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h);
-        const dataRows = dataAsArray.slice(headerRowIndex + 1);
-        const bayiKoduIndex = headerRow.indexOf('Bayi Kodu');
-        if (bayiKoduIndex === -1) return alert('FiDe Excel dosyasında "Bayi Kodu" sütunu bulunamadı.');
-        const processedData = dataRows.map(row => {
-            if (!row[bayiKoduIndex]) return null;
-            const scores = {};
-            for (let i = 0; i < filledYearRow.length; i++) {
-                if (filledYearRow[i] == currentYear) {
-                    const monthNumber = parseInt(monthRow[i]);
-                    if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
-                        if(row[i] !== null && row[i] !== undefined && row[i] !== "") scores[monthNumber] = row[i];
-                    }
-                }
-            }
-            return { 'Bayi Kodu': row[bayiKoduIndex], 'scores': scores };
-        }).filter(d => d);
+async function checkDataConsistency() {
+    showModal('<i class="fas fa-spinner fa-spin"></i> Tutarlılık Kontrol Ediliyor...', '<p>Lütfen bekleyin. Bayi listeleri karşılaştırılıyor...</p>', '<button class="btn-secondary" onclick="hideModal()">Kapat</button>');
     
-        if (saveToCloud && firebase.auth().currentUser && firebase.database()) {
-            const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
-            firebase.database().ref('excelData/fide').set(persistenceData)
-                .then(() => {
-                    alert('FiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
-                    displayCurrentFilenames(); // Arayüzü güncelle
-                });
+    try {
+        const storesSnapshot = await database.ref('tumBayilerListesi/stores').once('value');
+        const emailsSnapshot = await database.ref('storeEmails').once('value');
+
+        const mainStoreList = storesSnapshot.exists() ? storesSnapshot.val() : [];
+        const emailList = emailsSnapshot.exists() ? emailsSnapshot.val() : {};
+
+        const mainStoreCodes = new Set(mainStoreList.map(s => String(s.bayiKodu)));
+        const emailStoreCodes = new Set(Object.keys(emailList).map(String));
+
+        const dealersWithoutEmail = mainStoreList.filter(store => !emailStoreCodes.has(String(store.bayiKodu)));
+        const emailsWithoutDealer = Object.keys(emailList).filter(code => !mainStoreCodes.has(String(code)));
+        
+        let bodyHtml = `<div class="maintenance-info"><i class="fas fa-info-circle"></i> Bayi ana listesi ('tumBayilerListesi') ile bayi e-posta listesi ('storeEmails') arasındaki tutarsızlıklar aşağıdadır.</div>`;
+        
+        bodyHtml += `<div class="consistency-section"><h5><i class="fas fa-at"></i> E-postası Eksik Olan Bayiler (${dealersWithoutEmail.length} adet)</h5><div class="maintenance-list">`;
+        if (dealersWithoutEmail.length > 0) {
+            dealersWithoutEmail.forEach(store => {
+                bodyHtml += `<div class="maintenance-list-item"><p>${store.bayiAdi} <span>(Kod: ${store.bayiKodu})</span></p></div>`;
+            });
+        } else {
+            bodyHtml += `<div class="maintenance-list-item"><span>Tüm bayilerin e-posta adresi girilmiş.</span></div>`;
         }
-    }
-
-
-    // --- VERİ TEMİZLEME ---
-
-    function clearDideData() {
-        if (confirm("Yüklenmiş olan DiDe Excel verisini buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
-            if(firebase.auth().currentUser && firebase.database()) {
-                firebase.database().ref('excelData/dide').remove()
-                    .then(() => {
-                        alert("DiDe Excel verisi buluttan temizlendi.");
-                        displayCurrentFilenames();
-                    });
-            } else {
-                alert("Bu işlem için giriş yapmış olmalısınız.");
-            }
+        bodyHtml += `</div></div>`;
+        
+        bodyHtml += `<div class="consistency-section"><h5><i class="fas fa-user-times"></i> Ana Listede Olmayan E-posta Kayıtları (${emailsWithoutDealer.length} adet)</h5><div class="maintenance-list">`;
+        if (emailsWithoutDealer.length > 0) {
+            emailsWithoutDealer.forEach(code => {
+                bodyHtml += `<div class="maintenance-list-item"><p>${emailList[code]} <span>(Kod: ${code})</span></p></div>`;
+            });
+        } else {
+            bodyHtml += `<div class="maintenance-list-item"><span>Listede olmayan e-posta kaydı bulunamadı.</span></div>`;
         }
+        bodyHtml += `</div></div>`;
+
+        showModal('<i class="fas fa-check-double"></i> Veri Tutarlılığı Raporu', bodyHtml, '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+
+    } catch (error) {
+        console.error("Veri tutarlılığı kontrolü hatası:", error);
+        showModal('<i class="fas fa-exclamation-triangle"></i> Hata', '<p>Kontrol sırasında bir hata oluştu. Lütfen konsolu kontrol edin.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
     }
+}
 
-    function clearFideData() {
-        if (confirm("Yüklenmiş olan FiDe Excel verisini buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
-            if(firebase.auth().currentUser && firebase.database()) {
-                firebase.database().ref('excelData/fide').remove()
-                    .then(() => {
-                        alert("FiDe Excel verisi buluttan temizlendi.");
-                        displayCurrentFilenames();
-                    });
-            } else {
-                alert("Bu işlem için giriş yapmış olmalısınız.");
-            }
-        }
+function openFieldCleaner() {
+    const bodyHtml = `
+        <div class="maintenance-info"><i class="fas fa-exclamation-triangle"></i> <strong>DİKKAT:</strong> Bu işlem tehlikelidir ve geri alınamaz. Sadece ne yaptığınızdan eminseniz kullanın.</div>
+        <div class="field-cleaner-form">
+            <label for="field-to-clean">Tüm raporlardan silmek istediğiniz alanın adını yazın:</label>
+            <input type="text" id="field-to-clean" placeholder="Örn: isSpecialVisit">
+            <small>Bu alan, tüm raporların içindeki 'data' objesinden silinecektir.</small>
+        </div>
+    `;
+    const footerHtml = `
+        <button class="btn-secondary" onclick="hideModal()">İptal</button>
+        <button class="btn-danger" onclick="cleanObsoleteField()"><i class="fas fa-eraser"></i> Yazılan Alanı Temizle</button>
+    `;
+    showModal('<i class="fas fa-broom"></i> Gereksiz Alan Temizleyici', bodyHtml, footerHtml);
+}
+
+async function cleanObsoleteField() {
+    const fieldName = document.getElementById('field-to-clean').value.trim();
+    if (!fieldName) {
+        return alert("Lütfen silmek istediğiniz alanın adını girin.");
     }
-
-    function clearAllData() {
-        const dogruSifreHash = 'ZmRlMDAx'; // "fde001" in base64 hali
-        const girilenSifre = prompt("Bu işlem geri alınamaz. Buluttaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
-
-        if (girilenSifre) { 
-            const girilenSifreHash = btoa(girilenSifre);
-            if (girilenSifreHash === dogruSifreHash) {
-                if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları, yüklenmiş Excel dosyaları ve diğer ayarlar dahil olmak üzere bulutta saklanan BÜTÜN uygulama verileri kalıcı olarak silinecektir.")) {
-                    if(firebase.auth().currentUser && firebase.database()){
-                        // Silinecek ana yolları bir diziye ekle
-                        const pathsToDelete = [
-                            'allFideReports',
-                            'excelData',
-                            'migrationSettings',
-                            'storeEmails',
-                            'tumBayilerListesi',
-                            'fideQuestionsData',
-                            'denetimGeriAlinanlar'
-                            // Gelecekte eklenecek diğer ana veriler...
-                        ];
-                        
-                        const deletePromises = pathsToDelete.map(path => firebase.database().ref(path).remove());
-
-                        Promise.all(deletePromises)
-                            .then(() => {
-                                alert("Tüm bulut verileri başarıyla temizlendi. Sayfa yenileniyor.");
-                                window.location.reload();
-                            })
-                            .catch(error => {
-                                alert("Veriler silinirken bir hata oluştu: " + error.message);
-                            });
-                    } else {
-                        alert("Bu işlem için giriş yapmış olmalısınız.");
-                    }
-                }
-            } else {
-                alert("Hatalı şifre! Silme işlemi iptal edildi.");
-            }
-        }
-    }
-
-    // --- ARAYÜZ GÜNCELLEME ---
-
-    /**
-     * Buluttan mevcut Excel dosyalarının adlarını çeker ve ekranda gösterir.
-     */
-    async function displayCurrentFilenames() {
-        const user = firebase.auth().currentUser;
-        if (!user || !firebase.database()) return;
-
-        const dideFileNameSpan = document.getElementById('dide-file-name');
-        const fideFileNameSpan = document.getElementById('fide-file-name');
+    if (!backupReminder()) return;
+    if (confirm(`'${fieldName}' isimli alanı tüm raporlardan kalıcı olarak silmek üzeresiniz.\n\nBU İŞLEM GERİ ALINAMAZ!\n\nDevam etmek istediğinizden kesinlikle emin misiniz?`)) {
+        showModal('<i class="fas fa-spinner fa-spin"></i> Temizleniyor...', `<p>'${fieldName}' alanı tüm raporlardan siliniyor. Lütfen bekleyin...</p>`, '');
 
         try {
-            const dideRef = firebase.database().ref('excelData/dide/filename');
-            const dideSnapshot = await dideRef.once('value');
-            if (dideSnapshot.exists()) {
-                dideFileNameSpan.textContent = `Bulutta yüklü: ${dideSnapshot.val()}`;
+            const reportsRef = database.ref('allFideReports');
+            const snapshot = await reportsRef.once('value');
+            if (!snapshot.exists()) {
+                 showModal('<i class="fas fa-info-circle"></i> Bilgi', '<p>Temizlenecek rapor bulunamadı.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+                 return;
+            }
+            
+            const updates = {};
+            let fieldsFound = 0;
+            snapshot.forEach(childSnapshot => {
+                if (childSnapshot.child('data').hasChild(fieldName)) {
+                    updates[`/${childSnapshot.key}/data/${fieldName}`] = null;
+                    fieldsFound++;
+                }
+            });
+
+            if (fieldsFound > 0) {
+                await reportsRef.update(updates);
+                showModal('<i class="fas fa-check-circle"></i> Başarılı', `<p>${fieldsFound} adet raporda bulunan '${fieldName}' alanı başarıyla silindi.</p>`, '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
             } else {
-                dideFileNameSpan.textContent = 'Bulutta yüklü dosya yok.';
+                showModal('<i class="fas fa-info-circle"></i> Bilgi', `<p>Hiçbir raporda '${fieldName}' alanı bulunamadı. Veritabanı zaten temiz.</p>`, '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
             }
 
-            const fideRef = firebase.database().ref('excelData/fide/filename');
-            const fideSnapshot = await fideRef.once('value');
-            if (fideSnapshot.exists()) {
-                fideFileNameSpan.textContent = `Bulutta yüklü: ${fideSnapshot.val()}`;
-            } else {
-                fideFileNameSpan.textContent = 'Bulutta yüklü dosya yok.';
-            }
         } catch (error) {
-            console.error("Buluttan dosya adları okunurken hata oluştu:", error);
-            dideFileNameSpan.textContent = 'Veri okunamadı.';
-            fideFileNameSpan.textContent = 'Veri okunamadı.';
+            console.error("Alan temizleme hatası:", error);
+            showModal('<i class="fas fa-exclamation-triangle"></i> Hata', `<p>Temizleme sırasında bir hata oluştu: ${error.message}</p>`, '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
         }
     }
+}
 
-    // Modülü başlat
-    init();
 
-})();
+async function analyzeCorruptReports() {
+    if (!backupReminder()) return;
+    showModal(
+        '<i class="fas fa-spinner fa-spin"></i> Bozuk Raporlar Taranıyor...',
+        '<p>Lütfen bekleyin. Tüm raporların yapısı kontrol ediliyor...</p>',
+        '<button class="btn-secondary" onclick="hideModal()">Kapat</button>'
+    );
+
+    try {
+        const reportsSnapshot = await database.ref('allFideReports').once('value');
+        if (!reportsSnapshot.exists()) {
+            showModal('<i class="fas fa-info-circle"></i> Analiz Tamamlandı', '<p>Veritabanında analiz edilecek rapor bulunamadı.</p>', '<button class="btn-primary" onclick="hideModal()">Tamam</button>');
+            return;
+        }
+
+        const allReports = reportsSnapshot.val();
+        const corruptReports = [];
+
+        for (const reportKey in allReports) {
+            const report = allReports[reportKey];
+            if (!report.data || !report.data.questions_status) {
+                const bayiKodu = reportKey.replace('store_', '');
+                // Bayi adını bulmak zor olabilir çünkü uniqueStores burada yok,
+                // bu yüzden şimdilik sadece bayi kodunu gösterelim.
+                corruptReports.push({
+                    key: reportKey,
+                    bayiKodu: bayiKodu,
+                    bayiAdi: `Bayi Kodu: ${bayiKodu}`
+                });
+            }
+        }
+
+        if (corruptReports.length === 0) {
+            showModal('<i class="fas fa-check-circle"></i> Analiz Sonucu', '<p>Harika! Sistemde hiç bozuk ("hayalet") rapor bulunamadı. Veritabanınız temiz.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+        } else {
+            let listHtml = `<div class="maintenance-info"><i class="fas fa-info-circle"></i> Sistemde ${corruptReports.length} adet içi boş veya bozuk yapıda rapor bulundu. Bu raporlar uygulamanın hata vermesine neden olur. Silmek istediklerinizi seçin.</div>`;
+            listHtml += '<div class="maintenance-list">';
+            corruptReports.forEach(report => {
+                listHtml += `
+                    <div class="maintenance-list-item">
+                        <label>
+                            <input type="checkbox" class="corrupt-checkbox" value="${report.key}">
+                            <div>
+                                <p>${report.bayiAdi}</p>
+                                <span>Rapor Anahtarı: ${report.key}</span>
+                            </div>
+                        </label>
+                    </div>`;
+            });
+            listHtml += '</div>';
+
+            const footerHtml = `
+                <button class="btn-secondary" onclick="hideModal()">İptal</button>
+                <button class="btn-danger" onclick="deleteSelectedCorruptReports()"><i class="fas fa-trash"></i> Seçilenleri Kalıcı Olarak Sil</button>
+            `;
+            showModal('<i class="fas fa-heart-crack"></i> Bozuk Rapor Analizi Sonuçları', listHtml, footerHtml);
+        }
+
+    } catch (error) {
+        console.error("Bozuk rapor analizi hatası:", error);
+        showModal('<i class="fas fa-exclamation-triangle"></i> Hata', '<p>Analiz sırasında bir hata oluştu. Lütfen konsolu kontrol edin.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+    }
+}
+
+async function deleteSelectedCorruptReports() {
+    const selectedCorrupt = Array.from(document.querySelectorAll('.corrupt-checkbox:checked')).map(cb => cb.value);
+    if (selectedCorrupt.length === 0) {
+        return alert("Lütfen silmek için en az bir rapor seçin.");
+    }
+    if (confirm(`${selectedCorrupt.length} adet bozuk rapor kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`)) {
+        showModal(
+            '<i class="fas fa-spinner fa-spin"></i> Siliniyor...',
+            `<p>${selectedCorrupt.length} adet rapor siliniyor, lütfen bekleyin...</p>`,
+            ''
+        );
+        try {
+            const updates = {};
+            selectedCorrupt.forEach(key => {
+                updates[`/allFideReports/${key}`] = null;
+            });
+            await database.ref().update(updates);
+            showModal('<i class="fas fa-check-circle"></i> Başarılı', `<p>${selectedCorrupt.length} adet bozuk rapor başarıyla silindi.</p>`, '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+        } catch (error) {
+            console.error("Bozuk rapor silme hatası:", error);
+            showModal('<i class="fas fa-exclamation-triangle"></i> Hata', '<p>Raporlar silinirken bir hata oluştu. Lütfen konsolu kontrol edin.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+        }
+    }
+}
