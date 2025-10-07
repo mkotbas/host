@@ -1,4 +1,4 @@
-// --- Modül Tanımlamaları ---
+// --- Modül Tanımlamaları (Alt Menü Destekli Yeni Yapı) ---
 const modules = [
     {
         id: 'denetim-takip',
@@ -7,16 +7,30 @@ const modules = [
         path: '../modules/denetim-takip/'
     },
     {
-        id: 'veritabani',
-        name: 'Veritabanı Modülü',
-        icon: 'fas fa-database',
-        path: '../modules/veritabani/'
+        id: 'bayi-yoneticisi-parent', // Ana menü olduğu için benzersiz bir ID
+        name: 'Bayi Yöneticisi',
+        icon: 'fas fa-store',
+        submenu: [
+            {
+                id: 'bayi-yoneticisi', // Bu ID, modül klasör adıyla aynı olmalı
+                name: 'E-posta Sistemi',
+                icon: 'fas fa-at',
+                path: '../modules/bayi-yoneticisi/'
+            }
+            // Gelecekte bu ana menünün altına başka alt menüler eklenebilir
+        ]
     },
     {
         id: 'soru-yoneticisi',
         name: 'Soru Yöneticisi',
         icon: 'fas fa-edit',
         path: '../modules/soru-yoneticisi/'
+    },
+    {
+        id: 'veritabani',
+        name: 'Veritabanı Modülü',
+        icon: 'fas fa-database',
+        path: '../modules/veritabani/'
     }
 ];
 
@@ -29,25 +43,20 @@ window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
     await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
-
     auth.onAuthStateChanged(user => {
         updateAuthUI(user);
         updateConnectionIndicator();
         if (user) {
             renderModuleMenu();
-            // --- YENİ EKLENEN KOD ---
-            // Panel açıldığında varsayılan olarak Denetim Takip modülünü yükle
-            if (!currentModuleId) { // Sadece ilk yüklemede çalışır
+            if (!currentModuleId) {
                 loadModule('denetim-takip');
             }
-            // -------------------------
         } else {
             document.getElementById('module-menu').innerHTML = '';
             document.getElementById('module-container').innerHTML = '<p>Lütfen panele erişmek için giriş yapın.</p>';
             document.getElementById('module-title').innerHTML = '<i class="fas fa-tachometer-alt"></i> Modül Yöneticisi';
         }
     });
-
     if (database) {
         const connectionRef = database.ref('.info/connected');
         connectionRef.on('value', (snapshot) => {
@@ -55,68 +64,103 @@ async function initializeAdminPanel() {
             updateConnectionIndicator();
         });
     }
-
     setupEventListeners();
 }
 
+// --- ALT MENÜ DESTEKLİ YENİ MENÜ OLUŞTURUCU ---
 function renderModuleMenu() {
     const menu = document.getElementById('module-menu');
     menu.innerHTML = ''; 
 
     modules.forEach(module => {
         const li = document.createElement('li');
-        li.innerHTML = `<a href="#" data-module-id="${module.id}"><i class="${module.icon}"></i> ${module.name}</a>`;
-        li.querySelector('a').addEventListener('click', (event) => {
-            event.preventDefault();
-            if (currentModuleId !== module.id) {
-                loadModule(module.id);
-            }
-        });
+        
+        if (module.submenu) {
+            // Alt menüsü olan ana menü
+            li.classList.add('has-submenu');
+            li.innerHTML = `<a href="#"><i class="${module.icon}"></i><span>${module.name}</span></a>`;
+            const subMenu = document.createElement('ul');
+            subMenu.className = 'submenu';
+            
+            module.submenu.forEach(sub => {
+                const subLi = document.createElement('li');
+                subLi.innerHTML = `<a href="#" data-module-id="${sub.id}"><i class="${sub.icon}"></i><span>${sub.name}</span></a>`;
+                subLi.querySelector('a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation(); // Ana menünün tıklama olayını tetiklemesini engelle
+                    if (currentModuleId !== sub.id) {
+                        loadModule(sub.id);
+                    }
+                });
+                subMenu.appendChild(subLi);
+            });
+            
+            li.appendChild(subMenu);
+
+            // Ana menüye tıklama olayı (aç/kapa)
+            li.querySelector('a').addEventListener('click', (e) => {
+                e.preventDefault();
+                li.classList.toggle('open');
+                subMenu.classList.toggle('open');
+            });
+
+        } else {
+            // Normal (alt menüsü olmayan) menü
+            li.innerHTML = `<a href="#" data-module-id="${module.id}"><i class="${module.icon}"></i><span>${module.name}</span></a>`;
+            li.querySelector('a').addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentModuleId !== module.id) {
+                    loadModule(module.id);
+                }
+            });
+        }
         menu.appendChild(li);
     });
-
-    const styleId = 'module-menu-styles';
-    if (!document.getElementById(styleId)) {
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.textContent = `
-            .sidebar-menu li a {
-                display: block; padding: 12px 15px; color: var(--secondary-text); text-decoration: none;
-                border-radius: 6px; transition: var(--transition); font-weight: 500;
-            }
-            .sidebar-menu li a:hover {
-                background-color: var(--bg-dark-accent); color: var(--primary-text);
-            }
-            .sidebar-menu li a.active {
-                background-color: var(--primary-accent); color: var(--primary-text); font-weight: 600;
-            }
-        `;
-        document.head.appendChild(style);
-    }
 }
 
+
 async function loadModule(moduleId) {
-    const module = modules.find(m => m.id === moduleId);
-    if (!module) {
-        console.error("Modül bulunamadı:", moduleId);
-        return;
+    // Bu fonksiyon artık hem ana hem de alt menülerden gelen ID'leri bulabilir.
+    let module;
+    for (const main of modules) {
+        if (main.id === moduleId) {
+            module = main;
+            break;
+        }
+        if (main.submenu) {
+            const sub = main.submenu.find(s => s.id === moduleId);
+            if (sub) {
+                module = sub;
+                break;
+            }
+        }
     }
+
+    if (!module) { console.error("Modül bulunamadı:", moduleId); return; }
 
     currentModuleId = moduleId;
 
+    // Aktif menü stillerini ayarla
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     const activeLink = document.querySelector(`.sidebar-menu a[data-module-id="${moduleId}"]`);
-    if(activeLink) activeLink.classList.add('active');
-
+    if(activeLink) {
+        activeLink.classList.add('active');
+        // Eğer bir alt menüdeyse, ana menüsünü de 'open' yap
+        const parentLi = activeLink.closest('.has-submenu');
+        if (parentLi && !parentLi.classList.contains('open')) {
+            parentLi.classList.add('open');
+            parentLi.querySelector('.submenu').classList.add('open');
+        }
+    }
+    
     const container = document.getElementById('module-container');
     const title = document.getElementById('module-title');
-    
     container.innerHTML = `<p>Modül yükleniyor: ${module.name}...</p>`;
     title.innerHTML = `<i class="${module.icon}"></i> ${module.name}`;
     
     try {
         const htmlResponse = await fetch(`${module.path}${module.id}.html`);
-        if (!htmlResponse.ok) throw new Error(`Dosya bulunamadı veya okunamadı: ${module.id}.html (HTTP ${htmlResponse.status})`);
+        if (!htmlResponse.ok) throw new Error(`Dosya bulunamadı: ${module.id}.html`);
         container.innerHTML = await htmlResponse.text();
 
         const cssId = `module-css-${module.id}`;
@@ -135,7 +179,7 @@ async function loadModule(moduleId) {
         script.id = 'module-script';
         script.src = `${module.path}${module.id}.js`;
         script.onload = () => {
-            const formattedId = module.id.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
+            const formattedId = module.id.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
             const initFunctionName = `initialize${formattedId}Module`;
             if (typeof window[initFunctionName] === 'function') {
                 window[initFunctionName]();
@@ -147,10 +191,10 @@ async function loadModule(moduleId) {
 
     } catch (error) {
         console.error("Modül yüklenirken hata oluştu:", error);
-        container.innerHTML = `<div style="color: #fca5a5; background-color: #450a0a; border: 1px solid #991b1b; padding: 15px;">...Hata Detayı...</div>`;
     }
 }
 
+// updateAuthUI, updateConnectionIndicator, setupEventListeners fonksiyonları değişmemiştir.
 function updateAuthUI(user) {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
@@ -162,7 +206,6 @@ function updateAuthUI(user) {
         logoutBtn.style.display = 'none';
     }
 }
-
 function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
@@ -171,7 +214,6 @@ function updateConnectionIndicator() {
     statusSwitch.classList.toggle('disconnected', !isOnline);
     statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
 }
-
 function setupEventListeners() {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
