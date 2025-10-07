@@ -4,32 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yönetim Paneli</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="panel-container">
-        <aside id="sidebar">
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-cogs"></i> Yönetim Paneli</h2>
+                <h3><i class="fas fa-cogs"></i> Yönetim Paneli</h3>
             </div>
             <nav class="module-nav">
                 <ul id="module-menu">
-                    <li><a href="#" data-module="veritabani"><i class="fas fa-database"></i> Veritabanı Ayarları</a></li>
-                </ul>
+                    </ul>
             </nav>
             <div class="sidebar-footer">
+                <a href="../index.html" class="back-to-app-btn">
+                    <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+                </a>
                 <div id="auth-controls">
-                     <div id="connection-status-container">
-                        <span id="connection-status-text">Bağlı Değil</span>
+                    <div id="connection-status-container">
+                        <span id="connection-status-text">Bağlanıyor...</span>
                         <div id="connection-status-switch" class="disconnected">
                             <div class="thumb"></div>
                         </div>
                     </div>
                     <button id="login-toggle-btn" class="btn-primary btn-sm"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
                     <button id="logout-btn" class="btn-danger btn-sm" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
+                    
                     <div id="login-popup">
-                        <h3><i class="fas fa-user-lock"></i> Yönetici Girişi</h3>
+                        <h3><i class="fas fa-user-circle"></i> Yönetici Girişi</h3>
                         <input type="email" id="email-input" placeholder="E-posta Adresi">
                         <input type="password" id="password-input" placeholder="Şifre">
                         <button id="login-submit-btn" class="btn-primary">Giriş Yap</button>
@@ -39,11 +42,13 @@
             </div>
         </aside>
 
-        <main id="main-content">
-            <div class="welcome-message">
-                <i class="fas fa-cogs fa-3x"></i>
-                <h1>Modül Yöneticisi</h1>
-                <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
+        <main class="main-content">
+            <div id="module-container">
+                <div class="module-placeholder">
+                    <i class="fas fa-cogs fa-3x"></i>
+                    <h2>Modül Yöneticisi</h2>
+                    <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
+                </div>
             </div>
         </main>
     </div>
@@ -51,6 +56,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="../firebase-config.js"></script> <script src="admin.js"></script>
+    <script src="../firebase-config.js"></script>
+    <script src="admin.js"></script>
 </body>
 </html>
