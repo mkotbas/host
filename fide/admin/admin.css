@@ -1,24 +1,16 @@
-/* --- Genel Renk ve Stil Değişkenleri --- */
 :root {
-    --primary: #008CBA;
-    --primary-dark: #007B9A;
-    --secondary: #64748b;
+    --bg-dark: #1e293b;
+    --bg-dark-accent: #2c3a4f;
+    --sidebar-bg: #111827;
+    --primary-text: #f8fafc;
+    --secondary-text: #94a3b8;
+    --border-color: #374151;
+    --primary-accent: #3b82f6;
     --success: #16a34a;
     --danger: #dc2626;
-    --light: #f8fafc;
-    --dark: #1e293b;
-    --gray: #94a3b8;
-    --border: #e2e8f0;
-    --panel-bg: #f1f5f9;
-    --sidebar-bg: #0f172a;
-    --sidebar-text: #cbd5e1;
-    --sidebar-hover-bg: #1e293b;
-    --sidebar-active-bg: #008CBA;
-    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --transition: all 0.3s ease;
 }
 
-/* --- Temel Ayarlar --- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -27,200 +19,94 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--primary-text);
     font-size: 14px;
     line-height: 1.6;
-    color: var(--dark);
-    background-color: var(--panel-bg);
-    overflow-x: hidden;
 }
 
-/* --- Ana Panel Yapısı --- */
-.panel-container {
+.admin-panel {
     display: flex;
     min-height: 100vh;
 }
 
-/* --- Sol Menü (Sidebar) Stilleri --- */
+/* --- Sol Menü (Sidebar) --- */
 .sidebar {
     width: 260px;
     background-color: var(--sidebar-bg);
-    color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    transition: width 0.3s ease;
+    border-right: 1px solid var(--border-color);
 }
 
 .sidebar-header {
     padding: 20px;
-    border-bottom: 1px solid var(--sidebar-hover-bg);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .sidebar-header h3 {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-size: 18px;
-    color: #fff;
     margin: 0;
 }
 
-.module-nav {
+.sidebar-menu {
+    list-style-type: none;
+    padding: 15px;
     flex-grow: 1;
     overflow-y: auto;
 }
 
-#module-menu {
-    list-style-type: none;
-    padding: 15px 0;
+/* --- Sağ İçerik Alanı --- */
+.main-content {
+    flex-grow: 1;
+    padding: 25px;
+    background-color: var(--bg-dark-accent);
 }
 
-#module-menu li a {
+.content-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+.content-header h2 {
+    font-size: 22px;
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 20px;
-    text-decoration: none;
-    color: var(--sidebar-text);
-    font-weight: 500;
-    border-left: 3px solid transparent;
-    transition: var(--transition);
+    color: var(--primary-text);
 }
 
-#module-menu li a:hover {
-    background-color: var(--sidebar-hover-bg);
-    color: #fff;
+.content-body {
+    background-color: var(--bg-dark);
+    padding: 20px;
+    border-radius: 8px;
+    color: var(--secondary-text);
 }
 
-#module-menu li a.active {
-    background-color: var(--sidebar-active-bg);
-    color: #fff;
-    border-left-color: #fff;
-}
 
+/* --- Alt Kısım (Footer) ve Bağlantı Durumu --- */
 .sidebar-footer {
     padding: 15px;
-    border-top: 1px solid var(--sidebar-hover-bg);
-    margin-top: auto;
-}
-
-.back-to-app-btn {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    background-color: var(--sidebar-hover-bg);
-    color: var(--sidebar-text);
-    border-radius: 6px;
-    text-align: center;
-    text-decoration: none;
-    margin-bottom: 15px;
-    transition: var(--transition);
-}
-
-.back-to-app-btn:hover {
-    background-color: var(--primary);
-    color: #fff;
-}
-
-
-/* --- Ana İçerik Alanı Stilleri --- */
-.main-content {
-    flex-grow: 1;
-    padding: 24px;
-    overflow-y: auto;
-}
-
-#module-container {
-    width: 100%;
-    height: 100%;
-}
-
-.module-placeholder {
+    border-top: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    text-align: center;
-    color: var(--gray);
-    background-color: #fff;
-    border-radius: 12px;
-    border: 2px dashed var(--border);
-}
-
-.module-placeholder i {
-    color: var(--primary);
-    margin-bottom: 16px;
-    opacity: 0.5;
-}
-
-.module-placeholder h2 {
-    font-size: 24px;
-    color: var(--dark);
-    margin-bottom: 8px;
-}
-
-
-/* --- GİRİŞ VE BAĞLANTI DURUMU STİLLERİ (Mevcut style.css'den alındı) --- */
-#auth-controls {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-#login-popup {
-    position: absolute;
-    bottom: calc(100% + 10px); /* Butonların üstünde çıkması için */
-    right: 0;
-    width: 100%;
-    background: white;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-    border-radius: 12px;
-    padding: 20px;
-    z-index: 100;
-    display: none;
-    border: 1px solid var(--border);
-}
-
-#login-popup h3 {
-    margin: 0 0 15px 0;
-    font-size: 16px;
-    text-align: center;
-    color: var(--dark);
-    border: none;
-    padding: 0;
-}
-
-#login-popup input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
-
-#login-error {
-    color: var(--danger);
-    font-size: 12px;
-    font-weight: bold;
-    text-align: center;
-    min-height: 18px;
-    margin-top: 10px;
+    gap: 15px;
 }
 
 #connection-status-container {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
     padding: 8px 12px;
-    background-color: var(--sidebar-hover-bg);
-    border-radius: 6px;
-    font-size: 13px;
+    background-color: var(--bg-dark-accent);
+    border-radius: 8px;
+    font-size: 12px;
     font-weight: 600;
-    color: var(--sidebar-text);
 }
 
 #connection-status-switch {
@@ -249,22 +135,30 @@ body {
 #connection-status-switch.disconnected { background-color: var(--danger); }
 #connection-status-switch.disconnected .thumb { transform: translateX(20px); }
 
-/* --- Genel Buton Stilleri --- */
-button, .btn-primary, .btn-danger {
-    text-decoration: none;
-    cursor: pointer;
-    border: none;
+#connection-status-text {
+    width: 75px;
+    text-align: left;
+    color: var(--primary-text);
+}
+
+#auth-controls .btn-auth {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--secondary-text);
+    padding: 10px;
     border-radius: 8px;
-    padding: 10px 16px;
-    font-weight: 600;
-    transition: var(--transition);
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
+    gap: 8px;
+    font-weight: 600;
+    transition: var(--transition);
 }
-button:disabled { background-color: var(--gray); cursor: not-allowed; opacity: 0.7; }
-button i, .btn-primary i, .btn-danger i { margin-right: 8px; }
-.btn-primary { background-color: var(--primary); color: white; }
-.btn-danger { background-color: var(--danger); color: white; }
-.btn-sm { padding: 8px 12px; font-size: 13px; }
+
+#auth-controls .btn-auth:hover {
+    background-color: var(--primary-accent);
+    color: var(--primary-text);
+    border-color: var(--primary-accent);
+}
