@@ -1,0 +1,158 @@
+/* --- Admin Paneli Ana Yapısı --- */
+body {
+    /* Ana body'deki padding'i admin panelinde sıfırlıyoruz */
+    padding: 0; 
+    display: flex;
+    background-color: #e9e9e9; /* Arka plan rengini ana sayfa ile tutarlı tut */
+}
+
+.admin-container {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* --- Sol Menü (Sidebar) --- */
+.admin-sidebar {
+    width: 260px;
+    background-color: var(--dark); /* Koyu menü arka planı */
+    color: var(--light);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* Küçülmesini engelle */
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid #364357;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: white;
+    border: none; /* Ana style.css'deki h3 border'ını sıfırla */
+    padding: 0; /* Ana style.css'deki h3 padding'ini sıfırla */
+}
+
+.sidebar-nav {
+    flex-grow: 1; /* Kalan tüm boşluğu doldur */
+    padding: 15px 0;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: var(--light);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    border-left: 4px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+    background-color: #364357;
+    border-left-color: var(--secondary);
+}
+
+.nav-link.active {
+    background-color: var(--primary-dark);
+    border-left-color: white;
+    font-weight: 600;
+}
+
+.nav-link i {
+    width: 20px;
+    text-align: center;
+    margin-right: 0; /* Butonlardan gelen i stilini sıfırla */
+}
+
+.nav-link.nav-link-back {
+    margin-top: 20px;
+    border-top: 1px solid #364357;
+    padding-top: 15px;
+    color: var(--gray);
+}
+.nav-link.nav-link-back:hover {
+    color: white;
+    border-left-color: var(--warning);
+}
+
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid #364357;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sidebar-footer #auth-controls {
+    position: relative;
+}
+
+.sidebar-footer #login-popup {
+    /* Konumu ve stili menüye uygun hale getir */
+    position: absolute;
+    bottom: 100%; /* Butonun üstünde çıksın */
+    left: 0;
+    right: auto;
+    top: auto;
+    width: 240px; /* Genişliği ayarla */
+    margin-bottom: 10px;
+}
+
+/* --- Sağ İçerik Alanı --- */
+.admin-content {
+    flex-grow: 1; /* Kalan tüm alanı kapla */
+    padding: 24px;
+    overflow-y: auto; /* İçerik taşarsa kaydırma çubuğu çıksın */
+}
+
+.content-panel {
+    display: none; /* Panelleri varsayılan olarak gizle */
+}
+
+.content-panel.active {
+    display: block; /* Sadece aktif olan paneli göster */
+}
+
+/* Admin panelindeki kart başlıklarını daha belirgin yap */
+.admin-content .card h2 {
+    font-size: 24px;
+    color: var(--dark);
+    font-weight: 600;
+}
+
+/* Ana style.css'deki .container'dan gelen max-width'i sıfırlıyoruz */
+.container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Yönetim panelindeki bölümlerin arasına boşluk ekle */
+.management-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+.management-section:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+.management-section h4 {
+    font-size: 16px;
+    color: var(--primary-dark);
+    margin-bottom: 15px;
+}
