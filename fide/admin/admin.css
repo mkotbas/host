@@ -60,11 +60,12 @@ body {
     overflow-y: auto;
 }
 
-/* --- YENİ EKLENEN ALT MENÜ STİLLERİ --- */
+/* --- DÜZELTİLMİŞ ALT MENÜ STİLLERİ --- */
 .sidebar-menu li a {
     display: flex;
-    justify-content: space-between;
+    /* justify-content: space-between;  <-- HATALI KOD KALDIRILDI */
     align-items: center;
+    gap: 12px; /* <-- İKON VE YAZI ARASINA BOŞLUK EKLENDİ */
     padding: 12px 15px;
     color: var(--secondary-text);
     text-decoration: none;
@@ -91,6 +92,7 @@ body {
     font-weight: 900;
     font-size: 10px;
     transition: transform 0.3s ease;
+    margin-left: auto; /* <-- OK İŞARETİNİ SAĞA YASLAMAK İÇİN EKLENDİ */
 }
 
 .sidebar-menu .has-submenu.open > a::after {
@@ -111,6 +113,7 @@ body {
 .submenu li a {
     padding-left: 25px; /* Daha içeriden başlasın */
     font-size: 13px;
+    gap: 10px; /* Alt menü ikon-yazı arası boşluk */
 }
 /* -------------------------------------- */
 
