@@ -34,6 +34,12 @@
             <nav class="sidebar-nav">
                 <a href="#" class="nav-link active" data-target="veritabani-ayarlari"><i class="fas fa-database"></i> Veritabanı Ayarları</a>
                 <a href="#" class="nav-link" data-target="soru-yoneticisi"><i class="fas fa-edit"></i> Soru Yöneticisi</a>
+                
+                <div class="nav-group">
+                    <span class="nav-group-header"><i class="fas fa-at"></i> Bayi Yöneticisi</span>
+                    <a href="#" class="nav-link nav-link-sub" data-target="eposta-yoneticisi"><i class="fas fa-envelope"></i> E-posta Yöneticisi</a>
+                    </div>
+
                 <a href="../index.html" class="nav-link nav-link-back"><i class="fas fa-arrow-left"></i> Ana Sayfaya Dön</a>
             </nav>
             <div class="sidebar-footer">
@@ -135,7 +141,24 @@
                 </div>
             </div>
             
-            </main>
+            <div id="eposta-yoneticisi-panel" class="content-panel">
+                 <div class="card" id="email-manager">
+                    <h2><i class="fas fa-envelope"></i> E-posta Yöneticisi</h2>
+                    <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
+                        <i class="fas fa-info-circle"></i> Buradan bayi kodlarına atanmış e-posta adreslerini yönetebilirsiniz. Değişiklikler anında buluta kaydedilir.
+                    </p>
+                    <div class="manager-actions">
+                         <div class="manager-main-actions">
+                            <button id="bulk-upload-emails-btn" class="btn-success btn-sm"><i class="fas fa-file-upload"></i> Toplu E-posta Yükle (.txt)</button>
+                            <button id="add-new-email-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Yeni E-posta Ekle</button>
+                             <input type="file" id="email-bulk-upload-input" accept=".txt" style="display: none;">
+                        </div>
+                         <input type="text" id="email-search-input" placeholder="Bayi kodu veya e-posta ile ara..." style="padding: 10px; border-radius: 6px; border: 1px solid var(--border); width: 100%; max-width: 300px;">
+                    </div>
+                    <div id="email-manager-list" class="email-manager-list-container"></div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <div id="migration-manager-overlay" class="modal-overlay" style="display: none;">
