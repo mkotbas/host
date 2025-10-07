@@ -1,6 +1,12 @@
 // --- Modül Tanımlamaları ---
 const modules = [
     {
+        id: 'denetim-takip',
+        name: 'Denetim Takip',
+        icon: 'fas fa-calendar-check',
+        path: '../modules/denetim-takip/'
+    },
+    {
         id: 'veritabani',
         name: 'Veritabanı Modülü',
         icon: 'fas fa-database',
@@ -29,9 +35,16 @@ async function initializeAdminPanel() {
         updateConnectionIndicator();
         if (user) {
             renderModuleMenu();
+            // --- YENİ EKLENEN KOD ---
+            // Panel açıldığında varsayılan olarak Denetim Takip modülünü yükle
+            if (!currentModuleId) { // Sadece ilk yüklemede çalışır
+                loadModule('denetim-takip');
+            }
+            // -------------------------
         } else {
             document.getElementById('module-menu').innerHTML = '';
             document.getElementById('module-container').innerHTML = '<p>Lütfen panele erişmek için giriş yapın.</p>';
+            document.getElementById('module-title').innerHTML = '<i class="fas fa-tachometer-alt"></i> Modül Yöneticisi';
         }
     });
 
@@ -92,7 +105,8 @@ async function loadModule(moduleId) {
     currentModuleId = moduleId;
 
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
-    document.querySelector(`.sidebar-menu a[data-module-id="${moduleId}"]`).classList.add('active');
+    const activeLink = document.querySelector(`.sidebar-menu a[data-module-id="${moduleId}"]`);
+    if(activeLink) activeLink.classList.add('active');
 
     const container = document.getElementById('module-container');
     const title = document.getElementById('module-title');
@@ -121,31 +135,19 @@ async function loadModule(moduleId) {
         script.id = 'module-script';
         script.src = `${module.path}${module.id}.js`;
         script.onload = () => {
-            // --- DÜZELTİLEN BÖLÜM BURASI ---
-            // 'soru-yoneticisi' gibi isimleri 'SoruYoneticisi' şekline doğru çevirir.
             const formattedId = module.id.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
             const initFunctionName = `initialize${formattedId}Module`;
-            // ---------------------------------
-            
             if (typeof window[initFunctionName] === 'function') {
                 window[initFunctionName]();
             } else {
                 console.warn(`Başlatma fonksiyonu bulunamadı: ${initFunctionName}`);
-                alert(`Kritik Hata: Modülün başlatma fonksiyonu (${initFunctionName}) bulunamadı. Lütfen modülün .js dosyasını kontrol edin.`);
             }
         };
         document.body.appendChild(script);
 
     } catch (error) {
         console.error("Modül yüklenirken hata oluştu:", error);
-        container.innerHTML = `
-            <div style="color: #fca5a5; background-color: #450a0a; border: 1px solid #991b1b; border-radius: 8px; padding: 15px;">
-                <p style="font-weight: bold; font-size: 16px;">"${module.name}" yüklenirken bir hata oluştu.</p>
-                <p style="font-size: 12px; margin-top: 10px; color: #fda4af;">Sunucunuzda dosya yolu, dosya izni veya başka bir konfigürasyon sorunu olabilir.</p>
-                <hr style="border-color: #991b1b; margin: 15px 0;">
-                <p style="font-size: 12px; font-family: monospace; color: #fecaca;"><b>Teknik Hata Detayı:</b><br>${error.toString()}</p>
-            </div>
-        `;
+        container.innerHTML = `<div style="color: #fca5a5; background-color: #450a0a; border: 1px solid #991b1b; padding: 15px;">...Hata Detayı...</div>`;
     }
 }
 
