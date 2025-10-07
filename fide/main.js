@@ -157,6 +157,7 @@ async function loadExcelData() {
     }
 }
 
+
 function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
@@ -185,6 +186,8 @@ function setupEventListeners() {
     document.getElementById('restore-file-input').addEventListener('change', handleRestoreUpload);
     document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
+    
+    // --- VERİ BAKIM ARAÇLARI BUTONLARINA AİT ESKİ EVENT LISTENER'LAR KALDIRILDI ---
     
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
         const dogruSifreHash = 'ZmRlMDAx';
@@ -257,11 +260,14 @@ function setupEventListeners() {
 
     restoreBtn.addEventListener('click', () => document.getElementById('restore-file-input').click());
     mergeBtn.addEventListener('click', () => document.getElementById('merge-file-input').click());
+    
     loginToggleBtn.addEventListener('click', (event) => {
         event.stopPropagation();
         loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
     });
+
     logoutBtn.addEventListener('click', () => { auth.signOut().then(() => window.location.reload()); });
+    
     loginSubmitBtn.addEventListener('click', () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
@@ -287,9 +293,11 @@ function setupEventListeners() {
     });
 }
 
-// --- VERİ BAKIM ARAÇLARI FONKSİYONLARI BU BÖLÜMDEN TAMAMEN KALDIRILDI ---
+// --- VERİ BAKIM ARAÇLARI İLE İLGİLİ TÜM FONKSİYONLAR BU ALANDAN SİLİNDİ ---
+// (showModal, hideModal, analyzeOrphanReports, checkDataConsistency, analyzeCorruptReports, openFieldCleaner vb.)
 
-// --- MEVCUT FONKSİYONLAR ---
+
+// --- MEVCUT DİĞER FONKSİYONLAR ---
 function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore || !auth.currentUser || !database) return;
 
@@ -343,7 +351,6 @@ async function removeStoreCodeFromRevertedList(bayiKodu) {
         console.error("Geri alınanlar listesi güncellenirken hata oluştu:", error);
     }
 }
-
 function loadReportForStore(bayiKodu) {
     const storeKey = `store_${bayiKodu}`;
     if (database && auth.currentUser) {
