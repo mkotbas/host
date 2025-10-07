@@ -22,6 +22,8 @@ let currentModuleId = null;
 window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
+    // Kullanıcının isteği üzerine oturum kalıcılığı 'session' olarak ayarlandı.
+    // Bu ayar, tarayıcı kapatıldığında oturumun otomatik olarak sona ermesini sağlar.
     await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
     auth.onAuthStateChanged(user => {
