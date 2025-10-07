@@ -125,6 +125,12 @@ body {
     background-color: var(--bg-dark-accent);
 }
 
+/* --- YENİ EKLENEN İÇERİK KUTUSU --- */
+.content-wrapper {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
 .content-header {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 15px;
