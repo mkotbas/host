@@ -1,14 +1,14 @@
 :root {
-    --bg-dark: #1e293b; /* Kartlar, modüller gibi ana içerik kutularının arka planı */
-    --bg-dark-accent: #0f172a; /* Sayfanın en dış, genel arka plan rengi */
-    --sidebar-bg: #111827; /* Sol menünün arka planı */
-    --primary-text: #f8fafc; /* Ana metin rengi (beyaz) */
-    --secondary-text: #94a3b8; /* İkincil, daha soluk metin rengi */
-    --border-color: #374151; /* Kenarlıklar ve ayırıcı çizgilerin rengi */
-    --primary-accent: #3b82f6; /* Ana vurgu rengi (mavi) */
-    --success: #22c55e; /* Başarı rengi (yeşil) */
-    --danger: #ef4444; /* Tehlike/Silme rengi (kırmızı) */
-    --warning: #f59e0b; /* Uyarı rengi (turuncu) */
+    --bg-main: #f0f2f5; /* Sayfanın en dış, genel arka plan rengi (Açık Gri) */
+    --bg-card: #ffffff; /* Kartlar, modüller gibi ana içerik kutularının arka planı (Beyaz) */
+    --primary-text: #334155; /* Ana metin rengi (Koyu Gri/Siyah) */
+    --secondary-text: #64748b; /* İkincil, daha soluk metin rengi */
+    --border-color: #e2e8f0; /* Kenarlıklar ve ayırıcı çizgilerin rengi */
+    --primary-accent: #3b82f6; /* Ana vurgu rengi (Mavi) */
+    --success: #16a34a; /* Başarı rengi (Yeşil) */
+    --danger: #ef4444; /* Tehlike/Silme rengi (Kırmızı) */
+    --warning: #f59e0b; /* Uyarı rengi (Turuncu) */
+    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05); /* Kart gölgesi */
     --transition: all 0.3s ease;
 }
 
@@ -20,7 +20,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-dark-accent); /* Sayfa geneli arka planı en koyu renk yapıldı */
+    background-color: var(--bg-main);
     color: var(--primary-text);
     font-size: 14px;
     line-height: 1.6;
@@ -34,7 +34,7 @@ body {
 /* --- Sol Menü (Sidebar) --- */
 .sidebar {
     width: 260px;
-    background-color: var(--sidebar-bg);
+    background-color: var(--bg-card); /* Menü arka planı beyaz yapıldı */
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -75,13 +75,13 @@ body {
 }
 
 .sidebar-menu li a:hover {
-    background-color: var(--bg-dark);
+    background-color: #f8fafc; /* Hafif gri hover efekti */
     color: var(--primary-text);
 }
 
 .sidebar-menu li a.active {
     background-color: var(--primary-accent);
-    color: var(--primary-text);
+    color: white; /* Aktif menü metni beyaz */
     font-weight: 600;
 }
 
@@ -105,27 +105,20 @@ body {
     margin-top: 5px;
 }
 
-.submenu.open {
-    display: block;
-}
+.submenu.open { display: block; }
+.submenu li a { padding-left: 25px; font-size: 13px; gap: 10px; }
 
-.submenu li a {
-    padding-left: 25px;
-    font-size: 13px;
-    gap: 10px;
-}
 
 /* --- Sağ İçerik Alanı --- */
 .main-content {
     flex-grow: 1;
     padding: 25px;
-    background-color: var(--bg-dark-accent); /* Ana içerik alanı arka planı */
+    background-color: var(--bg-main); /* Ana içerik alanı arka planı */
 }
 
 .content-header {
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 15px;
     margin-bottom: 25px;
+    /* Kenarlık kaldırıldı, başlık sade bırakıldı */
 }
 
 .content-header h2 {
@@ -137,13 +130,11 @@ body {
 }
 
 .content-body {
-    background-color: var(--bg-dark); /* Modül içeriğinin yüklendiği alanın arka planı */
-    padding: 20px;
-    border-radius: 8px;
-    color: var(--secondary-text);
-    border: 1px solid var(--border-color); /* Tasarıma uygun kenarlık eklendi */
+    /* Bu alan artık modülün kendi stilini alması için boş bırakıldı */
+    background-color: transparent;
+    padding: 0;
+    border: none;
 }
-
 
 /* --- Alt Kısım (Footer) ve Bağlantı Durumu --- */
 .sidebar-footer {
@@ -154,67 +145,7 @@ body {
     gap: 15px;
 }
 
-#connection-status-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background-color: var(--bg-dark);
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-#connection-status-switch {
-    width: 44px;
-    height: 24px;
-    border-radius: 12px;
-    position: relative;
-    cursor: default;
-    transition: background-color 0.4s ease;
-}
-
-#connection-status-switch .thumb {
-    width: 20px;
-    height: 20px;
-    background: white;
-    border-radius: 50%;
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-#connection-status-switch.connected { background-color: var(--success); }
-#connection-status-switch.connected .thumb { transform: translateX(0px); }
-#connection-status-switch.disconnected { background-color: var(--danger); }
-#connection-status-switch.disconnected .thumb { transform: translateX(20px); }
-
-#connection-status-text {
-    width: 75px;
-    text-align: left;
-    color: var(--primary-text);
-}
-
-#auth-controls .btn-auth {
-    width: 100%;
+#connection-status-container, #auth-controls .btn-auth {
     border: 1px solid var(--border-color);
-    background-color: transparent;
-    color: var(--secondary-text);
-    padding: 10px;
     border-radius: 8px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-weight: 600;
-    transition: var(--transition);
-}
-
-#auth-controls .btn-auth:hover {
-    background-color: var(--primary-accent);
-    color: var(--primary-text);
-    border-color: var(--primary-accent);
 }
