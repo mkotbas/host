@@ -47,10 +47,6 @@ async function initializeAdminPanel() {
 }
 
 function renderModuleMenu() {
-    // --- TEŞHİS İÇİN EKLENEN SATIR ---
-    alert(`Admin paneli, modül listesinde ${modules.length} adet modül görüyor.`);
-    // ------------------------------------
-
     const menu = document.getElementById('module-menu');
     menu.innerHTML = ''; 
 
