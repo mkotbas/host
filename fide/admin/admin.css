@@ -1,0 +1,222 @@
+:root {
+    --bg-dark: #1e293b;
+    --bg-dark-accent: #2c3a4f;
+    --sidebar-bg: #111827;
+    --primary-text: #f8fafc;
+    --secondary-text: #94a3b8;
+    --border-color: #374151;
+    --primary-accent: #3b82f6;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --transition: all 0.3s ease;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--primary-text);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.admin-panel {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* --- Sol Menü (Sidebar) --- */
+.sidebar {
+    width: 260px;
+    background-color: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-color);
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    margin: 0;
+}
+
+.sidebar-menu {
+    list-style-type: none;
+    padding: 15px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* --- DÜZELTİLMİŞ ALT MENÜ STİLLERİ --- */
+.sidebar-menu li a {
+    display: flex;
+    /* justify-content: space-between;  <-- HATALI KOD KALDIRILDI */
+    align-items: center;
+    gap: 12px; /* <-- İKON VE YAZI ARASINA BOŞLUK EKLENDİ */
+    padding: 12px 15px;
+    color: var(--secondary-text);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: var(--transition);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.sidebar-menu li a:hover {
+    background-color: var(--bg-dark-accent);
+    color: var(--primary-text);
+}
+
+.sidebar-menu li a.active {
+    background-color: var(--primary-accent);
+    color: var(--primary-text);
+    font-weight: 600;
+}
+
+.sidebar-menu .has-submenu > a::after {
+    content: '\f054'; /* FontAwesome arrow icon */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 10px;
+    transition: transform 0.3s ease;
+    margin-left: auto; /* <-- OK İŞARETİNİ SAĞA YASLAMAK İÇİN EKLENDİ */
+}
+
+.sidebar-menu .has-submenu.open > a::after {
+    transform: rotate(90deg);
+}
+
+.submenu {
+    list-style-type: none;
+    padding-left: 20px;
+    display: none; /* Başlangıçta gizli */
+    margin-top: 5px;
+}
+
+.submenu.open {
+    display: block; /* Tıklandığında görünür */
+}
+
+.submenu li a {
+    padding-left: 25px; /* Daha içeriden başlasın */
+    font-size: 13px;
+    gap: 10px; /* Alt menü ikon-yazı arası boşluk */
+}
+/* -------------------------------------- */
+
+
+/* --- Sağ İçerik Alanı --- */
+.main-content {
+    flex-grow: 1;
+    padding: 25px;
+    background-color: var(--bg-dark-accent);
+}
+
+.content-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+.content-header h2 {
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--primary-text);
+}
+
+.content-body {
+    background-color: var(--bg-dark);
+    padding: 20px;
+    border-radius: 8px;
+    color: var(--secondary-text);
+}
+
+
+/* --- Alt Kısım (Footer) ve Bağlantı Durumu --- */
+.sidebar-footer {
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#connection-status-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: var(--bg-dark-accent);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#connection-status-switch {
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    position: relative;
+    cursor: default;
+    transition: background-color 0.4s ease;
+}
+
+#connection-status-switch .thumb {
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+#connection-status-switch.connected { background-color: var(--success); }
+#connection-status-switch.connected .thumb { transform: translateX(0px); }
+#connection-status-switch.disconnected { background-color: var(--danger); }
+#connection-status-switch.disconnected .thumb { transform: translateX(20px); }
+
+#connection-status-text {
+    width: 75px;
+    text-align: left;
+    color: var(--primary-text);
+}
+
+#auth-controls .btn-auth {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--secondary-text);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+#auth-controls .btn-auth:hover {
+    background-color: var(--primary-accent);
+    color: var(--primary-text);
+    border-color: var(--primary-accent);
+}
