@@ -9,6 +9,13 @@
     --success: #16a34a;
     --danger: #dc2626;
     --transition: all 0.3s ease;
+    
+    /* Aydınlık tema için yeni renkler */
+    --light-bg: #f3f4f6; /* Açık gri arkaplan */
+    --light-card-bg: #ffffff; /* Beyaz kart */
+    --light-text-primary: #111827; /* Koyu ana metin */
+    --light-text-secondary: #6b7280; /* Gri ikincil metin */
+    --light-border: #e5e7eb; /* Açık gri border */
 }
 
 * {
@@ -19,7 +26,8 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-dark);
+    /* Body arkaplanı artık koyu tema ile aynı kalacak */
+    background-color: var(--bg-dark); 
     color: var(--primary-text);
     font-size: 14px;
     line-height: 1.6;
@@ -30,7 +38,7 @@ body {
     min-height: 100vh;
 }
 
-/* --- Sol Menü (Sidebar) --- */
+/* --- Sol Menü (Sidebar) - Değişiklik yok --- */
 .sidebar {
     width: 260px;
     background-color: var(--sidebar-bg);
@@ -114,16 +122,15 @@ body {
     gap: 10px;
 }
 
-/* --- Sağ İçerik Alanı (GÜNCELLENDİ) --- */
+/* --- Sağ İçerik Alanı (AYDINLIK TEMA İÇİN GÜNCELLENDİ) --- */
 .main-content {
     flex-grow: 1;
     padding: 25px;
-    /* Ana arkaplan rengi orta tona ayarlandı */
-    background-color: var(--bg-dark-accent, #2c3a4f); 
+    background-color: var(--light-bg); /* Arkaplan açık gri oldu */
 }
 
 .content-header {
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--light-border);
     padding-bottom: 15px;
     margin-bottom: 25px;
 }
@@ -133,19 +140,19 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    color: var(--primary-text);
+    color: var(--light-text-primary); /* Yazı rengi koyu oldu */
 }
 
 .content-body {
-    /* Bu alan artık şeffaf, arkaplanı main-content'ten alacak */
-    background-color: transparent; 
-    padding: 0;
-    border-radius: 0;
-    color: var(--secondary-text);
+    background-color: var(--light-card-bg); /* Modül alanı beyaz bir kart oldu */
+    padding: 20px;
+    border-radius: 8px;
+    color: var(--light-text-secondary); /* Varsayılan metin rengi gri oldu */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 
-/* --- Alt Kısım (Footer) ve Bağlantı Durumu --- */
+/* --- Alt Kısım (Footer) - Değişiklik yok --- */
 .sidebar-footer {
     padding: 15px;
     border-top: 1px solid var(--border-color);
