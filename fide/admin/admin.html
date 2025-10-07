@@ -4,56 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yönetim Paneli</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
-    <style id="module-styles"></style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="admin-layout">
-        <nav class="sidebar">
+    <div class="panel-container">
+        <aside id="sidebar">
             <div class="sidebar-header">
-                <h1>Yönetim Paneli</h1>
+                <h2><i class="fas fa-cogs"></i> Yönetim Paneli</h2>
             </div>
-            <ul class="module-menu" id="module-menu">
+            <nav class="module-nav">
+                <ul id="module-menu">
+                    <li><a href="#" data-module="veritabani"><i class="fas fa-database"></i> Veritabanı Ayarları</a></li>
                 </ul>
+            </nav>
             <div class="sidebar-footer">
                 <div id="auth-controls">
-                    <div id="connection-status-container">
+                     <div id="connection-status-container">
+                        <span id="connection-status-text">Bağlı Değil</span>
                         <div id="connection-status-switch" class="disconnected">
                             <div class="thumb"></div>
                         </div>
-                        <span id="connection-status-text">Bağlı Değil</span>
                     </div>
-                    <button id="login-toggle-btn" class="login-btn"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
-                    <button id="logout-btn" class="logout-btn" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
-                    
+                    <button id="login-toggle-btn" class="btn-primary btn-sm"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
+                    <button id="logout-btn" class="btn-danger btn-sm" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
                     <div id="login-popup">
-                        <h3><i class="fas fa-lock"></i> Yönetici Girişi</h3>
+                        <h3><i class="fas fa-user-lock"></i> Yönetici Girişi</h3>
                         <input type="email" id="email-input" placeholder="E-posta Adresi">
                         <input type="password" id="password-input" placeholder="Şifre">
-                        <button id="login-submit-btn">Giriş Yap</button>
+                        <button id="login-submit-btn" class="btn-primary">Giriş Yap</button>
                         <div id="login-error"></div>
                     </div>
                 </div>
             </div>
-        </nav>
-        <main class="main-content">
-            <div class="module-header" id="module-header">
-                <i class="fas fa-cogs"></i>
-                <h2 id="module-title">Modül Yöneticisi</h2>
-            </div>
-            <div class="module-body" id="module-body">
+        </aside>
+
+        <main id="main-content">
+            <div class="welcome-message">
+                <i class="fas fa-cogs fa-3x"></i>
+                <h1>Modül Yöneticisi</h1>
                 <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
             </div>
         </main>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="../firebase-config.js"></script> <script src="admin.js"></script>
-    
-    <script id="module-script"></script>
 </body>
 </html>
