@@ -36,21 +36,14 @@ import {
     filterManagerView
 } from './soru-yoneticisi.module.js';
 
-// YENİ: Bayi Yönetimi Departmanından fonksiyonları ithal ediyoruz
-import {
-    loadBayiManagerData,
-    renderBayiManager,
-    addNewEmailUI,
-    handleBulkEmailUpload,
-    handleBayiManagerClick
-} from './bayi-yoneticisi.module.js';
+// KALDIRILDI: Bayi Yönetimi Departmanına ait import komutları silindi.
 
 
 // --- 2. Adım: Global Değişkenler ve Uygulama Başlatma ---
 
 let isFirebaseConnected = false;
 let isQuestionManagerRendered = false;
-let isBayiManagerRendered = false; // YENİ: Bayi yöneticisinin yüklenip yüklenmediğini kontrol eder
+// KALDIRILDI: isBayiManagerRendered değişkeni silindi.
 
 window.onload = initializeApp;
 
@@ -121,22 +114,44 @@ function setupEventListeners() {
     document.getElementById('clean-field-btn').addEventListener('click', () => openFieldCleaner(database));
     document.getElementById('analyze-corrupt-reports-btn').addEventListener('click', () => analyzeCorruptReports(database));
 
-    // Soru Yöneticisi Paneli
+    // Soru Yöneticisi Paneli (Bu bölüm aynı kalır, dokunulmadı)
     document.getElementById('save-questions-btn').addEventListener('click', () => saveQuestions(auth, database));
     document.getElementById('add-new-question-btn').addEventListener('click', addNewQuestionUI);
-    // ... (Soru Yöneticisi ile ilgili diğer tüm event listener'lar aynı kalacak) ...
-
-    // YENİ: Bayi Yöneticisi Paneli Olayları
-    document.getElementById('add-new-email-btn').addEventListener('click', addNewEmailUI);
-    document.getElementById('bulk-upload-emails-btn').addEventListener('click', () => document.getElementById('email-bulk-upload-input').click());
-    document.getElementById('email-bulk-upload-input').addEventListener('change', (e) => handleBulkEmailUpload(e, auth, database));
-    document.getElementById('email-search-input').addEventListener('keyup', renderBayiManager);
-
-    // Olay Delegasyonu: Bayi listesi içindeki tıklamaları yönet
-    const emailManagerList = document.getElementById('email-manager-list');
-    if(emailManagerList) {
-        emailManagerList.addEventListener('click', (e) => handleBayiManagerClick(e, auth, database));
+    document.getElementById('delete-all-archived-btn').addEventListener('click', deleteAllArchivedQuestions);
+    document.getElementById('restore-all-archived-btn').addEventListener('click', restoreAllArchivedQuestions);
+    document.getElementById('view-active-btn').addEventListener('click', (e) => {
+        e.currentTarget.classList.add('active');
+        document.getElementById('view-archived-btn').classList.remove('active');
+        filterManagerView();
+    });
+    document.getElementById('view-archived-btn').addEventListener('click', (e) => {
+        e.currentTarget.classList.add('active');
+        document.getElementById('view-active-btn').classList.remove('active');
+        filterManagerView();
+    });
+    document.getElementById('unlock-ids-btn').addEventListener('click', handleUnlockIds);
+    document.getElementById('open-scenario-system-btn').addEventListener('click', openScenarioSystem);
+    document.getElementById('close-scenario-system-btn').addEventListener('click', closeScenarioSystem);
+    document.querySelectorAll('.scenario-btn').forEach(btn => btn.addEventListener('click', (e) => selectScenario(e.currentTarget.dataset.scenario)));
+    document.getElementById('apply-id-change-btn').addEventListener('click', () => applyIdChangeScenario(auth, database));
+    document.getElementById('scenario-delete-id').addEventListener('input', previewQuestionForDelete);
+    document.getElementById('apply-delete-question-btn').addEventListener('click', () => applyDeleteQuestionScenario(auth, database));
+    document.getElementById('open-migration-manager-from-scenario-btn').addEventListener('click', () => {
+        closeScenarioSystem();
+        renderMigrationManagerUI(auth, database);
+        document.getElementById('migration-manager-overlay').style.display = 'flex';
+    });
+    document.getElementById('close-migration-manager-btn').addEventListener('click', () => document.getElementById('migration-manager-overlay').style.display = 'none');
+    const managerList = document.getElementById('manager-list');
+    if(managerList) {
+        managerList.addEventListener('click', (e) => {
+            handleManagerListClick(e, auth, database);
+            handleEditorToolbarClick(e);
+            handleProductManagerClick(e);
+        });
     }
+
+    // KALDIRILDI: Bayi Yöneticisi Paneli ile ilgili tüm event listener'lar silindi.
 }
 
 async function switchPanel(targetId) {
@@ -155,16 +170,7 @@ async function switchPanel(targetId) {
         isQuestionManagerRendered = true;
         document.getElementById('loading-overlay').style.display = 'none';
     } 
-    // YENİ: Bayi Yöneticisi paneline tıklandığında ilgili fonksiyonları çağır
-    else if (targetId === 'bayi-yoneticisi' && !isBayiManagerRendered) {
-        if (!auth.currentUser) return alert("Bayi Yöneticisi'ni kullanmak için giriş yapın.");
-
-        document.getElementById('loading-overlay').style.display = 'flex';
-        await loadBayiManagerData(auth, database);
-        renderBayiManager();
-        isBayiManagerRendered = true;
-        document.getElementById('loading-overlay').style.display = 'none';
-    }
+    // KALDIRILDI: Bayi Yöneticisi ile ilgili panel değiştirme mantığı silindi.
 }
 
 function handleLogin() {
@@ -179,7 +185,7 @@ function handleLogin() {
 }
 
 function handleUnlockIds() {
-    const dogruSifreHash = 'ZmRlMDAx'; // "fde001" in base64
+    const dogruSifreHash = 'ZmRlMDAx';
     const girilenSifre = prompt("ID alanlarını düzenlemeye açmak için yönetici şifresini girin:");
     if (girilenSifre) {
         if (btoa(girilenSifre) === dogruSifreHash) {
