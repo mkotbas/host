@@ -1,14 +1,14 @@
 :root {
-    --bg-main: #f0f2f5; /* Sayfanın en dış, genel arka plan rengi (Açık Gri) */
+    --bg-main: #f1f5f9; /* Sayfanın en dış, genel arka plan rengi (Açık Gri) */
     --bg-card: #ffffff; /* Kartlar, modüller gibi ana içerik kutularının arka planı (Beyaz) */
-    --primary-text: #334155; /* Ana metin rengi (Koyu Gri/Siyah) */
+    --primary-text: #1e293b; /* Ana metin rengi (Koyu Gri/Siyah) */
     --secondary-text: #64748b; /* İkincil, daha soluk metin rengi */
     --border-color: #e2e8f0; /* Kenarlıklar ve ayırıcı çizgilerin rengi */
     --primary-accent: #3b82f6; /* Ana vurgu rengi (Mavi) */
     --success: #16a34a; /* Başarı rengi (Yeşil) */
     --danger: #ef4444; /* Tehlike/Silme rengi (Kırmızı) */
     --warning: #f59e0b; /* Uyarı rengi (Turuncu) */
-    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05); /* Kart gölgesi */
+    --card-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Kart gölgesi */
     --transition: all 0.3s ease;
 }
 
@@ -34,7 +34,7 @@ body {
 /* --- Sol Menü (Sidebar) --- */
 .sidebar {
     width: 260px;
-    background-color: var(--bg-card); /* Menü arka planı beyaz yapıldı */
+    background-color: var(--bg-card);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -75,13 +75,13 @@ body {
 }
 
 .sidebar-menu li a:hover {
-    background-color: #f8fafc; /* Hafif gri hover efekti */
+    background-color: #f8fafc;
     color: var(--primary-text);
 }
 
 .sidebar-menu li a.active {
     background-color: var(--primary-accent);
-    color: white; /* Aktif menü metni beyaz */
+    color: white;
     font-weight: 600;
 }
 
@@ -94,31 +94,20 @@ body {
     margin-left: auto;
 }
 
-.sidebar-menu .has-submenu.open > a::after {
-    transform: rotate(90deg);
-}
-
-.submenu {
-    list-style-type: none;
-    padding-left: 20px;
-    display: none;
-    margin-top: 5px;
-}
-
+.sidebar-menu .has-submenu.open > a::after { transform: rotate(90deg); }
+.submenu { list-style-type: none; padding-left: 20px; display: none; margin-top: 5px; }
 .submenu.open { display: block; }
 .submenu li a { padding-left: 25px; font-size: 13px; gap: 10px; }
-
 
 /* --- Sağ İçerik Alanı --- */
 .main-content {
     flex-grow: 1;
     padding: 25px;
-    background-color: var(--bg-main); /* Ana içerik alanı arka planı */
 }
 
 .content-header {
+    padding-bottom: 15px;
     margin-bottom: 25px;
-    /* Kenarlık kaldırıldı, başlık sade bırakıldı */
 }
 
 .content-header h2 {
@@ -130,22 +119,8 @@ body {
 }
 
 .content-body {
-    /* Bu alan artık modülün kendi stilini alması için boş bırakıldı */
     background-color: transparent;
     padding: 0;
     border: none;
-}
-
-/* --- Alt Kısım (Footer) ve Bağlantı Durumu --- */
-.sidebar-footer {
-    padding: 15px;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-#connection-status-container, #auth-controls .btn-auth {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    color: var(--primary-text);
 }

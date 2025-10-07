@@ -1,95 +1,43 @@
 /* --- Genel Buton Stilleri --- */
-.btn-primary, .btn-warning, .btn-danger, .btn-success {
+.btn-primary, .btn-warning, .btn-danger, .btn-success, .file-input-label {
     text-decoration: none; cursor: pointer; border: none; border-radius: 6px;
-    padding: 8px 14px; font-weight: 600; transition: all 0.3s ease;
+    padding: 8px 14px; font-weight: 500; transition: all 0.3s ease;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     color: white;
 }
-.btn-primary { background-color: #3b82f6; }
-.btn-danger { background-color: #ef4444; }
-.btn-success { background-color: #16a34a; }
-.btn-warning { background-color: #f59e0b; }
+.btn-primary { background-color: var(--primary-accent); }
+.btn-danger { background-color: var(--danger); }
+.btn-success { background-color: var(--success); }
+.btn-warning { background-color: var(--warning); }
 .btn-sm { padding: 6px 12px; font-size: 12px; }
+.file-input-label { background-color: #475569; }
 
-/* --- Bilgi ve Uyarı Mesajları --- */
-.info-bar {
-    padding: 15px;
-    background-color: #eff6ff; /* Açık mavi arka plan */
-    border: 1px solid #dbeafe;
-    border-radius: 8px;
-    margin-bottom: 25px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-.info-bar p {
-    margin: 0;
-    font-size: 13px;
-    color: #374151;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* --- Panel Başlığı ve Yıllık Hedef --- */
+/* --- Panel Başlığı --- */
 .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; padding-bottom: 15px; flex-wrap: wrap; gap: 15px;
+    border-bottom: 1px solid var(--border-color);
 }
-.panel-header h3 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.annual-target {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--secondary-text);
-}
-.annual-target span {
-    color: var(--primary-accent);
-    font-weight: bold;
-}
+.panel-header h3 { margin: 0; font-size: 20px; font-weight: 600; }
 
-/* --- Ana Kart Yapısı --- */
-.card-style {
-    background-color: var(--bg-card);
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--card-shadow);
-    margin-bottom: 25px;
-}
-
-/* --- Performans Kartları --- */
+/* --- İstatistik Kartları --- */
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 16px;
+    margin-bottom: 25px;
 }
 .stat-card {
     background-color: var(--bg-card);
     padding: 20px;
-    border-radius: 12px;
+    border-radius: 8px;
     border: 1px solid var(--border-color);
-    text-align: left;
-    padding-left: 20px;
+    box-shadow: var(--card-shadow);
 }
 .stat-card span {
     font-size: 13px;
     color: var(--secondary-text);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: block;
     margin-bottom: 8px;
 }
 .stat-card p {
@@ -98,12 +46,20 @@
     margin: 0;
     color: var(--primary-text);
 }
+.stat-card.completed span { color: var(--success); }
+.stat-card.remaining span { color: var(--warning); }
 
 /* --- Filtreleme Alanı --- */
 .multi-filter-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
+    padding: 20px;
+    background-color: var(--bg-card); /* EKSİK OLAN ARKA PLAN RENGİ EKLENDİ */
+    border: 1px solid var(--border-color); /* EKSİK OLAN KENARLIK EKLENDİ */
+    border-radius: 8px; /* EKSİK OLAN KENAR YUVARLATMA EKLENDİ */
+    margin-bottom: 25px;
+    box-shadow: var(--card-shadow);
 }
 .filter-item label {
     display: block;
@@ -129,11 +85,10 @@
     align-items: flex-start;
 }
 .audit-list-column {
-    background-color: var(--bg-card);
-    border-radius: 12px;
+    background-color: var(--bg-card); /* ARKA PLAN RENGİ GÜNCELLENDİ */
+    border-radius: 8px;
     border: 1px solid var(--border-color);
     box-shadow: var(--card-shadow);
-    overflow: hidden; /* Kart içindeki elemanların dışarı taşmasını engeller */
 }
 .audit-list-column h4 {
     font-size: 16px;
@@ -146,6 +101,7 @@
     border-bottom: 1px solid var(--border-color);
 }
 #denetlenecek-bayiler-container, #denetlenen-bayiler-container { padding: 8px; }
+
 .store-list { list-style-type: none; padding: 0; margin: 0; }
 .store-list-item {
     padding: 12px;
@@ -154,18 +110,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    color: var(--primary-text); /* Metin rengi düzeltildi */
 }
 .store-list-item:last-child { border-bottom: none; }
 
-.region-container { margin-bottom: 10px; }
 .region-header {
     padding: 10px 12px;
-    background-color: #f8fafc;
+    background-color: #f8fafc; /* Açık gri tonu */
     font-weight: bold;
     font-size: 13px;
     border-top: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
 }
-.region-header:first-child { border-top: none; }
+.region-header:first-of-type { border-top: none; }
 .region-container .store-list { max-height: 250px; overflow-y: auto; }
-.empty-list-message { text-align: center; padding: 20px; color: var(--secondary-text); }
