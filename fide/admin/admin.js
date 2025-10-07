@@ -22,8 +22,6 @@ let currentModuleId = null;
 window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
-    // Kullanıcının isteği üzerine oturum kalıcılığı 'session' olarak ayarlandı.
-    // Bu ayar, tarayıcı kapatıldığında oturumun otomatik olarak sona ermesini sağlar.
     await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
     auth.onAuthStateChanged(user => {
@@ -123,11 +121,17 @@ async function loadModule(moduleId) {
         script.id = 'module-script';
         script.src = `${module.path}${module.id}.js`;
         script.onload = () => {
-            const initFunctionName = `initialize${module.id.charAt(0).toUpperCase() + module.id.slice(1).replace(/-/g, '')}Module`;
+            // --- DÜZELTİLEN BÖLÜM BURASI ---
+            // 'soru-yoneticisi' gibi isimleri 'SoruYoneticisi' şekline doğru çevirir.
+            const formattedId = module.id.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
+            const initFunctionName = `initialize${formattedId}Module`;
+            // ---------------------------------
+            
             if (typeof window[initFunctionName] === 'function') {
                 window[initFunctionName]();
             } else {
                 console.warn(`Başlatma fonksiyonu bulunamadı: ${initFunctionName}`);
+                alert(`Kritik Hata: Modülün başlatma fonksiyonu (${initFunctionName}) bulunamadı. Lütfen modülün .js dosyasını kontrol edin.`);
             }
         };
         document.body.appendChild(script);
