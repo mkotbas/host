@@ -1,0 +1,19 @@
+<div id="loading-overlay" style="display: none;">
+    <div class="spinner"></div>
+    <p>İşlem yapılıyor, lütfen bekleyin...</p>
+</div>
+
+<div class="card" id="email-manager">
+    <p style="font-size: 12px; color: var(--secondary-text, #94a3b8); margin-top: -15px; margin-bottom: 15px;">
+        <i class="fas fa-info-circle"></i> Buradan bayi kodlarına atanmış e-posta adreslerini yönetebilirsiniz. Değişiklikler anında buluta kaydedilir.
+    </p>
+    <div class="manager-actions">
+         <div class="manager-main-actions">
+            <button id="bulk-upload-emails-btn" class="btn-success btn-sm"><i class="fas fa-file-upload"></i> Toplu E-posta Yükle (.txt)</button>
+            <button id="add-new-email-btn" class="btn-primary btn-sm"><i class="fas fa-plus"></i> Yeni E-posta Ekle</button>
+             <input type="file" id="email-bulk-upload-input" accept=".txt" style="display: none;">
+        </div>
+         <input type="text" id="email-search-input" placeholder="Bayi kodu veya e-posta ile ara...">
+    </div>
+    <div id="email-manager-list" class="email-manager-list-container"></div>
+</div>
