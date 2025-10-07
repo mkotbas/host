@@ -1,52 +1,47 @@
-// --- Veritabanı Modülü Ana Betiği ---
-
 /**
- * Bu fonksiyon, admin.js tarafından modül yüklendikten sonra otomatik olarak çağrılır.
- * Modülün olay dinleyicilerini (event listeners) ve başlangıç ayarlarını yapar.
+ * Bu script, Veritabanı Bakım modülünün tüm işlevselliğini içerir.
+ * admin.js tarafından dinamik olarak yüklendiğinde çalışır.
  */
-window.initializeModule = function() {
-    // Butonlara tıklama olaylarını ilgili fonksiyonlara bağla
-    document.getElementById('analyze-orphan-reports-btn').addEventListener('click', analyzeOrphanReports);
-    document.getElementById('check-consistency-btn').addEventListener('click', checkDataConsistency);
-    document.getElementById('clean-field-btn').addEventListener('click', openFieldCleaner);
-    document.getElementById('analyze-corrupt-reports-btn').addEventListener('click', analyzeCorruptReports);
 
-    // Modal penceresi dışına tıklandığında kapatma
-    const modal = document.getElementById('maintenance-modal');
-    if (modal) {
-        modal.addEventListener('click', (event) => {
-            if (event.target === modal) {
-                hideModal();
-            }
-        });
-    }
-};
+// --- MODÜL BAŞLATMA ---
+// Bu fonksiyon, script yüklendiğinde butonlara olay dinleyicilerini ekler.
+function initializeVeritabaniModule() {
+    // Butonları bul
+    const analyzeOrphanBtn = document.getElementById('analyze-orphan-reports-btn');
+    const analyzeCorruptBtn = document.getElementById('analyze-corrupt-reports-btn');
+    const checkConsistencyBtn = document.getElementById('check-consistency-btn');
+    const cleanFieldBtn = document.getElementById('clean-field-btn');
 
-// --- Modal (Açılır Pencere) Yönetim Fonksiyonları ---
+    // Olay dinleyicilerini ekle
+    if (analyzeOrphanBtn) analyzeOrphanBtn.addEventListener('click', analyzeOrphanReports);
+    if (analyzeCorruptBtn) analyzeCorruptBtn.addEventListener('click', analyzeCorruptReports);
+    if (checkConsistencyBtn) checkConsistencyBtn.addEventListener('click', checkDataConsistency);
+    if (cleanFieldBtn) cleanFieldBtn.addEventListener('click', openFieldCleaner);
+}
+
+// --- main.js'ten TAŞINAN FONKSİYONLAR ---
 
 function showModal(title, body, footer) {
-    document.getElementById('modal-title').innerHTML = title;
-    document.getElementById('modal-body').innerHTML = body;
-    document.getElementById('modal-footer').innerHTML = footer;
-    document.getElementById('maintenance-modal').style.display = 'flex';
+    // Global scope'taki modal'ı kullan
+    const modal = document.getElementById('maintenance-modal');
+    if(modal) {
+        modal.querySelector('#modal-title').innerHTML = title;
+        modal.querySelector('#modal-body').innerHTML = body;
+        modal.querySelector('#modal-footer').innerHTML = footer;
+        modal.style.display = 'flex';
+    }
 }
 
 function hideModal() {
-    document.getElementById('maintenance-modal').style.display = 'none';
+    const modal = document.getElementById('maintenance-modal');
+    if(modal) {
+        modal.style.display = 'none';
+    }
 }
 
 function backupReminder() {
-    // Bu fonksiyon artık ana uygulama yerine yedekleme modülünden çağrılmalı,
-    // ancak veri bakım araçları için hala bir uyarı mekanizması olarak kalabilir.
-    return confirm(
-        "ÖNEMLİ UYARI:\n\nBu işlem veritabanında kalıcı değişiklikler yapacaktır. " +
-        "İşleme başlamadan önce verilerinizin tamamını yedeklemeniz şiddetle tavsiye edilir.\n\n" +
-        "Bu riski kabul ederek devam etmek istiyor musunuz?"
-    );
+    return confirm("ÖNEMLİ UYARI:\n\nBu işlem veritabanında kalıcı değişiklikler yapacaktır. İşleme başlamadan önce ana sayfadaki 'Raporları Yedekle' butonunu kullanarak verilerinizin tamamını yedeklemeniz şiddetle tavsiye edilir.\n\nYedek aldınız mı veya bu riski kabul ederek devam etmek istiyor musunuz?");
 }
-
-
-// --- Veri Bakım Araçları Fonksiyonları (main.js'ten taşındı) ---
 
 async function analyzeOrphanReports() {
     if (!backupReminder()) return;
@@ -76,7 +71,7 @@ async function analyzeOrphanReports() {
                 orphanReports.push({
                     key: reportKey,
                     bayiKodu: bayiKodu,
-                    bayiAdi: reportData.selectedStore ? reportData.selectedStore.bayiAdi : 'Bilinmeyen Bayi'
+                    bayiAdi: reportData && reportData.selectedStore ? reportData.selectedStore.bayiAdi : 'Bilinmeyen Bayi'
                 });
             }
         }
@@ -240,7 +235,6 @@ async function cleanObsoleteField() {
     }
 }
 
-
 async function analyzeCorruptReports() {
     if (!backupReminder()) return;
     showModal(
@@ -263,12 +257,12 @@ async function analyzeCorruptReports() {
             const report = allReports[reportKey];
             if (!report.data || !report.data.questions_status) {
                 const bayiKodu = reportKey.replace('store_', '');
-                // Bayi adını bulmak zor olabilir çünkü uniqueStores burada yok,
-                // bu yüzden şimdilik sadece bayi kodunu gösterelim.
+                const bayiAdi = (report.data && report.data.selectedStore) ? report.data.selectedStore.bayiAdi : 'Bilinmeyen Bayi';
+
                 corruptReports.push({
                     key: reportKey,
                     bayiKodu: bayiKodu,
-                    bayiAdi: `Bayi Kodu: ${bayiKodu}`
+                    bayiAdi: bayiAdi
                 });
             }
         }
@@ -285,7 +279,7 @@ async function analyzeCorruptReports() {
                             <input type="checkbox" class="corrupt-checkbox" value="${report.key}">
                             <div>
                                 <p>${report.bayiAdi}</p>
-                                <span>Rapor Anahtarı: ${report.key}</span>
+                                <span>Kod: ${report.bayiKodu}</span>
                             </div>
                         </label>
                     </div>`;
@@ -329,3 +323,7 @@ async function deleteSelectedCorruptReports() {
         }
     }
 }
+
+
+// Script yüklendiğinde başlatıcı fonksiyonu çağır.
+initializeVeritabaniModule();
