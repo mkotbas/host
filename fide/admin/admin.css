@@ -1,15 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
+    --bg-dark: #0f172a;
     --sidebar-bg: #1e293b;
-    --sidebar-text: #cbd5e1;
-    --sidebar-header-text: #ffffff;
-    --sidebar-hover-bg: #334155;
-    --sidebar-active-bg: #008CBA;
-    --content-bg: #f1f5f9;
-    --main-text: #334155;
-    --border-color: #e2e8f0;
-    --primary-color: #008CBA;
-    --danger-color: #dc2626;
-    --success-color: #16a34a;
+    --content-bg: #0f172a;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --border-color: #334155;
+    --primary-accent: #38bdf8;
+    --primary-accent-hover: #7dd3fc;
+    --success: #16a34a;
+    --danger: #dc2626;
     --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --transition: all 0.3s ease;
 }
@@ -22,231 +23,161 @@
 
 body, html {
     height: 100%;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--content-bg);
-    color: var(--main-text);
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-size: 14px;
 }
 
-.admin-layout {
+.panel-container {
     display: flex;
-    height: 100vh;
+    height: 100%;
 }
 
-/* --- Kenar Çubuğu (Sidebar) --- */
-.sidebar {
+/* --- Sol Menü (Sidebar) --- */
+#sidebar {
     width: 260px;
     background-color: var(--sidebar-bg);
-    color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
-    transition: width 0.3s ease;
+    border-right: 1px solid var(--border-color);
 }
 
 .sidebar-header {
     padding: 24px;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.sidebar-header h1 {
+.sidebar-header h2 {
     font-size: 20px;
-    color: var(--sidebar-header-text);
-    text-align: center;
-}
-
-.module-menu {
-    list-style: none;
-    padding: 15px 0;
-    flex-grow: 1;
-}
-
-.module-menu-item a {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 24px;
+}
+
+.module-nav {
+    flex-grow: 1;
+    padding: 16px 0;
+}
+
+#module-menu {
+    list-style: none;
+}
+
+#module-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    color: var(--text-secondary);
     text-decoration: none;
-    color: var(--sidebar-text);
     font-weight: 500;
-    transition: var(--transition);
     border-left: 3px solid transparent;
+    transition: var(--transition);
 }
 
-.module-menu-item a:hover {
-    background-color: var(--sidebar-hover-bg);
-    color: #ffffff;
+#module-menu li a:hover {
+    background-color: var(--bg-dark);
+    color: var(--primary-accent-hover);
 }
 
-.module-menu-item.active a {
-    background-color: var(--sidebar-active-bg);
-    color: #ffffff;
-    border-left-color: #ffffff;
+#module-menu li a.active {
+    background-color: var(--bg-dark);
+    color: var(--primary-accent);
+    border-left-color: var(--primary-accent);
 }
 
-.module-menu-item a i {
+#module-menu li a i {
     width: 20px;
     text-align: center;
+    font-size: 16px;
 }
 
 .sidebar-footer {
     padding: 20px;
-    border-top: 1px solid #334155;
+    border-top: 1px solid var(--border-color);
 }
 
+
 /* --- Ana İçerik Alanı --- */
-.main-content {
+#main-content {
     flex-grow: 1;
-    padding: 30px;
+    padding: 32px;
     overflow-y: auto;
 }
 
-.module-header {
+.welcome-message {
     display: flex;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: 15px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid var(--border-color);
-    margin-bottom: 30px;
+    height: 100%;
+    text-align: center;
+    color: var(--text-secondary);
 }
 
-.module-header i {
+.welcome-message i {
+    color: var(--border-color);
+    margin-bottom: 24px;
+}
+
+.welcome-message h1 {
     font-size: 28px;
-    color: var(--primary-color);
+    color: var(--text-primary);
+    margin-bottom: 8px;
 }
 
-.module-header h2 {
-    font-size: 24px;
-    color: var(--main-text);
-}
+/* --- Ana Uygulamadan Kopyalanan Stiller (Tutarlılık için) --- */
+button, a.btn-primary, a.btn-danger {
+    cursor: pointer; border: none; border-radius: 8px; padding: 8px 14px; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+button i, a.btn-primary i, a.btn-danger i { margin-right: 8px; }
+.btn-primary { background-color: var(--primary-accent); color: var(--bg-dark); }
+.btn-primary:hover { background-color: var(--primary-accent-hover); }
+.btn-danger { background-color: var(--danger); color: white; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
 
-.module-body {
-    background-color: #ffffff;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: var(--card-shadow);
-}
-
-/* --- Giriş ve Bağlantı Kontrolleri --- */
 #auth-controls {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    position: relative;
-}
-
-#connection-status-container {
-    display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px;
-    background-color: #334155;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
 }
-
+#login-popup {
+    position: absolute; bottom: calc(100% + 10px); left: 50%;
+    transform: translateX(-50%);
+    width: 280px; background: var(--sidebar-bg);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    border-radius: 12px; padding: 20px; z-index: 100;
+    display: none; border: 1px solid var(--border-color);
+}
+#login-popup h3 { margin: 0 0 15px 0; font-size: 16px; text-align: center; border: none; padding: 0; display: flex; align-items: center; justify-content: center; gap: 8px;}
+#login-popup input {
+    width: 100%; padding: 10px; border: 1px solid var(--border-color);
+    border-radius: 6px; margin-bottom: 10px; font-size: 14px;
+    background-color: var(--bg-dark); color: var(--text-primary);
+}
+#login-popup button { width: 100%; padding: 10px; }
+#login-error {
+    color: var(--danger); font-size: 12px; font-weight: bold;
+    text-align: center; min-height: 18px; margin-top: 10px;
+}
+#connection-status-container {
+    display: flex; align-items: center; gap: 8px; padding: 4px 8px;
+    background-color: var(--bg-dark); border-radius: 20px;
+    font-size: 12px; font-weight: 600; margin-bottom: 10px;
+}
 #connection-status-switch {
-    width: 44px;
-    height: 24px;
-    border-radius: 12px;
-    position: relative;
+    width: 44px; height: 24px; border-radius: 12px; position: relative; cursor: default;
     transition: background-color 0.4s ease;
 }
-
 #connection-status-switch .thumb {
-    width: 20px;
-    height: 20px;
-    background: white;
-    border-radius: 50%;
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    width: 20px; height: 20px; background: white; border-radius: 50%;
+    position: absolute; top: 2px; left: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
-
-#connection-status-switch.connected { background-color: var(--success-color); }
+#connection-status-switch.connected { background-color: var(--success); }
 #connection-status-switch.connected .thumb { transform: translateX(0px); }
-#connection-status-switch.disconnected { background-color: var(--danger-color); }
+#connection-status-switch.disconnected { background-color: var(--danger); }
 #connection-status-switch.disconnected .thumb { transform: translateX(20px); }
-
-.login-btn, .logout-btn {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: var(--transition);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.login-btn {
-    background-color: var(--success-color);
-    color: white;
-}
-.login-btn:hover { background-color: #15803d; }
-
-.logout-btn {
-    background-color: var(--danger-color);
-    color: white;
-}
-.logout-btn:hover { background-color: #b91c1c; }
-
-#login-popup {
-    position: absolute;
-    bottom: calc(100% + 10px);
-    left: 0;
-    width: 100%;
-    background: #ffffff;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-    border-radius: 12px;
-    padding: 20px;
-    z-index: 100;
-    display: none;
-    border: 1px solid var(--border-color);
-    color: var(--main-text);
-}
-
-#login-popup h3 {
-    margin: 0 0 15px 0;
-    font-size: 16px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-#login-popup input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
-
-#login-popup button {
-    width: 100%;
-    padding: 10px;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-#login-error {
-    color: var(--danger-color);
-    font-size: 12px;
-    font-weight: bold;
-    text-align: center;
-    min-height: 18px;
-    margin-top: 10px;
-}
+#connection-status-text { width: 75px; text-align: left; }
