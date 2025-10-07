@@ -196,10 +196,12 @@ function setupEventListeners() {
     document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
     
-    // --- YENİ EKLENEN VERİ BAKIM ARAÇLARI ---
+    // --- VERİ BAKIM ARAÇLARI ---
     document.getElementById('analyze-orphan-reports-btn').addEventListener('click', analyzeOrphanReports);
     document.getElementById('check-consistency-btn').addEventListener('click', checkDataConsistency);
     document.getElementById('clean-field-btn').addEventListener('click', openFieldCleaner);
+    // YENİ EKLENEN BUTONUN OLAY DİNLEYİCİSİ
+    document.getElementById('analyze-corrupt-reports-btn').addEventListener('click', analyzeCorruptReports);
 
     
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
@@ -529,6 +531,101 @@ async function cleanObsoleteField() {
         }
     }
 }
+
+// --- YENİ EKLENEN BOZUK VERİ TEMİZLEME FONKSİYONLARI ---
+async function analyzeCorruptReports() {
+    if (!backupReminder()) return;
+    showModal(
+        '<i class="fas fa-spinner fa-spin"></i> Bozuk Raporlar Taranıyor...',
+        '<p>Lütfen bekleyin. Tüm raporların yapısı kontrol ediliyor...</p>',
+        '<button class="btn-secondary" onclick="hideModal()">Kapat</button>'
+    );
+
+    try {
+        const reportsSnapshot = await database.ref('allFideReports').once('value');
+        if (!reportsSnapshot.exists()) {
+            showModal('<i class="fas fa-info-circle"></i> Analiz Tamamlandı', '<p>Veritabanında analiz edilecek rapor bulunamadı.</p>', '<button class="btn-primary" onclick="hideModal()">Tamam</button>');
+            return;
+        }
+
+        const allReports = reportsSnapshot.val();
+        const corruptReports = [];
+
+        for (const reportKey in allReports) {
+            const report = allReports[reportKey];
+            // Bir raporun bozuk sayılması için 'data' objesinin veya 'data' içindeki 'questions_status' objesinin olmaması gerekir.
+            if (!report.data || !report.data.questions_status) {
+                const bayiKodu = reportKey.replace('store_', '');
+                // Bayi adını bulmak için uniqueStores listesini kullanalım
+                const storeInfo = uniqueStores.find(s => s.bayiKodu == bayiKodu);
+                const bayiAdi = storeInfo ? storeInfo.bayiAdi : 'Bilinmeyen Bayi';
+
+                corruptReports.push({
+                    key: reportKey,
+                    bayiKodu: bayiKodu,
+                    bayiAdi: bayiAdi
+                });
+            }
+        }
+
+        if (corruptReports.length === 0) {
+            showModal('<i class="fas fa-check-circle"></i> Analiz Sonucu', '<p>Harika! Sistemde hiç bozuk ("hayalet") rapor bulunamadı. Veritabanınız temiz.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+        } else {
+            let listHtml = `<div class="maintenance-info"><i class="fas fa-info-circle"></i> Sistemde ${corruptReports.length} adet içi boş veya bozuk yapıda rapor bulundu. Bu raporlar uygulamanın hata vermesine neden olur. Silmek istediklerinizi seçin.</div>`;
+            listHtml += '<div class="maintenance-list">';
+            corruptReports.forEach(report => {
+                listHtml += `
+                    <div class="maintenance-list-item">
+                        <label>
+                            <input type="checkbox" class="corrupt-checkbox" value="${report.key}">
+                            <div>
+                                <p>${report.bayiAdi}</p>
+                                <span>Kod: ${report.bayiKodu}</span>
+                            </div>
+                        </label>
+                    </div>`;
+            });
+            listHtml += '</div>';
+
+            const footerHtml = `
+                <button class="btn-secondary" onclick="hideModal()">İptal</button>
+                <button class="btn-danger" onclick="deleteSelectedCorruptReports()"><i class="fas fa-trash"></i> Seçilenleri Kalıcı Olarak Sil</button>
+            `;
+            showModal('<i class="fas fa-heart-crack"></i> Bozuk Rapor Analizi Sonuçları', listHtml, footerHtml);
+        }
+
+    } catch (error) {
+        console.error("Bozuk rapor analizi hatası:", error);
+        showModal('<i class="fas fa-exclamation-triangle"></i> Hata', '<p>Analiz sırasında bir hata oluştu. Lütfen konsolu kontrol edin.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+    }
+}
+
+async function deleteSelectedCorruptReports() {
+    const selectedCorrupt = Array.from(document.querySelectorAll('.corrupt-checkbox:checked')).map(cb => cb.value);
+    if (selectedCorrupt.length === 0) {
+        return alert("Lütfen silmek için en az bir rapor seçin.");
+    }
+    if (confirm(`${selectedCorrupt.length} adet bozuk rapor kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?`)) {
+        showModal(
+            '<i class="fas fa-spinner fa-spin"></i> Siliniyor...',
+            `<p>${selectedCorrupt.length} adet rapor siliniyor, lütfen bekleyin...</p>`,
+            ''
+        );
+        try {
+            const updates = {};
+            selectedCorrupt.forEach(key => {
+                updates[`/allFideReports/${key}`] = null;
+            });
+            await database.ref().update(updates);
+            showModal('<i class="fas fa-check-circle"></i> Başarılı', `<p>${selectedCorrupt.length} adet bozuk rapor başarıyla silindi.</p>`, '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+        } catch (error) {
+            console.error("Bozuk rapor silme hatası:", error);
+            showModal('<i class="fas fa-exclamation-triangle"></i> Hata', '<p>Raporlar silinirken bir hata oluştu. Lütfen konsolu kontrol edin.</p>', '<button class="btn-primary" onclick="hideModal()">Kapat</button>');
+        }
+    }
+}
+
+
 // --- MEVCUT FONKSİYONLAR ---
 function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore || !auth.currentUser || !database) return;
@@ -1145,20 +1242,12 @@ function generateEmail() {
 }
 
 function loadReport(reportData) {
-    // --- GÜNCELLENEN BÖLÜM BAŞLANGICI ---
-    // Hatanın çözümü için bu kontrol eklenmiştir.
-    // Bu blok, buluttan gelen rapor verisinin (reportData) veya raporun temelini oluşturan
-    // 'questions_status' objesinin mevcut olup olmadığını kontrol eder. Eğer bu verilerden biri
-    // eksikse, bu, raporun bozuk olduğu anlamına gelir. Hata mesajı göstermek yerine,
-    // formu temizleyip (resetForm) kullanıcıya boş bir denetim sayfası sunarız.
-    // Bu sayede uygulama kilitlenmez ve kullanıcı işine devam edebilir.
     if (!reportData || !reportData.questions_status) {
         console.warn("Rapor verisi bulunamadı veya 'questions_status' alanı eksik. Form sıfırlanıyor. Gelen Veri:", reportData);
         resetForm();
-        updateFormInteractivity(true); // Formun kullanılabilir olduğundan emin ol.
-        return; // Fonksiyonun geri kalanının çalışmasını engelle.
+        updateFormInteractivity(true); 
+        return; 
     }
-    // --- GÜNCELLENEN BÖLÜM SONU ---
 
     try {
         for (const oldId in migrationMap) {
