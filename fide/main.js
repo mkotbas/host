@@ -187,8 +187,6 @@ function setupEventListeners() {
     document.getElementById('merge-file-input').addEventListener('change', handleMergeUpload);
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
     
-    // --- VERİ BAKIM ARAÇLARI BUTONLARINA AİT ESKİ EVENT LISTENER'LAR KALDIRILDI ---
-    
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
         const dogruSifreHash = 'ZmRlMDAx';
         const girilenSifre = prompt("Bu işlem geri alınamaz. Buluttaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
@@ -260,14 +258,11 @@ function setupEventListeners() {
 
     restoreBtn.addEventListener('click', () => document.getElementById('restore-file-input').click());
     mergeBtn.addEventListener('click', () => document.getElementById('merge-file-input').click());
-    
     loginToggleBtn.addEventListener('click', (event) => {
         event.stopPropagation();
         loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
     });
-
     logoutBtn.addEventListener('click', () => { auth.signOut().then(() => window.location.reload()); });
-    
     loginSubmitBtn.addEventListener('click', () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
@@ -286,18 +281,17 @@ function setupEventListeners() {
         }
     });
 
-    // YÖNETİM PANELİ BUTONU GÜNCELLENDİ
     document.getElementById('toggle-backup-manager-btn').addEventListener('click', () => {
-        // Yeni admin panelini yeni bir sekmede açar.
+        // ESKİ KOD SİLİNDİ, YENİ KOD EKLENDİ
+        // Bu kod, yeni admin panelini yeni bir sekmede açar.
         window.open('admin/admin.html', '_blank');
     });
 }
 
-// --- VERİ BAKIM ARAÇLARI İLE İLGİLİ TÜM FONKSİYONLAR BU ALANDAN SİLİNDİ ---
-// (showModal, hideModal, analyzeOrphanReports, checkDataConsistency, analyzeCorruptReports, openFieldCleaner vb.)
+// --- VERİ BAKIM ARAÇLARI FONKSİYONLARI (BU BÖLÜMÜN TAMAMI SİLİNDİ) ---
 
 
-// --- MEVCUT DİĞER FONKSİYONLAR ---
+// --- MEVCUT FONKSİYONLAR ---
 function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore || !auth.currentUser || !database) return;
 
@@ -351,6 +345,7 @@ async function removeStoreCodeFromRevertedList(bayiKodu) {
         console.error("Geri alınanlar listesi güncellenirken hata oluştu:", error);
     }
 }
+
 function loadReportForStore(bayiKodu) {
     const storeKey = `store_${bayiKodu}`;
     if (database && auth.currentUser) {
@@ -1128,3 +1123,5 @@ function updateFormInteractivity(enable) {
         input.disabled = !enable;
     });
 }
+}
+Soru Yöneticisi ve Bayi Yöneticisi butonları kalsın. Yönetim paneli butonunu admin paneli olarak değiştir.
