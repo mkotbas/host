@@ -1145,6 +1145,21 @@ function generateEmail() {
 }
 
 function loadReport(reportData) {
+    // --- GÜNCELLENEN BÖLÜM BAŞLANGICI ---
+    // Hatanın çözümü için bu kontrol eklenmiştir.
+    // Bu blok, buluttan gelen rapor verisinin (reportData) veya raporun temelini oluşturan
+    // 'questions_status' objesinin mevcut olup olmadığını kontrol eder. Eğer bu verilerden biri
+    // eksikse, bu, raporun bozuk olduğu anlamına gelir. Hata mesajı göstermek yerine,
+    // formu temizleyip (resetForm) kullanıcıya boş bir denetim sayfası sunarız.
+    // Bu sayede uygulama kilitlenmez ve kullanıcı işine devam edebilir.
+    if (!reportData || !reportData.questions_status) {
+        console.warn("Rapor verisi bulunamadı veya 'questions_status' alanı eksik. Form sıfırlanıyor. Gelen Veri:", reportData);
+        resetForm();
+        updateFormInteractivity(true); // Formun kullanılabilir olduğundan emin ol.
+        return; // Fonksiyonun geri kalanının çalışmasını engelle.
+    }
+    // --- GÜNCELLENEN BÖLÜM SONU ---
+
     try {
         for (const oldId in migrationMap) {
             if (reportData.questions_status[oldId]) {
