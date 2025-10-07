@@ -60,12 +60,10 @@ body {
     overflow-y: auto;
 }
 
-/* --- DÜZELTİLMİŞ ALT MENÜ STİLLERİ --- */
 .sidebar-menu li a {
     display: flex;
-    /* justify-content: space-between;  <-- HATALI KOD KALDIRILDI */
     align-items: center;
-    gap: 12px; /* <-- İKON VE YAZI ARASINA BOŞLUK EKLENDİ */
+    gap: 12px;
     padding: 12px 15px;
     color: var(--secondary-text);
     text-decoration: none;
@@ -87,12 +85,12 @@ body {
 }
 
 .sidebar-menu .has-submenu > a::after {
-    content: '\f054'; /* FontAwesome arrow icon */
+    content: '\f054';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
     font-size: 10px;
     transition: transform 0.3s ease;
-    margin-left: auto; /* <-- OK İŞARETİNİ SAĞA YASLAMAK İÇİN EKLENDİ */
+    margin-left: auto;
 }
 
 .sidebar-menu .has-submenu.open > a::after {
@@ -102,27 +100,26 @@ body {
 .submenu {
     list-style-type: none;
     padding-left: 20px;
-    display: none; /* Başlangıçta gizli */
+    display: none;
     margin-top: 5px;
 }
 
 .submenu.open {
-    display: block; /* Tıklandığında görünür */
+    display: block;
 }
 
 .submenu li a {
-    padding-left: 25px; /* Daha içeriden başlasın */
+    padding-left: 25px;
     font-size: 13px;
-    gap: 10px; /* Alt menü ikon-yazı arası boşluk */
+    gap: 10px;
 }
-/* -------------------------------------- */
 
-
-/* --- Sağ İçerik Alanı --- */
+/* --- Sağ İçerik Alanı (GÜNCELLENDİ) --- */
 .main-content {
     flex-grow: 1;
     padding: 25px;
-    background-color: var(--bg-dark-accent);
+    /* Ana arkaplan rengi en koyu tona ayarlandı */
+    background-color: var(--sidebar-bg, #111827); 
 }
 
 .content-header {
@@ -140,9 +137,10 @@ body {
 }
 
 .content-body {
-    background-color: var(--bg-dark);
-    padding: 20px;
-    border-radius: 8px;
+    /* Bu alan artık şeffaf, arkaplanı main-content'ten alacak */
+    background-color: transparent; 
+    padding: 0; /* İç boşlukları modüllerin kendi stilleri yönetecek */
+    border-radius: 0;
     color: var(--secondary-text);
 }
 
