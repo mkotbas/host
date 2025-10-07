@@ -4,73 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yönetim Paneli</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
+    <style id="module-styles"></style>
 </head>
 <body>
-
-    <div id="maintenance-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-panel">
-            <div class="modal-header">
-                <h3 id="modal-title"></h3>
-            </div>
-            <div class="modal-body" id="modal-body">
-            </div>
-            <div class="modal-footer" id="modal-footer">
-            </div>
-        </div>
-    </div>
-
-    <div class="admin-container">
-        <nav class="sidebar">
+    <div class="panel-container">
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <h1><i class="fas fa-shield-alt"></i> Yönetim Paneli</h1>
+                <h2><i class="fas fa-tools"></i> Yönetim Paneli</h2>
             </div>
-            <ul class="nav-menu">
-                <li><a href="#" data-module="database-manager"><i class="fas fa-database"></i> Veritabanı Ayarları</a></li>
-                <li><a href="#" data-module="question-manager"><i class="fas fa-edit"></i> Soru Yöneticisi</a></li>
-                <li><a href="#" data-module="dealer-manager"><i class="fas fa-store"></i> Bayi Yöneticisi</a></li>
-                <li><a href="#" data-module="email-manager"><i class="fas fa-at"></i> E-posta Yöneticisi</a></li>
-                <li><a href="../index.html"><i class="fas fa-arrow-left"></i> Ana Sayfaya Dön</a></li>
-            </ul>
-            <div class="connection-controls">
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="#" class="nav-link active" data-module="database">
+                            <i class="fas fa-database"></i>
+                            <span>Veritabanı Ayarları</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-module="questions">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Soru Yöneticisi</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-module="stores">
+                            <i class="fas fa-store"></i>
+                            <span>Bayi Yöneticisi</span>
+                        </a>
+                    </li>
+                     <li>
+                        <a href="#" class="nav-link" data-module="email">
+                            <i class="fas fa-envelope"></i>
+                            <span>E-posta Yöneticisi</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="../index.html" class="nav-link back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Ana Sayfaya Dön</span>
+                </a>
                 <div id="connection-status-container">
+                    <span id="connection-status-text">Bağlanıyor...</span>
                     <div id="connection-status-switch" class="disconnected">
                         <div class="thumb"></div>
                     </div>
-                    <span id="connection-status-text">Bağlı Değil</span>
                 </div>
-                
-                <div id="auth-controls">
-                    <button id="login-toggle-btn" class="btn-success btn-sm"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
-                    <button id="logout-btn" class="btn-danger btn-sm" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
-                    <div id="login-popup">
-                        <h3><i class="fas fa-cloud"></i> Bulut Sistemine Giriş</h3>
-                        <input type="email" id="email-input" placeholder="E-posta">
-                        <input type="password" id="password-input" placeholder="Şifre">
-                        <button id="login-submit-btn" class="btn-primary btn-sm"><i class="fas fa-check"></i> Onayla</button>
-                        <div id="login-error"></div>
-                    </div>
-                </div>
+                <button id="login-toggle-btn" class="auth-btn"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
+                <button id="logout-btn" class="auth-btn" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
             </div>
-        </nav>
+            <div id="login-popup">
+                <h3>Yönetici Girişi</h3>
+                <input type="email" id="email-input" placeholder="E-posta Adresi">
+                <input type="password" id="password-input" placeholder="Şifre">
+                <button id="login-submit-btn">Giriş Yap</button>
+                <div id="login-error"></div>
+            </div>
+        </aside>
 
         <main class="main-content">
-            <div id="module-content">
+            <header class="content-header">
+                <h1 id="module-title">Modül Yöneticisi</h1>
+            </header>
+            <section id="module-content">
                 <div class="placeholder">
                     <i class="fas fa-cogs fa-3x"></i>
-                    <h2>Modül Yöneticisi</h2>
                     <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
                 </div>
-            </div>
+            </section>
         </main>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    
-    <script src="../db-config.js"></script>
-    <script src="admin.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="../firebase-config.js"></script> <script src="admin.js"></script>
 </body>
 </html>
