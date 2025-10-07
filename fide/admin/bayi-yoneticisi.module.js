@@ -39,12 +39,12 @@ export function renderBayiManager() {
         return kodu.toLowerCase().includes(filterText) || email.toLowerCase().includes(filterText);
     });
     
-    if(filteredEntries.length === 0 && Object.keys(storeEmails).length > 0) {
+    if (filteredEntries.length === 0 && Object.keys(storeEmails).length > 0) {
          listContainer.innerHTML = '<p class="empty-list-message">Aramanızla eşleşen bayi e-postası bulunamadı.</p>';
          return;
     }
     
-    if(Object.keys(storeEmails).length === 0) {
+    if (Object.keys(storeEmails).length === 0) {
         listContainer.innerHTML = '<p class="empty-list-message">Henüz hiç bayi e-postası eklenmedi.</p>';
         return;
     }
@@ -119,7 +119,7 @@ export function handleBulkEmailUpload(event, auth, database) {
                 }
             });
             
-            if(count === 0) {
+            if (count === 0) {
                 alert("Dosya okundu ancak geçerli 'bayikodu e-posta' formatında satır bulunamadı.");
                 return;
             }
@@ -141,7 +141,7 @@ export function handleBulkEmailUpload(event, auth, database) {
 }
 
 /**
- * Bayi Yöneticisi paneli içindeki tüm tıklama olaylarını yönetir.
+ * Bayi Yöneticisi paneli içindeki tüm tıklama olaylarını yönetir (Olay Delegasyonu).
  * @param {Event} event Tıklama olayı.
  * @param {object} auth Firebase auth nesnesi.
  * @param {object} database Firebase database nesnesi.
@@ -153,7 +153,7 @@ export async function handleBayiManagerClick(event, auth, database) {
     const action = target.dataset.action;
     const itemDiv = target.closest('.email-manager-item');
 
-    switch(action) {
+    switch (action) {
         case 'save-email':
             await saveEmail(itemDiv, auth, database);
             break;
@@ -177,7 +177,7 @@ async function saveEmail(itemDiv, auth, database) {
     const kodu = itemDiv.dataset.kodu;
     const emailInput = itemDiv.querySelector('.email-manager-input');
     const newEmail = emailInput.value.trim();
-    if (!newEmail) { alert("E-posta alanı boş bırakılamaz."); return; }
+    if (!newEmail || !newEmail.includes('@')) { alert("Geçerli bir e-posta adresi giriniz."); return; }
     
     try {
         await database.ref(`storeEmails/${kodu}`).set(newEmail);
