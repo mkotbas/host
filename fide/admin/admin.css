@@ -1,16 +1,15 @@
-/* --- Genel Değişkenler ve Sıfırlama --- */
 :root {
-    --bg-dark: #1e293b;
-    --bg-darker: #0f172a;
-    --bg-light: #f1f5f9;
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --text-light: #e2e8f0;
-    --text-dark: #334155;
-    --text-muted: #94a3b8;
-    --border-color: #334155;
-    --success: #22c55e;
-    --danger: #ef4444;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-header-text: #ffffff;
+    --sidebar-hover-bg: #334155;
+    --sidebar-active-bg: #008CBA;
+    --content-bg: #f1f5f9;
+    --main-text: #334155;
+    --border-color: #e2e8f0;
+    --primary-color: #008CBA;
+    --danger-color: #dc2626;
+    --success-color: #16a34a;
     --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --transition: all 0.3s ease;
 }
@@ -21,145 +20,129 @@
     padding: 0;
 }
 
-body {
-    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--bg-light);
-    color: var(--text-dark);
-    line-height: 1.6;
-    overflow-x: hidden;
+body, html {
+    height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--content-bg);
+    color: var(--main-text);
 }
 
-/* --- Ana Panel Yapısı --- */
-.panel-container {
+.admin-layout {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
 }
 
-/* --- Sol Menü (Sidebar) --- */
+/* --- Kenar Çubuğu (Sidebar) --- */
 .sidebar {
     width: 260px;
-    background-color: var(--bg-dark);
-    color: var(--text-light);
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
-    position: fixed;
-    height: 100%;
-    left: 0;
-    top: 0;
-    box-shadow: 5px 0 15px rgba(0,0,0,0.2);
-    z-index: 100;
+    flex-shrink: 0;
+    transition: width 0.3s ease;
 }
 
 .sidebar-header {
     padding: 24px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid #334155;
 }
 
-.sidebar-header h2 {
+.sidebar-header h1 {
+    font-size: 20px;
+    color: var(--sidebar-header-text);
+    text-align: center;
+}
+
+.module-menu {
+    list-style: none;
+    padding: 15px 0;
+    flex-grow: 1;
+}
+
+.module-menu-item a {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 20px;
-    margin: 0;
-}
-
-.sidebar-nav {
-    flex-grow: 1;
-    padding: 16px 0;
-}
-
-.sidebar-nav ul {
-    list-style-type: none;
-}
-
-.sidebar-nav .nav-link {
-    display: flex;
-    align-items: center;
     padding: 14px 24px;
-    color: var(--text-muted);
     text-decoration: none;
+    color: var(--sidebar-text);
     font-weight: 500;
     transition: var(--transition);
     border-left: 3px solid transparent;
 }
 
-.sidebar-nav .nav-link:hover {
-    background-color: var(--border-color);
-    color: var(--text-light);
+.module-menu-item a:hover {
+    background-color: var(--sidebar-hover-bg);
+    color: #ffffff;
 }
 
-.sidebar-nav .nav-link.active {
-    background-color: rgba(59, 130, 246, 0.1);
-    color: var(--primary);
-    border-left-color: var(--primary);
+.module-menu-item.active a {
+    background-color: var(--sidebar-active-bg);
+    color: #ffffff;
+    border-left-color: #ffffff;
 }
 
-.sidebar-nav .nav-link i {
+.module-menu-item a i {
     width: 20px;
-    margin-right: 16px;
     text-align: center;
 }
 
 .sidebar-footer {
-    padding: 16px 24px;
-    border-top: 1px solid var(--border-color);
+    padding: 20px;
+    border-top: 1px solid #334155;
+}
+
+/* --- Ana İçerik Alanı --- */
+.main-content {
+    flex-grow: 1;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.module-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 30px;
+}
+
+.module-header i {
+    font-size: 28px;
+    color: var(--primary-color);
+}
+
+.module-header h2 {
+    font-size: 24px;
+    color: var(--main-text);
+}
+
+.module-body {
+    background-color: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+}
+
+/* --- Giriş ve Bağlantı Kontrolleri --- */
+#auth-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     position: relative;
 }
 
-.sidebar-footer .back-link {
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    padding: 10px 0;
-    margin-bottom: 15px;
-    color: var(--text-muted);
-    transition: var(--transition);
-}
-
-.sidebar-footer .back-link:hover {
-    color: var(--text-light);
-}
-
-.sidebar-footer .back-link i {
-    margin-right: 12px;
-}
-
-.auth-btn {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 6px;
-    background-color: var(--primary);
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-    transition: var(--transition);
+#connection-status-container {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-}
-
-.auth-btn:hover {
-    background-color: var(--primary-hover);
-}
-
-#logout-btn {
-    background-color: var(--danger);
-}
-
-
-/* --- Bulut Bağlantı Göstergesi --- */
-#connection-status-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 8px 12px;
-    margin-bottom: 15px;
-    background-color: var(--bg-darker);
-    border-radius: 6px;
-    font-size: 12px;
+    padding: 8px;
+    background-color: #334155;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 600;
 }
 
@@ -168,7 +151,6 @@ body {
     height: 24px;
     border-radius: 12px;
     position: relative;
-    cursor: default;
     transition: background-color 0.4s ease;
 }
 
@@ -179,85 +161,92 @@ body {
     border-radius: 50%;
     position: absolute;
     top: 2px;
+    left: 2px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-#connection-status-switch.connected {
-    background-color: var(--success);
+#connection-status-switch.connected { background-color: var(--success-color); }
+#connection-status-switch.connected .thumb { transform: translateX(0px); }
+#connection-status-switch.disconnected { background-color: var(--danger-color); }
+#connection-status-switch.disconnected .thumb { transform: translateX(20px); }
+
+.login-btn, .logout-btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
-#connection-status-switch.connected .thumb {
-    transform: translateX(20px);
+.login-btn {
+    background-color: var(--success-color);
+    color: white;
 }
+.login-btn:hover { background-color: #15803d; }
 
-#connection-status-switch.disconnected {
-    background-color: var(--danger);
+.logout-btn {
+    background-color: var(--danger-color);
+    color: white;
 }
+.logout-btn:hover { background-color: #b91c1c; }
 
-#connection-status-switch.disconnected .thumb {
-    transform: translateX(2px);
-}
-
-#connection-status-text {
-    flex-grow: 1;
-}
-
-/* --- Giriş Pop-up'ı --- */
 #login-popup {
     position: absolute;
-    bottom: calc(100% - 70px);
-    left: 10px;
-    right: 10px;
-    background: var(--bg-darker);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
-    border-radius: 8px;
+    bottom: calc(100% + 10px);
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    border-radius: 12px;
     padding: 20px;
-    z-index: 10;
+    z-index: 100;
     display: none;
+    border: 1px solid var(--border-color);
+    color: var(--main-text);
 }
-#login-popup h3 { margin: 0 0 15px 0; font-size: 16px; text-align: center; color: var(--text-light); }
+
+#login-popup h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
 #login-popup input {
     width: 100%;
     padding: 10px;
     border: 1px solid var(--border-color);
-    background-color: var(--bg-dark);
-    color: var(--text-light);
     border-radius: 6px;
     margin-bottom: 10px;
-}
-#login-popup button { width: 100%; padding: 10px; background-color: var(--primary); color: white; border:none; border-radius: 6px; cursor:pointer; }
-#login-error { color: var(--danger); font-size: 12px; text-align: center; min-height: 18px; margin-top: 10px; }
-
-
-/* --- Sağ Ana İçerik Alanı --- */
-.main-content {
-    flex-grow: 1;
-    padding: 30px;
-    margin-left: 260px; /* Sidebar genişliği kadar boşluk bırak */
+    font-size: 14px;
 }
 
-.content-header {
-    margin-bottom: 30px;
+#login-popup button {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
-.content-header h1 {
-    font-size: 28px;
-    color: var(--text-dark);
-}
-
-#module-content .placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 60vh;
+#login-error {
+    color: var(--danger-color);
+    font-size: 12px;
+    font-weight: bold;
     text-align: center;
-    color: var(--text-muted);
-}
-
-#module-content .placeholder i {
-    margin-bottom: 20px;
-    color: #cbd5e1;
+    min-height: 18px;
+    margin-top: 10px;
 }
