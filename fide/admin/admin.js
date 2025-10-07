@@ -36,14 +36,20 @@ import {
     filterManagerView
 } from './soru-yoneticisi.module.js';
 
-// KALDIRILDI: Bayi Yönetimi Departmanına ait import komutları silindi.
+import {
+    loadBayiManagerData,
+    renderBayiManager,
+    addNewEmailUI,
+    handleBulkEmailUpload,
+    handleBayiManagerClick
+} from './bayi-yoneticisi.module.js';
 
 
 // --- 2. Adım: Global Değişkenler ve Uygulama Başlatma ---
 
 let isFirebaseConnected = false;
 let isQuestionManagerRendered = false;
-// KALDIRILDI: isBayiManagerRendered değişkeni silindi.
+let isBayiManagerRendered = false;
 
 window.onload = initializeApp;
 
@@ -83,14 +89,13 @@ function setupEventListeners() {
     if (document.body.dataset.listenersAttached) return;
     document.body.dataset.listenersAttached = 'true';
     
-    document.querySelectorAll('.sidebar-nav .nav-link:not(.nav-link-back)').forEach(link => {
+    document.querySelectorAll('.sidebar-nav .nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             switchPanel(e.currentTarget.dataset.target);
         });
     });
 
-    // Giriş/Çıkış
     document.getElementById('login-toggle-btn').addEventListener('click', (event) => {
         event.stopPropagation();
         document.getElementById('login-popup').style.display = 'block';
@@ -114,7 +119,7 @@ function setupEventListeners() {
     document.getElementById('clean-field-btn').addEventListener('click', () => openFieldCleaner(database));
     document.getElementById('analyze-corrupt-reports-btn').addEventListener('click', () => analyzeCorruptReports(database));
 
-    // Soru Yöneticisi Paneli (Bu bölüm aynı kalır, dokunulmadı)
+    // Soru Yöneticisi Paneli
     document.getElementById('save-questions-btn').addEventListener('click', () => saveQuestions(auth, database));
     document.getElementById('add-new-question-btn').addEventListener('click', addNewQuestionUI);
     document.getElementById('delete-all-archived-btn').addEventListener('click', deleteAllArchivedQuestions);
@@ -151,10 +156,20 @@ function setupEventListeners() {
         });
     }
 
-    // KALDIRILDI: Bayi Yöneticisi Paneli ile ilgili tüm event listener'lar silindi.
+    // Bayi Yöneticisi Paneli Olayları
+    document.getElementById('add-new-email-btn').addEventListener('click', addNewEmailUI);
+    document.getElementById('bulk-upload-emails-btn').addEventListener('click', () => document.getElementById('email-bulk-upload-input').click());
+    document.getElementById('email-bulk-upload-input').addEventListener('change', (e) => handleBulkEmailUpload(e, auth, database));
+    document.getElementById('email-search-input').addEventListener('keyup', renderBayiManager);
+    const emailManagerList = document.getElementById('email-manager-list');
+    if(emailManagerList) {
+        emailManagerList.addEventListener('click', (e) => handleBayiManagerClick(e, auth, database));
+    }
 }
 
 async function switchPanel(targetId) {
+    if (!document.getElementById(`${targetId}-panel`)) return;
+
     document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
 
@@ -163,14 +178,20 @@ async function switchPanel(targetId) {
 
     if (targetId === 'soru-yoneticisi' && !isQuestionManagerRendered) {
         if (!auth.currentUser) return alert("Soru Yöneticisi'ni kullanmak için giriş yapın.");
-        
         document.getElementById('loading-overlay').style.display = 'flex';
         await loadQuestionManagerData(auth, database);
         renderQuestionManager();
         isQuestionManagerRendered = true;
         document.getElementById('loading-overlay').style.display = 'none';
     } 
-    // KALDIRILDI: Bayi Yöneticisi ile ilgili panel değiştirme mantığı silindi.
+    else if (targetId === 'eposta-yoneticisi' && !isBayiManagerRendered) {
+        if (!auth.currentUser) return alert("Bayi Yöneticisi'ni kullanmak için giriş yapın.");
+        document.getElementById('loading-overlay').style.display = 'flex';
+        await loadBayiManagerData(auth, database);
+        renderBayiManager();
+        isBayiManagerRendered = true;
+        document.getElementById('loading-overlay').style.display = 'none';
+    }
 }
 
 function handleLogin() {
@@ -179,7 +200,6 @@ function handleLogin() {
     const errorDiv = document.getElementById('login-error');
     errorDiv.textContent = '';
     if (!email || !password) return errorDiv.textContent = 'Lütfen tüm alanları doldurun.';
-    
     auth.signInWithEmailAndPassword(email, password)
         .catch(() => errorDiv.textContent = 'E-posta veya şifre hatalı.');
 }
