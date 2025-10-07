@@ -1,14 +1,17 @@
 // --- Modül Tanımlamaları ---
-// Burası panelimizdeki modüllerin "adres defteri" gibidir.
-// Yeni modül eklemek için bu listeye ekleme yapmak yeterli olacaktır.
 const modules = [
     {
         id: 'veritabani',
         name: 'Veritabanı Modülü',
         icon: 'fas fa-database',
         path: '../modules/veritabani/'
+    },
+    {
+        id: 'soru-yoneticisi',
+        name: 'Soru Yöneticisi',
+        icon: 'fas fa-edit',
+        path: '../modules/soru-yoneticisi/'
     }
-    // Gelecekteki modüller buraya eklenecek...
 ];
 
 // --- Global Değişkenler ---
@@ -18,20 +21,15 @@ let currentModuleId = null;
 // --- Uygulama Başlatma ---
 window.onload = initializeAdminPanel;
 
-/**
- * Yönetim panelini başlatan ana fonksiyon.
- */
 async function initializeAdminPanel() {
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
     auth.onAuthStateChanged(user => {
         updateAuthUI(user);
         updateConnectionIndicator();
-        // Kullanıcı giriş yapmışsa menüyü oluştur.
         if (user) {
             renderModuleMenu();
         } else {
-            // Giriş yapılmamışsa menüyü ve içeriği temizle.
             document.getElementById('module-menu').innerHTML = '';
             document.getElementById('module-container').innerHTML = '<p>Lütfen panele erişmek için giriş yapın.</p>';
         }
@@ -48,19 +46,19 @@ async function initializeAdminPanel() {
     setupEventListeners();
 }
 
-/**
- * Sol menüdeki modül listesini `modules` dizisine göre oluşturur.
- */
 function renderModuleMenu() {
+    // --- TEŞHİS İÇİN EKLENEN SATIR ---
+    alert(`Admin paneli, modül listesinde ${modules.length} adet modül görüyor.`);
+    // ------------------------------------
+
     const menu = document.getElementById('module-menu');
-    menu.innerHTML = ''; // Menüyü temizle
+    menu.innerHTML = ''; 
 
     modules.forEach(module => {
         const li = document.createElement('li');
         li.innerHTML = `<a href="#" data-module-id="${module.id}"><i class="${module.icon}"></i> ${module.name}</a>`;
         li.querySelector('a').addEventListener('click', (event) => {
             event.preventDefault();
-            // Mevcut modül zaten yüklüyse tekrar yükleme
             if (currentModuleId !== module.id) {
                 loadModule(module.id);
             }
@@ -68,36 +66,26 @@ function renderModuleMenu() {
         menu.appendChild(li);
     });
 
-    // CSS stillerini menüye ekleyelim
-    const style = document.createElement('style');
-    style.textContent = `
-        .sidebar-menu li a {
-            display: block;
-            padding: 12px 15px;
-            color: var(--secondary-text);
-            text-decoration: none;
-            border-radius: 6px;
-            transition: var(--transition);
-            font-weight: 500;
-        }
-        .sidebar-menu li a:hover {
-            background-color: var(--bg-dark-accent);
-            color: var(--primary-text);
-        }
-        .sidebar-menu li a.active {
-            background-color: var(--primary-accent);
-            color: var(--primary-text);
-            font-weight: 600;
-        }
-    `;
-    document.head.appendChild(style);
+    const styleId = 'module-menu-styles';
+    if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            .sidebar-menu li a {
+                display: block; padding: 12px 15px; color: var(--secondary-text); text-decoration: none;
+                border-radius: 6px; transition: var(--transition); font-weight: 500;
+            }
+            .sidebar-menu li a:hover {
+                background-color: var(--bg-dark-accent); color: var(--primary-text);
+            }
+            .sidebar-menu li a.active {
+                background-color: var(--primary-accent); color: var(--primary-text); font-weight: 600;
+            }
+        `;
+        document.head.appendChild(style);
+    }
 }
 
-
-/**
- * Belirtilen modülün HTML, CSS ve JS dosyalarını dinamik olarak yükler.
- * @param {string} moduleId - Yüklenecek modülün kimliği (örn: 'veritabani').
- */
 async function loadModule(moduleId) {
     const module = modules.find(m => m.id === moduleId);
     if (!module) {
@@ -107,24 +95,20 @@ async function loadModule(moduleId) {
 
     currentModuleId = moduleId;
 
-    // Menüdeki aktif linki güncelle
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     document.querySelector(`.sidebar-menu a[data-module-id="${moduleId}"]`).classList.add('active');
 
     const container = document.getElementById('module-container');
     const title = document.getElementById('module-title');
     
-    // Yükleniyor göstergesi
     container.innerHTML = `<p>Modül yükleniyor: ${module.name}...</p>`;
     title.innerHTML = `<i class="${module.icon}"></i> ${module.name}`;
     
     try {
-        // 1. HTML'i Yükle
         const htmlResponse = await fetch(`${module.path}${module.id}.html`);
         if (!htmlResponse.ok) throw new Error(`Dosya bulunamadı veya okunamadı: ${module.id}.html (HTTP ${htmlResponse.status})`);
         container.innerHTML = await htmlResponse.text();
 
-        // 2. CSS'i Yükle (Eğer zaten yüklenmemişse)
         const cssId = `module-css-${module.id}`;
         if (!document.getElementById(cssId)) {
             const link = document.createElement('link');
@@ -134,7 +118,6 @@ async function loadModule(moduleId) {
             document.head.appendChild(link);
         }
 
-        // 3. JavaScript'i Yükle
         const oldScript = document.getElementById('module-script');
         if (oldScript) oldScript.remove();
         
@@ -142,7 +125,7 @@ async function loadModule(moduleId) {
         script.id = 'module-script';
         script.src = `${module.path}${module.id}.js`;
         script.onload = () => {
-            const initFunctionName = `initialize${module.id.charAt(0).toUpperCase() + module.id.slice(1)}Module`;
+            const initFunctionName = `initialize${module.id.charAt(0).toUpperCase() + module.id.slice(1).replace(/-/g, '')}Module`;
             if (typeof window[initFunctionName] === 'function') {
                 window[initFunctionName]();
             } else {
@@ -152,7 +135,6 @@ async function loadModule(moduleId) {
         document.body.appendChild(script);
 
     } catch (error) {
-        // HATA MESAJINI DAHA DETAYLI GÖSTERMEK İÇİN BU BÖLÜMÜ GÜNCELLEDİK
         console.error("Modül yüklenirken hata oluştu:", error);
         container.innerHTML = `
             <div style="color: #fca5a5; background-color: #450a0a; border: 1px solid #991b1b; border-radius: 8px; padding: 15px;">
@@ -164,9 +146,6 @@ async function loadModule(moduleId) {
         `;
     }
 }
-
-
-// --- ARAYÜZ VE BAĞLANTI FONKSİYONLARI (Değişiklik yok) ---
 
 function updateAuthUI(user) {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
