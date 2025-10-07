@@ -1,183 +1,270 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
+/* --- Genel Renk ve Stil Değişkenleri --- */
 :root {
-    --bg-dark: #0f172a;
-    --sidebar-bg: #1e293b;
-    --content-bg: #0f172a;
-    --text-primary: #e2e8f0;
-    --text-secondary: #94a3b8;
-    --border-color: #334155;
-    --primary-accent: #38bdf8;
-    --primary-accent-hover: #7dd3fc;
+    --primary: #008CBA;
+    --primary-dark: #007B9A;
+    --secondary: #64748b;
     --success: #16a34a;
     --danger: #dc2626;
+    --light: #f8fafc;
+    --dark: #1e293b;
+    --gray: #94a3b8;
+    --border: #e2e8f0;
+    --panel-bg: #f1f5f9;
+    --sidebar-bg: #0f172a;
+    --sidebar-text: #cbd5e1;
+    --sidebar-hover-bg: #1e293b;
+    --sidebar-active-bg: #008CBA;
     --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --transition: all 0.3s ease;
 }
 
+/* --- Temel Ayarlar --- */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-body, html {
-    height: 100%;
-    font-family: 'Inter', sans-serif;
-    background-color: var(--bg-dark);
-    color: var(--text-primary);
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 14px;
+    line-height: 1.6;
+    color: var(--dark);
+    background-color: var(--panel-bg);
+    overflow-x: hidden;
 }
 
+/* --- Ana Panel Yapısı --- */
 .panel-container {
     display: flex;
-    height: 100%;
+    min-height: 100vh;
 }
 
-/* --- Sol Menü (Sidebar) --- */
-#sidebar {
+/* --- Sol Menü (Sidebar) Stilleri --- */
+.sidebar {
     width: 260px;
     background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border-color);
+    flex-shrink: 0;
+    transition: width 0.3s ease;
 }
 
 .sidebar-header {
-    padding: 24px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 20px;
+    border-bottom: 1px solid var(--sidebar-hover-bg);
 }
 
-.sidebar-header h2 {
-    font-size: 20px;
+.sidebar-header h3 {
     display: flex;
     align-items: center;
     gap: 12px;
+    font-size: 18px;
+    color: #fff;
+    margin: 0;
 }
 
 .module-nav {
     flex-grow: 1;
-    padding: 16px 0;
+    overflow-y: auto;
 }
 
 #module-menu {
-    list-style: none;
+    list-style-type: none;
+    padding: 15px 0;
 }
 
 #module-menu li a {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 24px;
-    color: var(--text-secondary);
+    padding: 12px 20px;
     text-decoration: none;
+    color: var(--sidebar-text);
     font-weight: 500;
     border-left: 3px solid transparent;
     transition: var(--transition);
 }
 
 #module-menu li a:hover {
-    background-color: var(--bg-dark);
-    color: var(--primary-accent-hover);
+    background-color: var(--sidebar-hover-bg);
+    color: #fff;
 }
 
 #module-menu li a.active {
-    background-color: var(--bg-dark);
-    color: var(--primary-accent);
-    border-left-color: var(--primary-accent);
-}
-
-#module-menu li a i {
-    width: 20px;
-    text-align: center;
-    font-size: 16px;
+    background-color: var(--sidebar-active-bg);
+    color: #fff;
+    border-left-color: #fff;
 }
 
 .sidebar-footer {
-    padding: 20px;
-    border-top: 1px solid var(--border-color);
+    padding: 15px;
+    border-top: 1px solid var(--sidebar-hover-bg);
+    margin-top: auto;
+}
+
+.back-to-app-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: var(--sidebar-hover-bg);
+    color: var(--sidebar-text);
+    border-radius: 6px;
+    text-align: center;
+    text-decoration: none;
+    margin-bottom: 15px;
+    transition: var(--transition);
+}
+
+.back-to-app-btn:hover {
+    background-color: var(--primary);
+    color: #fff;
 }
 
 
-/* --- Ana İçerik Alanı --- */
-#main-content {
+/* --- Ana İçerik Alanı Stilleri --- */
+.main-content {
     flex-grow: 1;
-    padding: 32px;
+    padding: 24px;
     overflow-y: auto;
 }
 
-.welcome-message {
+#module-container {
+    width: 100%;
+    height: 100%;
+}
+
+.module-placeholder {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     height: 100%;
     text-align: center;
-    color: var(--text-secondary);
+    color: var(--gray);
+    background-color: #fff;
+    border-radius: 12px;
+    border: 2px dashed var(--border);
 }
 
-.welcome-message i {
-    color: var(--border-color);
-    margin-bottom: 24px;
+.module-placeholder i {
+    color: var(--primary);
+    margin-bottom: 16px;
+    opacity: 0.5;
 }
 
-.welcome-message h1 {
-    font-size: 28px;
-    color: var(--text-primary);
+.module-placeholder h2 {
+    font-size: 24px;
+    color: var(--dark);
     margin-bottom: 8px;
 }
 
-/* --- Ana Uygulamadan Kopyalanan Stiller (Tutarlılık için) --- */
-button, a.btn-primary, a.btn-danger {
-    cursor: pointer; border: none; border-radius: 8px; padding: 8px 14px; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
-button i, a.btn-primary i, a.btn-danger i { margin-right: 8px; }
-.btn-primary { background-color: var(--primary-accent); color: var(--bg-dark); }
-.btn-primary:hover { background-color: var(--primary-accent-hover); }
-.btn-danger { background-color: var(--danger); color: white; }
-.btn-sm { padding: 6px 12px; font-size: 12px; }
 
+/* --- GİRİŞ VE BAĞLANTI DURUMU STİLLERİ (Mevcut style.css'den alındı) --- */
 #auth-controls {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    align-items: center;
+    gap: 8px;
 }
+
 #login-popup {
-    position: absolute; bottom: calc(100% + 10px); left: 50%;
-    transform: translateX(-50%);
-    width: 280px; background: var(--sidebar-bg);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-    border-radius: 12px; padding: 20px; z-index: 100;
-    display: none; border: 1px solid var(--border-color);
+    position: absolute;
+    bottom: calc(100% + 10px); /* Butonların üstünde çıkması için */
+    right: 0;
+    width: 100%;
+    background: white;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 100;
+    display: none;
+    border: 1px solid var(--border);
 }
-#login-popup h3 { margin: 0 0 15px 0; font-size: 16px; text-align: center; border: none; padding: 0; display: flex; align-items: center; justify-content: center; gap: 8px;}
+
+#login-popup h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    text-align: center;
+    color: var(--dark);
+    border: none;
+    padding: 0;
+}
+
 #login-popup input {
-    width: 100%; padding: 10px; border: 1px solid var(--border-color);
-    border-radius: 6px; margin-bottom: 10px; font-size: 14px;
-    background-color: var(--bg-dark); color: var(--text-primary);
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-size: 14px;
 }
-#login-popup button { width: 100%; padding: 10px; }
+
 #login-error {
-    color: var(--danger); font-size: 12px; font-weight: bold;
-    text-align: center; min-height: 18px; margin-top: 10px;
+    color: var(--danger);
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    min-height: 18px;
+    margin-top: 10px;
 }
+
 #connection-status-container {
-    display: flex; align-items: center; gap: 8px; padding: 4px 8px;
-    background-color: var(--bg-dark); border-radius: 20px;
-    font-size: 12px; font-weight: 600; margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: var(--sidebar-hover-bg);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sidebar-text);
 }
+
 #connection-status-switch {
-    width: 44px; height: 24px; border-radius: 12px; position: relative; cursor: default;
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    position: relative;
+    cursor: default;
     transition: background-color 0.4s ease;
 }
+
 #connection-status-switch .thumb {
-    width: 20px; height: 20px; background: white; border-radius: 50%;
-    position: absolute; top: 2px; left: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
+
 #connection-status-switch.connected { background-color: var(--success); }
 #connection-status-switch.connected .thumb { transform: translateX(0px); }
 #connection-status-switch.disconnected { background-color: var(--danger); }
 #connection-status-switch.disconnected .thumb { transform: translateX(20px); }
-#connection-status-text { width: 75px; text-align: left; }
+
+/* --- Genel Buton Stilleri --- */
+button, .btn-primary, .btn-danger {
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-weight: 600;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+button:disabled { background-color: var(--gray); cursor: not-allowed; opacity: 0.7; }
+button i, .btn-primary i, .btn-danger i { margin-right: 8px; }
+.btn-primary { background-color: var(--primary); color: white; }
+.btn-danger { background-color: var(--danger); color: white; }
+.btn-sm { padding: 8px 12px; font-size: 13px; }
