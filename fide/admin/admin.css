@@ -38,6 +38,8 @@ body {
     flex-direction: column;
     flex-shrink: 0;
     border-right: 1px solid var(--border-color);
+    
+    /* YENİ EKLENEN SABİTLEME KODLARI */
     position: sticky;
     top: 0;
     height: 100vh;
@@ -122,9 +124,10 @@ body {
     flex-grow: 1;
     background-color: #e9e9e9;
     padding: 0; 
-    overflow-y: auto;
+    overflow-y: auto; /* İçerik taşarsa kaydırma çubuğu burada çıksın */
 }
 
+/* --- YENİ BAŞLIK BANDI STİLİ --- */
 .content-header {
     background-color: var(--bg-dark);
     padding: 17px 25px; 
@@ -140,6 +143,7 @@ body {
     color: var(--primary-text);
 }
 
+/* --- İÇERİK ALANI STİLİ --- */
 .content-wrapper {
     max-width: 1600px;
     margin: 0 auto;
@@ -147,10 +151,10 @@ body {
 }
 
 .content-body {
-    background-color: #f4f7fa; /* Koyu arka plan açık gri tonuyla değiştirildi */
+    background-color: var(--bg-dark);
     padding: 20px;
     border-radius: 8px;
-    color: #1e293b; /* Yazı rengi, okunabilirlik için koyu yapıldı */
+    color: var(--secondary-text);
 }
 
 
@@ -206,10 +210,6 @@ body {
     color: var(--primary-text);
 }
 
-#auth-controls {
-    position: relative; /* Popup'ın konumlanması için eklendi */
-}
-
 #auth-controls .btn-auth {
     width: 100%;
     border: 1px solid var(--border-color);
@@ -230,66 +230,4 @@ body {
     background-color: var(--primary-accent);
     color: var(--primary-text);
     border-color: var(--primary-accent);
-}
-
-/* --- YENİ EKLENEN GİRİŞ POPUP STİLLERİ --- */
-#login-popup {
-    display: none;
-    position: absolute;
-    bottom: 100%; /* Butonun üstünde çıkacak */
-    left: 0;
-    width: 100%;
-    background-color: var(--bg-dark-accent);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 10px;
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
-    border: 1px solid var(--border-color);
-    z-index: 100;
-}
-
-#login-popup h3 {
-    font-size: 14px;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--primary-text);
-}
-
-#login-popup input {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-dark);
-    color: var(--primary-text);
-}
-
-#login-popup button {
-    width: 100%;
-    padding: 9px;
-    border: none;
-    border-radius: 4px;
-    background-color: var(--primary-accent);
-    color: white;
-    cursor: pointer;
-    font-weight: 600;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-#login-popup button:hover {
-    opacity: 0.9;
-}
-
-#login-error {
-    margin-top: 10px;
-    color: var(--danger);
-    font-size: 12px;
-    text-align: center;
 }
