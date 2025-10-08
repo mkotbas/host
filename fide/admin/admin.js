@@ -42,7 +42,9 @@ let currentModuleId = null;
 window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
-    await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+    // --- GÜNCELLEME: Oturum kalıcılığı 'LOCAL' olarak değiştirildi ---
+    // Bu değişiklik, ana sayfada yapılan girişin admin panelinde de geçerli olmasını sağlar.
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     auth.onAuthStateChanged(user => {
         updateAuthUI(user);
         updateConnectionIndicator();
