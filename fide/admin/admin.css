@@ -38,6 +38,8 @@ body {
     flex-direction: column;
     flex-shrink: 0;
     border-right: 1px solid var(--border-color);
+    
+    /* YENİ EKLENEN SABİTLEME KODLARI */
     position: sticky;
     top: 0;
     height: 100vh;
@@ -122,9 +124,10 @@ body {
     flex-grow: 1;
     background-color: #e9e9e9;
     padding: 0; 
-    overflow-y: auto;
+    overflow-y: auto; /* İçerik taşarsa kaydırma çubuğu burada çıksın */
 }
 
+/* --- YENİ BAŞLIK BANDI STİLİ --- */
 .content-header {
     background-color: var(--bg-dark);
     padding: 17px 25px; 
@@ -140,6 +143,7 @@ body {
     color: var(--primary-text);
 }
 
+/* --- İÇERİK ALANI STİLİ --- */
 .content-wrapper {
     max-width: 1600px;
     margin: 0 auto;
@@ -152,6 +156,7 @@ body {
     border-radius: 8px;
     color: var(--secondary-text);
 }
+
 
 /* --- Alt Kısım (Footer) ve Bağlantı Durumu --- */
 .sidebar-footer {
@@ -227,104 +232,73 @@ body {
     border-color: var(--primary-accent);
 }
 
-/* --- YENİ LOGIN MODAL STİLLERİ --- */
-.login-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(17, 24, 39, 0.8); /* Arka plan karartma */
-    display: none; /* JavaScript ile görünür yapılacak */
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    backdrop-filter: blur(5px); /* Arka planı bulanıklaştır */
-}
-
-.login-modal-overlay.show {
-    display: flex;
-}
-
-.login-modal-content {
-    background-color: var(--bg-dark-accent);
-    padding: 30px 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-    width: 100%;
-    max-width: 400px;
-    display: flex;
+/* --- GİRİŞ POPUP STİLLERİ (YENİ EKLENDİ) --- */
+#login-popup {
+    display: none; /* Varsayılan olarak gizli */
     flex-direction: column;
-    gap: 15px; /* Elemanlar arası boşluk */
-    position: relative;
+    gap: 12px;
+    padding: 15px;
+    background-color: var(--bg-dark-accent);
+    border-radius: 8px;
+    margin-top: 10px;
     border: 1px solid var(--border-color);
 }
 
-.login-modal-content h3 {
-    font-size: 22px;
+#login-popup.show {
+    display: flex; /* JavaScript ile bu class eklenince görünür olacak */
+}
+
+#login-popup h3 {
+    font-size: 16px;
     color: var(--primary-text);
-    text-align: center;
-    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 12px;
-    font-weight: 600;
+    gap: 8px;
+    margin-bottom: 5px;
 }
 
-.login-modal-content .input-group {
+#login-popup input {
     width: 100%;
-}
-
-.login-modal-content input[type="email"],
-.login-modal-content input[type="password"] {
-    width: 100%;
-    padding: 14px 18px;
+    padding: 10px;
     background-color: var(--bg-dark);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 6px;
     color: var(--primary-text);
-    font-size: 16px;
-    transition: var(--transition);
+    font-size: 14px;
 }
 
-.login-modal-content input[type="email"]::placeholder,
-.login-modal-content input[type="password"]::placeholder {
+#login-popup input::placeholder {
     color: var(--secondary-text);
 }
 
-.login-modal-content input[type="email"]:focus,
-.login-modal-content input[type="password"]:focus {
+#login-popup input:focus {
     outline: none;
     border-color: var(--primary-accent);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
 }
 
-.login-modal-content .btn-primary {
-    width: 100%;
-    padding: 14px 20px;
-    margin-top: 10px;
+#login-submit-btn {
     background-color: var(--primary-accent);
     color: var(--primary-text);
+    padding: 10px;
     border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 700;
+    border-radius: 6px;
     cursor: pointer;
-    transition: var(--transition);
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
+    transition: var(--transition);
 }
 
-.login-modal-content .btn-primary:hover {
+#login-submit-btn:hover {
     opacity: 0.9;
 }
 
-.login-error-message {
+#login-error {
     color: var(--danger);
+    font-size: 12px;
     text-align: center;
-    font-size: 14px;
-    min-height: 20px;
+    min-height: 18px;
 }
