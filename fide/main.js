@@ -9,6 +9,16 @@ let isFirebaseConnected = false;
 // --- Ana Uygulama Mantığı ---
 window.onload = initializeApp;
 
+// --- YENİ EKLENDİ: Sayfadan ayrılmadan önce veri kaybını önlemek için otomatik kaydetme ---
+window.addEventListener('beforeunload', (event) => {
+    // Sadece bir bayi seçiliyse ve formda veri varsa kaydet.
+    if (selectedStore) {
+        // Bu fonksiyon, denetimi 'tamamlandı' olarak işaretlemez, sadece mevcut durumu kaydeder.
+        saveFormState(false); 
+    }
+});
+
+
 async function initializeApp() {
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     auth.onAuthStateChanged(async user => { 
@@ -283,6 +293,7 @@ function setupEventListeners() {
 
 
 // --- MEVCUT ANA UYGULAMA FONKSİYONLARI ---
+// --- GÜNCELLENDİ: Denetim tamamlama mantığı ESKİ HALİNE DÖNDÜ, sadece 'isFinalizing' true ise tamamlandı sayar ---
 function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore || !auth.currentUser || !database) return;
 
@@ -297,6 +308,7 @@ function saveFormState(isFinalizing = false) {
             reportData.auditCompletedTimestamp = existingReport.data.auditCompletedTimestamp;
         }
 
+        // Sadece "E-POSTA OLUŞTUR" butonuna basıldığında (isFinalizing=true) denetimi tamamlanmış say.
         if (isFinalizing) {
             reportData.auditCompletedTimestamp = new Date().getTime();
         }
