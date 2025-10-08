@@ -26,6 +26,14 @@
                 <div id="auth-controls">
                     <button id="login-toggle-btn" class="btn-auth"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
                     <button id="logout-btn" class="btn-auth" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
+                    
+                    <div id="login-popup">
+                        <h3><i class="fas fa-cloud"></i> Panele Giriş Yap</h3>
+                        <input type="email" id="email-input" placeholder="E-posta">
+                        <input type="password" id="password-input" placeholder="Şifre">
+                        <button id="login-submit-btn"><i class="fas fa-check"></i> Onayla</button>
+                        <div id="login-error"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,7 +55,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     
-    <script src="../db-config.js"></script> <script src="admin.js"></script>
+    <script src="../db-config.js"></script>
+    <script src="admin.js"></script>
 
 </body>
 </html>
