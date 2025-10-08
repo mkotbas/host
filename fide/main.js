@@ -10,8 +10,6 @@ let isFirebaseConnected = false;
 window.onload = initializeApp;
 
 async function initializeApp() {
-    // --- GÜNCELLEME: OTURUM KALICILIĞI EKLENDİ ---
-    // Bu satır, kullanıcının tekrar tekrar giriş yapma zorunluluğunu ortadan kaldırır.
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     auth.onAuthStateChanged(async user => { 
         const loginToggleBtn = document.getElementById('login-toggle-btn');
