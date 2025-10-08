@@ -1,194 +1,77 @@
-/* ============================================= */
-/* --- BAYİ YÖNETİCİSİ MODÜLÜ STİLLERİ --- */
-/* Bu dosya, temel değişkenler için ana stil */
-/* dosyasının yüklendiğini varsayar. */
-/* ============================================= */
-
-/* --- Genel Konteyner ve Başlık --- */
-.card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: var(--card-shadow); /* */
-    padding: 24px;
-    margin-bottom: 24px;
+/* --- Genel Buton Stilleri (Admin Paneli Temasına Uygun) --- */
+.btn-primary, .btn-warning, .btn-danger, .btn-success {
+    text-decoration: none; cursor: pointer; border: none; border-radius: 8px;
+    padding: 10px 16px; font-weight: 600; transition: all 0.3s ease;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
 }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-primary { background-color: #3b82f6; color: white; }
+.btn-warning { background-color: #f59e0b; color: #111827; }
+.btn-danger { background-color: #ef4444; color: white; }
+.btn-success { background-color: #16a34a; color: white; }
 
-.card-header-info {
-    font-size: 13px;
-    color: var(--secondary); /* */
-    margin-top: -10px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* --- Genel Buton Stilleri (Ana Dosyadan Alınan) --- */
-/* Butonların doğru görünmesi için bu temel stiller gereklidir */
-button, .btn-like-label {
-    cursor: pointer;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-weight: 600;
-    transition: var(--transition); /* */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-button i, .btn-like-label i {
-    margin-right: 8px; /* */
-}
-.btn-primary { background-color: var(--primary); color: white; } /* */
-.btn-success { background-color: var(--success); color: white; } /* */
-.btn-danger { background-color: var(--danger); color: white; } /* */
-.btn-sm { padding: 6px 12px; font-size: 12px; } /* */
-
-
-/* --- Üst Kontrol Paneli (Butonlar ve Arama) --- */
+/* --- Ana Yönetici Yapısı --- */
 .manager-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 25px; display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 15px;
 }
-
-.manager-main-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
+.manager-main-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 #email-search-input {
-    width: 100%;
-    max-width: 300px;
-    padding: 10px 14px;
-    border: 1px solid var(--border); /* */
-    border-radius: 8px;
-    font-size: 14px;
-    transition: var(--transition); /* */
+    padding: 10px; border-radius: 6px; width: 100%; max-width: 300px;
+    border: 1px solid var(--border-color, #374151);
+    background-color: var(--sidebar-bg, #111827);
+    color: var(--primary-text, #f8fafc);
 }
 
-#email-search-input:focus {
-    outline: none;
-    border-color: var(--primary); /* */
-    box-shadow: 0 0 0 3px rgba(0, 140, 186, 0.15);
-}
-
-
-/* --- E-posta Listesi Alanı --- */
+/* --- E-posta Listesi Stilleri --- */
 .email-manager-list-container {
-    max-height: 65vh;
-    overflow-y: auto;
-    padding-right: 5px;
+    margin-top: 20px; max-height: 70vh; overflow-y: auto;
+    border: 1px solid var(--border-color, #374151);
+    border-radius: 8px; padding: 10px;
 }
-
 .email-manager-item {
-    display: grid;
-    grid-template-columns: 140px 1fr 90px;
-    gap: 16px;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border); /* */
-    transition: background-color 0.2s ease;
+    display: grid; grid-template-columns: 120px 1fr 100px;
+    gap: 15px; align-items: center; padding: 10px;
+    border-radius: 6px; background-color: var(--bg-dark-accent, #2c3a4f);
+    margin-bottom: 8px; border: 1px solid transparent;
 }
-
-.email-manager-item:last-child {
-    border-bottom: none;
+.email-manager-item:hover {
+    border-color: var(--primary-accent, #3b82f6);
 }
-
 .email-manager-item.new-item {
-    grid-template-columns: 1fr 1fr 90px;
-    background-color: var(--success-light); /* */
-    padding: 12px;
-    border-radius: 8px;
-    border-bottom: none;
-    margin-bottom: 10px;
+    grid-template-columns: 1fr 1fr 100px;
+    background-color: rgba(22, 163, 74, 0.1);
+    border-color: var(--success, #16a34a);
 }
-
-/* --- Liste Elemanları (Kod, E-posta, Butonlar) --- */
 .email-manager-code {
-    font-weight: 600;
-    font-family: monospace;
-    font-size: 15px;
-    color: var(--dark); /* */
-    padding-left: 5px;
+    font-weight: bold; font-family: monospace; font-size: 15px;
+    color: var(--primary-text, #f8fafc);
 }
-
-.email-manager-code-input,
-.email-manager-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid var(--border); /* */
-    border-radius: 6px;
-    font-size: 14px;
-    background-color: var(--light); /* */
-    transition: var(--transition); /* */
+.email-manager-code-input, .email-manager-input {
+    width: 100%; padding: 10px;
+    border: 1px solid var(--border-color, #374151);
+    background-color: var(--sidebar-bg, #111827);
+    color: var(--primary-text, #f8fafc);
+    border-radius: 6px; font-size: 14px;
 }
-
-.email-manager-input {
-    background-color: transparent;
-    border-color: transparent;
-}
-
-.email-manager-input:focus {
-    background-color: #fff;
-    border-color: var(--primary); /* */
-}
-
-.email-manager-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
-
-.email-manager-actions .btn-sm {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    padding: 0;
-}
-
-.email-manager-actions .btn-sm i {
-    margin: 0;
-    font-size: 14px;
-}
-
-/* --- Boş Liste Mesajı --- */
+.email-manager-actions { display: flex; gap: 8px; }
+.email-manager-actions button i { margin: 0; }
 .empty-list-message {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--secondary); /* */
+    text-align: center; padding: 20px;
+    color: var(--secondary-text, #94a3b8);
     font-style: italic;
-    background-color: var(--light); /* */
-    border-radius: 8px;
 }
 
-/* --- Medya Sorguları (Mobil Uyum) --- */
-@media (max-width: 768px) {
-    .manager-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    #email-search-input {
-        max-width: none;
-    }
-    
-    .email-manager-item,
-    .email-manager-item.new-item {
-        grid-template-columns: 1fr; /* */
-        gap: 10px;
-        padding-bottom: 15px;
-    }
-    
-    .email-manager-code {
-        padding-left: 0;
-    }
-    
-    .email-manager-actions {
-        justify-content: flex-start;
-    }
+/* --- Yükleniyor Ekranı --- */
+#loading-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex; flex-direction: column; justify-content: center;
+    align-items: center; z-index: 9999; color: white;
 }
+.spinner {
+    border: 8px solid #4b5563; border-top: 8px solid var(--primary-accent, #3b82f6);
+    border-radius: 50%; width: 60px; height: 60px;
+    animation: spin 1s linear infinite; margin-bottom: 20px;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
