@@ -1,35 +1,267 @@
-/* --- LOGIN MODAL STİLLERİ (admin.css içine eklenecek) --- */
+:root {
+    --bg-dark: #1e293b;
+    --bg-dark-accent: #2c3a4f;
+    --sidebar-bg: #111827;
+    --primary-text: #f8fafc;
+    --secondary-text: #94a3b8;
+    --border-color: #374151;
+    --primary-accent: #3b82f6;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --transition: all 0.3s ease;
+}
 
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--primary-text);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.admin-panel {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* --- Sol Menü (Sidebar) --- */
+.sidebar {
+    width: 260px;
+    background-color: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    margin: 0;
+}
+
+.sidebar-menu {
+    list-style-type: none;
+    padding: 15px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    color: var(--secondary-text);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: var(--transition);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.sidebar-menu li a:hover {
+    background-color: var(--bg-dark-accent);
+    color: var(--primary-text);
+}
+
+.sidebar-menu li a.active {
+    background-color: var(--primary-accent);
+    color: var(--primary-text);
+    font-weight: 600;
+}
+
+.sidebar-menu .has-submenu > a::after {
+    content: '\f054';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 10px;
+    transition: transform 0.3s ease;
+    margin-left: auto;
+}
+
+.sidebar-menu .has-submenu.open > a::after {
+    transform: rotate(90deg);
+}
+
+.submenu {
+    list-style-type: none;
+    padding-left: 20px;
+    display: none;
+    margin-top: 5px;
+}
+
+.submenu.open {
+    display: block;
+}
+
+.submenu li a {
+    padding-left: 25px;
+    font-size: 13px;
+    gap: 10px;
+}
+
+/* --- Sağ İçerik Alanı --- */
+.main-content {
+    flex-grow: 1;
+    background-color: #e9e9e9;
+    padding: 0; 
+    overflow-y: auto;
+}
+
+.content-header {
+    background-color: var(--bg-dark);
+    padding: 17px 25px; 
+    border-bottom: 1px solid var(--border-color);
+}
+
+.content-header h2 {
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--primary-text);
+}
+
+.content-wrapper {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 25px;
+}
+
+.content-body {
+    background-color: var(--bg-dark);
+    padding: 20px;
+    border-radius: 8px;
+    color: var(--secondary-text);
+}
+
+/* --- Alt Kısım (Footer) ve Bağlantı Durumu --- */
+.sidebar-footer {
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#connection-status-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: var(--bg-dark-accent);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+#connection-status-switch {
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    position: relative;
+    cursor: default;
+    transition: background-color 0.4s ease;
+}
+
+#connection-status-switch .thumb {
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+#connection-status-switch.connected { background-color: var(--success); }
+#connection-status-switch.connected .thumb { transform: translateX(0px); }
+#connection-status-switch.disconnected { background-color: var(--danger); }
+#connection-status-switch.disconnected .thumb { transform: translateX(20px); }
+
+#connection-status-text {
+    width: 75px;
+    text-align: left;
+    color: var(--primary-text);
+}
+
+#auth-controls .btn-auth {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--secondary-text);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+#auth-controls .btn-auth:hover {
+    background-color: var(--primary-accent);
+    color: var(--primary-text);
+    border-color: var(--primary-accent);
+}
+
+/* --- YENİ LOGIN MODAL STİLLERİ --- */
 .login-modal-overlay {
-    display: none; /* JavaScript ile kontrol edilecek */
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* Hafif karartma */
-    display: flex;
+    background-color: rgba(17, 24, 39, 0.8); /* Arka plan karartma */
+    display: none; /* JavaScript ile görünür yapılacak */
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    backdrop-filter: blur(5px); /* Arka planı bulanıklaştır */
+}
+
+.login-modal-overlay.show {
+    display: flex;
 }
 
 .login-modal-content {
-    background-color: var(--bg-dark-accent); /* Panel renk tonuna uygun */
+    background-color: var(--bg-dark-accent);
     padding: 30px 40px;
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
     width: 100%;
-    max-width: 400px; /* Genişliği kısıtla */
+    max-width: 400px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px; /* Elemanlar arası boşluk */
     position: relative;
-    border: 1px solid var(--border-color); /* Hafif bir çerçeve */
+    border: 1px solid var(--border-color);
 }
 
 .login-modal-content h3 {
-    font-size: 24px;
+    font-size: 22px;
     color: var(--primary-text);
     text-align: center;
     margin-bottom: 10px;
@@ -41,19 +273,19 @@
 }
 
 .login-modal-content .input-group {
-    margin-bottom: 15px; /* Inputlar arası boşluk */
+    width: 100%;
 }
 
 .login-modal-content input[type="email"],
 .login-modal-content input[type="password"] {
     width: 100%;
     padding: 14px 18px;
-    background-color: var(--bg-dark); /* Daha koyu input arka planı */
+    background-color: var(--bg-dark);
     border: 1px solid var(--border-color);
-    border-radius: 8px; /* Daha yuvarlak köşeler */
+    border-radius: 8px;
     color: var(--primary-text);
     font-size: 16px;
-    transition: all 0.3s ease;
+    transition: var(--transition);
 }
 
 .login-modal-content input[type="email"]::placeholder,
@@ -64,21 +296,22 @@
 .login-modal-content input[type="email"]:focus,
 .login-modal-content input[type="password"]:focus {
     outline: none;
-    border-color: var(--primary-accent); /* Vurgu rengi çerçeve */
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Hafif bir parlama */
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
 .login-modal-content .btn-primary {
     width: 100%;
     padding: 14px 20px;
-    background-color: var(--primary-accent); /* Vurgu renginde buton */
+    margin-top: 10px;
+    background-color: var(--primary-accent);
     color: var(--primary-text);
     border: none;
     border-radius: 8px;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -86,12 +319,12 @@
 }
 
 .login-modal-content .btn-primary:hover {
-    background-color: #2563eb; /* Hafif koyulaşma */
+    opacity: 0.9;
 }
 
 .login-error-message {
     color: var(--danger);
     text-align: center;
     font-size: 14px;
-    min-height: 20px; /* Hata mesajı için yer ayır */
+    min-height: 20px;
 }
