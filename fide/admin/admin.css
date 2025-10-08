@@ -2,27 +2,15 @@
    YENİ AÇIK TEMA RENK PALETİ VE TEMEL AYARLAR
    ================================================================= */
 :root {
-    /* --- YENİ TEMA DEĞİŞKENLERİ --- */
     --bg-main: #f4f7fa; /* Ana arka plan rengi (çok açık gri) */
     --bg-content: #ffffff; /* İçerik kartları ve sol menü arka planı (beyaz) */
-    --primary-text-new: #2c3e50; /* Ana metin rengi (koyu lacivert-gri) */
-    --secondary-text-new: #7f8c8d; /* İkincil metin rengi (gri) */
-    --border-color-new: #e6e9ed; /* Kenarlık ve ayraç çizgileri */
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Kartlar için gölge */
-    
-    /* --- ESKİ TEMA DEĞİŞKENLERİ İÇİN GERİYE UYUMLULUK (ÇÖZÜM BURADA) --- */
-    /* Modüllerin eski renk isimlerini kullandığını varsayarak, bu isimlere yeni açık tema renklerini atıyoruz. */
-    --bg-dark: #ffffff; /* Eski koyu arkaplanı BEYAZ yap */
-    --bg-dark-accent: #f4f7fa; /* Eski koyu vurgu rengini AÇIK GRİ yap */
-    --sidebar-bg: #ffffff;     /* Eski sol menü arkaplanını BEYAZ yap */
-    --primary-text: #2c3e50;   /* Eski açık metin rengini KOYU METİN RENGİ yap */
-    --secondary-text: #7f8c8d; /* Eski ikincil metin rengini GRİ yap */
-    --border-color: #e6e9ed;   /* Eski kenarlık rengini AÇIK GRİ KENARLIK yap */
-
-    /* --- ORTAK DEĞİŞKENLER --- */
+    --primary-text: #2c3e50; /* Ana metin rengi (koyu lacivert-gri) */
+    --secondary-text: #7f8c8d; /* İkincil metin rengi (gri) */
+    --border-color: #e6e9ed; /* Kenarlık ve ayraç çizgileri */
     --primary-accent: #3b82f6; /* Vurgu rengi (mavi) */
     --success: #16a34a;
     --danger: #dc2626;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Kartlar için gölge */
     --transition: all 0.3s ease;
 }
 
@@ -50,7 +38,7 @@ body {
    ================================================================= */
 .sidebar {
     width: 260px;
-    background-color: var(--sidebar-bg);
+    background-color: var(--bg-content);
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -171,15 +159,17 @@ body {
 .content-wrapper {
     max-width: 1600px;
     margin: 0 auto;
-    padding: 0 25px 25px 25px;
+    padding: 0 25px 25px 25px; /* Üst padding content-header'dan geldiği için 0 */
 }
 
+/* ÖNEMLİ: Bu kısım modül içeriğinin arkaplanını ve stilini belirler */
 .content-body {
-    background-color: transparent; /* Modül kendi kartlarını oluşturacağı için burası şeffaf kalmalı */
-    padding: 0;
+    background-color: transparent; /* Arkaplan artık olmayacak, çünkü kartlar kendi arkaplanına sahip */
+    padding: 0; /* İç boşlukları sıfırladık */
     border-radius: 0;
     color: var(--secondary-text);
 }
+
 
 /* =================================================================
    ÖRNEK EKRAN GÖRÜNTÜSÜNDEKİ KARTLI YAPI İÇİN STİLLER
