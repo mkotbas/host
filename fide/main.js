@@ -11,11 +11,15 @@ window.onload = initializeApp;
 
 async function initializeApp() {
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    auth.onAuthStateChanged(async user => {
+
+    // --- GÜNCELLENEN KISIM BAŞLANGICI ---
+    auth.onAuthStateChanged(user => {
+        // 1. Arayüzdeki butonları anında güncelle
         const loginToggleBtn = document.getElementById('login-toggle-btn');
         const logoutBtn = document.getElementById('logout-btn');
         const loginPopup = document.getElementById('login-popup');
         const uploadBtn = document.getElementById('upload-backup-to-cloud-btn');
+
         if (user) {
             loginToggleBtn.style.display = 'none';
             logoutBtn.style.display = 'inline-flex';
@@ -27,11 +31,25 @@ async function initializeApp() {
             if (uploadBtn) uploadBtn.disabled = true;
         }
         updateConnectionIndicator();
-        await loadInitialData();
+
+        // 2. Veri yükleme işlemini arka planda başlat
+        if (user) {
+            // Giriş yapıldıysa, verileri yükle ve yükleme bitince formu güncelle
+            loadInitialData().then(() => {
+                updateFormInteractivity(selectedStore !== null);
+            });
+        } else {
+            // Çıkış yapıldıysa, formu temizle ve interaktifliği kapat
+            buildForm(); // Boş formu çizer
+            updateFormInteractivity(false);
+        }
+
+        // 3. Olay dinleyicilerini her durumda kur
         setupEventListeners();
-        updateFormInteractivity(selectedStore !== null);
     });
+    // --- GÜNCELLENEN KISIM BİTİŞİ ---
 }
+
 
 async function loadStoreEmails() {
     const user = auth.currentUser;
@@ -288,8 +306,9 @@ function setupEventListeners() {
         if (!email || !password) { errorDiv.textContent = 'Lütfen tüm alanları doldurun.'; return; }
         auth.signInWithEmailAndPassword(email, password)
             .then(() => {
+                // Başarılı girişten sonra sadece popup'ı kapatıyoruz.
+                // Geri kalan her şeyi onAuthStateChanged halledecek.
                 loginPopup.style.display = 'none';
-                // window.location.reload(); // <--- BU SATIR KALDIRILDI
             })
             .catch(error => { errorDiv.textContent = 'E-posta veya şifre hatalı.'; });
     });
