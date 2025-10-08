@@ -231,3 +231,74 @@ body {
     color: var(--primary-text);
     border-color: var(--primary-accent);
 }
+
+/* --- GİRİŞ POPUP STİLLERİ (YENİ EKLENDİ) --- */
+#login-popup {
+    display: none; /* Varsayılan olarak gizli */
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px;
+    background-color: var(--bg-dark-accent);
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid var(--border-color);
+}
+
+#login-popup.show {
+    display: flex; /* JavaScript ile bu class eklenince görünür olacak */
+}
+
+#login-popup h3 {
+    font-size: 16px;
+    color: var(--primary-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+#login-popup input {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--bg-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--primary-text);
+    font-size: 14px;
+}
+
+#login-popup input::placeholder {
+    color: var(--secondary-text);
+}
+
+#login-popup input:focus {
+    outline: none;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+#login-submit-btn {
+    background-color: var(--primary-accent);
+    color: var(--primary-text);
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+#login-submit-btn:hover {
+    opacity: 0.9;
+}
+
+#login-error {
+    color: var(--danger);
+    font-size: 12px;
+    text-align: center;
+    min-height: 18px;
+}
