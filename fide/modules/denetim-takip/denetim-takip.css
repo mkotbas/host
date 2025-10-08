@@ -92,22 +92,31 @@
     color: var(--light-text-secondary);
 }
 .annual-progress-text { font-size: 14px; font-weight: bold; color: var(--primary-accent, #3b82f6); }
-.progress-bar { width: 100%; background-color: var(--light-border); border-radius: 20px; overflow: hidden; height: 22px; /* YAZININ GÖRÜNMESİ İÇİN YÜKSEKLİK ARTIRILDI */ }
+.progress-bar { width: 100%; background-color: var(--light-border); border-radius: 20px; overflow: hidden; height: 22px; }
 
-/* --- GÜNCELLENMİŞ PROGRESS BAR KODU --- */
+/* --- KESİN ÇÖZÜM İÇİN GÜNCELLENMİŞ PROGRESS BAR KODU --- */
 .progress-bar-fill {
     height: 100%;
     transition: width 0.5s ease;
     background-color: var(--primary-accent, #3b82f6);
-    /* Yazıyı hizalamak için eklenen yeni stiller */
+    
+    /* Yazı stilleri */
     color: white;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: bold;
+    white-space: nowrap; /* Yazının alt satıra kaymasını engelle */
+    
+    /* Hizalama için Flexbox */
     display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 12px;
-    white-space: nowrap;
+    align-items: center; /* Dikeyde ortala */
+    justify-content: center; /* Yatayda ortala */
+    
+    /* OKUNABİLİRLİK İÇİN EN ÖNEMLİ KISIM */
+    min-width: 45px; /* Çubuğun genişliği ne olursa olsun, yazının sığması için minimum 45px'lik bir alan ayır */
+    
+    /* İç boşluklar */
+    padding: 0 8px;
+    box-sizing: border-box; /* Padding değerini genişliğe dahil et */
 }
 
 .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 25px; }
