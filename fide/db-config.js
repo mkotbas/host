@@ -1,19 +1,17 @@
-// --- Firebase Başlatma ---
-// Bu dosya, tüm HTML sayfaları (index.html, soru-yoneticisi.html, bayi-yoneticisi.html)
-// tarafından ortak olarak kullanılacak veritabanı bağlantı ayarlarını içerir.
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyBzTb9cop8B4k8D8VGRBnojlxvIKoaGcbQ",
-    authDomain: "fideraporuygulamasi.firebaseapp.com",
-    databaseURL: "https://fideraporuygulamasi-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "fideraporuygulamasi",
-    storageBucket: "fideraporuygulamasi.appspot.com",
-    messagingSenderId: "351112274026",
-    appId: "1:351112274026:web:2e7433982f3b4bc747ea13"
+  apiKey: "AIzaSyCCz33ukxoNAwsZ-xC4bLUpbeNRB9J3P4U",
+  authDomain: "fide-7cd6e.firebaseapp.com",
+  projectId: "fide-7cd6e",
+  storageBucket: "fide-7cd6e.firebasestorage.app",
+  messagingSenderId: "876303922675",
+  appId: "1:876303922675:web:7d68f6f058dc2c1b540e86"
 };
 
-let database, auth;
-try {
-    firebase.initializeApp(firebaseConfig);
-    database = firebase.database();
-    auth = firebase.auth();
-} catch (e) { console.error("Firebase başlatılamadı.", e); }
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
