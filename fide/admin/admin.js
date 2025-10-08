@@ -42,8 +42,6 @@ let currentModuleId = null;
 window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
-    // --- GÜNCELLEME: Oturum kalıcılığı 'LOCAL' olarak değiştirildi ---
-    // Bu değişiklik, ana sayfada yapılan girişin admin panelinde de geçerli olmasını sağlar.
     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     auth.onAuthStateChanged(user => {
         updateAuthUI(user);
@@ -78,7 +76,6 @@ function renderModuleMenu() {
         const li = document.createElement('li');
         
         if (module.submenu) {
-            // Alt menüsü olan ana menü
             li.classList.add('has-submenu');
             li.innerHTML = `<a href="#"><i class="${module.icon}"></i><span>${module.name}</span></a>`;
             const subMenu = document.createElement('ul');
@@ -89,7 +86,7 @@ function renderModuleMenu() {
                 subLi.innerHTML = `<a href="#" data-module-id="${sub.id}"><i class="${sub.icon}"></i><span>${sub.name}</span></a>`;
                 subLi.querySelector('a').addEventListener('click', (e) => {
                     e.preventDefault();
-                    e.stopPropagation(); // Ana menünün tıklama olayını tetiklemesini engelle
+                    e.stopPropagation();
                     if (currentModuleId !== sub.id) {
                         loadModule(sub.id);
                     }
@@ -99,7 +96,6 @@ function renderModuleMenu() {
             
             li.appendChild(subMenu);
 
-            // Ana menüye tıklama olayı (aç/kapa)
             li.querySelector('a').addEventListener('click', (e) => {
                 e.preventDefault();
                 li.classList.toggle('open');
@@ -107,7 +103,6 @@ function renderModuleMenu() {
             });
 
         } else {
-            // Normal (alt menüsü olmayan) menü
             li.innerHTML = `<a href="#" data-module-id="${module.id}"><i class="${module.icon}"></i><span>${module.name}</span></a>`;
             li.querySelector('a').addEventListener('click', (e) => {
                 e.preventDefault();
@@ -122,7 +117,6 @@ function renderModuleMenu() {
 
 
 async function loadModule(moduleId) {
-    // Bu fonksiyon artık hem ana hem de alt menülerden gelen ID'leri bulabilir.
     let module;
     for (const main of modules) {
         if (main.id === moduleId) {
@@ -142,12 +136,10 @@ async function loadModule(moduleId) {
 
     currentModuleId = moduleId;
 
-    // Aktif menü stillerini ayarla
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     const activeLink = document.querySelector(`.sidebar-menu a[data-module-id="${moduleId}"]`);
     if(activeLink) {
         activeLink.classList.add('active');
-        // Eğer bir alt menüdeyse, ana menüsünü de 'open' yap
         const parentLi = activeLink.closest('.has-submenu');
         if (parentLi && !parentLi.classList.contains('open')) {
             parentLi.classList.add('open');
@@ -196,13 +188,15 @@ async function loadModule(moduleId) {
     }
 }
 
-// updateAuthUI, updateConnectionIndicator, setupEventListeners fonksiyonları değişmemiştir.
+
 function updateAuthUI(user) {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
+    const loginPopup = document.getElementById('login-popup');
     if (user) {
         loginToggleBtn.style.display = 'none';
         logoutBtn.style.display = 'inline-flex';
+        loginPopup.style.display = 'none';
     } else {
         loginToggleBtn.style.display = 'inline-flex';
         logoutBtn.style.display = 'none';
@@ -216,14 +210,52 @@ function updateConnectionIndicator() {
     statusSwitch.classList.toggle('disconnected', !isOnline);
     statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
 }
+
+// --- GÜNCELLENEN OLAY DİNLEYİCİLERİ ---
 function setupEventListeners() {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
-    loginToggleBtn.addEventListener('click', () => {
-        alert('Giriş yapmak için lütfen ana sayfaya dönün.');
-        window.location.href = '../index.html';
+    const loginPopup = document.getElementById('login-popup');
+    const loginSubmitBtn = document.getElementById('login-submit-btn');
+
+    // Giriş yap butonuna tıklandığında popup'ı göster/gizle
+    loginToggleBtn.addEventListener('click', (event) => {
+        event.stopPropagation(); // Olayın dışarıya yayılmasını engelle
+        loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
     });
+    
+    // Çıkış yap butonu
     logoutBtn.addEventListener('click', () => {
         auth.signOut();
+    });
+
+    // Popup içindeki onayla butonu ile giriş yapma
+    loginSubmitBtn.addEventListener('click', () => {
+        const email = document.getElementById('email-input').value;
+        const password = document.getElementById('password-input').value;
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.textContent = '';
+        
+        if (!email || !password) {
+            errorDiv.textContent = 'Lütfen tüm alanları doldurun.';
+            return;
+        }
+
+        auth.signInWithEmailAndPassword(email, password)
+            .then(() => {
+                // Başarılı giriş sonrası sayfayı yenileyerek modüllerin yüklenmesini sağla
+                window.location.reload(); 
+            })
+            .catch(error => {
+                errorDiv.textContent = 'E-posta veya şifre hatalı.';
+            });
+    });
+
+    // Sayfanın herhangi bir yerine tıklandığında popup'ı kapat
+    window.addEventListener('click', function(event) {
+        const authControls = document.getElementById('auth-controls');
+        if (authControls && !authControls.contains(event.target)) {
+            loginPopup.style.display = 'none';
+        }
     });
 }
