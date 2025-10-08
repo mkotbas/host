@@ -147,10 +147,10 @@ body {
 }
 
 .content-body {
-    background-color: var(--bg-dark);
+    background-color: #f4f7fa; /* Koyu arka plan açık gri tonuyla değiştirildi */
     padding: 20px;
     border-radius: 8px;
-    color: var(--secondary-text);
+    color: #1e293b; /* Yazı rengi, okunabilirlik için koyu yapıldı */
 }
 
 
