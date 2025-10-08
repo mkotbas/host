@@ -4,7 +4,7 @@
     --light-border: #e5e7eb;
     --light-text-primary: #1f2937;
     --light-text-secondary: #6b7280;
-    --light-container-bg: #f9fafb;
+    --light-container-bg: #f9fafb; /* Hafif gri arka planlar için */
     --success-color: #16a34a;
     --warning-color: #f59e0b;
 }
@@ -17,7 +17,7 @@
 
 /* --- Genel Buton Stilleri --- */
 button, .btn-primary, .btn-warning, .btn-danger, .btn-success, .btn-secondary {
-    text-decoration: none; cursor: pointer; border: 1px solid transparent; border-radius: 8px;
+    text-decoration: none; cursor: pointer; border: 1px solid transparent; border-radius: 6px; /* Daha keskin köşeler */
     padding: 10px 16px; font-weight: 600; transition: all 0.3s ease;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
 }
@@ -25,7 +25,7 @@ button.btn-sm { padding: 6px 12px; font-size: 12px; }
 button:disabled { background-color: #d1d5db; color: #6b7280; cursor: not-allowed; border-color: #d1d5db; }
 .btn-primary { background-color: #3b82f6; color: white; }
 .btn-primary:hover:not(:disabled) { background-color: #2563eb; }
-.btn-warning { background-color: var(--warning-color); color: white; } /* Yazı rengi beyaz olarak değiştirildi */
+.btn-warning { background-color: var(--warning-color); color: white; }
 .btn-warning:hover:not(:disabled) { background-color: #d97706; }
 .btn-danger { background-color: #ef4444; color: white; }
 .btn-danger:hover:not(:disabled) { background-color: #dc2626; }
@@ -46,7 +46,7 @@ button:disabled { background-color: #d1d5db; color: #6b7280; cursor: not-allowed
 
 
 .manager-item {
-    background-color: var(--light-bg);
+    background-color: var(--light-container-bg); /* ÖRNEK RESİMDEKİ GİBİ HAFİF GRİ YAPILDI */
     border: 1px solid var(--light-border);
     border-radius: 12px; padding: 20px; margin-bottom: 20px;
 }
@@ -57,7 +57,8 @@ button:disabled { background-color: #d1d5db; color: #6b7280; cursor: not-allowed
 .manager-item input, .manager-item select, .manager-item textarea {
     width: 100%; padding: 10px; border: 1px solid var(--light-border);
     border-radius: 6px; font-size: 14px; font-family: inherit;
-    background-color: var(--light-container-bg); color: var(--light-text-primary);
+    background-color: var(--light-bg); /* ÖRNEK RESİMDEKİ GİBİ BEYAZ YAPILDI */
+    color: var(--light-text-primary);
 }
 .manager-item input:disabled { background-color: #e5e7eb; cursor: not-allowed; opacity: 0.8; }
 .manager-item-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--light-border); display: flex; justify-content: flex-end; gap: 10px; }
@@ -76,7 +77,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 /* --- Metin Editörü --- */
 .editor-toolbar {
     display: flex; gap: 5px; margin-bottom: 0;
-    background-color: var(--light-container-bg);
+    background-color: var(--light-bg); /* ÖRNEK RESİMDEKİ GİBİ BEYAZ YAPILDI */
     padding: 5px; border-radius: 6px 6px 0 0;
     border: 1px solid var(--light-border); border-bottom: none;
 }
@@ -93,7 +94,7 @@ input:checked + .slider:before { transform: translateX(22px); }
     font-family: inherit; font-size: 14px; min-height: 80px; resize: vertical; overflow: auto;
     background-color: var(--light-bg); line-height: 1.6; color: var(--light-text-primary);
 }
-.editable-textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+.editable-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
 
 /* --- Ürün & POP Yöneticisi --- */
 .product-list-manager, .pop-manager-container {
@@ -103,7 +104,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 .product-list-manager h4, .pop-manager-group label { color: #3730a3; margin: 0 0 10px 0; }
 .product-manager-info, .pop-manager-info {
     font-size: 12px; color: #3730a3; margin-bottom: 15px; padding: 8px;
-    background-color: var(--light-bg); border-radius: 6px; border-left: 4px solid var(--primary-color);
+    background-color: var(--light-bg); border-radius: 6px; border-left: 4px solid #3b82f6;
 }
 .product-manager-info i, .pop-manager-info i { margin-right: 5px; }
 .bulk-add-container {
@@ -147,5 +148,5 @@ input:checked + .slider:before { transform: translateX(22px); }
 
 /* --- Yükleniyor Ekranı --- */
 #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; color: white; font-size: 18px; }
-.spinner { border: 8px solid #9ca3af; border-top: 8px solid var(--primary-color); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+.spinner { border: 8px solid #9ca3af; border-top: 8px solid #3b82f6; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 20px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
