@@ -850,7 +850,6 @@ function generateEmail() {
 
             fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
             if (!isQuestionCompleted || q.type === 'product_list' || (isQuestionCompleted && q.type === 'standard' && contentHtml !== '')) fideReportHtml += contentHtml;
-            fideReportHtml += '<p>&nbsp;</p>';
         }
     });
     const currentYear = new Date().getFullYear();
