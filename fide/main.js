@@ -6,7 +6,7 @@ const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular 
 const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 let isFirebaseConnected = false;
 
-// --- Ana Uygulama Mantığı ---
+// --- Ana Uygulaa Mantığı ---
 window.onload = initializeApp;
 
 async function initializeApp() {
@@ -793,7 +793,7 @@ function generateEmail() {
     const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
     const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
     const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
-    let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>&nbsp;</p><p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
+    let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
     let fideReportHtml = "";
     fideQuestions.forEach(q => {
         const itemDiv = document.getElementById(`fide-item-${q.id}`);
@@ -864,7 +864,7 @@ function generateEmail() {
          fideScores += `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;">${score}</td>`;
     }
     const tableHtml = `<div style="overflow-x: auto; -webkit-overflow-scrolling: touch;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #dddddd;"><thead><tr><th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;">${currentYear}</th>${monthHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">DiDe</td>${dideScores}</tr><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold; white-space: nowrap;">FiDe</td>${fideScores}</tr></tbody></table></div>`;
-    const finalEmailBody = `${greetingHtml}<p>&nbsp;</p>${fideReportHtml}${tableHtml}`;
+    const finalEmailBody = `${greetingHtml}${fideReportHtml}${tableHtml}`;
     
     document.getElementById('dide-upload-card').style.display = 'none';
     document.getElementById('form-content').style.display = 'none';
