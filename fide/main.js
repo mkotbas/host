@@ -899,6 +899,10 @@ async function generateEmail() {
             let emailTag = '';
             if (q.wantsStoreEmail && q.type !== 'pop_system') {
                 emailTag = storeEmailTag;
+            } else if (q.type === 'pop_system' && q.popEmailTo && q.popEmailTo.length > 0) {
+                const popEmails = q.popEmailTo.join(', ');
+                const mailtoLink = `mailto:${q.popEmailTo.join(',')}`;
+                emailTag = ` <a href="${mailtoLink}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${popEmails}</a>`;
             }
 
             fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
