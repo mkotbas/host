@@ -370,7 +370,7 @@ function calculateAndDisplayDashboard() {
              <p class="annual-progress-text">${auditedYearlyCount} / ${totalStores}</p>
         </div>
         <div class="progress-bar">
-            <div class="progress-bar-fill" style="width: ${annualProgress.toFixed(2)}%; background-color: var(--primary);">${annualProgress.toFixed(0)}%</div>
+            <div class="progress-bar-fill" style="width: ${annualProgress.toFixed(2)}%;">${annualProgress.toFixed(0)}%</div>
         </div>`;
 
     renderAuditedStores();
