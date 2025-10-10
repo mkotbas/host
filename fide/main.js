@@ -5,6 +5,7 @@ let migrationMap = {}, storeEmails = {}, allStoresList = [];
 const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan yüklenemedi." }];
 const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 let isFirebaseConnected = false;
+let auditedThisMonth = []; // YENİ: Bu ay denetlenen bayilerin kodlarını tutacak.
 
 // --- Ana Uygulaa Mantığı ---
 window.onload = initializeApp;
@@ -84,6 +85,48 @@ async function loadMigrationMap() {
     }
 }
 
+// YENİ FONKSİYON: Bu ay tamamlanan denetimleri buluttan çeker.
+async function loadMonthlyAuditData() {
+    auditedThisMonth = [];
+    if (!auth.currentUser || !database) return;
+
+    try {
+        // Tamamlanmış raporları al
+        const reportsRef = database.ref('allFideReports');
+        const reportsSnapshot = await reportsRef.once('value');
+        const allReports = reportsSnapshot.exists() ? reportsSnapshot.val() : {};
+
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        const monthlyCodesFromReports = [];
+
+        Object.entries(allReports).forEach(([key, value]) => {
+            if (value.data && value.data.auditCompletedTimestamp) {
+                const reportDate = new Date(value.data.auditCompletedTimestamp);
+                if (reportDate.getFullYear() === currentYear && reportDate.getMonth() === currentMonth) {
+                    monthlyCodesFromReports.push(key.replace('store_', ''));
+                }
+            }
+        });
+
+        // Bu ay için geri alınmış raporları al
+        const currentMonthKey = `${currentYear}-${currentMonth}`;
+        const geriAlinanlarRef = database.ref('denetimGeriAlinanlar');
+        const geriAlinanlarSnapshot = await geriAlinanlarRef.once('value');
+        const geriAlinanlar = geriAlinanlarSnapshot.exists() ? geriAlinanlarSnapshot.val() : {};
+        const geriAlinanBayiKodlariBuAy = geriAlinanlar[currentMonthKey] || [];
+
+        // Geri alınanları listeden çıkar
+        const uniqueMonthlyCodes = [...new Set(monthlyCodesFromReports)];
+        auditedThisMonth = uniqueMonthlyCodes.filter(code => !geriAlinanBayiKodlariBuAy.includes(code));
+
+    } catch (error) {
+        console.error("Bu ay denetlenen bayi verileri yüklenirken hata oluştu:", error);
+    }
+}
+
+
 async function loadInitialData() {
     if (!auth.currentUser) {
         buildForm();
@@ -93,6 +136,7 @@ async function loadInitialData() {
     await loadMigrationMap();
     await loadStoreEmails();
     await loadAllStoresList();
+    await loadMonthlyAuditData(); // YENİ: Fonksiyonu burada çağırıyoruz.
     let questionsLoaded = false;
 
     try {
@@ -298,16 +342,15 @@ function saveFormState(isFinalizing = false) {
         }
 
         if (isFinalizing) {
-            reportData.auditCompletedTimestamp = new Date().getTime();
+            // Sadece bu ay içinde daha önce denetlenmemişse timestamp ekle ve geri alınanlardan çıkar
+            if (!auditedThisMonth.includes(bayiKodu)) {
+                 reportData.auditCompletedTimestamp = new Date().getTime();
+                 removeStoreCodeFromRevertedList(bayiKodu);
+            }
         }
 
         const dataToSave = { timestamp: new Date().getTime(), data: reportData };
         firebaseStoreRef.set(dataToSave)
-            .then(() => {
-                if (isFinalizing) {
-                    removeStoreCodeFromRevertedList(bayiKodu);
-                }
-            })
             .catch(error => console.error("Firebase'e yazma hatası:", error));
     });
 }
@@ -750,7 +793,21 @@ function displayStores(stores) {
         storeListDiv.appendChild(item);
     });
 }
+// GÜNCELLENDİ: Bayi seçimi kontrolü eklendi.
 function selectStore(store, loadSavedData = true) {
+    // --- YENİ EKLENEN KOD BAŞLANGICI ---
+    if (auditedThisMonth.includes(String(store.bayiKodu))) {
+        const proceed = confirm(
+            `UYARI: Bu bayi (${store.bayiAdi} - ${store.bayiKodu}) bu ay içinde zaten denetlenmiş.\n\n` +
+            `Rapora devam edebilirsiniz ancak bu işlem aylık denetim sayınızı ARTTIRMAYACAKTIR.\n\n` +
+            `Yine de devam etmek istiyor musunuz?`
+        );
+        if (!proceed) {
+            return; // Kullanıcı iptal ederse işlemi durdur
+        }
+    }
+    // --- YENİ EKLENEN KOD BİTİŞİ ---
+
     document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
     const storeItem = document.querySelector(`.store-item[data-bayi-kodu="${store.bayiKodu}"]`);
     if (storeItem) storeItem.classList.add('selected');
@@ -768,8 +825,8 @@ function selectStore(store, loadSavedData = true) {
         loadReportForStore(store.bayiKodu);
     } else {
         resetForm();
-        updateFormInteractivity(true);
     }
+    updateFormInteractivity(true); // Formun aktifleşmesi için bu satır eklendi.
 }
 
 function generateEmail() {
@@ -905,12 +962,18 @@ function loadReport(reportData) {
                 }
             }
         }
+        
+        resetForm(); // Formu temizleyip yeniden inşa etmeye hazırla
 
         if (reportData.selectedStore) {
             const storeData = uniqueStores.find(s => s.bayiKodu == reportData.selectedStore.bayiKodu);
-            if(storeData) selectStore(storeData, false);
-        } else {
-             resetForm();
+            if(storeData) {
+                // selectStore'u çağırmak yerine, sadece global değişkeni ve inputu ayarla
+                selectedStore = { bayiKodu: storeData.bayiKodu, bayiAdi: storeData.bayiAdi };
+                const searchInput = document.getElementById('store-search-input');
+                let shortBayiAdi = storeData.bayiAdi.length > 20 ? storeData.bayiAdi.substring(0, 20) + '...' : storeData.bayiAdi;
+                searchInput.value = `${storeData.bayiKodu} - ${shortBayiAdi}`;
+            }
         }
         
         const formContainer = document.getElementById('form-content');
@@ -988,17 +1051,11 @@ function updateFormInteractivity(enable) {
     const formContent = document.getElementById('form-content');
     if (!formContent) return;
 
-    const buttons = formContent.querySelectorAll(
-        '.add-item-btn, .status-btn, .remove-btn, .delete-bar, .delete-item-btn, .product-adder button'
+    const allElements = formContent.querySelectorAll(
+        'button, input, select'
     );
-    const inputs = formContent.querySelectorAll(
-        '#product-selector, #product-qty'
-    );
-
-    buttons.forEach(btn => {
-        btn.disabled = !enable;
-    });
-    inputs.forEach(input => {
-        input.disabled = !enable;
+    
+    allElements.forEach(el => {
+        el.disabled = !enable;
     });
 }
