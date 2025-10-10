@@ -897,7 +897,7 @@ async function generateEmail() {
             const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
             
             let emailTag = '';
-            if (q.wantsStoreEmail) {
+            if (q.wantsStoreEmail && q.type !== 'pop_system') {
                 emailTag = storeEmailTag;
             }
 
