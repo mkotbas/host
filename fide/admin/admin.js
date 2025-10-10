@@ -7,6 +7,19 @@ const modules = [
         path: '../modules/denetim-takip/'
     },
     {
+        id: 'fide-main-parent', // Ana menü ID'si
+        name: 'FiDe Ana Sayfası',
+        icon: 'fas fa-home',
+        submenu: [
+            {
+                id: 'eposta-taslagi', // Bu ID, modül klasör adıyla aynı olmalı
+                name: 'E-posta Taslağı',
+                icon: 'fas fa-envelope-open-text',
+                path: '../modules/eposta-taslagi/'
+            }
+        ]
+    },
+    {
         id: 'bayi-yoneticisi-parent', // Ana menü olduğu için benzersiz bir ID
         name: 'Bayi Yöneticisi',
         icon: 'fas fa-store',
@@ -17,7 +30,6 @@ const modules = [
                 icon: 'fas fa-at',
                 path: '../modules/bayi-yoneticisi/'
             }
-            // Gelecekte bu ana menünün altına başka alt menüler eklenebilir
         ]
     },
     {

@@ -123,6 +123,11 @@ input:checked + .slider:before { transform: translateX(22px); }
     background-color: var(--light-bg); border-radius: 6px; border-left: 4px solid #3b82f6;
 }
 .product-manager-info i, .pop-manager-info i { margin-right: 5px; }
+.pop-manager-grid { /* YENİ: POP Yöneticisi için 2 sütunlu grid */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
 .bulk-add-container {
     padding: 15px; background-color: var(--light-container-bg);
     border: 1px solid var(--light-border);
