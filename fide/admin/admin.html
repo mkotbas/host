@@ -4,59 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yönetim Paneli</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-
     <div class="admin-panel">
-        <div class="sidebar">
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <h3><i class="fas fa-cogs"></i> Yönetim Paneli</h3>
+                <i class="fa-solid fa-earth-americas logo-icon"></i>
+                <h1 class="logo-text">Logistix</h1>
             </div>
-            <ul class="sidebar-menu" id="module-menu">
-                </ul>
-            <div class="sidebar-footer">
-                <div id="connection-status-container">
-                    <div id="connection-status-switch" class="disconnected">
-                        <div class="thumb"></div>
-                    </div>
-                    <span id="connection-status-text">Bağlı Değil</span>
-                </div>
-                <div id="auth-controls">
-                    <button id="login-toggle-btn" class="btn-auth"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
-                    <button id="logout-btn" class="btn-auth" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
-                    
-                    <div id="login-popup">
-                        <h3><i class="fas fa-cloud"></i> Panele Giriş Yap</h3>
-                        <input type="email" id="email-input" placeholder="E-posta">
-                        <input type="password" id="password-input" placeholder="Şifre">
-                        <button id="login-submit-btn"><i class="fas fa-check"></i> Onayla</button>
-                        <div id="login-error"></div>
-                    </div>
-                </div>
+            <div class="sidebar-profile">
+                <img src="https://i.pravatar.cc/150?img=32" alt="Kullanıcı Resmi" class="profile-avatar">
+                <h3 class="profile-name">Danielle Garner</h3>
             </div>
-        </div>
+            <nav class="sidebar-menu-wrapper">
+                <ul class="sidebar-menu" id="module-menu">
+                    </ul>
+            </nav>
+        </aside>
 
-        <div class="main-content">
-            <div class="content-header">
-                <h2 id="module-title"><i class="fas fa-tachometer-alt"></i> Modül Yöneticisi</h2>
-            </div>
-            
-            <div class="content-wrapper">
-                <div class="content-body" id="module-container">
-                    <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
+        <div class="main-wrapper">
+            <header class="main-header">
+                <div class="header-left">
+                    <h2>Welcome back,</h2>
+                    <h1 id="module-title"><i class="fa-solid fa-chart-pie"></i> Logistics Dashboard</h1>
                 </div>
-            </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <input type="text" placeholder="Search...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <button class="header-icon-btn"><i class="fas fa-bell"></i></button>
+                    <div class="header-user">
+                         <img src="https://i.pravatar.cc/150?img=32" alt="Kullanıcı">
+                        <span>admin@distro.com</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </header>
+
+            <main class="content-area" id="module-container">
+                 <div class="dashboard-grid">
+                    <div class="stat-card color-blue">
+                        <div class="stat-icon"><i class="fas fa-box"></i></div>
+                        <div class="stat-info">
+                            <p>Total Shipments</p>
+                            <span>869</span>
+                        </div>
+                    </div>
+                    <div class="stat-card color-red">
+                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        <div class="stat-info">
+                            <p>Pending</p>
+                            <span>562</span>
+                        </div>
+                    </div>
+                    <div class="stat-card color-purple">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <p>Delivered</p>
+                            <span>624</span>
+                        </div>
+                    </div>
+                    <div class="stat-card color-dark-blue">
+                        <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+                        <div class="stat-info">
+                            <p>Cancelled</p>
+                            <span>47</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Shipment Statistics</h3>
+                    </div>
+                    <div class="card-body">
+                         <p>İstatistik grafiği alanı. Modül yüklendiğinde ilgili grafik buraya gelebilir.</p>
+                         <img src="https" alt="">
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
-
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     
-    <script src="../db-config.js"></script>
-    <script src="admin.js"></script>
-
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script src="firebase-config.js"></script> <script src="admin.js"></script>
 </body>
 </html>
