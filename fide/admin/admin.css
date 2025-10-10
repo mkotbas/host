@@ -97,6 +97,10 @@ body {
     list-style-type: none;
 }
 
+.sidebar-menu li {
+    margin-bottom: 5px;
+}
+
 .sidebar-menu li a {
     display: flex;
     align-items: center;
@@ -107,7 +111,7 @@ body {
     text-decoration: none;
     font-weight: 500;
     transition: var(--transition);
-    margin-bottom: 5px;
+    cursor: pointer;
 }
 
 .sidebar-menu li a:hover {
@@ -125,6 +129,43 @@ body {
     font-size: 16px;
     width: 20px;
     text-align: center;
+}
+
+/* --- YENİ EKLENEN ALT MENÜ STİLLERİ --- */
+.sidebar-menu .has-submenu > a {
+    position: relative;
+}
+
+.sidebar-menu .has-submenu > a::after {
+    content: '\f054'; /* Font Awesome chevron right */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%) rotate(0deg);
+    transition: transform 0.3s ease;
+    font-size: 12px;
+}
+
+.sidebar-menu .has-submenu.open > a::after {
+    transform: translateY(-50%) rotate(90deg);
+}
+
+.submenu {
+    list-style-type: none;
+    padding-left: 20px;
+    margin-top: 5px;
+    display: none; /* Başlangıçta gizli */
+}
+
+.submenu.open {
+    display: block; /* Açık olduğunda göster */
+}
+
+.submenu li a {
+    padding-left: 25px; /* Daha içeriden başlasın */
+    font-size: 13px;
 }
 
 /* --- ANA BÖLÜM --- */
@@ -214,60 +255,4 @@ body {
     padding: 30px;
     flex-grow: 1;
     overflow-y: auto;
-}
-
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 25px;
-    margin-bottom: 25px;
-}
-
-.stat-card {
-    color: white;
-    padding: 25px;
-    border-radius: var(--border-radius);
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-.stat-card.color-blue { background: var(--stat-blue-bg); }
-.stat-card.color-red { background: var(--stat-red-bg); }
-.stat-card.color-purple { background: var(--stat-purple-bg); }
-.stat-card.color-dark-blue { background: var(--stat-dark-blue-bg); }
-
-.stat-icon i {
-    font-size: 32px;
-    opacity: 0.8;
-}
-
-.stat-info p {
-    font-size: 14px;
-    margin-bottom: 5px;
-    text-transform: uppercase;
-    font-weight: 600;
-}
-
-.stat-info span {
-    font-size: 28px;
-    font-weight: 700;
-}
-
-.card {
-    background-color: var(--card-bg);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
-}
-.card-header {
-    padding: 15px 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-.card-header h3 {
-    font-size: 18px;
-    font-weight: 600;
-}
-.card-body {
-    padding: 20px;
 }
