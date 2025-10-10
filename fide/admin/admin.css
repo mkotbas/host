@@ -1,195 +1,40 @@
-:root {
-    --bg-dark: #1e293b;
-    --bg-dark-accent: #2c3a4f;
-    --sidebar-bg: #111827;
-    --primary-text: #f8fafc;
-    --secondary-text: #94a3b8;
-    --border-color: #374151;
-    --primary-accent: #3b82f6;
-    --success: #16a34a;
-    --danger: #dc2626;
-    --transition: all 0.3s ease;
-}
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+/* AdminLTE 3 Temel Stilleri */
+@import url('https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css');
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-dark);
-    color: var(--primary-text);
-    font-size: 14px;
-    line-height: 1.6;
+    font-family: 'Source Sans Pro', sans-serif;
 }
 
-.admin-panel {
-    display: flex;
-    min-height: 100vh;
-}
-
-/* --- Sol Menü (Sidebar) --- */
-.sidebar {
-    width: 260px;
-    background-color: var(--sidebar-bg);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    border-right: 1px solid var(--border-color);
-    
-    /* YENİ EKLENEN SABİTLEME KODLARI */
-    position: sticky;
-    top: 0;
-    height: 100vh;
-}
-
-.sidebar-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.sidebar-header h3 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 18px;
-    margin: 0;
-}
-
-.sidebar-menu {
-    list-style-type: none;
-    padding: 15px;
-    flex-grow: 1;
-    overflow-y: auto;
-}
-
-.sidebar-menu li a {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 15px;
-    color: var(--secondary-text);
-    text-decoration: none;
-    border-radius: 6px;
-    transition: var(--transition);
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.sidebar-menu li a:hover {
-    background-color: var(--bg-dark-accent);
-    color: var(--primary-text);
-}
-
-.sidebar-menu li a.active {
-    background-color: var(--primary-accent);
-    color: var(--primary-text);
-    font-weight: 600;
-}
-
-.sidebar-menu .has-submenu > a::after {
-    content: '\f054';
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
-    font-size: 10px;
-    transition: transform 0.3s ease;
-    margin-left: auto;
-}
-
-.sidebar-menu .has-submenu.open > a::after {
-    transform: rotate(90deg);
-}
-
-.submenu {
-    list-style-type: none;
-    padding-left: 20px;
-    display: none;
-    margin-top: 5px;
-}
-
-.submenu.open {
-    display: block;
-}
-
-.submenu li a {
-    padding-left: 25px;
-    font-size: 13px;
-    gap: 10px;
-}
-
-/* --- Sağ İçerik Alanı --- */
-.main-content {
-    flex-grow: 1;
-    background-color: #e9e9e9;
-    padding: 0; 
-    overflow-y: auto; /* İçerik taşarsa kaydırma çubuğu burada çıksın */
-}
-
-/* --- YENİ BAŞLIK BANDI STİLİ --- */
-.content-header {
-    background-color: var(--bg-dark);
-    padding: 17px 25px; 
-    border-bottom: 1px solid var(--border-color);
-}
-
-.content-header h2 {
-    font-size: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    color: var(--primary-text);
-}
-
-/* --- İÇERİK ALANI STİLİ --- */
-.content-wrapper {
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 25px;
-}
-
-.content-body {
-    background-color: var(--bg-dark);
-    padding: 20px;
-    border-radius: 8px;
-    color: var(--secondary-text);
-}
-
-
-/* --- Alt Kısım (Footer) ve Bağlantı Durumu --- */
-.sidebar-footer {
-    padding: 15px;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+/* --- ÜST BAR (NAVBAR) ÖZELLEŞTİRMELERİ --- */
+.main-header {
+    border-bottom: 1px solid #dee2e6;
 }
 
 #connection-status-container {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background-color: var(--bg-dark-accent);
-    border-radius: 8px;
-    font-size: 12px;
+    gap: 10px;
+    margin-right: 15px;
+}
+
+#connection-status-text {
     font-weight: 600;
+    font-size: 14px;
+    color: #495057;
 }
 
 #connection-status-switch {
-    width: 44px;
-    height: 24px;
-    border-radius: 12px;
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
     position: relative;
     cursor: default;
     transition: background-color 0.4s ease;
 }
 
 #connection-status-switch .thumb {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     background: white;
     border-radius: 50%;
     position: absolute;
@@ -199,92 +44,99 @@ body {
     transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-#connection-status-switch.connected { background-color: var(--success); }
-#connection-status-switch.connected .thumb { transform: translateX(0px); }
-#connection-status-switch.disconnected { background-color: var(--danger); }
-#connection-status-switch.disconnected .thumb { transform: translateX(20px); }
+#connection-status-switch.connected { background-color: #28a745; } /* Yeşil */
+#connection-status-switch.connected .thumb { transform: translateX(18px); }
+#connection-status-switch.disconnected { background-color: #dc3545; } /* Kırmızı */
+#connection-status-switch.disconnected .thumb { transform: translateX(0px); }
 
-#connection-status-text {
-    width: 75px;
-    text-align: left;
-    color: var(--primary-text);
-}
-
-#auth-controls .btn-auth {
-    width: 100%;
-    border: 1px solid var(--border-color);
-    background-color: transparent;
-    color: var(--secondary-text);
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
+#auth-controls .btn {
+    font-weight: 600;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    font-weight: 600;
-    transition: var(--transition);
 }
 
-#auth-controls .btn-auth:hover {
-    background-color: var(--primary-accent);
-    color: var(--primary-text);
-    border-color: var(--primary-accent);
-}
-
-/* --- YENİ EKLENEN GİRİŞ POPUP STİLLERİ --- */
+/* --- GİRİŞ POPUP STİLLERİ --- */
 #login-popup {
     display: none; /* Başlangıçta gizli */
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    width: 300px;
+    z-index: 1050;
     flex-direction: column;
     gap: 12px;
     padding: 20px;
-    background-color: var(--bg-dark-accent);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    margin-top: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: .25rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,.1);
+    color: #333;
 }
 
 #login-popup h3 {
-    font-size: 16px;
-    color: var(--primary-text);
+    font-size: 18px;
+    color: #333;
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 5px;
     justify-content: center;
+    font-weight: 600;
 }
 
 #login-popup input {
     width: 100%;
     padding: 10px;
-    background-color: var(--bg-dark);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--primary-text);
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    color: #495057;
     font-size: 14px;
-}
-
-#login-popup input::placeholder {
-    color: var(--secondary-text);
 }
 
 #login-popup #login-submit-btn {
     width: 100%;
     padding: 10px;
-    background-color: var(--primary-accent);
-    color: var(--primary-text);
+    background-color: #007bff;
+    color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: .25rem;
     cursor: pointer;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: var(--transition);
+    transition: background-color 0.2s ease;
 }
 
 #login-popup #login-submit-btn:hover {
-    opacity: 0.9;
+    background-color: #0056b3;
+}
+
+#login-error {
+    color: #dc3545;
+    font-size: 13px;
+    text-align: center;
+    min-height: 18px;
+}
+
+/* --- SOL MENÜ (SIDEBAR) ÖZELLEŞTİRMELERİ --- */
+.nav-sidebar .nav-item .nav-link i {
+    width: 1.6rem;
+    text-align: center;
+}
+
+/* --- İÇERİK ALANI --- */
+.content-wrapper {
+    background-color: #f4f6f9;
+}
+
+.content-body {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: .25rem;
+    border: 1px solid #dee2e6;
+    color: #495057;
 }

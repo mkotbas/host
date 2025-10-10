@@ -3,60 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yönetim Paneli</title>
+    <title>Yönetim Paneli - Yeni Tasarım</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <link rel="stylesheet" href="admin.css">
 </head>
-<body>
+<body class="hold-transition sidebar-mini">
+<div class="wrapper">
 
-    <div class="admin-panel">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h3><i class="fas fa-cogs"></i> Yönetim Paneli</h3>
-            </div>
-            <ul class="sidebar-menu" id="module-menu">
-                </ul>
-            <div class="sidebar-footer">
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+            </li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
                 <div id="connection-status-container">
+                    <span id="connection-status-text">Bağlı Değil</span>
                     <div id="connection-status-switch" class="disconnected">
                         <div class="thumb"></div>
                     </div>
-                    <span id="connection-status-text">Bağlı Değil</span>
                 </div>
+            </li>
+            <li class="nav-item dropdown">
                 <div id="auth-controls">
-                    <button id="login-toggle-btn" class="btn-auth"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
-                    <button id="logout-btn" class="btn-auth" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
-                    
-                    <div id="login-popup">
-                        <h3><i class="fas fa-cloud"></i> Panele Giriş Yap</h3>
-                        <input type="email" id="email-input" placeholder="E-posta">
-                        <input type="password" id="password-input" placeholder="Şifre">
-                        <button id="login-submit-btn"><i class="fas fa-check"></i> Onayla</button>
-                        <div id="login-error"></div>
+                     <button id="login-toggle-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
+                     <button id="logout-btn" class="btn btn-danger" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
+                </div>
+            </li>
+        </ul>
+    </nav>
+    <div id="login-popup">
+        <h3><i class="fas fa-cloud"></i> Panele Giriş Yap</h3>
+        <input type="email" id="email-input" placeholder="E-posta">
+        <input type="password" id="password-input" placeholder="Şifre">
+        <button id="login-submit-btn"><i class="fas fa-check"></i> Onayla</button>
+        <div id="login-error"></div>
+    </div>
+
+
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="#" class="brand-link">
+            <i class="nav-icon fas fa-cogs ml-3 mr-2"></i>
+            <span class="brand-text font-weight-light">Yönetim Paneli</span>
+        </a>
+
+        <div class="sidebar">
+            <nav class="mt-2">
+                <ul id="module-menu" class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0" id="module-title"><i class="fas fa-tachometer-alt"></i> Modül Yöneticisi</h1>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="main-content">
-            <div class="content-header">
-                <h2 id="module-title"><i class="fas fa-tachometer-alt"></i> Modül Yöneticisi</h2>
-            </div>
-            
-            <div class="content-wrapper">
+        <section class="content">
+            <div class="container-fluid">
                 <div class="content-body" id="module-container">
                     <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
                 </div>
             </div>
-        </div>
+        </section>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    
-    <script src="../db-config.js"></script>
-    <script src="admin.js"></script>
+    <footer class="main-footer">
+        <strong>Telif Hakkı &copy; 2024-2025.</strong> Tüm hakları saklıdır.
+    </footer>
+
+</div>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="../db-config.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+
+<script src="admin.js"></script>
 
 </body>
 </html>

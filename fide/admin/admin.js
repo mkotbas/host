@@ -61,11 +61,12 @@ async function initializeAdminPanel() {
         if (user) {
             renderModuleMenu();
             if (!currentModuleId) {
-                loadModule('denetim-takip');
+                // Varsayılan olarak ilk modülü yükle
+                loadModule(modules[0].id);
             }
         } else {
             document.getElementById('module-menu').innerHTML = '';
-            document.getElementById('module-container').innerHTML = '<p>Lütfen panele erişmek için giriş yapın.</p>';
+            document.getElementById('module-container').innerHTML = '<div class="alert alert-warning text-center">Lütfen panele erişmek için giriş yapın.</div>';
             document.getElementById('module-title').innerHTML = '<i class="fas fa-tachometer-alt"></i> Modül Yöneticisi';
         }
     });
@@ -79,23 +80,38 @@ async function initializeAdminPanel() {
     setupEventListeners();
 }
 
-// --- ALT MENÜ DESTEKLİ YENİ MENÜ OLUŞTURUCU ---
+// --- YENİ ADMINLTE MENÜ OLUŞTURUCU ---
 function renderModuleMenu() {
     const menu = document.getElementById('module-menu');
     menu.innerHTML = ''; 
 
     modules.forEach(module => {
         const li = document.createElement('li');
-        
+        li.className = 'nav-item';
+
         if (module.submenu) {
-            li.classList.add('has-submenu');
-            li.innerHTML = `<a href="#"><i class="${module.icon}"></i><span>${module.name}</span></a>`;
+            li.classList.add('has-treeview');
+            li.innerHTML = `
+                <a href="#" class="nav-link">
+                    <i class="nav-icon ${module.icon}"></i>
+                    <p>
+                        ${module.name}
+                        <i class="right fas fa-angle-left"></i>
+                    </p>
+                </a>`;
+            
             const subMenu = document.createElement('ul');
-            subMenu.className = 'submenu';
+            subMenu.className = 'nav nav-treeview';
             
             module.submenu.forEach(sub => {
                 const subLi = document.createElement('li');
-                subLi.innerHTML = `<a href="#" data-module-id="${sub.id}"><i class="${sub.icon}"></i><span>${sub.name}</span></a>`;
+                subLi.className = 'nav-item';
+                subLi.innerHTML = `
+                    <a href="#" class="nav-link" data-module-id="${sub.id}">
+                        <i class="nav-icon ${sub.icon}"></i>
+                        <p>${sub.name}</p>
+                    </a>`;
+                
                 subLi.querySelector('a').addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -108,14 +124,13 @@ function renderModuleMenu() {
             
             li.appendChild(subMenu);
 
-            li.querySelector('a').addEventListener('click', (e) => {
-                e.preventDefault();
-                li.classList.toggle('open');
-                subMenu.classList.toggle('open');
-            });
-
         } else {
-            li.innerHTML = `<a href="#" data-module-id="${module.id}"><i class="${module.icon}"></i><span>${module.name}</span></a>`;
+            li.innerHTML = `
+                <a href="#" class="nav-link" data-module-id="${module.id}">
+                    <i class="nav-icon ${module.icon}"></i>
+                    <p>${module.name}</p>
+                </a>`;
+
             li.querySelector('a').addEventListener('click', (e) => {
                 e.preventDefault();
                 if (currentModuleId !== module.id) {
@@ -148,20 +163,31 @@ async function loadModule(moduleId) {
 
     currentModuleId = moduleId;
 
-    document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
-    const activeLink = document.querySelector(`.sidebar-menu a[data-module-id="${moduleId}"]`);
+    // Menüdeki aktifliği ayarla
+    document.querySelectorAll('.sidebar .nav-link').forEach(a => a.classList.remove('active'));
+    const activeLink = document.querySelector(`.sidebar a[data-module-id="${moduleId}"]`);
     if(activeLink) {
         activeLink.classList.add('active');
-        const parentLi = activeLink.closest('.has-submenu');
-        if (parentLi && !parentLi.classList.contains('open')) {
-            parentLi.classList.add('open');
-            parentLi.querySelector('.submenu').classList.add('open');
+        const parentTree = activeLink.closest('.has-treeview');
+        if (parentTree) {
+             // AdminLTE'nin kendi mekanizması açıp kapatacağı için biz sadece aktif sınıfı veriyoruz
+            if (!parentTree.classList.contains('menu-open')) {
+                 // Eğer AdminLTE js'i yüklendiyse, bu tıklama menüyü açacaktır.
+                 // Ancak script'in bunu yönetmesi daha doğrudur. 
+                 // Genellikle sadece 'active' sınıfı vermek yeterlidir.
+                 parentTree.querySelector('a').classList.add('active');
+            }
         }
     }
     
     const container = document.getElementById('module-container');
     const title = document.getElementById('module-title');
-    container.innerHTML = `<p>Modül yükleniyor: ${module.name}...</p>`;
+    container.innerHTML = `<div class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="sr-only">Yükleniyor...</span>
+                                </div>
+                                <b class="ml-3">${module.name} yükleniyor...</b>
+                           </div>`;
     title.innerHTML = `<i class="${module.icon}"></i> ${module.name}`;
     
     try {
@@ -169,18 +195,22 @@ async function loadModule(moduleId) {
         if (!htmlResponse.ok) throw new Error(`Dosya bulunamadı: ${module.id}.html`);
         container.innerHTML = await htmlResponse.text();
 
-        const cssId = `module-css-${module.id}`;
-        if (!document.getElementById(cssId)) {
-            const link = document.createElement('link');
-            link.id = cssId;
-            link.rel = 'stylesheet';
-            link.href = `${module.path}${module.id}.css`;
-            document.head.appendChild(link);
-        }
+        // Eski modül stilini kaldır (opsiyonel, eğer çakışma olursa)
+        const oldCss = document.querySelector('link[id^="module-css-"]');
+        if (oldCss) oldCss.remove();
 
+        // Yeni modül CSS'ini ekle
+        const link = document.createElement('link');
+        link.id = `module-css-${module.id}`;
+        link.rel = 'stylesheet';
+        link.href = `${module.path}${module.id}.css`;
+        document.head.appendChild(link);
+        
+        // Eski modül script'ini kaldır
         const oldScript = document.getElementById('module-script');
         if (oldScript) oldScript.remove();
         
+        // Yeni modül script'ini ekle
         const script = document.createElement('script');
         script.id = 'module-script';
         script.src = `${module.path}${module.id}.js`;
@@ -196,6 +226,7 @@ async function loadModule(moduleId) {
         document.body.appendChild(script);
 
     } catch (error) {
+        container.innerHTML = `<div class="alert alert-danger"><b>Hata!</b> Modül yüklenirken bir sorun oluştu. <br><small>${error.message}</small></div>`;
         console.error("Modül yüklenirken hata oluştu:", error);
     }
 }
@@ -217,6 +248,7 @@ function updateAuthUI(user) {
 function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
+    // Giriş yapılmış ve Firebase'e bağlı ise 'Bağlı' durumuna geç
     const isOnline = isFirebaseConnected && auth.currentUser;
     statusSwitch.classList.toggle('connected', isOnline);
     statusSwitch.classList.toggle('disconnected', !isOnline);
@@ -232,8 +264,8 @@ function setupEventListeners() {
 
     // Giriş yap butonuna tıklandığında popup'ı göster/gizle
     loginToggleBtn.addEventListener('click', (event) => {
-        event.stopPropagation(); // Olayın dışarıya yayılmasını engelle
-        loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
+        event.stopPropagation(); 
+        loginPopup.style.display = loginPopup.style.display === 'flex' ? 'none' : 'flex';
     });
     
     // Çıkış yap butonu
@@ -255,8 +287,8 @@ function setupEventListeners() {
 
         auth.signInWithEmailAndPassword(email, password)
             .then(() => {
-                // Başarılı giriş sonrası sayfayı yenileyerek modüllerin yüklenmesini sağla
-                window.location.reload(); 
+                loginPopup.style.display = 'none';
+                // Başarılı giriş sonrası sayfa yenilenmesine gerek yok, onAuthStateChanged tetiklenecek
             })
             .catch(error => {
                 errorDiv.textContent = 'E-posta veya şifre hatalı.';
@@ -265,8 +297,7 @@ function setupEventListeners() {
 
     // Sayfanın herhangi bir yerine tıklandığında popup'ı kapat
     window.addEventListener('click', function(event) {
-        const authControls = document.getElementById('auth-controls');
-        if (authControls && !authControls.contains(event.target)) {
+        if (!loginPopup.contains(event.target) && event.target !== loginToggleBtn) {
             loginPopup.style.display = 'none';
         }
     });
