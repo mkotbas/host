@@ -1,0 +1,26 @@
+div id=loading-overlay style=display none;
+    div class=spinnerdiv
+    pİşlem yapılıyor, lütfen bekleyin...p
+div
+
+div class=card id=template-manager
+    div class=template-info
+        i class=fas fa-info-circlei
+        p
+            Bu alanda, denetim raporu e-postasının başlangıcında yer alan metni düzenleyebilirsiniz. Sistem, e-postayı oluştururken aşağıdaki etiketleri otomatik olarak doğru bilgilerle dolduracaktır
+            br
+            strong{YONETMEN_ADI}strong Bayi Yönetmeninin adını ekler (Örn Ahmet).
+            br
+            strong{BAYI_BILGISI}strong Bayi kodu ve adını ekler (Örn 12345 ABC Ticaret).
+        p
+    div
+    
+    div class=template-editor
+        label for=email-template-textareaE-posta Karşılama Metnilabel
+        textarea id=email-template-textarea rows=5 placeholder=Örn {YONETMEN_ADI} Bey Merhaba,&#10;Ziyaret etmiş olduğum {BAYI_BILGISI} bayi karnesi ektedir.textarea
+    div
+    
+    div class=template-actions
+        button id=save-template-btn class=btn-success btn-smi class=fas fa-savei Şablonu Kaydetbutton
+    div
+div

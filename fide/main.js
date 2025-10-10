@@ -5,7 +5,7 @@ let migrationMap = {}, storeEmails = {}, allStoresList = [];
 const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan yüklenemedi." }];
 const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 let isFirebaseConnected = false;
-let auditedThisMonth = []; // YENİ: Bu ay denetlenen bayilerin kodlarını tutacak.
+let auditedThisMonth = []; 
 
 // --- Ana Uygulaa Mantığı ---
 window.onload = initializeApp;
@@ -85,13 +85,11 @@ async function loadMigrationMap() {
     }
 }
 
-// YENİ FONKSİYON: Bu ay tamamlanan denetimleri buluttan çeker.
 async function loadMonthlyAuditData() {
     auditedThisMonth = [];
     if (!auth.currentUser || !database) return;
 
     try {
-        // Tamamlanmış raporları al
         const reportsRef = database.ref('allFideReports');
         const reportsSnapshot = await reportsRef.once('value');
         const allReports = reportsSnapshot.exists() ? reportsSnapshot.val() : {};
@@ -110,14 +108,12 @@ async function loadMonthlyAuditData() {
             }
         });
 
-        // Bu ay için geri alınmış raporları al
         const currentMonthKey = `${currentYear}-${currentMonth}`;
         const geriAlinanlarRef = database.ref('denetimGeriAlinanlar');
         const geriAlinanlarSnapshot = await geriAlinanlarRef.once('value');
         const geriAlinanlar = geriAlinanlarSnapshot.exists() ? geriAlinanlarSnapshot.val() : {};
         const geriAlinanBayiKodlariBuAy = geriAlinanlar[currentMonthKey] || [];
 
-        // Geri alınanları listeden çıkar
         const uniqueMonthlyCodes = [...new Set(monthlyCodesFromReports)];
         auditedThisMonth = uniqueMonthlyCodes.filter(code => !geriAlinanBayiKodlariBuAy.includes(code));
 
@@ -136,7 +132,7 @@ async function loadInitialData() {
     await loadMigrationMap();
     await loadStoreEmails();
     await loadAllStoresList();
-    await loadMonthlyAuditData(); // YENİ: Fonksiyonu burada çağırıyoruz.
+    await loadMonthlyAuditData(); 
     let questionsLoaded = false;
 
     try {
@@ -318,15 +314,11 @@ function setupEventListeners() {
         }
     });
 
-    // --- YÖNETİM PANELİ BUTONU GÜNCELLENDİ ---
     document.getElementById('toggle-backup-manager-btn').addEventListener('click', () => {
-        // Artık yeni admin paneli sayfasına yönlendiriyor
         window.open('admin/admin.html', '_blank');
     });
 }
 
-
-// --- MEVCUT ANA UYGULAMA FONKSİYONLARI ---
 function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore || !auth.currentUser || !database) return;
 
@@ -342,7 +334,6 @@ function saveFormState(isFinalizing = false) {
         }
 
         if (isFinalizing) {
-            // Sadece bu ay içinde daha önce denetlenmemişse timestamp ekle ve geri alınanlardan çıkar
             if (!auditedThisMonth.includes(bayiKodu)) {
                  reportData.auditCompletedTimestamp = new Date().getTime();
                  removeStoreCodeFromRevertedList(bayiKodu);
@@ -646,13 +637,18 @@ function openEmailDraft() {
     const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
     const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
     if (nonExpiredCodes.length === 0) { alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin."); return; }
+    
+    const popQuestion = fideQuestions.find(q => q.type === 'pop_system') || {};
+    const emailTo = (popQuestion.popEmailTo || []).join(',');
+    const emailCc = (popQuestion.popEmailCc || []).join(',');
+
     const kodSatiri = nonExpiredCodes.join(', ');
     const emailHTML = `
         <!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>E-Posta Taslağı</title>
         <style>body { font-family: Arial; padding: 20px; background-color: #fff; } .block { margin-bottom: 15px; } .label { font-weight: bold; color: #555; display: inline-block; margin-bottom: 8px; }</style>
         </head><body>
-        <div class="block"><span class="label">Kime:</span> berkcan_boza@arcelik.com.tr</div>
-        <div class="block"><span class="label">CC:</span> "ugur.dogan@arcelik.com" &lt;ugur.dogan@arcelik.com.tr&gt;; "aykut.demen@arcelik.com.tr" &lt;aykut.demen@arcelik.com.tr&gt;; "Ahmet.Erol2@arcelik.com.tr" &lt;ahmet.erol2@arcelik.com.tr&gt;</div>
+        <div class="block"><span class="label">Kime:</span> ${emailTo || ''}</div>
+        <div class="block"><span class="label">CC:</span> ${emailCc || ''}</div>
         <div class="block"><span class="label">Konu:</span> (Boş)</div>
         <div class="block"><span class="label">İçerik:</span><div style="margin-top: 10px;">${kodSatiri}</div></div>
         </body></html>`;
@@ -793,9 +789,7 @@ function displayStores(stores) {
         storeListDiv.appendChild(item);
     });
 }
-// GÜNCELLENDİ: Bayi seçimi kontrolü eklendi.
 function selectStore(store, loadSavedData = true) {
-    // --- YENİ EKLENEN KOD BAŞLANGICI ---
     if (auditedThisMonth.includes(String(store.bayiKodu))) {
         const proceed = confirm(
             `UYARI: Bu bayi (${store.bayiAdi} - ${store.bayiKodu}) bu ay içinde zaten denetlenmiş.\n\n` +
@@ -803,10 +797,9 @@ function selectStore(store, loadSavedData = true) {
             `Yine de devam etmek istiyor musunuz?`
         );
         if (!proceed) {
-            return; // Kullanıcı iptal ederse işlemi durdur
+            return; 
         }
     }
-    // --- YENİ EKLENEN KOD BİTİŞİ ---
 
     document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
     const storeItem = document.querySelector(`.store-item[data-bayi-kodu="${store.bayiKodu}"]`);
@@ -826,14 +819,31 @@ function selectStore(store, loadSavedData = true) {
     } else {
         resetForm();
     }
-    updateFormInteractivity(true); // Formun aktifleşmesi için bu satır eklendi.
+    updateFormInteractivity(true); 
 }
 
-function generateEmail() {
+// GÜNCELLENDİ: E-posta şablonunu buluttan çekecek şekilde değiştirildi.
+async function generateEmail() {
     if (!selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
         return;
     }
+
+    // --- YENİ EKLENEN KOD BAŞLANGICI: Şablonu buluttan çek ---
+    let emailTemplate = `{YONETMEN_ADI} Bey Merhaba,\nZiyaret etmiş olduğum {BAYI_BILGISI} bayi karnesi ektedir.`; // Varsayılan şablon
+    if (auth.currentUser && database) {
+        try {
+            const templateRef = database.ref('fideSettings/emailTemplate');
+            const snapshot = await templateRef.once('value');
+            if (snapshot.exists() && snapshot.val()) {
+                emailTemplate = snapshot.val();
+            }
+        } catch (error) {
+            console.warn("E-posta şablonu buluttan yüklenemedi, varsayılan şablon kullanılıyor.", error);
+        }
+    }
+    // --- YENİ EKLENEN KOD BİTİŞİ ---
+
     saveFormState(true);
 
     const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
@@ -844,13 +854,21 @@ function generateEmail() {
     }
     
     const storeEmail = storeEmails[selectedStore.bayiKodu] || null;
-    
     const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
 
+    // --- GÜNCELLENEN KOD: Şablondaki etiketleri gerçek verilerle değiştir ---
     const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
     const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
     const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
-    let greetingHtml = `<p>${yonetmenFirstName ? yonetmenFirstName + ' Bey' : ''} Merhaba,</p><p>Ziyaret etmiş olduğum ${selectedStore.bayiKodu} ${shortBayiAdi} bayi karnesi ektedir.</p>`;
+    
+    let greetingHtml = emailTemplate
+        .replace(/{YONETMEN_ADI}/g, yonetmenFirstName || 'Yetkili')
+        .replace(/{BAYI_BILGISI}/g, `${selectedStore.bayiKodu} ${shortBayiAdi}`);
+    
+    // Metindeki satır sonlarını HTML paragraf etiketlerine çevir
+    greetingHtml = greetingHtml.split('\n').map(p => `<p>${p.trim()}</p>`).join('');
+    // --- GÜNCELLENEN KOD BİTİŞİ ---
+
     let fideReportHtml = "";
     fideQuestions.forEach(q => {
         const itemDiv = document.getElementById(`fide-item-${q.id}`);
@@ -963,12 +981,11 @@ function loadReport(reportData) {
             }
         }
         
-        resetForm(); // Formu temizleyip yeniden inşa etmeye hazırla
+        resetForm(); 
 
         if (reportData.selectedStore) {
             const storeData = uniqueStores.find(s => s.bayiKodu == reportData.selectedStore.bayiKodu);
             if(storeData) {
-                // selectStore'u çağırmak yerine, sadece global değişkeni ve inputu ayarla
                 selectedStore = { bayiKodu: storeData.bayiKodu, bayiAdi: storeData.bayiAdi };
                 const searchInput = document.getElementById('store-search-input');
                 let shortBayiAdi = storeData.bayiAdi.length > 20 ? storeData.bayiAdi.substring(0, 20) + '...' : storeData.bayiAdi;
