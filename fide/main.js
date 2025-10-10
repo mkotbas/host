@@ -1,13 +1,13 @@
 // --- Global Değişkenler ---
 let dideData = [], fideData = [], uniqueStores = [], selectedStore = null;
-let fideQuestions = [], popCodes = [], expiredCodes = [], productList = [], expiredExcelFiles = [];
-let migrationMap = {}, storeEmails = {}, allStoresList = [];
+let fideQuestions = [], popCodes = [], expiredCodes = [], productList = [];
+let migrationMap = {}, storeEmails = {};
 const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan yüklenemedi." }];
 const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 let isFirebaseConnected = false;
 let auditedThisMonth = []; 
 
-// --- Ana Uygulaa Mantığı ---
+// --- Ana Uygulama Mantığı ---
 window.onload = initializeApp;
 
 async function initializeApp() {
@@ -16,16 +16,13 @@ async function initializeApp() {
         const loginToggleBtn = document.getElementById('login-toggle-btn');
         const logoutBtn = document.getElementById('logout-btn');
         const loginPopup = document.getElementById('login-popup');
-        const uploadBtn = document.getElementById('upload-backup-to-cloud-btn');
         if (user) {
             loginToggleBtn.style.display = 'none';
             logoutBtn.style.display = 'inline-flex';
             loginPopup.style.display = 'none';
-            if (uploadBtn) uploadBtn.disabled = false;
         } else {
             loginToggleBtn.style.display = 'inline-flex';
             logoutBtn.style.display = 'none';
-            if (uploadBtn) uploadBtn.disabled = true;
         }
         updateConnectionIndicator();
         await loadInitialData();
@@ -47,23 +44,6 @@ async function loadStoreEmails() {
             }
         } catch (error) {
             console.error("Buluttan bayi e-postaları yüklenemedi:", error);
-        }
-    }
-}
-
-async function loadAllStoresList() {
-    const user = auth.currentUser;
-    allStoresList = [];
-
-    if (user && database) {
-        try {
-            const storesRef = database.ref('tumBayilerListesi/stores');
-            const snapshot = await storesRef.once('value');
-            if (snapshot.exists()) {
-                allStoresList = snapshot.val();
-            }
-        } catch (error) {
-            console.error("Buluttan ana bayi listesi yüklenemedi:", error);
         }
     }
 }
@@ -131,7 +111,6 @@ async function loadInitialData() {
     
     await loadMigrationMap();
     await loadStoreEmails();
-    await loadAllStoresList();
     await loadMonthlyAuditData(); 
     let questionsLoaded = false;
 
@@ -638,6 +617,7 @@ function openEmailDraft() {
     const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
     if (nonExpiredCodes.length === 0) { alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin."); return; }
     
+    // GÜNCELLENDİ: Alıcılar artık Soru Yöneticisi'nden dinamik olarak çekiliyor.
     const popQuestion = fideQuestions.find(q => q.type === 'pop_system') || {};
     const emailTo = (popQuestion.popEmailTo || []).join(',');
     const emailCc = (popQuestion.popEmailCc || []).join(',');
@@ -822,15 +802,14 @@ function selectStore(store, loadSavedData = true) {
     updateFormInteractivity(true); 
 }
 
-// GÜNCELLENDİ: E-posta şablonunu buluttan çekecek şekilde değiştirildi.
+// GÜNCELLENDİ: E-posta şablonu artık buluttan okunuyor ve fallback mekanizması kaldırıldı.
 async function generateEmail() {
     if (!selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
         return;
     }
 
-    // --- YENİ EKLENEN KOD BAŞLANGICI: Şablonu buluttan çek ---
-    let emailTemplate = `{YONETMEN_ADI} Bey Merhaba,\nZiyaret etmiş olduğum {BAYI_BILGISI} bayi karnesi ektedir.`; // Varsayılan şablon
+    let emailTemplate = null;
     if (auth.currentUser && database) {
         try {
             const templateRef = database.ref('fideSettings/emailTemplate');
@@ -839,10 +818,14 @@ async function generateEmail() {
                 emailTemplate = snapshot.val();
             }
         } catch (error) {
-            console.warn("E-posta şablonu buluttan yüklenemedi, varsayılan şablon kullanılıyor.", error);
+            console.error("E-posta şablonu buluttan yüklenemedi.", error);
         }
     }
-    // --- YENİ EKLENEN KOD BİTİŞİ ---
+
+    if (!emailTemplate) {
+        alert("HATA: E-posta şablonu buluttan yüklenemedi.\n\nLütfen internet bağlantınızı kontrol edin veya Yönetim Panelinden şablonu kaydedin.");
+        return;
+    }
 
     saveFormState(true);
 
@@ -856,7 +839,6 @@ async function generateEmail() {
     const storeEmail = storeEmails[selectedStore.bayiKodu] || null;
     const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
 
-    // --- GÜNCELLENEN KOD: Şablondaki etiketleri gerçek verilerle değiştir ---
     const bayiYonetmeniFullName = storeInfo['Bayi Yönetmeni'] || '';
     const yonetmenFirstName = bayiYonetmeniFullName.split(' ')[0];
     const shortBayiAdi = selectedStore.bayiAdi.length > 20 ? selectedStore.bayiAdi.substring(0, 20) + '...' : selectedStore.bayiAdi;
@@ -865,9 +847,7 @@ async function generateEmail() {
         .replace(/{YONETMEN_ADI}/g, yonetmenFirstName || 'Yetkili')
         .replace(/{BAYI_BILGISI}/g, `${selectedStore.bayiKodu} ${shortBayiAdi}`);
     
-    // Metindeki satır sonlarını HTML paragraf etiketlerine çevir
     greetingHtml = greetingHtml.split('\n').map(p => `<p>${p.trim()}</p>`).join('');
-    // --- GÜNCELLENEN KOD BİTİŞİ ---
 
     let fideReportHtml = "";
     fideQuestions.forEach(q => {
@@ -917,9 +897,7 @@ async function generateEmail() {
             const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
             
             let emailTag = '';
-            if (q.type === 'pop_system') {
-                emailTag = ` <a href="mailto:berkcan_boza@arcelik.com.tr" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@berkcan_boza@arcelik.com.tr</a>`;
-            } else if (q.wantsStoreEmail) {
+            if (q.wantsStoreEmail) {
                 emailTag = storeEmailTag;
             }
 
