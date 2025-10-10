@@ -4,7 +4,7 @@ let auditedStoreCodesCurrentMonth = [];
 let auditedStoreCodesCurrentYear = [];
 let geriAlinanBayiKodlariBuAy = [];
 let geriAlinanBayiKodlariBuYil = [];
-let aylikHedef = 47;
+let aylikHedef = 0; // Başlangıç değeri buluttan okunana kadar 0 olarak ayarlandı.
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
 // --- MODÜL BAŞLATMA FONKSİYONU ---
@@ -28,20 +28,24 @@ async function initializeDenetimTakipModule() {
 }
 
 async function loadSettings() {
-    aylikHedef = 47; // Varsayılan
+    // Varsayılan değer kaldırıldı. Hedef tamamen buluttan okunacak.
     if (auth.currentUser && database) {
         try {
             const settingsRef = database.ref('denetimAyarlari');
             const snapshot = await settingsRef.once('value');
             if (snapshot.exists()) {
                 const settings = snapshot.val();
-                aylikHedef = settings.aylikHedef || 47;
+                // Eğer bulutta bir hedef varsa onu kullan, yoksa 0 olarak ayarla.
+                aylikHedef = settings.aylikHedef || 0;
+            } else {
+                aylikHedef = 0; // Ayar hiç yoksa hedef 0'dır.
             }
         } catch (error) {
             console.error("Ayarlar yüklenemedi:", error);
+            aylikHedef = 0; // Hata durumunda da hedefi 0 yap.
         }
     }
-    document.getElementById('monthly-target-input').value = aylikHedef;
+    document.getElementById('monthly-target-input').value = aylikHedef > 0 ? aylikHedef : '';
 }
 
 async function loadStoreList() {
@@ -124,7 +128,7 @@ async function loadAuditedStoresData() {
         const today = new Date();
         const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
-        const monthlyCodesFromReports = [];
+        const monthlyAuditsMap = new Map();
         const yearlyCodes = [];
 
         Object.entries(allReports).forEach(([key, value]) => {
@@ -135,14 +139,17 @@ async function loadAuditedStoresData() {
                 if (reportDate.getFullYear() === currentYear) {
                     yearlyCodes.push(storeCode);
                     if (reportDate.getMonth() === currentMonth) {
-                        monthlyCodesFromReports.push(storeCode);
+                        const existingTimestamp = monthlyAuditsMap.get(storeCode);
+                        if (!existingTimestamp || reportDate.getTime() > existingTimestamp) {
+                            monthlyAuditsMap.set(storeCode, reportDate.getTime());
+                        }
                     }
                 }
             }
         });
         
-        const uniqueMonthlyCodes = [...new Set(monthlyCodesFromReports)];
-        auditedStoreCodesCurrentMonth = uniqueMonthlyCodes.filter(code => !geriAlinanBayiKodlariBuAy.includes(code));
+        const monthlyAudits = Array.from(monthlyAuditsMap, ([code, timestamp]) => ({ code, timestamp }));
+        auditedStoreCodesCurrentMonth = monthlyAudits.filter(audit => !geriAlinanBayiKodlariBuAy.includes(audit.code));
         
         const uniqueYearlyCodes = [...new Set(yearlyCodes)];
         auditedStoreCodesCurrentYear = uniqueYearlyCodes.filter(code => !geriAlinanBayiKodlariBuYil.includes(code));
@@ -433,31 +440,45 @@ function populateDynamicFilters(storesToUse, filtersToUpdate, currentSelection) 
 function renderRemainingStores(filteredStores) {
     const container = document.getElementById('denetlenecek-bayiler-container');
     container.innerHTML = '';
-    const remainingStores = filteredStores.filter(store => !auditedStoreCodesCurrentMonth.includes(store.bayiKodu));
+    const auditedCodesThisMonth = auditedStoreCodesCurrentMonth.map(audit => audit.code);
+    const remainingStores = filteredStores.filter(store => !auditedCodesThisMonth.includes(store.bayiKodu));
 
     if (remainingStores.length === 0) {
         container.innerHTML = `<p class="empty-list-message">Seçili kriterlere uygun, bu ay denetlenmemiş bayi bulunamadı.</p>`;
-        return;
-    }
-    const storesByRegion = remainingStores.reduce((acc, store) => {
-        const region = store.bolge || 'Bölge Belirtilmemiş';
-        if (!acc[region]) acc[region] = [];
-        acc[region].push(store);
-        return acc;
-    }, {});
-    const sortedRegions = Object.keys(storesByRegion).sort();
-    sortedRegions.forEach(region => {
-        const regionStores = storesByRegion[region];
-        const totalInRegionFiltered = filteredStores.filter(s => (s.bolge || 'Bölge Belirtilmemiş') === region);
-        const auditedInRegionFiltered = totalInRegionFiltered.filter(s => auditedStoreCodesCurrentMonth.includes(s.bayiKodu));
-        const progress = totalInRegionFiltered.length > 0 ? (auditedInRegionFiltered.length / totalInRegionFiltered.length) * 100 : 0;
-        let regionHtml = `<div class="region-container"><div class="region-header"><span>${region} (Bu Ay: ${auditedInRegionFiltered.length}/${totalInRegionFiltered.length})</span></div><div class="progress-bar"><div class="progress-bar-fill" style="width: ${progress.toFixed(2)}%;">${progress.toFixed(0)}%</div></div><ul class="store-list">`;
-        regionStores.forEach(store => {
-            regionHtml += `<li class="store-list-item">${store.bayiAdi} (${store.bayiKodu}) - ${store.sehir}/${store.ilce}</li>`;
+    } else {
+        const storesByRegion = remainingStores.reduce((acc, store) => {
+            const region = store.bolge || 'Bölge Belirtilmemiş';
+            if (!acc[region]) acc[region] = [];
+            acc[region].push(store);
+            return acc;
+        }, {});
+        const sortedRegions = Object.keys(storesByRegion).sort();
+        let regionsHtml = '';
+        sortedRegions.forEach(region => {
+            const regionStores = storesByRegion[region];
+            const totalInRegionFiltered = filteredStores.filter(s => (s.bolge || 'Bölge Belirtilmemiş') === region);
+            const auditedInRegionFiltered = totalInRegionFiltered.filter(s => auditedCodesThisMonth.includes(s.bayiKodu));
+            const progress = totalInRegionFiltered.length > 0 ? (auditedInRegionFiltered.length / totalInRegionFiltered.length) * 100 : 0;
+            let regionHtml = `<div class="region-container"><div class="region-header"><span>${region} (Bu Ay: ${auditedInRegionFiltered.length}/${totalInRegionFiltered.length})</span></div><div class="progress-bar"><div class="progress-bar-fill" style="width: ${progress.toFixed(2)}%;">${progress.toFixed(0)}%</div></div><ul class="store-list">`;
+            regionStores.forEach(store => {
+                regionHtml += `<li class="store-list-item">${store.bayiAdi} (${store.bayiKodu}) - ${store.sehir}/${store.ilce}</li>`;
+            });
+            regionHtml += '</ul></div>';
+            regionsHtml += regionHtml;
         });
-        regionHtml += '</ul></div>';
-        container.innerHTML += regionHtml;
-    });
+        container.innerHTML = regionsHtml;
+    }
+
+    const remainingContainer = document.getElementById('denetlenecek-bayiler-container');
+    const auditedContainer = document.getElementById('denetlenen-bayiler-container');
+    if (remainingContainer && auditedContainer) {
+        const height = remainingContainer.offsetHeight;
+        if (height > 0) {
+            auditedContainer.style.maxHeight = `${height}px`;
+        } else {
+            auditedContainer.style.maxHeight = 'none';
+        }
+    }
 }
 
 function renderAuditedStores() {
@@ -473,7 +494,16 @@ function renderAuditedStores() {
         return;
     }
 
-    const auditedStoresDetails = auditedStoreCodesCurrentMonth.map(code => allStores.find(store => store.bayiKodu === code)).filter(store => store !== undefined).sort((a,b) => a.bayiAdi.localeCompare(b.bayiAdi, 'tr'));
+    const auditedStoresDetails = auditedStoreCodesCurrentMonth
+        .map(audit => {
+            const storeDetails = allStores.find(store => store.bayiKodu === audit.code);
+            if (storeDetails) {
+                return { ...storeDetails, timestamp: audit.timestamp };
+            }
+            return null;
+        })
+        .filter(store => store !== null)
+        .sort((a, b) => b.timestamp - a.timestamp);
     
     let listHtml = '<ul class="store-list">';
     auditedStoresDetails.forEach(store => {
