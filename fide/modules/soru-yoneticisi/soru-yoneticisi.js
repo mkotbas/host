@@ -403,13 +403,33 @@ function toggleSpecialManagerUI(selectElement) {
     } else { specialContainer.className = 'special-manager-container'; }
 }
 
+// GÜNCELLENDİ: E-posta alıcıları için yeni alanlar eklendi.
 function renderPopManagerUI(container, questionData) {
     const popCodes = (questionData.popCodes || []).join(', ');
     const expiredCodes = (questionData.expiredCodes || []).join(', ');
+    const popEmailTo = (questionData.popEmailTo || []).join(', ');
+    const popEmailCc = (questionData.popEmailCc || []).join(', ');
+
     container.innerHTML = `
-        <p class="pop-manager-info"><i class="fas fa-info-circle"></i> Kodları aralarına virgül (,) koyarak girin.</p>
-        <div class="pop-manager-group"><label>Geçerli POP Kodları</label><textarea class="pop-codes-input" rows="5">${popCodes}</textarea></div>
-        <div class="pop-manager-group"><label>Süresi Dolmuş POP Kodları</label><textarea class="expired-pop-codes-input" rows="3">${expiredCodes}</textarea></div>`;
+        <p class="pop-manager-info"><i class="fas fa-info-circle"></i> Kodları ve e-posta adreslerini aralarına virgül (,) koyarak girin.</p>
+        <div class="pop-manager-grid">
+            <div class="pop-manager-group">
+                <label>Geçerli POP Kodları</label>
+                <textarea class="pop-codes-input" rows="5">${popCodes}</textarea>
+            </div>
+            <div class="pop-manager-group">
+                <label>Süresi Dolmuş POP Kodları</label>
+                <textarea class="expired-pop-codes-input" rows="5">${expiredCodes}</textarea>
+            </div>
+            <div class="pop-manager-group">
+                <label>POP E-posta Alıcıları (Kime)</label>
+                <textarea class="pop-email-to-input" rows="5" placeholder="ornek1@mail.com, ornek2@mail.com...">${popEmailTo}</textarea>
+            </div>
+            <div class="pop-manager-group">
+                <label>POP E-posta Alıcıları (CC)</label>
+                <textarea class="pop-email-cc-input" rows="5" placeholder="ornek3@mail.com, ornek4@mail.com...">${popEmailCc}</textarea>
+            </div>
+        </div>`;
 }
 
 function renderProductManagerUI(container) {
@@ -667,12 +687,18 @@ async function saveQuestions() {
         if (staticItems.length > 0) newQuestion.staticItems = staticItems;
         if (isArchived) newQuestion.isArchived = true;
         if (wantsStoreEmail) newQuestion.wantsStoreEmail = true;
+
+        // GÜNCELLENDİ: Kaydetme mantığına e-posta alıcıları eklendi.
         if (type === 'pop_system') {
             const popInput = item.querySelector('.pop-codes-input');
             const expiredInput = item.querySelector('.expired-pop-codes-input');
-            if (popInput && expiredInput) {
+            const emailToInput = item.querySelector('.pop-email-to-input');
+            const emailCcInput = item.querySelector('.pop-email-cc-input');
+            if (popInput && expiredInput && emailToInput && emailCcInput) {
                 newQuestion.popCodes = popInput.value.split(',').map(c => c.trim()).filter(c => c);
                 newQuestion.expiredCodes = expiredInput.value.split(',').map(c => c.trim()).filter(c => c);
+                newQuestion.popEmailTo = emailToInput.value.split(',').map(e => e.trim()).filter(e => e);
+                newQuestion.popEmailCc = emailCcInput.value.split(',').map(e => e.trim()).filter(e => e);
             }
         }
         newQuestions.push(newQuestion);
