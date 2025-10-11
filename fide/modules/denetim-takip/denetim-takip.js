@@ -9,14 +9,6 @@ const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Tem
 
 // --- MODÜL BAŞLATMA FONKSİYONU ---
 async function initializeDenetimTakipModule() {
-    // --- GÜNCELLEME: KODUN SAYFANIN YÜKLENMESİNİ BEKLEMESİ İÇİN EKLENDİ ---
-    // Bu kontrol, JavaScript'in HTML elementleri oluşturulmadan önce çalışmasını engelleyerek
-    // konsolda gördüğünüz 'addEventListener' hatasını çözer.
-    if (document.readyState === 'loading') {
-        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
-    }
-    // --- GÜNCELLEME SONU ---
-
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
 
