@@ -16,17 +16,14 @@ window.onload = initializeApp;
  * PocketBase'den mevcut kullanıcı durumunu kontrol eder ve arayüzü ayarlar.
  */
 function initializeApp() {
-    // Kullanıcı giriş yapmış mı diye kontrol et ve arayüzü güncelle.
-    handleAuthStateChange();
-    
-    // PocketBase'in authStore'u (kullanıcı bilgilerini tutan bölümü) değiştiğinde
-    // (yani kullanıcı giriş veya çıkış yaptığında) arayüzü tekrar güncelle.
-    pb.authStore.onChange(() => {
-        handleAuthStateChange();
-    });
-
     // Sayfadaki butonlar ve diğer elementler için olay dinleyicilerini kur.
     setupEventListeners();
+    
+    // PocketBase'in authStore'u (kullanıcı bilgilerini tutan bölümü) değiştiğinde
+    // (yani kullanıcı giriş veya çıkış yaptığında) handleAuthStateChange fonksiyonunu çalıştır.
+    pb.authStore.onChange(() => {
+        handleAuthStateChange();
+    }, true); // `true` parametresi, sayfa ilk yüklendiğinde de bu fonksiyonun çalışmasını sağlar.
 }
 
 /**
@@ -137,10 +134,10 @@ function setupEventListeners() {
         loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
     });
 
-    // Çıkış Yap butonuna tıklanınca PocketBase oturumunu sonlandır ve sayfayı yenile.
+    // Çıkış Yap butonuna tıklanınca PocketBase oturumunu sonlandır.
+    // Sayfa yenileme YOK. Arayüz otomatik olarak güncellenecek.
     logoutBtn.addEventListener('click', () => {
         pb.authStore.clear(); // PocketBase oturum bilgilerini temizle.
-        window.location.reload(); // Sayfayı yeniden yükleyerek arayüzü sıfırla.
     });
 
     // Giriş penceresindeki Onayla butonuna tıklanınca.
@@ -157,10 +154,9 @@ function setupEventListeners() {
 
         try {
             // PocketBase ile kullanıcı girişi yapmayı dene.
+            // Başarılı olursa, authStore.onChange tetikleneceği için arayüz otomatik güncellenir.
+            // Bu yüzden burada ek bir şey yapmamıza gerek yok.
             await pb.collection('users').authWithPassword(email, password);
-            // Başarılı olursa giriş penceresini kapat ve sayfayı yenile.
-            loginPopup.style.display = 'none';
-            window.location.reload();
         } catch (error) {
             // Hata olursa kullanıcıya bildir.
             errorDiv.textContent = 'E-posta veya şifre hatalı.';
@@ -169,22 +165,18 @@ function setupEventListeners() {
     });
     
     // --- DİĞER OLAY DİNLEYİCİLERİ (Şimdilik çoğu çalışmayacak) ---
-    // Bu kısımlar sonraki adımlarda veritabanı bağlantısı yapıldıkça anlam kazanacak.
     
     document.getElementById('excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'dide'));
     document.getElementById('fide-excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'fide'));
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
     
     document.getElementById('clear-storage-btn').addEventListener('click', () => {
-        // TODO: PocketBase için silme mantığı buraya eklenecek.
         alert("Bu özellik henüz PocketBase için ayarlanmadı.");
     });
     document.getElementById('clear-excel-btn').addEventListener('click', () => {
-        // TODO: PocketBase için silme mantığı buraya eklenecek.
         alert("Bu özellik henüz PocketBase için ayarlanmadı.");
     });
      document.getElementById('clear-fide-excel-btn').addEventListener('click', () => {
-        // TODO: PocketBase için silme mantığı buraya eklenecek.
         alert("Bu özellik henüz PocketBase için ayarlanmadı.");
     });
 
@@ -200,7 +192,6 @@ function setupEventListeners() {
     });
 
     document.getElementById('toggle-backup-manager-btn').addEventListener('click', () => {
-        // Bu buton direkt PocketBase yönetim paneline yönlendirebilir.
         window.open(POCKETBASE_URL + '/_/', '_blank');
     });
 }
@@ -208,7 +199,6 @@ function setupEventListeners() {
 
 // ======================================================================================
 // === BURADAN AŞAĞIDAKİ FONKSİYONLAR GEÇİŞ SÜRECİNDE HENÜZ AKTİF DEĞİLDİR ===
-// === BİR SONRAKİ ADIMLARDA BU BÖLÜMLERİ POCKETBASE'E GÖRE GÜNCELLEYECEĞİZ ===
 // ======================================================================================
 
 function buildForm(questionsToBuild = []) {
@@ -220,11 +210,10 @@ function buildForm(questionsToBuild = []) {
         html += generateQuestionHtml(q);
     });
     formContainer.innerHTML = html;
-    if (document.getElementById('popCodesContainer')) initializePopSystem();
+    // initializePopSystem gibi fonksiyonlar daha sonra eklenecek.
 }
 
 function generateQuestionHtml(q) {
-    // Bu fonksiyon şimdilik sadece bir iskelet olarak kalacak.
     return `<div class="fide-item" id="fide-item-${q.id}"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>`;
 }
 
