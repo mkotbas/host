@@ -34,7 +34,7 @@
                     <button id="login-toggle-btn" class="btn-success btn-sm"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
                     <button id="logout-btn" class="btn-danger btn-sm" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
                     <div id="login-popup">
-                        <h3><i class="fas fa-cloud"></i> Bulut Sistemine Giriş</h3>
+                        <h3><i class="fas fa-database"></i> PocketBase Sistemine Giriş</h3>
                         <input type="email" id="email-input" placeholder="E-posta">
                         <input type="password" id="password-input" placeholder="Şifre">
                         <button id="login-submit-btn" class="btn-primary btn-sm"><i class="fas fa-check"></i> Onayla</button>
@@ -47,7 +47,7 @@
         <div class="card" id="dide-upload-card">
             <h2><i class="fas fa-chart-line"></i> Puan Entegrasyonu ve Veri Yönetimi</h2>
             <p style="font-size: 12px; color: var(--secondary); margin-top: -15px; margin-bottom: 15px;">
-                <i class="fas fa-info-circle"></i> Tüm raporlarınız ve Excel verileriniz artık doğrudan bulut üzerinde saklanmaktadır. Çalışmaya başlamadan önce sisteme giriş yaptığınızdan emin olun.
+                <i class="fas fa-info-circle"></i> Tüm raporlarınız ve Excel verileriniz artık PocketBase üzerinde saklanmaktadır. Çalışmaya başlamadan önce sisteme giriş yaptığınızdan emin olun.
             </p>
             <div>
                 <p><b>1. Adım: DiDe Puan Excel Dosyasını Yükleyin</b></p>
@@ -95,9 +95,9 @@
 
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.3/dist/pocketbase.umd.js"></script>
     
-    <script src="pocketbase-config.js"></script>
-    <script src="main.js"></script>
+    <script src="db-config.js"></script>
+    <script src="pb-schema.js"></script> <script src="main.js"></script>
 </body>
 </html>
