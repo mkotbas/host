@@ -15,5 +15,5 @@ const pb = new PocketBase(pocketbaseUrl);
 // DİKKAT: Bu bilgiler, sadece uygulama ilk kez çalıştırıldığında veritabanı tablolarını
 // otomatik olarak oluşturmak için kullanılır. Lütfen PocketBase yönetici panelini
 // kurarken belirlediğiniz e-posta ve şifreyi buraya girin.
-const ADMIN_EMAIL_FOR_SETUP = 'melih@melih.com';
+const ADMIN_EMAIL_FOR_SETUP = 'melih@semih.com';
 const ADMIN_PASSWORD_FOR_SETUP = '0120304m';
