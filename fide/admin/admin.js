@@ -25,7 +25,13 @@ const modules = [
         icon: 'fas fa-store',
         submenu: [
             {
-                id: 'bayi-yoneticisi', // Bu ID, modül klasör adıyla aynı olmalı
+                id: 'bayi-bilgileri', // YENİ EKLENDİ
+                name: 'Bayi Bilgileri',
+                icon: 'fas fa-file-excel',
+                path: '../modules/bayi-bilgileri/'
+            },
+            {
+                id: 'bayi-yoneticisi', // Bu artık E-posta Sistemi oldu
                 name: 'E-posta Sistemi',
                 icon: 'fas fa-at',
                 path: '../modules/bayi-yoneticisi/'
