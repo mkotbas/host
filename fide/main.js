@@ -1,197 +1,150 @@
 // --- Global Değişkenler ---
-// Bu değişkenler, uygulama çalışırken ihtiyaç duyacağımız bilgileri geçici olarak saklamak için kullanılır.
-// Tıpkı bir yemeği yaparken malzemeleri tezgaha dizmek gibi.
-let dideData = [], fideData = [], uniqueStores = [], selectedStore = null;
+let dideData = [], fideData = [], allStores = [], selectedStore = null;
 let fideQuestions = [], popCodes = [], expiredCodes = [], productList = [];
-let migrationMap = {}, storeEmails = {};
-const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan yüklenemedi." }];
+let storeEmails = {};
+const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular veritabanından yüklenemedi." }];
 const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-let isPocketBaseConnected = false; // Firebase'den PocketBase'e geçiş yapıldı.
+let isPocketBaseConnected = false;
 let auditedThisMonth = [];
-let currentReportId = null; // Seçili bayinin raporunun PocketBase'deki ID'sini saklamak için yeni değişken.
+// Bu değişken, seçili bayinin raporunun PocketBase'deki ID'sini tutacak. Güncelleme için gereklidir.
+let currentReportId = null;
 
 // --- Ana Uygulama Mantığı ---
-// window.onload: Sayfa tamamen yüklendiğinde bu fonksiyonu çalıştırır. Uygulamanın başlangıç noktasıdır.
 window.onload = initializeApp;
 
-// initializeApp: Uygulamayı başlatan ana fonksiyon.
 async function initializeApp() {
-    // PocketBase'in kullanıcı oturum bilgilerini tarayıcıda saklamasını sağlıyoruz.
-    // Bu sayede, sayfayı yenileseniz bile giriş yapmış olarak kalırsınız.
-    pb.authStore.loadFromCookie();
+    // PocketBase, sayfa yenilendiğinde giriş bilgilerini otomatik olarak hatırlar.
+    // Kullanıcının giriş yapmış olup olmadığını kontrol edelim.
+    const loggedIn = pb.authStore.isValid;
 
-    // Kullanıcının giriş yapıp yapmadığını anlık olarak dinliyoruz.
-    pb.authStore.onChange(async () => {
-        const user = pb.authStore.model;
-        const loginToggleBtn = document.getElementById('login-toggle-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const loginPopup = document.getElementById('login-popup');
+    const loginToggleBtn = document.getElementById('login-toggle-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginPopup = document.getElementById('login-popup');
 
-        if (user) {
-            loginToggleBtn.style.display = 'none';
-            logoutBtn.style.display = 'inline-flex';
-            loginPopup.style.display = 'none';
-            isPocketBaseConnected = true; // Kullanıcı giriş yapmışsa bağlı kabul ediyoruz.
-        } else {
-            loginToggleBtn.style.display = 'inline-flex';
-            logoutBtn.style.display = 'none';
-            isPocketBaseConnected = false; // Kullanıcı çıkış yapmışsa bağlantı kesildi.
-        }
-        
-        updateConnectionIndicator(); // Bağlantı göstergesini güncelle.
-        await loadInitialData(); // Gerekli verileri (sorular, bayiler vb.) yükle.
-        setupEventListeners(); // Buton tıklamaları gibi olayları dinlemeye başla.
-        updateFormInteractivity(selectedStore !== null); // Bayi seçiliyse formu aktif et.
-    }, true); // `true` parametresi sayesinde sayfa yüklenir yüklenmez bu kontrol bir kere çalışır.
-}
-
-
-// --- VERİ YÜKLEME FONKSİYONLARI (POCKETBASE) ---
-
-// getSetting: PocketBase'deki 'ayarlar' tablosundan belirli bir ayarı çeker.
-async function getSetting(settingName) {
-    try {
-        const record = await pb.collection('ayarlar').getFirstListItem(`ayar_adi = "${settingName}"`);
-        // Gelen veriyi (JSON formatında) normal bir objeye çevirip geri döndürüyoruz.
-        return record.ayar_degeri;
-    } catch (error) {
-        console.error(`"${settingName}" ayarı PocketBase'den yüklenemedi:`, error);
-        return null;
+    if (loggedIn) {
+        loginToggleBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-flex';
+        loginPopup.style.display = 'none';
+    } else {
+        loginToggleBtn.style.display = 'inline-flex';
+        logoutBtn.style.display = 'none';
     }
+    
+    // PocketBase sunucusuna ulaşıp ulaşamadığımızı test edelim.
+    try {
+        const health = await pb.health.check();
+        isPocketBaseConnected = health.code === 200;
+    } catch (error) {
+        isPocketBaseConnected = false;
+    }
+    
+    updateConnectionIndicator();
+    await loadInitialData();
+    setupEventListeners();
+    updateFormInteractivity(selectedStore !== null);
 }
 
-// loadInitialData: Uygulama için gerekli olan tüm başlangıç verilerini PocketBase'den yükler.
 async function loadInitialData() {
-    if (!pb.authStore.isValid) { // Kullanıcı giriş yapmamışsa verileri yüklemeye çalışma.
-        buildForm(fallbackFideQuestions); // Varsayılan "hata" sorusuyla formu oluştur.
+    // Giriş yapılmadıysa veri yüklemeye çalışma.
+    if (!pb.authStore.isValid) {
+        buildForm(); // Boş formu yine de çiz
         return;
     }
 
-    // 'ayarlar' tablosundan tüm ayarları tek seferde çekiyoruz. Bu daha verimli bir yöntem.
+    // Gösterge paneli aktif ediliyor
+    showLoadingOverlay('Başlangıç verileri yükleniyor...');
+
+    let questionsLoaded = false;
     try {
-        const settings = await pb.collection('ayarlar').getFullList();
-        
-        const fideQuestionsSetting = settings.find(s => s.ayar_adi === 'fideQuestionsData');
-        const emailTemplateSetting = settings.find(s => s.ayar_adi === 'fideSettings'); // E-posta şablonu da artık buradan geliyor.
-        const migrationSetting = settings.find(s => s.ayar_adi === 'migrationSettings');
+        // Promise.all ile tüm verileri aynı anda çekmeye çalışalım. Bu daha hızlıdır.
+        const [
+            questionsRecords,
+            productsRecords,
+            dideExcelRecords,
+            fideExcelRecords,
+            bayilerRecords
+        ] = await Promise.all([
+            pb.collection('sorular').getFullList({ sort: 'soru_id' }),
+            pb.collection('urunler').getFullList({ sort: 'created' }),
+            pb.collection('excel_dide').getFullList({ expand: 'bayi' }), // expand ile ilişkili bayi bilgisini de çekeriz.
+            pb.collection('excel_fide').getFullList({ expand: 'bayi' }),
+            pb.collection('bayiler').getFullList({ sort: 'bayiAdi' })
+        ]);
 
-        if (fideQuestionsSetting) {
-            fideQuestions = fideQuestionsSetting.ayar_degeri.questions || fallbackFideQuestions;
-            productList = fideQuestionsSetting.ayar_degeri.productList || [];
-            console.log("Sorular ve ürün listesi başarıyla PocketBase'den yüklendi.");
-
-            // POP sistem verilerini ayıkla
+        // 1. Soruları ve Ürünleri işle
+        if (questionsRecords && questionsRecords.length > 0) {
+            fideQuestions = questionsRecords.map(rec => ({ id: rec.soru_id, ...rec.soru_data }));
             const popSystemQuestion = fideQuestions.find(q => q.type === 'pop_system');
             if (popSystemQuestion) {
                 popCodes = popSystemQuestion.popCodes || [];
                 expiredCodes = popSystemQuestion.expiredCodes || [];
             }
-        } else {
-             fideQuestions = fallbackFideQuestions;
-             document.getElementById('initialization-error').style.display = 'block';
+            questionsLoaded = true;
+        }
+        if (productsRecords && productsRecords.length > 0) {
+            productList = productsRecords.map(rec => ({ code: rec.urun_kodu, name: rec.urun_adi, type: rec.tip }));
         }
 
-        if (migrationSetting) {
-            migrationMap = migrationSetting.ayar_degeri.map || {};
+        // 2. Bayi listesini işle
+        allStores = bayilerRecords.map(rec => ({ id: rec.id, bayiKodu: rec.bayiKodu, bayiAdi: rec.bayiAdi, email: rec.email }));
+        storeEmails = Object.fromEntries(allStores.map(store => [store.bayiKodu, store.email]));
+        document.getElementById('store-selection-area').style.display = 'block';
+
+        // 3. Excel verilerini işle
+        if (dideExcelRecords && dideExcelRecords.length > 0) {
+            dideData = dideExcelRecords.map(rec => ({
+                'Bayi Kodu': rec.expand.bayi.bayiKodu,
+                'Bayi': rec.expand.bayi.bayiAdi,
+                'Bayi Yönetmeni': rec.expand.bayi.yonetmen,
+                'scores': rec.puanlar
+            }));
+            const firstDideFile = dideExcelRecords.find(rec => rec.dosya_adi);
+            if(firstDideFile) document.getElementById('file-name').textContent = `Veritabanından yüklendi: ${firstDideFile.dosya_adi}`;
         }
+        if (fideExcelRecords && fideExcelRecords.length > 0) {
+            fideData = fideExcelRecords.map(rec => ({
+                'Bayi Kodu': rec.expand.bayi.bayiKodu,
+                'scores': rec.puanlar
+            }));
+             const firstFideFile = fideExcelRecords.find(rec => rec.dosya_adi);
+            if(firstFideFile) document.getElementById('fide-file-name').textContent = `Veritabanından yüklendi: ${firstFideFile.dosya_adi}`;
+        }
+
+        // 4. Aylık denetim verisini yükle
+        await loadMonthlyAuditData();
+
+        console.log("Tüm başlangıç verileri PocketBase'den başarıyla yüklendi.");
 
     } catch (error) {
-        console.error("PocketBase'den ayarlar okunurken hata oluştu:", error);
-        fideQuestions = fallbackFideQuestions;
+        console.error("PocketBase'den başlangıç verileri okunurken hata oluştu:", error);
         document.getElementById('initialization-error').style.display = 'block';
     }
     
-    // Bayi listesini, e-postaları ve puanları PocketBase'den yükle
-    await loadAllStoresData();
-    await loadMonthlyAuditData();
-    
-    buildForm();
-}
-
-// loadAllStoresData: 'bayiler' tablosundan tüm bayi verilerini çekip global değişkenlere atar.
-async function loadAllStoresData() {
-    if (!pb.authStore.isValid) return;
-    try {
-        // PocketBase'den tüm bayi kayıtlarını çekiyoruz.
-        const records = await pb.collection('bayiler').getFullList({
-            sort: 'bayi_adi', // Bayileri isme göre sıralı getir.
-        });
-
-        // Gelen verileri daha önce kullandığımız formata dönüştürüyoruz.
-        uniqueStores = records.map(record => ({
-            id: record.id, // PocketBase'deki benzersiz ID'yi de saklayalım.
-            bayiKodu: record.bayi_kodu,
-            bayiAdi: record.bayi_adi
-        }));
-
-        // DiDe ve FiDe puan verilerini de ayrı ayrı saklayalım.
-        dideData = records.map(record => ({
-            'Bayi Kodu': record.bayi_kodu,
-            'Bayi': record.bayi_adi,
-            'Bayi Yönetmeni': record.bayi_yonetmeni,
-            'scores': record.dide_puanlari || {}
-        }));
-
-        fideData = records.map(record => ({
-            'Bayi Kodu': record.bayi_kodu,
-            'scores': record.fide_puanlari || {}
-        }));
-
-        // E-posta verisini de 'storeEmails' objesine dolduralım.
-        storeEmails = {};
-        records.forEach(record => {
-            if (record.email) {
-                storeEmails[record.bayi_kodu] = record.email;
-            }
-        });
-
-        console.log("Tüm bayi verileri PocketBase'den başarıyla yüklendi.");
-        document.getElementById('store-selection-area').style.display = 'block';
-        document.getElementById('clear-storage-btn').style.display = 'inline-flex';
-        document.getElementById('clear-excel-btn').style.display = 'inline-flex';
-        document.getElementById('clear-fide-excel-btn').style.display = 'inline-flex';
-
-    } catch (error) {
-        console.error("PocketBase'den bayi verileri yüklenirken hata oluştu:", error);
-        alert("Bayi listesi sunucudan yüklenemedi. Lütfen internet bağlantınızı kontrol edin.");
+    if (!questionsLoaded) {
+        fideQuestions = fallbackFideQuestions;
+        document.getElementById('initialization-error').style.display = 'block';
     }
+
+    buildForm();
+    hideLoadingOverlay();
 }
 
-// loadMonthlyAuditData: Bu ay içinde denetimi tamamlanmış bayileri PocketBase'den çeker.
+
 async function loadMonthlyAuditData() {
     auditedThisMonth = [];
     if (!pb.authStore.isValid) return;
 
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+
     try {
-        const today = new Date();
-        const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth() + 1; // JavaScript'te aylar 0'dan başlar.
-        
-        // Ayın ilk gününü ve sonraki ayın ilk gününü buluyoruz.
-        const firstDayOfMonth = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01 00:00:00`;
-        const firstDayOfNextMonth = (currentMonth === 12)
-            ? `${currentYear + 1}-01-01 00:00:00`
-            : `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01 00:00:00`;
-
-        // Bu ay içinde denetimi tamamlanmış raporları filtreliyoruz.
-        const reports = await pb.collection('fide_raporlari').getFullList({
-            filter: `denetim_tarihi >= "${firstDayOfMonth}" && denetim_tarihi < "${firstDayOfNextMonth}"`,
-            expand: 'bayi' // İlişkili bayi bilgisini de getirmesini istiyoruz.
+        // Bu ay içinde tamamlanmış ve geri alınmamış raporları filtrele
+        const records = await pb.collection('raporlar').getFullList({
+            filter: `denetim_tarihi >= "${firstDayOfMonth}" && geri_alindi = false`,
+            expand: 'bayi'
         });
-        const monthlyCodesFromReports = reports.map(report => String(report.expand.bayi.bayi_kodu));
 
-        // Bu ay geri alınmış denetimleri filtreliyoruz.
-        const revertedAudits = await pb.collection('geri_alinan_denetimler').getFullList({
-            filter: `geri_alinma_ayi = "${currentYear}-${currentMonth - 1}"` // Ayı 0-11 formatında sakladığımızı varsayarsak.
-        });
-        const revertedStoreIds = revertedAudits.map(r => r.bayi); // Geri alınan bayilerin ID'leri
-
-        // Raporu olan ama geri alınmamış bayileri buluyoruz.
-        const uniqueMonthlyCodes = [...new Set(monthlyCodesFromReports)];
-        auditedThisMonth = uniqueMonthlyCodes.filter(code => {
-            const store = uniqueStores.find(s => s.bayiKodu == code);
-            return store && !revertedStoreIds.includes(store.id);
-        });
+        auditedThisMonth = records.map(rec => rec.expand.bayi.bayiKodu);
 
     } catch (error) {
         console.error("Bu ay denetlenen bayi verileri yüklenirken hata oluştu:", error);
@@ -199,16 +152,14 @@ async function loadMonthlyAuditData() {
 }
 
 
-// --- ARAYÜZ VE OLAY DİNLEYİCİLERİ ---
-
 function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
+    const isOnline = isPocketBaseConnected && pb.authStore.isValid;
     
-    // Bağlantı durumu artık sadece kullanıcı giriş yapmış mı ona bağlı.
-    statusSwitch.classList.toggle('connected', isPocketBaseConnected);
-    statusSwitch.classList.toggle('disconnected', !isPocketBaseConnected);
-    statusText.textContent = isPocketBaseConnected ? 'Buluta Bağlı' : 'Bağlı Değil';
+    statusSwitch.classList.toggle('connected', isOnline);
+    statusSwitch.classList.toggle('disconnected', !isOnline);
+    statusText.textContent = isOnline ? 'Sunucuya Bağlı' : 'Bağlı Değil';
 }
 
 function returnToMainPage() {
@@ -227,18 +178,6 @@ function setupEventListeners() {
     document.getElementById('fide-excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'fide'));
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
     
-    document.getElementById('clear-storage-btn').addEventListener('click', async () => {
-        // Bu fonksiyonun PocketBase'e uyarlanması gerekir.
-        // Şimdilik sadece bir uyarı verelim.
-        alert("Bu fonksiyon henüz PocketBase için yapılandırılmamıştır.");
-    });
-    document.getElementById('clear-excel-btn').addEventListener('click', () => {
-        alert("Bu fonksiyonun işlevi değişti. Bayi verilerini silmek için Yönetim Panelini kullanın.");
-    });
-     document.getElementById('clear-fide-excel-btn').addEventListener('click', () => {
-        alert("Bu fonksiyonun işlevi değişti. Bayi verilerini silmek için Yönetim Panelini kullanın.");
-    });
-    
     document.getElementById('store-search-input').addEventListener('keyup', (e) => {
         selectedStore = null; 
         currentReportId = null;
@@ -249,7 +188,7 @@ function setupEventListeners() {
             storeListDiv.innerHTML = ''; 
             return;
         }
-        const filteredStores = uniqueStores.filter(store => 
+        const filteredStores = allStores.filter(store => 
             (store.bayiAdi && store.bayiAdi.toLowerCase().includes(filter)) || 
             (store.bayiKodu && String(store.bayiKodu).toLowerCase().includes(filter))
         );
@@ -265,12 +204,10 @@ function setupEventListeners() {
         event.stopPropagation();
         loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
     });
-    
     logoutBtn.addEventListener('click', () => { 
-        pb.authStore.clear(); // PocketBase oturumunu temizle
+        pb.authStore.clear(); // PocketBase'de çıkış yapma
         window.location.reload(); 
     });
-
     loginSubmitBtn.addEventListener('click', async () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
@@ -279,15 +216,13 @@ function setupEventListeners() {
         if (!email || !password) { errorDiv.textContent = 'Lütfen tüm alanları doldurun.'; return; }
         
         try {
-            // PocketBase kullanıcı girişi
+            // PocketBase'de kullanıcı girişi denemesi
             await pb.collection('users').authWithPassword(email, password);
-            // Oturum bilgisini cookie'ye kaydet
-            pb.authStore.exportToCookie({ httpOnly: false });
-            loginPopup.style.display = 'none';
+            loginPopup.style.display = 'none'; 
             window.location.reload();
         } catch (error) {
-            console.error("PocketBase giriş hatası:", error);
             errorDiv.textContent = 'E-posta veya şifre hatalı.';
+            console.error('PocketBase giriş hatası:', error);
         }
     });
 
@@ -299,71 +234,49 @@ function setupEventListeners() {
     });
 
     document.getElementById('toggle-backup-manager-btn').addEventListener('click', () => {
-        // PocketBase yönetim panelini yeni sekmede aç
-        window.open(pb.baseUrl, '_blank');
+        // PocketBase admin paneli yeni sekmede açılır
+        window.open('http://127.0.0.1:8090/_/', '_blank');
     });
 }
-
-
-// --- RAPOR KAYDETME VE YÜKLEME (POCKETBASE) ---
 
 async function saveFormState(isFinalizing = false) {
     if (!document.getElementById('form-content').innerHTML || !selectedStore || !pb.authStore.isValid) return;
 
     const reportData = getFormDataForSaving();
-    
-    // isFinalizing, raporun "E-posta Oluştur" butonuyla tamamlandığını belirtir.
-    if (isFinalizing) {
-        // PocketBase'in kendi tarih formatını kullanıyoruz.
-        reportData.denetim_tarihi = new Date().toISOString(); 
-    }
-    
+    const bayiKodu = String(selectedStore.bayiKodu);
+
+    // Raporu kaydetmek/güncellemek için PocketBase'e göndereceğimiz veri yapısı
     const dataToSave = {
-        bayi: selectedStore.id, // Bayi ID'si ile ilişki kuruyoruz.
-        denetleyen_kisi: pb.authStore.model.id, // Mevcut kullanıcı ID'si ile ilişki kuruyoruz.
-        rapor_verisi: reportData.questions_status, // Form verisini JSON olarak kaydediyoruz.
-        denetim_tarihi: reportData.denetim_tarihi || null,
+        bayi: selectedStore.id, // İlişkili bayinin ID'si
+        rapor_data: reportData,
+        geri_alindi: false
     };
 
+    if (isFinalizing) {
+        const isAlreadyAudited = auditedThisMonth.includes(bayiKodu);
+        // Sadece bu ay daha önce denetlenmemişse denetim tarihini ekle
+        if (!isAlreadyAudited) {
+            dataToSave.denetim_tarihi = new Date().toISOString();
+        }
+    }
+    
+    showLoadingOverlay('Rapor kaydediliyor...');
     try {
         if (currentReportId) {
-            // Eğer mevcut bir rapor düzenleniyorsa, onu güncelle.
-            await pb.collection('fide_raporlari').update(currentReportId, dataToSave);
+            // Rapor daha önce kaydedilmiş, şimdi güncelliyoruz.
+            await pb.collection('raporlar').update(currentReportId, dataToSave);
             console.log("Rapor güncellendi:", currentReportId);
         } else {
-            // Yeni bir rapor ise, oluştur.
-            const newRecord = await pb.collection('fide_raporlari').create(dataToSave);
-            currentReportId = newRecord.id; // Oluşturulan yeni raporun ID'sini sakla.
+            // Bu bayi için yeni bir rapor oluşturuyoruz.
+            const newRecord = await pb.collection('raporlar').create(dataToSave);
+            currentReportId = newRecord.id; // Yeni raporun ID'sini alıp saklıyoruz.
             console.log("Yeni rapor kaydedildi:", currentReportId);
         }
-
-        // Rapor tamamlanıyorsa, bayinin "geri alınanlar" listesinden çıkarılması gerekebilir.
-        if (isFinalizing) {
-            await removeStoreCodeFromRevertedList(selectedStore.id);
-        }
-
     } catch (error) {
-        console.error("PocketBase'e rapor yazma hatası:", error);
-        alert("Rapor buluta kaydedilirken bir hata oluştu!");
+        console.error("PocketBase'e yazma hatası:", error);
+        alert("Rapor kaydedilirken bir hata oluştu!");
     }
-}
-
-async function removeStoreCodeFromRevertedList(bayiId) {
-    // Bu fonksiyon, ilgili bayinin geri alınanlar listesindeki kaydını siler.
-    if (!pb.authStore.isValid || !bayiId) return;
-    try {
-        // Geri alınanlar listesinde bu bayiye ait bir kayıt var mı diye kontrol et.
-        const records = await pb.collection('geri_alinan_denetimler').getFullList({
-            filter: `bayi = "${bayiId}"`
-        });
-        // Eğer kayıt varsa, hepsini sil. (Normalde tek olması beklenir)
-        for (const record of records) {
-            await pb.collection('geri_alinan_denetimler').delete(record.id);
-            console.log(`Bayi ${bayiId} geri alınanlar listesinden çıkarıldı.`);
-        }
-    } catch (error) {
-        console.error("Geri alınanlar listesi güncellenirken hata oluştu:", error);
-    }
+    hideLoadingOverlay();
 }
 
 async function loadReportForStore(bayiId) {
@@ -371,44 +284,41 @@ async function loadReportForStore(bayiId) {
         resetForm();
         return;
     }
+    showLoadingOverlay('Rapor yükleniyor...');
     try {
-        // Belirli bir bayiye ait en son raporu bulup getiriyoruz.
-        const record = await pb.collection('fide_raporlari').getFirstListItem(
-            `bayi = "${bayiId}"`,
-            { sort: '-created' } // Oluşturulma tarihine göre en yeniyi getir.
-        );
-        console.log("Bulunan rapor:", record);
-        currentReportId = record.id; // Raporun ID'sini sakla.
+        // PocketBase'de belirli bir bayiye ait en son raporu bulalım
+        const record = await pb.collection('raporlar').getFirstListItem(`bayi = "${bayiId}"`, {
+            sort: '-created', // En yeniye göre sırala
+        });
         
-        // Rapor verisini, eski formattaki gibi `questions_status` anahtarı altına alıyoruz.
-        const reportData = {
-            questions_status: record.rapor_verisi
-        };
-        loadReport(reportData);
+        currentReportId = record.id; // Bulunan raporun ID'sini sakla
+        loadReport(record.rapor_data); // Raporun içeriğini forma yükle
+        
     } catch (error) {
-        // Hata "404" ise bu, bayinin henüz bir raporu olmadığı anlamına gelir.
+        // 'getFirstListItem' hata fırlatırsa, bu genellikle kayıt bulunamadığı anlamına gelir.
         if (error.status === 404) {
-            console.log("Bu bayi için mevcut rapor bulunamadı. Yeni rapor oluşturulacak.");
+            console.log("Bu bayi için kaydedilmiş bir rapor bulunamadı. Temiz form açılıyor.");
+            currentReportId = null; // Rapor ID'sini sıfırla
             resetForm();
-            currentReportId = null; // Rapor ID'sini temizle.
         } else {
-            console.error("PocketBase'den rapor okuma hatası:", error);
-            alert("Kaydedilmiş rapor yüklenirken bir hata oluştu.");
+            console.error("PocketBase'den okuma hatası:", error);
             resetForm();
         }
     }
+    hideLoadingOverlay();
 }
 
-
-// --- FORM OLUŞTURMA VE YÖNETİMİ ---
-// Bu kısımdaki fonksiyonlar çoğunlukla arayüzle ilgili olduğu için büyük değişiklikler gerektirmez.
 
 function getUnitForProduct(productName) {
     const upperCaseName = productName.toUpperCase();
     if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; }
     return 'Paket';
 }
-function resetForm() { document.getElementById('form-content').innerHTML = ''; buildForm(); }
+function resetForm() { 
+    currentReportId = null; // Yeni rapor için ID'yi sıfırla
+    document.getElementById('form-content').innerHTML = ''; 
+    buildForm(); 
+}
 
 function generateQuestionHtml(q) {
     let questionActionsHTML = '';
@@ -445,7 +355,7 @@ function buildForm() {
     const formContainer = document.getElementById('form-content');
     formContainer.innerHTML = '';
     let html = '';
-    (fideQuestions || []).forEach(q => {
+    fideQuestions.forEach(q => {
         if (q.isArchived) { return; }
         html += generateQuestionHtml(q);
     });
@@ -670,17 +580,13 @@ function openEmailDraft() {
     emailWindow.document.write(emailHTML);
     emailWindow.document.close();
 }
-
-
-// --- EXCEL İŞLEMLERİ (POCKETBASE'E UYARLANDI) ---
-
-function handleFileSelect(event, type) {
+// Excel işleme fonksiyonları PocketBase'e göre güncellendi
+async function handleFileSelect(event, type) {
     const file = event.target.files[0];
     if (!file) return;
-
+    showLoadingOverlay(`${type.toUpperCase()} Excel dosyası işleniyor...`);
     const fileNameSpan = type === 'dide' ? document.getElementById('file-name') : document.getElementById('fide-file-name');
-    fileNameSpan.textContent = `Okunuyor: ${file.name}`;
-
+    fileNameSpan.textContent = `Yüklü dosya: ${file.name}`;
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
     reader.onload = async function(e) {
@@ -690,43 +596,33 @@ function handleFileSelect(event, type) {
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-            
-            showLoadingOverlay('Excel verileri işleniyor ve buluta kaydediliyor...');
-            if (type === 'dide') {
-                await processDideExcelData(dataAsArray);
-            } else {
-                await processFideExcelData(dataAsArray);
-            }
-            hideLoadingOverlay();
-            alert('Excel verileri başarıyla işlendi ve buluta kaydedildi. Sayfa yenileniyor.');
-            window.location.reload();
 
+            if (type === 'dide') {
+                await processDideExcelData(dataAsArray, file.name);
+            } else {
+                await processFideExcelData(dataAsArray, file.name);
+            }
+            // Başarılı işlem sonrası sayfayı yenileyerek tüm verilerin güncel gelmesini sağla
+            window.location.reload();
         } catch (error) {
+            alert("Excel dosyası okunurken bir hata oluştu.");
+            console.error("Excel okuma hatası:", error);
+        } finally {
             hideLoadingOverlay();
-            alert("Excel dosyası okunurken veya veriler kaydedilirken bir hata oluştu.");
-            console.error("Excel işleme hatası:", error);
         }
     };
 }
 
-async function processDideExcelData(dataAsArray) {
-    if (dataAsArray.length < 2) throw new Error('DiDe Excel dosyası beklenen formatta değil.');
+async function processDideExcelData(dataAsArray, filename = '') {
+    // ... Excel okuma mantığı aynı ...
     let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
-    if (headerRowIndex === -1) throw new Error('DiDe Excel dosyasında "Bayi Kodu" başlığı bulunamadı.');
-    
+    if (headerRowIndex === -1) return alert('DiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
     const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h);
     const dataRows = dataAsArray.slice(headerRowIndex + 1);
-    
     const bayiKoduIndex = headerRow.indexOf('Bayi Kodu');
     const bayiIndex = headerRow.indexOf('Bayi');
     const bayiYonetmeniIndex = headerRow.indexOf('Bayi Yönetmeni');
-
-    if ([bayiKoduIndex, bayiIndex, bayiYonetmeniIndex].includes(-1)) throw new Error('"Bayi Kodu", "Bayi" veya "Bayi Yönetmeni" sütunlarından biri bulunamadı.');
-
-    // PocketBase'e tek tek kayıt eklemek yerine, mevcut tüm bayileri alıp güncelleyeceğiz. Bu daha hızlıdır.
-    const allStores = await pb.collection('bayiler').getFullList();
-    const storeMap = new Map(allStores.map(store => [String(store.bayi_kodu), store]));
-
+    
     for (const row of dataRows) {
         const bayiKodu = row[bayiKoduIndex];
         if (!bayiKodu) continue;
@@ -739,58 +635,44 @@ async function processDideExcelData(dataAsArray) {
             }
         });
 
-        const dataToUpdate = {
-            'bayi_kodu': bayiKodu,
-            'bayi_adi': row[bayiIndex],
-            'bayi_yonetmeni': row[bayiYonetmeniIndex],
-            'dide_puanlari': scores
-        };
+        try {
+            // Bayinin 'bayiler' tablosunda olup olmadığını kontrol et
+            let bayiRecord = allStores.find(s => s.bayiKodu == bayiKodu);
+            if (!bayiRecord) { continue; } // Bayi ana listede yoksa atla
 
-        const existingStore = storeMap.get(String(bayiKodu));
-        if (existingStore) {
-            // Bayi zaten varsa, güncelle
-            await pb.collection('bayiler').update(existingStore.id, dataToUpdate);
-        } else {
-            // Bayi yoksa, yeni oluştur
-            await pb.collection('bayiler').create(dataToUpdate);
+            // DiDe puanlarını güncelle veya oluştur
+            const data = {
+                bayi: bayiRecord.id,
+                puanlar: scores,
+                dosya_adi: filename
+            };
+
+            // Bu bayiye ait bir DiDe puan kaydı var mı diye bak
+            const existing = await pb.collection('excel_dide').getFirstListItem(`bayi.bayiKodu = "${bayiKodu}"`).catch(() => null);
+            if (existing) {
+                await pb.collection('excel_dide').update(existing.id, data);
+            } else {
+                await pb.collection('excel_dide').create(data);
+            }
+        } catch(e) {
+            console.error(`Bayi ${bayiKodu} için DiDe verisi işlenirken hata:`, e);
         }
     }
+    alert('DiDe puan dosyası başarıyla işlendi ve veritabanına kaydedildi.');
 }
 
-async function processFideExcelData(dataAsArray) {
-    if (dataAsArray.length < 3) throw new Error('FiDe Excel dosyası beklenen formatta değil.');
-    
-    // ... FiDe Excel işleme mantığı (Firebase sürümüyle aynı) ...
+async function processFideExcelData(dataAsArray, filename = '') {
+    // ... Excel okuma mantığı aynı ...
     const currentYear = new Date().getFullYear();
-    let yearRowIndex = -1;
-    for(let i = 0; i < dataAsArray.length; i++) {
-        if(dataAsArray[i].some(cell => String(cell).trim() == currentYear)) {
-            yearRowIndex = i;
-            break;
-        }
-    }
-    if (yearRowIndex === -1) throw new Error(`FiDe Excel dosyasında '${currentYear}' yılı bulunamadı.`);
-    
-    const yearRow = dataAsArray[yearRowIndex];
-    const filledYearRow = [];
-    let lastKnownYear = null;
-    for (const cell of yearRow) {
-        if (cell !== null && cell !== undefined && String(cell).trim() !== "") { lastKnownYear = String(cell).trim(); }
-        filledYearRow.push(lastKnownYear);
-    }
-    let monthRowIndex = yearRowIndex + 1;
-    if (monthRowIndex >= dataAsArray.length) throw new Error('FiDe Excel dosyasında ay bilgileri bulunamadı.');
-    const monthRow = dataAsArray[monthRowIndex];
+    let yearRowIndex = dataAsArray.findIndex(row => row.some(cell => String(cell).trim() == currentYear));
+    if (yearRowIndex === -1) return alert(`FiDe Excel dosyasında '${currentYear}' yılını içeren bir satır bulunamadı.`);
+    const filledYearRow = dataAsArray[yearRowIndex].reduce((acc, cell) => { acc.push(cell || acc[acc.length - 1] || null); return acc; }, []);
+    const monthRow = dataAsArray[yearRowIndex + 1];
     let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
-    if (headerRowIndex === -1) throw new Error('FiDe Excel dosyasında "Bayi Kodu" başlığı bulunamadı.');
-    
-    const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h);
+    if (headerRowIndex === -1) return alert('FiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
+    const headerRow = dataAsArray[headerRowIndex];
     const dataRows = dataAsArray.slice(headerRowIndex + 1);
     const bayiKoduIndex = headerRow.indexOf('Bayi Kodu');
-    if (bayiKoduIndex === -1) throw new Error('FiDe Excel dosyasında "Bayi Kodu" sütunu bulunamadı.');
-    
-    const allStores = await pb.collection('bayiler').getFullList();
-    const storeMap = new Map(allStores.map(store => [String(store.bayi_kodu), store]));
 
     for (const row of dataRows) {
         const bayiKodu = row[bayiKoduIndex];
@@ -800,35 +682,32 @@ async function processFideExcelData(dataAsArray) {
         for (let i = 0; i < filledYearRow.length; i++) {
             if (filledYearRow[i] == currentYear) {
                 const monthNumber = parseInt(monthRow[i]);
-                if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
-                    if(row[i] !== null && row[i] !== undefined && row[i] !== "") scores[monthNumber] = row[i];
-                }
+                if (!isNaN(monthNumber) && row[i] !== "") scores[monthNumber] = row[i];
             }
         }
         
-        const existingStore = storeMap.get(String(bayiKodu));
-        if (existingStore) {
-            // FiDe puanlarını güncellemek için sadece ilgili alanı gönderiyoruz.
-            await pb.collection('bayiler').update(existingStore.id, { 'fide_puanlari': scores });
-        } else {
-            console.warn(`FiDe Excel'indeki bayi kodu (${bayiKodu}) DiDe listesinde bulunamadı. Önce DiDe Excel'ini yükleyin.`);
+        try {
+            let bayiRecord = allStores.find(s => s.bayiKodu == bayiKodu);
+            if (!bayiRecord) { continue; }
+
+            const data = {
+                bayi: bayiRecord.id,
+                puanlar: scores,
+                dosya_adi: filename
+            };
+
+            const existing = await pb.collection('excel_fide').getFirstListItem(`bayi.bayiKodu = "${bayiKodu}"`).catch(() => null);
+            if (existing) {
+                await pb.collection('excel_fide').update(existing.id, data);
+            } else {
+                await pb.collection('excel_fide').create(data);
+            }
+        } catch(e) {
+            console.error(`Bayi ${bayiKodu} için FiDe verisi işlenirken hata:`, e);
         }
     }
+     alert('FiDe puan dosyası başarıyla işlendi ve veritabanına kaydedildi.');
 }
-
-// Yükleme ekranını göstermek ve gizlemek için yardımcı fonksiyonlar
-function showLoadingOverlay(message) {
-    const overlay = document.getElementById('loading-overlay');
-    overlay.querySelector('p').textContent = message || 'İşlem yapılıyor, lütfen bekleyin...';
-    overlay.style.display = 'flex';
-}
-
-function hideLoadingOverlay() {
-    document.getElementById('loading-overlay').style.display = 'none';
-}
-
-
-// --- BAYİ SEÇİMİ VE FORM GÖRÜNTÜLEME ---
 
 function displayStores(stores) {
     const storeListDiv = document.getElementById('store-list');
@@ -837,31 +716,21 @@ function displayStores(stores) {
         const item = document.createElement('div');
         item.className = 'store-item';
         let displayName = store.bayiAdi;
-        if (displayName && displayName.length > 20) displayName = displayName.substring(0, 20) + '...';
+        if (displayName && displayName.length > 30) displayName = displayName.substring(0, 30) + '...';
         item.textContent = `${displayName} (${store.bayiKodu})`;
-        item.dataset.bayiId = store.id; // PocketBase ID'sini de saklayalım.
-        item.dataset.bayiKodu = store.bayiKodu;
-        item.dataset.bayiAdi = store.bayiAdi;
-        item.addEventListener('click', () => {
-            selectStore(store);
-        });
+        item.dataset.bayiId = store.id; // PocketBase ID'sini saklayalım
+        item.addEventListener('click', () => selectStore(store));
         storeListDiv.appendChild(item);
     });
 }
 function selectStore(store, loadSavedData = true) {
     if (auditedThisMonth.includes(String(store.bayiKodu))) {
-        const proceed = confirm(
-            `UYARI: Bu bayi (${store.bayiAdi} - ${store.bayiKodu}) bu ay içinde zaten denetlenmiş.\n\n` +
-            `Rapora devam edebilirsiniz ancak bu işlem aylık denetim sayınızı ARTTIRMAYACAKTIR.\n\n` +
-            `Yine de devam etmek istiyor musunuz?`
-        );
-        if (!proceed) {
-            return; 
-        }
+        const proceed = confirm(`UYARI: Bu bayi (${store.bayiAdi} - ${store.bayiKodu}) bu ay içinde zaten denetlenmiş.\n\nDevam etmek istiyor musunuz?`);
+        if (!proceed) return; 
     }
 
     document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
-    const storeItem = document.querySelector(`.store-item[data-bayi-kodu="${store.bayiKodu}"]`);
+    const storeItem = document.querySelector(`.store-item[data-bayi-id="${store.id}"]`);
     if (storeItem) storeItem.classList.add('selected');
     
     selectedStore = { id: store.id, bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi };
@@ -874,14 +743,12 @@ function selectStore(store, loadSavedData = true) {
     document.getElementById('store-list').style.display = 'none';
     
     if (loadSavedData) {
-        loadReportForStore(store.id); // Artık bayi ID'si ile rapor yüklüyoruz.
+        loadReportForStore(store.id);
     } else {
         resetForm();
     }
     updateFormInteractivity(true); 
 }
-
-// --- E-POSTA OLUŞTURMA ---
 
 async function generateEmail() {
     if (!selectedStore) {
@@ -889,21 +756,20 @@ async function generateEmail() {
         return;
     }
 
-    // E-posta şablonunu PocketBase'deki 'ayarlar' tablosundan alıyoruz.
-    const emailSettings = await getSetting('fideSettings');
-    const emailTemplate = emailSettings ? emailSettings.emailTemplate : null;
-    
-    if (!emailTemplate) {
-        alert("HATA: E-posta şablonu buluttan yüklenemedi.\n\nLütfen internet bağlantınızı kontrol edin veya Yönetim Panelinden şablonu kaydedin.");
-        return;
+    let emailTemplate = "Ziyaret etmiş olduğum {BAYI_BILGISI} bayi karnesi ektedir."; // Varsayılan
+    try {
+        const record = await pb.collection('genel_ayarlar').getFirstListItem('ayar_adi = "emailSablonu"');
+        emailTemplate = record.ayar_degeri.template;
+    } catch (error) {
+        console.warn("E-posta şablonu veritabanından yüklenemedi, varsayılan kullanılıyor.", error);
     }
-
-    await saveFormState(true); // Raporu 'tamamlandı' olarak işaretleyip son kez kaydet.
+    
+    await saveFormState(true);
 
     const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
     const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
     if (!storeInfo) {
-        alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
+        alert("Seçilen bayi için DiDe verisi bulunamadı.");
         return;
     }
     
@@ -1015,46 +881,28 @@ async function generateEmail() {
     document.querySelector('.container').appendChild(draftContainer);
 }
 
-
-// --- YARDIMCI FONKSİYONLAR ---
-
 function loadReport(reportData) {
     if (!reportData || !reportData.questions_status) {
-        console.warn("Rapor verisi bulunamadı veya 'questions_status' alanı eksik. Form sıfırlanıyor. Gelen Veri:", reportData);
+        console.warn("Rapor verisi bulunamadı veya 'questions_status' alanı eksik. Form sıfırlanıyor.");
         resetForm();
         updateFormInteractivity(true); 
         return; 
     }
 
     try {
-        // Firebase'den gelen eski rapor verilerini yeni soru ID'lerine taşıma mantığı.
-        // Bu, migrationMap ayarı sayesinde çalışır.
-        for (const oldId in migrationMap) {
-            if (reportData.questions_status[oldId]) {
-                const newId = migrationMap[oldId];
-                if (!reportData.questions_status[newId]) {
-                    reportData.questions_status[newId] = reportData.questions_status[oldId];
-                    delete reportData.questions_status[oldId];
-                }
+        resetForm(); 
+
+        if (reportData.selectedStore) {
+            const storeData = allStores.find(s => s.bayiKodu == reportData.selectedStore.bayiKodu);
+            if(storeData) {
+                selectStore(storeData, false); // selectStore'u tekrar çağır ama bu sefer veri yüklemesin
             }
         }
         
-        resetForm(); 
-
         const formContainer = document.getElementById('form-content');
 
         for (const qId in reportData.questions_status) {
             let questionItem = document.getElementById(`fide-item-${qId}`);
-
-            if (!questionItem) {
-                const archivedQuestion = fideQuestions.find(q => String(q.id) === String(qId));
-                if (archivedQuestion && archivedQuestion.isArchived) {
-                    const questionHtml = generateQuestionHtml(archivedQuestion);
-                    formContainer.insertAdjacentHTML('beforeend', questionHtml);
-                    questionItem = document.getElementById(`fide-item-${qId}`);
-                }
-            }
-            
             if (!questionItem) continue;
 
             const data = reportData.questions_status[qId];
@@ -1084,46 +932,37 @@ function loadReport(reportData) {
 
 function startNewReport() {
     selectedStore = null;
-    currentReportId = null; // Yeni rapor için ID'yi temizle
+    currentReportId = null;
     document.getElementById('store-search-input').value = '';
     resetForm();
     updateFormInteractivity(false);
 }
-
 function getFormDataForSaving() {
-    // Bu fonksiyon, formdaki mevcut durumu PocketBase'e kaydedilecek JSON formatına dönüştürür.
-    let reportData = { questions_status: {} };
-    if (selectedStore) {
-        reportData.selectedStore = {
-            bayiAdi: selectedStore.bayiAdi,
-            bayiKodu: selectedStore.bayiKodu,
-        };
-    }
-     (fideQuestions || []).forEach(q => {
+    let reportData = { selectedStore: selectedStore, questions_status: {} };
+     fideQuestions.forEach(q => {
         const itemDiv = document.getElementById(`fide-item-${q.id}`);
-        // Arşivlenmiş ama daha önce kaydedilmiş bir soru verisi varsa onu korumak için
-        // `itemDiv` olmasa bile devam etmeliyiz.
-        if (!itemDiv && !q.isArchived) {
-             console.warn(`Soru #${q.id} için HTML elementi bulunamadı.`);
-             return;
-        }
-
         const isRemoved = itemDiv ? itemDiv.classList.contains('question-removed') : false;
         const titleContainer = itemDiv ? itemDiv.querySelector('.fide-title-container') : null;
         const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
         
+        if (!itemDiv && q.isArchived) { return; }
+
         const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
 
         if (itemDiv) {
             if (q.type === 'standard') {
                 questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}`);
             } else if (q.type === 'product_list') {
-                document.querySelectorAll(`#fide-item-${q.id} #selected-products-list .selected-product-item`).forEach(item => {
-                    questionData.selectedProducts.push({ code: item.dataset.code, qty: item.dataset.qty });
-                });
+                const productItems = itemDiv.querySelectorAll('#selected-products-list .selected-product-item');
+                if (productItems.length > 0) {
+                     productItems.forEach(item => questionData.selectedProducts.push({ code: item.dataset.code, qty: item.dataset.qty }));
+                }
                 questionData.dynamicInputs = getDynamicInputsForSaving(`fide${q.id}_pleksi`);
             } else if (q.type === 'pop_system') {
-                questionData.selectedPops = Array.from(document.querySelectorAll(`#fide-item-${q.id} .pop-checkbox:checked`)).map(cb => cb.value);
+                const popItems = itemDiv.querySelectorAll('.pop-checkbox:checked');
+                 if(popItems.length > 0) {
+                    questionData.selectedPops = Array.from(popItems).map(cb => cb.value);
+                }
             }
         }
         reportData.questions_status[q.id] = questionData;
@@ -1131,16 +970,19 @@ function getFormDataForSaving() {
     return reportData;
 }
 
-
 function updateFormInteractivity(enable) {
     const formContent = document.getElementById('form-content');
     if (!formContent) return;
+    const allElements = formContent.querySelectorAll('button, input, select');
+    allElements.forEach(el => { el.disabled = !enable; });
+}
 
-    const allElements = formContent.querySelectorAll(
-        'button, input, select'
-    );
-    
-    allElements.forEach(el => {
-        el.disabled = !enable;
-    });
+function showLoadingOverlay(message = 'İşlem yapılıyor, lütfen bekleyin...') {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.querySelector('p').textContent = message;
+    overlay.style.display = 'flex';
+}
+
+function hideLoadingOverlay() {
+    document.getElementById('loading-overlay').style.display = 'none';
 }
