@@ -2,27 +2,26 @@
 let fideQuestions = [], productList = [], migrationMap = {};
 const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan yüklenemedi." }];
 let currentManagerView = 'active'; 
+let pbInstance; // PocketBase nesnesini modül içinde kullanmak için
 
 // --- MODÜL BAŞLATMA FONKSİYONU ---
-async function initializeSoruYoneticisiModule() {
+async function initializeSoruYoneticisiModule(pb) {
+    pbInstance = pb; // Admin.js'den gelen PocketBase nesnesini al
     await loadInitialData();
     setupModuleEventListeners();
     renderQuestionManager();
 }
 
 async function loadMigrationMap() {
-    const user = auth.currentUser;
     migrationMap = {}; 
+    if (!pbInstance || !pbInstance.authStore.isValid) return;
 
-    if (user && database) {
-        try {
-            const migrationRef = database.ref('migrationSettings/map');
-            const snapshot = await migrationRef.once('value');
-            if (snapshot.exists()) {
-                migrationMap = snapshot.val();
-            }
-        } catch (error) {
-            console.error("Buluttan veri taşıma ayarları yüklenemedi:", error);
+    try {
+        const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="migrationMap"');
+        migrationMap = record.deger || {};
+    } catch (error) {
+        if (error.status !== 404) {
+            console.error("Buluttan yönlendirme kuralları yüklenemedi:", error);
             alert("Uyarı: Yönlendirme kuralları buluttan yüklenemedi.");
         }
     }
@@ -31,30 +30,29 @@ async function loadMigrationMap() {
 async function loadInitialData() {
     await loadMigrationMap();
     let questionsLoaded = false;
+    if (!pbInstance || !pbInstance.authStore.isValid) return;
 
-    if (auth.currentUser && database) {
-        try {
-            const questionsRef = database.ref('fideQuestionsData');
-            const snapshot = await questionsRef.once('value');
-            if (snapshot.exists()) {
-                const cloudData = snapshot.val();
-                fideQuestions = cloudData.questions || [];
-                productList = cloudData.productList || [];
-                console.log("Sorular ve ürün listesi başarıyla buluttan yüklendi.");
-                questionsLoaded = true;
-            }
-        } catch (error) {
-            console.error("Firebase'den soru verisi okunurken hata oluştu:", error);
+    try {
+        const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="fideQuestionsData"');
+        const cloudData = record.deger;
+        fideQuestions = cloudData.questions || [];
+        productList = cloudData.productList || [];
+        console.log("Sorular ve ürün listesi başarıyla buluttan yüklendi.");
+        questionsLoaded = true;
+    } catch (error) {
+        if (error.status !== 404) {
+            console.error("PocketBase'den soru verisi okunurken hata oluştu:", error);
         }
     }
     
     if (!questionsLoaded) {
         fideQuestions = fallbackFideQuestions;
-        alert("Soru listesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin ve sisteme giriş yaptığınızdan emin olun.");
+        alert("Soru listesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin veya sisteme giriş yaptığınızdan emin olun.");
     }
 }
 
 function setupModuleEventListeners() {
+    // Bu fonksiyonun içeriği backend'den bağımsız olduğu için büyük ölçüde aynı kalıyor.
     if (document.body.dataset.soruYoneticisiListenersAttached) return;
     document.body.dataset.soruYoneticisiListenersAttached = 'true';
 
@@ -78,9 +76,7 @@ function setupModuleEventListeners() {
             const girilenSifreHash = btoa(girilenSifre);
             if (girilenSifreHash === dogruSifreHash) {
                 const idInputs = document.querySelectorAll('.manager-id-input');
-                idInputs.forEach(input => {
-                    input.disabled = false;
-                });
+                idInputs.forEach(input => { input.disabled = false; });
                 const unlockBtn = document.getElementById('unlock-ids-btn');
                 unlockBtn.disabled = true;
                 unlockBtn.innerHTML = '<i class="fas fa-lock-open"></i> ID Alanları Düzenlenebilir';
@@ -110,89 +106,44 @@ function setupModuleEventListeners() {
     document.getElementById('apply-delete-question-btn').addEventListener('click', applyDeleteQuestionScenario);
 }
 
-function openScenarioSystem() {
-    document.getElementById('scenario-system-overlay').style.display = 'flex';
-    document.querySelector('.scenario-selection').style.display = 'flex';
-    document.querySelectorAll('.scenario-form').forEach(form => form.style.display = 'none');
-    document.getElementById('scenario-old-id').value = '';
-    document.getElementById('scenario-new-id').value = '';
-    document.getElementById('scenario-delete-id').value = '';
-    previewQuestionForDelete();
-}
+// --- SENARYO SİSTEMİ FONKSİYONLARI (POCKETBASE'E UYARLANDI) ---
 
-function closeScenarioSystem() {
-    document.getElementById('scenario-system-overlay').style.display = 'none';
-}
-
-function selectScenario(scenario) {
-    document.querySelector('.scenario-selection').style.display = 'none';
-    if (scenario === 'id-change') {
-        document.getElementById('scenario-id-change-form').style.display = 'block';
-    } else if (scenario === 'delete-question') {
-        document.getElementById('scenario-delete-question-form').style.display = 'block';
-    }
-}
-
-async function migrateQuestionData(oldId, newId) {
+async function updateAllReports(updateFunction) {
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
     try {
-        if (!auth.currentUser || !database) {
+        if (!pbInstance || !pbInstance.authStore.isValid) {
             alert("Bu işlem için bulut bağlantısı gereklidir.");
             return false;
         }
-        const reportsRef = database.ref('allFideReports');
-        const snapshot = await reportsRef.once('value');
-        if (snapshot.exists()) {
-            let allCloudReports = snapshot.val();
-            let updates = {};
-            for (const storeKey in allCloudReports) {
-                const report = allCloudReports[storeKey]?.data?.questions_status;
-                if (report && report[oldId]) {
-                    updates[`${storeKey}/data/questions_status/${newId}`] = report[oldId];
-                    updates[`${storeKey}/data/questions_status/${oldId}`] = null;
-                }
-            }
-            if (Object.keys(updates).length > 0) await reportsRef.update(updates);
-        }
-        return true;
-    } catch (error) {
-        console.error("Veri taşıma sırasında bir hata oluştu:", error);
-        alert("Kritik Hata: Raporlardaki cevaplar taşınamadı.");
-        return false;
-    } finally {
-        loadingOverlay.style.display = 'none';
-    }
-}
 
-async function swapQuestionData(idA, idB) {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    loadingOverlay.style.display = 'flex';
-    try {
-         if (!auth.currentUser || !database) {
-            alert("Bu işlem için bulut bağlantısı gereklidir.");
-            return false;
-        }
-        const reportsRef = database.ref('allFideReports');
-        const snapshot = await reportsRef.once('value');
-        if (snapshot.exists()) {
-            let allCloudReports = snapshot.val();
-            let updates = {};
-            for (const storeKey in allCloudReports) {
-                const report = allCloudReports[storeKey]?.data?.questions_status;
-                if (report) {
-                    const answerA = report[idA];
-                    const answerB = report[idB];
-                    updates[`${storeKey}/data/questions_status/${idA}`] = answerB || null;
-                    updates[`${storeKey}/data/questions_status/${idB}`] = answerA || null;
-                }
+        // Tüm raporları çek
+        const allReports = await pbInstance.collection('denetim_raporlari').getFullList({
+            fields: 'id,soruDurumlari' // Sadece gerekli alanları alarak performansı artır
+        });
+
+        const updatePromises = [];
+        for (const report of allReports) {
+            let soruDurumlari = report.soruDurumlari;
+            const originalSoruDurumlariString = JSON.stringify(soruDurumlari);
+
+            // Gelen fonksiyona göre soru durumlarını güncelle
+            soruDurumlari = updateFunction(soruDurumlari);
+            
+            // Eğer bir değişiklik yapıldıysa, güncelleme listesine ekle
+            if (JSON.stringify(soruDurumlari) !== originalSoruDurumlariString) {
+                const promise = pbInstance.collection('denetim_raporlari').update(report.id, { soruDurumlari });
+                updatePromises.push(promise);
             }
-            if (Object.keys(updates).length > 0) await reportsRef.update(updates);
+        }
+
+        if (updatePromises.length > 0) {
+            await Promise.all(updatePromises); // Tüm güncellemelerin bitmesini bekle
         }
         return true;
     } catch (error) {
-        console.error("Veri takas sırasında bir hata oluştu:", error);
-        alert("Kritik Hata: Raporlardaki cevaplar takas edilemedi.");
+        console.error("Toplu rapor güncelleme sırasında bir hata oluştu:", error);
+        alert("Kritik Hata: Raporlardaki veriler güncellenemedi.");
         return false;
     } finally {
         loadingOverlay.style.display = 'none';
@@ -204,20 +155,41 @@ async function applyIdChangeScenario() {
     const newId = document.getElementById('scenario-new-id').value.trim();
     if (!oldId || !newId) { alert("Lütfen hem 'Eski Soru ID' hem de 'Yeni Soru ID' alanlarını doldurun."); return; }
     if (oldId === newId) { alert("Eski ve yeni ID aynı olamaz."); return; }
+
     const questionToMove = fideQuestions.find(q => String(q.id) === String(oldId));
     if (!questionToMove) { alert(`HATA: "${oldId}" ID'li bir soru bulunamadı.`); return; }
+
     const targetQuestion = fideQuestions.find(q => String(q.id) === String(newId));
-    if (!targetQuestion) {
+
+    if (!targetQuestion) { // Senaryo 1: ID taşıma
         if (!confirm(`Bu işlem, ${oldId} ID'li soruyu ${newId} olarak güncelleyecek ve TÜM cevapları kalıcı olarak yeni ID'ye taşıyacaktır. Devam etmek istiyor musunuz?`)) return;
-        const migrationSuccess = await migrateQuestionData(oldId, newId);
-        if (!migrationSuccess) return;
+
+        const success = await updateAllReports(soruDurumlari => {
+            if (soruDurumlari && soruDurumlari[oldId]) {
+                soruDurumlari[newId] = soruDurumlari[oldId];
+                delete soruDurumlari[oldId];
+            }
+            return soruDurumlari;
+        });
+
+        if (!success) return;
         questionToMove.id = parseInt(newId, 10);
         addMigrationMapping(oldId, newId);
         alert(`Başarılı!\n\n- Soru ${oldId}, ${newId} ID'sine taşındı.\n- Tüm raporlardaki cevaplar kalıcı olarak taşındı.\n\nDeğişiklikleri kalıcı yapmak için 'Kaydet' butonuna basmayı unutmayın.`);
-    } else {
+    } else { // Senaryo 2: ID takas etme
         if (!confirm(`"${newId}" ID'si zaten başka bir soru tarafından kullanılıyor.\n\nİki sorunun ID'lerini ve kaydedilmiş TÜM cevaplarını birbiriyle DEĞİŞTİRMEK (takas etmek) istediğinizden emin misiniz?`)) return;
-        const swapSuccess = await swapQuestionData(oldId, newId);
-        if (!swapSuccess) return;
+
+        const success = await updateAllReports(soruDurumlari => {
+            if (soruDurumlari) {
+                const answerA = soruDurumlari[oldId];
+                const answerB = soruDurumlari[newId];
+                soruDurumlari[oldId] = answerB || null;
+                soruDurumlari[newId] = answerA || null;
+            }
+            return soruDurumlari;
+        });
+
+        if (!success) return;
         questionToMove.id = parseInt(newId, 10);
         targetQuestion.id = parseInt(oldId, 10);
         delete migrationMap[oldId];
@@ -229,14 +201,191 @@ async function applyIdChangeScenario() {
     closeScenarioSystem();
 }
 
+async function applyDeleteQuestionScenario() {
+    const questionIdToDelete = document.getElementById('scenario-delete-id').value;
+    if (!questionIdToDelete) { alert("Lütfen silinecek soru ID'sini girin."); return; }
+    const question = fideQuestions.find(q => String(q.id) === String(questionIdToDelete));
+    if (!question) { alert(`HATA: "${questionIdToDelete}" ID'li bir soru bulunamadı.`); return; }
+    if (!confirm(`DİKKAT! BU İŞLEM GERİ ALINAMAZ!\n\nID: ${question.id}\nSoru: "${question.title}"\n\nYukarıdaki soruyu ve bu soruya ait TÜM bayi raporlarındaki cevapları kalıcı olarak silmek istediğinizden KESİNLİKLE emin misiniz?`)) return;
+
+    // 1. Raporlardaki cevapları sil
+    const success = await updateAllReports(soruDurumlari => {
+        if (soruDurumlari && soruDurumlari[questionIdToDelete]) {
+            delete soruDurumlari[questionIdToDelete];
+        }
+        return soruDurumlari;
+    });
+
+    if (!success) return;
+
+    // 2. Soru listesinden soruyu kaldır ve kaydet
+    fideQuestions = fideQuestions.filter(q => String(q.id) !== String(questionIdToDelete));
+    await saveQuestions(false); // Kaydet ama sayfayı yenileme
+
+    alert(`Başarılı!\n\nFiDe ${questionIdToDelete} sorusu ve ilişkili tüm cevaplar kalıcı olarak silindi. Sayfa yenileniyor.`);
+    window.location.reload();
+}
+
+async function deleteAllAnswersForQuestion(questionId) {
+    const questionTitle = document.querySelector(`.manager-item[data-id="${questionId}"] .question-title-input`).value;
+    if (!confirm(`FiDe ${questionId} ("${questionTitle}") sorusuna ait TÜM cevapları BÜTÜN raporlardan kalıcı olarak silmek istediğinizden emin misiniz?`)) return;
+    
+    const success = await updateAllReports(soruDurumlari => {
+        if (soruDurumlari && soruDurumlari[questionId]) {
+            delete soruDurumlari[questionId];
+        }
+        return soruDurumlari;
+    });
+
+    if (success) {
+        alert(`FiDe ${questionId} sorusuna ait tüm cevaplar silindi.`);
+    }
+}
+
+// --- Yönlendirme Haritası Fonksiyonları (PocketBase'e Uyarlandı) ---
+async function addMigrationMapping(oldIdValue, newIdValue) {
+    if (!oldIdValue || !newIdValue || oldIdValue === newIdValue) return;
+    migrationMap[oldIdValue] = newIdValue;
+    await saveMigrationMap();
+}
+
+async function deleteMigrationMapping(oldIdToDelete) {
+    if (confirm(`'${oldIdToDelete}' ID'li yönlendirmeyi silmek istediğinizden emin misiniz?`)) {
+        delete migrationMap[oldIdToDelete];
+        await saveMigrationMap();
+        renderMigrationManagerUI();
+    }
+}
+
+async function saveMigrationMap() {
+    if (!pbInstance || !pbInstance.authStore.isValid) return;
+    const data = { 'deger': migrationMap };
+    try {
+        const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="migrationMap"');
+        await pbInstance.collection('ayarlar').update(record.id, data);
+    } catch (error) {
+        if (error.status === 404) {
+            await pbInstance.collection('ayarlar').create({ anahtar: 'migrationMap', ...data });
+        } else {
+            console.error("Yönlendirme kuralları buluta kaydedilemedi:", error);
+        }
+    }
+}
+
+
+// --- KAYDETME FONKSİYONU (POCKETBASE'E UYARLANDI) ---
+async function saveQuestions(reloadPage = true) {
+    if (!pbInstance || !pbInstance.authStore.isValid) { alert("Kaydetmek için giriş yapın."); return; }
+    
+    // Ürün listesini arayüzden topla
+    const newProductList = [];
+    const activeProductManager = document.querySelector('.product-list-manager');
+    if (activeProductManager && activeProductManager.offsetParent !== null) {
+        activeProductManager.querySelectorAll('.category-manager-row, .product-manager-row').forEach(row => {
+            if (row.dataset.type === 'category') {
+                const name = row.querySelector('input').value.trim();
+                if (name) newProductList.push({ type: 'header', name });
+            } else if (row.dataset.type === 'product') {
+                const code = row.querySelector('.product-code').value.trim();
+                const name = row.querySelector('.product-name').value.trim();
+                if (code && name) newProductList.push({ code, name });
+            }
+        });
+    } else {
+        Object.assign(newProductList, productList);
+    }
+
+    // Soru listesini arayüzden topla
+    const newQuestions = [];
+    const ids = new Set();
+    let hasError = false;
+    document.querySelectorAll('#manager-list .manager-item').forEach(item => {
+        if (item.classList.contains('to-be-deleted')) return;
+        const id = parseInt(item.querySelector('.manager-id-input').value);
+        const title = item.querySelector('.question-title-input').value.trim();
+        if (!id || !title) { alert(`ID veya Başlık boş olamaz.`); hasError = true; return; }
+        if (ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer kullanılmış.`); hasError = true; return; }
+        ids.add(id);
+
+        const type = item.querySelector('.question-type-select').value;
+        const answerType = item.querySelector('.answer-type-select').value;
+        const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
+        const isArchived = item.querySelector('.archive-checkbox').checked;
+        const wantsStoreEmail = item.querySelector('.wants-email-checkbox').checked;
+        const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
+
+        const newQuestion = { id, title, type, answerType, staticItems: staticItems || [], isArchived, wantsStoreEmail };
+        
+        if (type === 'pop_system') {
+            const popInput = item.querySelector('.pop-codes-input');
+            if (popInput) {
+                newQuestion.popCodes = popInput.value.split(',').map(c => c.trim()).filter(c => c);
+                newQuestion.expiredCodes = item.querySelector('.expired-pop-codes-input').value.split(',').map(c => c.trim()).filter(c => c);
+                newQuestion.popEmailTo = item.querySelector('.pop-email-to-input').value.split(',').map(e => e.trim()).filter(e => e);
+                newQuestion.popEmailCc = item.querySelector('.pop-email-cc-input').value.split(',').map(e => e.trim()).filter(e => e);
+            }
+        }
+        newQuestions.push(newQuestion);
+    });
+
+    if (hasError) return;
+    newQuestions.sort((a, b) => a.id - b.id);
+
+    const finalJsonData = { questions: newQuestions, productList: newProductList };
+    
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+    try {
+        const dataToSave = { 'deger': finalJsonData };
+        const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="fideQuestionsData"');
+        await pbInstance.collection('ayarlar').update(record.id, dataToSave);
+        
+        if (reloadPage) {
+            alert("Değişiklikler kaydedildi. Sayfa yenileniyor...");
+            window.location.reload();
+        }
+    } catch (error) {
+        if (error.status === 404) { // Kayıt yoksa yeni oluştur
+            await pbInstance.collection('ayarlar').create({ anahtar: 'fideQuestionsData', deger: finalJsonData });
+            if (reloadPage) {
+                alert("Değişiklikler kaydedildi. Sayfa yenileniyor...");
+                window.location.reload();
+            }
+        } else {
+            console.error("Kaydederken hata oluştu:", error);
+        }
+    } finally {
+        loadingOverlay.style.display = 'none';
+    }
+}
+
+
+// --- ARAYÜZ OLUŞTURMA VE YÖNETİM FONKSİYONLARI (DEĞİŞİKLİK GEREKTİRMEYEN KISIMLAR) ---
+// Bu kısımdaki fonksiyonlar genellikle arayüzü (UI) yönetir ve backend ile doğrudan konuşmaz,
+// bu yüzden Firebase'den PocketBase'e geçişte değiştirilmelerine gerek yoktur.
+
+function openScenarioSystem() {
+    document.getElementById('scenario-system-overlay').style.display = 'flex';
+    document.querySelector('.scenario-selection').style.display = 'flex';
+    document.querySelectorAll('.scenario-form').forEach(form => form.style.display = 'none');
+    document.getElementById('scenario-old-id').value = '';
+    document.getElementById('scenario-new-id').value = '';
+    document.getElementById('scenario-delete-id').value = '';
+    previewQuestionForDelete();
+}
+function closeScenarioSystem() { document.getElementById('scenario-system-overlay').style.display = 'none'; }
+function selectScenario(scenario) {
+    document.querySelector('.scenario-selection').style.display = 'none';
+    if (scenario === 'id-change') { document.getElementById('scenario-id-change-form').style.display = 'block'; } 
+    else if (scenario === 'delete-question') { document.getElementById('scenario-delete-question-form').style.display = 'block'; }
+}
 function previewQuestionForDelete() {
     const id = document.getElementById('scenario-delete-id').value;
     const previewArea = document.getElementById('scenario-delete-preview');
     const deleteBtn = document.getElementById('apply-delete-question-btn');
     if (!id) {
         previewArea.innerHTML = "Lütfen silmek istediğiniz sorunun ID'sini girin.";
-        deleteBtn.disabled = true;
-        return;
+        deleteBtn.disabled = true; return;
     }
     const question = fideQuestions.find(q => String(q.id) === String(id));
     if (question) {
@@ -247,42 +396,6 @@ function previewQuestionForDelete() {
         deleteBtn.disabled = true;
     }
 }
-
-async function applyDeleteQuestionScenario() {
-    const questionIdToDelete = document.getElementById('scenario-delete-id').value;
-    if (!questionIdToDelete) { alert("Lütfen silinecek soru ID'sini girin."); return; }
-    const question = fideQuestions.find(q => String(q.id) === String(questionIdToDelete));
-    if (!question) { alert(`HATA: "${questionIdToDelete}" ID'li bir soru bulunamadı.`); return; }
-    if (!confirm(`DİKKAT! BU İŞLEM GERİ ALINAMAZ!\n\nID: ${question.id}\nSoru: "${question.title}"\n\nYukarıdaki soruyu ve bu soruya ait TÜM bayi raporlarındaki cevapları kalıcı olarak silmek istediğinizden KESİNLİKLE emin misiniz?`)) return;
-    if (!auth.currentUser || !database) { alert("Bu kritik işlem için bulut sistemine giriş yapmış olmanız gerekmektedir."); return; }
-    const loadingOverlay = document.getElementById('loading-overlay');
-    loadingOverlay.style.display = 'flex';
-    try {
-        const reportsRef = database.ref('allFideReports');
-        const snapshot = await reportsRef.once('value');
-        if (snapshot.exists()) {
-            let allCloudReports = snapshot.val();
-            let updates = {};
-             for (const storeKey in allCloudReports) {
-                if (allCloudReports[storeKey]?.data?.questions_status?.[questionIdToDelete]) {
-                    updates[`${storeKey}/data/questions_status/${questionIdToDelete}`] = null;
-                }
-            }
-             if (Object.keys(updates).length > 0) { await reportsRef.update(updates); }
-        }
-        const newQuestions = fideQuestions.filter(q => String(q.id) !== String(questionIdToDelete));
-        const finalJsonData = { questions: newQuestions, productList: productList };
-        await database.ref('fideQuestionsData').set(finalJsonData);
-        alert(`Başarılı!\n\nFiDe ${questionIdToDelete} sorusu ve ilişkili tüm cevaplar kalıcı olarak silindi. Sayfa yenileniyor.`);
-        window.location.reload();
-    } catch (error) {
-        console.error("Soru silme senaryosu sırasında bir hata oluştu:", error);
-        alert("Bir hata oluştu! Soru ve cevaplar silinemedi.");
-    } finally {
-        loadingOverlay.style.display = 'none';
-    }
-}
-
 function renderMigrationManagerUI() {
     const listContainer = document.getElementById('migration-list-container');
     listContainer.innerHTML = '';
@@ -298,29 +411,6 @@ function renderMigrationManagerUI() {
         }
     }
 }
-
-async function addMigrationMapping(oldIdValue, newIdValue) {
-    if (!oldIdValue || !newIdValue) { return; }
-    if (oldIdValue === newIdValue) { return; }
-    migrationMap[oldIdValue] = newIdValue;
-    await saveMigrationMap();
-}
-
-async function deleteMigrationMapping(oldIdToDelete) {
-    if (confirm(`'${oldIdToDelete}' ID'li yönlendirmeyi silmek istediğinizden emin misiniz?`)) {
-        delete migrationMap[oldIdToDelete];
-        await saveMigrationMap();
-        renderMigrationManagerUI();
-    }
-}
-
-async function saveMigrationMap() {
-    if (auth.currentUser && database) {
-        try { await database.ref('migrationSettings/map').set(migrationMap); } 
-        catch (error) { console.error("Veri taşıma ayarları buluta kaydedilemedi:", error); }
-    }
-}
-
 function formatText(buttonEl, command) {
     const editor = buttonEl.closest('.manager-item').querySelector('.editable-textarea');
     editor.focus();
@@ -346,7 +436,6 @@ function formatText(buttonEl, command) {
         }
     } else { document.execCommand(command, false, null); }
 }
-
 function renderQuestionManager() {
     const managerList = document.getElementById('manager-list');
     if (!managerList) return;
@@ -388,7 +477,6 @@ function renderQuestionManager() {
     });
     filterManagerView(); 
 }
-
 function toggleSpecialManagerUI(selectElement) {
     const managerItem = selectElement.closest('.manager-item');
     const specialContainer = managerItem.querySelector('.special-manager-container');
@@ -402,8 +490,6 @@ function toggleSpecialManagerUI(selectElement) {
         renderPopManagerUI(specialContainer, question);
     } else { specialContainer.className = 'special-manager-container'; }
 }
-
-// GÜNCELLENDİ: E-posta alıcıları için yeni alanlar eklendi.
 function renderPopManagerUI(container, questionData) {
     const popCodes = (questionData.popCodes || []).join(', ');
     const expiredCodes = (questionData.expiredCodes || []).join(', ');
@@ -431,7 +517,6 @@ function renderPopManagerUI(container, questionData) {
             </div>
         </div>`;
 }
-
 function renderProductManagerUI(container) {
     const categories = productList.filter(p => p.type === 'header');
     let categoryOptions = '<option value="__end">Ana Liste (Sona Ekle)</option>';
@@ -628,89 +713,4 @@ function deleteAllArchivedQuestions() {
         document.getElementById('delete-all-archived-btn').disabled = true;
         alert("Arşivdeki sorular silinmek üzere işaretlendi. Kaydetmeyi unutmayın.");
     }
-}
-async function deleteAllAnswersForQuestion(questionId) {
-    const questionTitle = document.querySelector(`.manager-item[data-id="${questionId}"] .question-title-input`).value;
-    if (!confirm(`FiDe ${questionId} ("${questionTitle}") sorusuna ait TÜM cevapları BÜTÜN raporlardan kalıcı olarak silmek istediğinizden emin misiniz?`)) return;
-    if (!auth.currentUser || !database) { alert("Bulut bağlantısı gerekli."); return; }
-    const loadingOverlay = document.getElementById('loading-overlay');
-    loadingOverlay.style.display = 'flex';
-    try {
-        const reportsRef = database.ref('allFideReports');
-        const snapshot = await reportsRef.once('value');
-        if (snapshot.exists()) {
-            let allCloudReports = snapshot.val();
-            let updates = {};
-            for (const storeKey in allCloudReports) {
-                if (allCloudReports[storeKey]?.data?.questions_status?.[questionId]) {
-                     updates[`${storeKey}/data/questions_status/${questionId}`] = null;
-                }
-            }
-            if (Object.keys(updates).length > 0) { await reportsRef.update(updates); }
-        }
-        alert(`FiDe ${questionId} sorusuna ait tüm cevaplar silindi.`);
-    } catch (error) { console.error("Cevapları silerken hata oluştu:", error); } 
-    finally { loadingOverlay.style.display = 'none'; }
-}
-async function saveQuestions() {
-    if (!auth.currentUser || !database) { alert("Kaydetmek için giriş yapın."); return; }
-    const newProductList = [];
-    const activeProductManager = document.querySelector('.product-list-manager');
-    if (activeProductManager && activeProductManager.offsetParent !== null) {
-        activeProductManager.querySelectorAll('.category-manager-row, .product-manager-row').forEach(row => {
-            if (row.dataset.type === 'category') {
-                const name = row.querySelector('input').value.trim();
-                if (name) newProductList.push({ type: 'header', name });
-            } else if (row.dataset.type === 'product') {
-                const code = row.querySelector('.product-code').value.trim();
-                const name = row.querySelector('.product-name').value.trim();
-                if (code && name) newProductList.push({ code, name });
-            }
-        });
-    } else { Object.assign(newProductList, productList); }
-    const newQuestions = [];
-    const ids = new Set();
-    document.querySelectorAll('#manager-list .manager-item').forEach(item => {
-        if (item.classList.contains('to-be-deleted')) return;
-        const id = parseInt(item.querySelector('.manager-id-input').value);
-        const title = item.querySelector('.question-title-input').value.trim();
-        if (!id || !title) { alert(`ID veya Başlık boş olamaz.`); return; }
-        if(ids.has(id)) { alert(`HATA: ${id} ID'si mükerrer.`); return; }
-        ids.add(id);
-        const type = item.querySelector('.question-type-select').value;
-        const answerType = item.querySelector('.answer-type-select').value;
-        const staticItemsHTML = item.querySelector('.editable-textarea').innerHTML;
-        const isArchived = item.querySelector('.archive-checkbox').checked;
-        const wantsStoreEmail = item.querySelector('.wants-email-checkbox').checked;
-        const staticItems = staticItemsHTML.split(/<br\s*\/?>/gi).map(s => s.trim()).filter(s => s);
-        const newQuestion = { id, title, type, answerType };
-        if (staticItems.length > 0) newQuestion.staticItems = staticItems;
-        if (isArchived) newQuestion.isArchived = true;
-        if (wantsStoreEmail) newQuestion.wantsStoreEmail = true;
-
-        // GÜNCELLENDİ: Kaydetme mantığına e-posta alıcıları eklendi.
-        if (type === 'pop_system') {
-            const popInput = item.querySelector('.pop-codes-input');
-            const expiredInput = item.querySelector('.expired-pop-codes-input');
-            const emailToInput = item.querySelector('.pop-email-to-input');
-            const emailCcInput = item.querySelector('.pop-email-cc-input');
-            if (popInput && expiredInput && emailToInput && emailCcInput) {
-                newQuestion.popCodes = popInput.value.split(',').map(c => c.trim()).filter(c => c);
-                newQuestion.expiredCodes = expiredInput.value.split(',').map(c => c.trim()).filter(c => c);
-                newQuestion.popEmailTo = emailToInput.value.split(',').map(e => e.trim()).filter(e => e);
-                newQuestion.popEmailCc = emailCcInput.value.split(',').map(e => e.trim()).filter(e => e);
-            }
-        }
-        newQuestions.push(newQuestion);
-    });
-    newQuestions.sort((a, b) => a.id - b.id);
-    const finalJsonData = { questions: newQuestions, productList: newProductList };
-    const loadingOverlay = document.getElementById('loading-overlay');
-    loadingOverlay.style.display = 'flex';
-    try {
-        await database.ref('fideQuestionsData').set(finalJsonData);
-        alert("Değişiklikler kaydedildi. Sayfa yenileniyor...");
-        window.location.reload();
-    } catch (error) { console.error("Kaydederken hata oluştu:", error); }
-    finally { loadingOverlay.style.display = 'none'; }
 }
