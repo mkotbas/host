@@ -2,108 +2,97 @@
 let dideData = [], fideData = [], uniqueStores = [], selectedStore = null;
 let fideQuestions = [], popCodes = [], expiredCodes = [], productList = [];
 let migrationMap = {}, storeEmails = {};
-const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular sunucudan yüklenemedi." }];
+const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan yüklenemedi." }];
 const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-let isPocketBaseConnected = false;
+let isFirebaseConnected = false;
 let auditedThisMonth = []; 
 
 // --- Ana Uygulama Mantığı ---
 window.onload = initializeApp;
 
 async function initializeApp() {
-    // Otomatik tablo oluşturma fonksiyonunu çalıştırıyoruz.
-    // Eğer tablolar zaten varsa, bu fonksiyon hiçbir şey yapmaz.
-    // Bu fonksiyonun çalışabilmesi için db-config.js içindeki yönetici bilgileri doğru olmalı.
-    await ensureSchemaExists(pb, ADMIN_EMAIL_FOR_SETUP, ADMIN_PASSWORD_FOR_SETUP);
-
-    const isLoggedIn = pb.authStore.isValid;
-    updateAuthUI(isLoggedIn);
-    await checkPocketBaseConnection();
-    
-    await loadInitialData();
-    setupEventListeners();
-    updateFormInteractivity(selectedStore !== null);
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    auth.onAuthStateChanged(async user => { 
+        const loginToggleBtn = document.getElementById('login-toggle-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const loginPopup = document.getElementById('login-popup');
+        if (user) {
+            loginToggleBtn.style.display = 'none';
+            logoutBtn.style.display = 'inline-flex';
+            loginPopup.style.display = 'none';
+        } else {
+            loginToggleBtn.style.display = 'inline-flex';
+            logoutBtn.style.display = 'none';
+        }
+        updateConnectionIndicator();
+        await loadInitialData();
+        setupEventListeners();
+        updateFormInteractivity(selectedStore !== null);
+    });
 }
-
-function updateAuthUI(isLoggedIn) {
-    const loginToggleBtn = document.getElementById('login-toggle-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const loginPopup = document.getElementById('login-popup');
-    if (isLoggedIn) {
-        loginToggleBtn.style.display = 'none';
-        logoutBtn.style.display = 'inline-flex';
-        loginPopup.style.display = 'none';
-    } else {
-        loginToggleBtn.style.display = 'inline-flex';
-        logoutBtn.style.display = 'none';
-    }
-}
-
-async function checkPocketBaseConnection() {
-    try {
-        await pb.health.check();
-        isPocketBaseConnected = true;
-    } catch (e) {
-        isPocketBaseConnected = false;
-    }
-    updateConnectionIndicator();
-}
-
-// --- POCKETBASE İÇİN YENİLENMİŞ VERİ YÜKLEME FONKSİYONLARI ---
 
 async function loadStoreEmails() {
+    const user = auth.currentUser;
     storeEmails = {}; 
-    if (!pb.authStore.isValid) return;
 
-    try {
-        // 'bayi_epostalari' collection'ından tüm kayıtları çekiyoruz.
-        const records = await pb.collection('bayi_epostalari').getFullList();
-        // Gelen veriyi { bayi_kodu: eposta } formatına dönüştürüyoruz.
-        records.forEach(record => {
-            storeEmails[record.bayi_kodu] = record.eposta;
-        });
-    } catch (error) {
-        console.error("PocketBase'den bayi e-postaları yüklenemedi:", error);
+    if (user && database) {
+        try {
+            const emailsRef = database.ref('storeEmails');
+            const snapshot = await emailsRef.once('value');
+            if (snapshot.exists()) {
+                storeEmails = snapshot.val();
+            }
+        } catch (error) {
+            console.error("Buluttan bayi e-postaları yüklenemedi:", error);
+        }
     }
 }
 
 async function loadMigrationMap() {
-    migrationMap = {};
-    if (!pb.authStore.isValid) return;
-    
-    try {
-        // 'ayarlar' collection'ından 'anahtar' alanı 'migrationMap' olan kaydı buluyoruz.
-        const record = await pb.collection('ayarlar').getFirstListItem('anahtar="migrationMap"');
-        migrationMap = record.deger || {};
-    } catch (error) {
-        // Kayıt bulunamazsa hata verir, bu normal olabilir. O yüzden sadece konsola yazdırıyoruz.
-        console.log("Veri taşıma (migration) ayarları bulunamadı veya yüklenemedi.");
+    const user = auth.currentUser;
+    migrationMap = {}; 
+
+    if (user && database) {
+        try {
+            const migrationRef = database.ref('migrationSettings/map');
+            const snapshot = await migrationRef.once('value');
+            if (snapshot.exists()) {
+                migrationMap = snapshot.val();
+            }
+        } catch (error) {
+            console.error("Buluttan veri taşıma ayarları yüklenemedi:", error);
+        }
     }
 }
 
 async function loadMonthlyAuditData() {
     auditedThisMonth = [];
-    if (!pb.authStore.isValid) return;
+    if (!auth.currentUser || !database) return;
 
     try {
+        const reportsRef = database.ref('allFideReports');
+        const reportsSnapshot = await reportsRef.once('value');
+        const allReports = reportsSnapshot.exists() ? reportsSnapshot.val() : {};
+
         const today = new Date();
+        const currentMonth = today.getMonth();
         const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth(); // 0-11 arası
-        const firstDayOfMonth = new Date(currentYear, currentMonth, 1).toISOString();
+        const monthlyCodesFromReports = [];
 
-        // Bu ay içinde tamamlanmış raporları filtreliyoruz.
-        // PocketBase'de tarihler ISO formatında (YYYY-MM-DD HH:MM:SS.SSSZ) saklanır.
-        const reportRecords = await pb.collection('denetim_raporlari').getFullList({
-            filter: `rapor_verisi.auditCompletedTimestamp >= "${firstDayOfMonth}"`
+        Object.entries(allReports).forEach(([key, value]) => {
+            if (value.data && value.data.auditCompletedTimestamp) {
+                const reportDate = new Date(value.data.auditCompletedTimestamp);
+                if (reportDate.getFullYear() === currentYear && reportDate.getMonth() === currentMonth) {
+                    monthlyCodesFromReports.push(key.replace('store_', ''));
+                }
+            }
         });
-        const monthlyCodesFromReports = reportRecords.map(r => r.bayi_kodu);
 
-        // Bu ay geri alınmış denetimleri filtreliyoruz.
         const currentMonthKey = `${currentYear}-${currentMonth}`;
-        const revertedRecords = await pb.collection('geri_alinan_denetimler').getFullList({
-            filter: `yil_ay = "${currentMonthKey}"`
-        });
-        const geriAlinanBayiKodlariBuAy = revertedRecords.map(r => r.bayi_kodu);
+        const geriAlinanlarRef = database.ref('denetimGeriAlinanlar');
+        const geriAlinanlarSnapshot = await geriAlinanlarRef.once('value');
+        const geriAlinanlar = geriAlinanlarSnapshot.exists() ? geriAlinanlarSnapshot.val() : {};
+        const geriAlinanBayiKodlariBuAy = geriAlinanlar[currentMonthKey] || [];
 
         const uniqueMonthlyCodes = [...new Set(monthlyCodesFromReports)];
         auditedThisMonth = uniqueMonthlyCodes.filter(code => !geriAlinanBayiKodlariBuAy.includes(code));
@@ -115,37 +104,28 @@ async function loadMonthlyAuditData() {
 
 
 async function loadInitialData() {
-    if (!pb.authStore.isValid) {
-        buildForm(); // Giriş yapılmadıysa formu boş haliyle oluştur
+    if (!auth.currentUser) {
+        buildForm();
         return;
     }
     
-    // Gerekli tüm verileri paralel olarak (aynı anda) yüklemeye başlıyoruz.
-    // Bu, uygulamanın daha hızlı açılmasını sağlar.
-    await Promise.all([
-        loadMigrationMap(),
-        loadStoreEmails(),
-        loadMonthlyAuditData(),
-        loadQuestionsAndProducts(),
-        loadExcelData()
-    ]);
-    
-    // Tüm veriler yüklendikten sonra formu oluşturuyoruz.
-    buildForm();
-}
+    await loadMigrationMap();
+    await loadStoreEmails();
+    await loadMonthlyAuditData(); 
+    let questionsLoaded = false;
 
-async function loadQuestionsAndProducts() {
-     let questionsLoaded = false;
     try {
-        // Soru ve ürün listesi artık 'ayarlar' tablosunda tek bir kayıtta tutuluyor.
-        const record = await pb.collection('ayarlar').getFirstListItem('anahtar="fideQuestionsData"');
-        const cloudData = record.deger;
-        fideQuestions = cloudData.questions || [];
-        productList = cloudData.productList || [];
-        console.log("Sorular ve ürün listesi başarıyla PocketBase'den yüklendi.");
-        questionsLoaded = true;
+        const questionsRef = database.ref('fideQuestionsData');
+        const snapshot = await questionsRef.once('value');
+        if (snapshot.exists()) {
+            const cloudData = snapshot.val();
+            fideQuestions = cloudData.questions || [];
+            productList = cloudData.productList || [];
+            console.log("Sorular ve ürün listesi başarıyla buluttan yüklendi.");
+            questionsLoaded = true;
+        }
     } catch (error) {
-        console.error("PocketBase'den soru verisi okunurken hata oluştu:", error);
+        console.error("Firebase'den soru verisi okunurken hata oluştu:", error);
     }
     
     if (!questionsLoaded) {
@@ -158,28 +138,41 @@ async function loadQuestionsAndProducts() {
         popCodes = popSystemQuestion.popCodes || [];
         expiredCodes = popSystemQuestion.expiredCodes || [];
     }
-}
 
-
-async function loadExcelData() {
-    if (!pb.authStore.isValid) return;
-
-    try {
-        // DİDE Excel verisini yüklüyoruz
-        const dideRecord = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
-        document.getElementById('file-name').textContent = `Sunucudan yüklendi: ${dideRecord.dosya_adi}`;
-        populateDideState(dideRecord.veri);
-    } catch (error) {
-        console.log("Sunucuda kayıtlı DiDe Excel verisi bulunamadı.");
+    if (database) {
+        const connectionRef = database.ref('.info/connected');
+        connectionRef.on('value', (snapshot) => {
+            isFirebaseConnected = snapshot.val();
+            updateConnectionIndicator();
+        });
     }
 
+    await loadExcelData();
+    buildForm();
+}
+
+async function loadExcelData() {
+    const user = auth.currentUser;
+    if (!user || !database) return;
+
     try {
-        // FİDE Excel verisini yüklüyoruz
-        const fideRecord = await pb.collection('excel_verileri').getFirstListItem('tip="fide"');
-        document.getElementById('fide-file-name').textContent = `Sunucudan yüklendi: ${fideRecord.dosya_adi}`;
-        populateFideState(fideRecord.veri);
+        const dideRef = database.ref('excelData/dide');
+        const dideSnapshot = await dideRef.once('value');
+        if (dideSnapshot.exists()) {
+            const storedData = dideSnapshot.val();
+            if (storedData.filename) { document.getElementById('file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
+            populateDideState(storedData.data);
+        }
+
+        const fideRef = database.ref('excelData/fide');
+        const fideSnapshot = await fideRef.once('value');
+        if (fideSnapshot.exists()) {
+            const storedData = fideSnapshot.val();
+            if (storedData.filename) { document.getElementById('fide-file-name').textContent = `Buluttan yüklendi: ${storedData.filename}`; }
+            populateFideState(storedData.data);
+        }
     } catch (error) {
-        console.log("Sunucuda kayıtlı FiDe Excel verisi bulunamadı.");
+        console.error("Buluttan Excel verileri yüklenirken hata oluştu:", error);
     }
 }
 
@@ -187,14 +180,21 @@ async function loadExcelData() {
 function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
-    const isOnline = isPocketBaseConnected && pb.authStore.isValid;
+    const isOnline = isFirebaseConnected && auth.currentUser;
     
     statusSwitch.classList.toggle('connected', isOnline);
     statusSwitch.classList.toggle('disconnected', !isOnline);
-    statusText.textContent = isOnline ? 'Sunucuya Bağlı' : 'Bağlı Değil';
+    statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
 }
 
-// --- GÜNCELLENEN OLAY DİNLEYİCİLERİ (EVENT LISTENERS) ---
+function returnToMainPage() {
+    const emailDraft = document.getElementById('email-draft-container');
+    if (emailDraft) emailDraft.remove();
+    document.getElementById('dide-upload-card').style.display = 'block';
+    document.getElementById('form-content').style.display = 'block';
+    document.querySelector('.action-button').style.display = 'block';
+}
+
 function setupEventListeners() {
     if (document.body.dataset.listenersAttached) return;
     document.body.dataset.listenersAttached = 'true';
@@ -203,32 +203,21 @@ function setupEventListeners() {
     document.getElementById('fide-excel-file-input').addEventListener('change', (e) => handleFileSelect(e, 'fide'));
     document.getElementById('new-report-btn').addEventListener('click', startNewReport);
     
-    // TÜM VERİLERİ SİLME BUTONU
-    document.getElementById('clear-storage-btn').addEventListener('click', async () => {
-        const dogruSifreHash = 'ZmRlMDAx'; // "fde001" in base64 hali
-        const girilenSifre = prompt("Bu işlem geri alınamaz. Sunucudaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
+    document.getElementById('clear-storage-btn').addEventListener('click', () => {
+        const dogruSifreHash = 'ZmRlMDAx';
+        const girilenSifre = prompt("Bu işlem geri alınamaz. Buluttaki TÜM uygulama verilerini kalıcı olarak silmek için lütfen şifreyi girin:");
 
         if (girilenSifre) { 
             const girilenSifreHash = btoa(girilenSifre);
             if (girilenSifreHash === dogruSifreHash) {
-                if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları, yüklenmiş Excel dosyaları ve diğer ayarlar dahil olmak üzere sunucuda saklanan BÜTÜN uygulama verileri kalıcı olarak silinecektir.")) {
-                    if(pb.authStore.isValid){
-                        try {
-                            // Tüm collection'lardaki verileri silmek için her birini döngüye alıyoruz.
-                            const collectionsToDelete = ['denetim_raporlari', 'excel_verileri', 'ayarlar', 'bayi_epostalari', 'geri_alinan_denetimler'];
-                            for (const collectionName of collectionsToDelete) {
-                                const records = await pb.collection(collectionName).getFullList();
-                                for (const record of records) {
-                                    await pb.collection(collectionName).delete(record.id);
-                                }
-                                console.log(`'${collectionName}' içindeki tüm veriler silindi.`);
-                            }
-                            alert("Tüm sunucu verileri başarıyla temizlendi. Sayfa yenileniyor.");
-                            window.location.reload();
-                        } catch (error) {
-                            alert("Veriler silinirken bir hata oluştu. Lütfen konsolu kontrol edin.");
-                            console.error("Silme hatası:", error);
-                        }
+                if (confirm("Şifre doğru. Emin misiniz? Kaydedilmiş TÜM bayi raporları, yüklenmiş Excel dosyaları ve diğer ayarlar dahil olmak üzere bulutta saklanan BÜTÜN uygulama verileri kalıcı olarak silinecektir.")) {
+                    if(auth.currentUser && database){
+                        database.ref('allFideReports').remove();
+                        database.ref('excelData').remove();
+                        database.ref('migrationSettings').remove();
+                        database.ref('storeEmails').remove();
+                        alert("Tüm bulut verileri başarıyla temizlendi. Sayfa yenileniyor.");
+                        window.location.reload();
                     } else {
                         alert("Bu işlem için giriş yapmış olmalısınız.");
                     }
@@ -238,12 +227,28 @@ function setupEventListeners() {
             }
         }
     });
-
-    // EXCEL VERİLERİNİ SİLME BUTONLARI
-    document.getElementById('clear-excel-btn').addEventListener('click', () => clearExcelData('dide'));
-    document.getElementById('clear-fide-excel-btn').addEventListener('click', () => clearExcelData('fide'));
-    
-    // ARAMA ÇUBUĞU
+    document.getElementById('clear-excel-btn').addEventListener('click', () => {
+        if (confirm("Yüklenmiş olan DiDe Excel verisini buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+            if(auth.currentUser && database) {
+                database.ref('excelData/dide').remove();
+                alert("DiDe Excel verisi buluttan temizlendi. Sayfa yenileniyor.");
+                window.location.reload();
+            } else {
+                alert("Bu işlem için giriş yapmış olmalısınız.");
+            }
+        }
+    });
+     document.getElementById('clear-fide-excel-btn').addEventListener('click', () => {
+        if (confirm("Yüklenmiş olan FiDe Excel verisini buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+            if(auth.currentUser && database) {
+                database.ref('excelData/fide').remove();
+                alert("FiDe Excel verisi buluttan temizlendi. Sayfa yenileniyor.");
+                window.location.reload();
+            } else {
+                alert("Bu işlem için giriş yapmış olmalısınız.");
+            }
+        }
+    });
     document.getElementById('store-search-input').addEventListener('keyup', (e) => {
         selectedStore = null; 
         const filter = e.target.value.toLowerCase().trim();
@@ -260,7 +265,6 @@ function setupEventListeners() {
         displayStores(filteredStores);
     });
     
-    // GİRİŞ/ÇIKIŞ POPUP KONTROLLERİ
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const loginPopup = document.getElementById('login-popup');
@@ -270,26 +274,16 @@ function setupEventListeners() {
         event.stopPropagation();
         loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
     });
-    
-    logoutBtn.addEventListener('click', () => { 
-        pb.authStore.clear(); 
-        window.location.reload(); 
-    });
-    
-    loginSubmitBtn.addEventListener('click', async () => {
+    logoutBtn.addEventListener('click', () => { auth.signOut().then(() => window.location.reload()); });
+    loginSubmitBtn.addEventListener('click', () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
         const errorDiv = document.getElementById('login-error');
         errorDiv.textContent = '';
         if (!email || !password) { errorDiv.textContent = 'Lütfen tüm alanları doldurun.'; return; }
-        
-        try {
-            await pb.collection('users').authWithPassword(email, password);
-            loginPopup.style.display = 'none'; 
-            window.location.reload();
-        } catch (error) {
-            errorDiv.textContent = 'E-posta veya şifre hatalı.';
-        }
+        auth.signInWithEmailAndPassword(email, password)
+            .then(() => { loginPopup.style.display = 'none'; window.location.reload(); })
+            .catch(error => { errorDiv.textContent = 'E-posta veya şifre hatalı.'; });
     });
 
     window.addEventListener('click', function(event) {
@@ -304,119 +298,74 @@ function setupEventListeners() {
     });
 }
 
-async function clearExcelData(type) {
-    const typeName = type === 'dide' ? 'DiDe' : 'FiDe';
-    if (confirm(`Yüklenmiş olan ${typeName} Excel verisini sunucudan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
-        if(pb.authStore.isValid) {
-            try {
-                const record = await pb.collection('excel_verileri').getFirstListItem(`tip="${type}"`);
-                await pb.collection('excel_verileri').delete(record.id);
-                alert(`${typeName} Excel verisi sunucudan temizlendi. Sayfa yenileniyor.`);
-                window.location.reload();
-            } catch (error) {
-                alert(`${typeName} verisi zaten sunucuda bulunmuyor veya silinirken bir hata oluştu.`);
-                console.error("Excel silme hatası:", error);
-            }
-        } else {
-            alert("Bu işlem için giriş yapmış olmalısınız.");
-        }
-    }
-}
-
-
-// --- POCKETBASE İÇİN GÜNCELLENMİŞ VERİ KAYDETME VE OKUMA ---
-
-async function saveFormState(isFinalizing = false) {
-    if (!document.getElementById('form-content').innerHTML || !selectedStore || !pb.authStore.isValid) return;
+function saveFormState(isFinalizing = false) {
+    if (!document.getElementById('form-content').innerHTML || !selectedStore || !auth.currentUser || !database) return;
 
     const reportData = getFormDataForSaving();
+    const storeKey = `store_${selectedStore.bayiKodu}`;
+    const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
     const bayiKodu = String(selectedStore.bayiKodu);
 
-    try {
-        let existingReport = null;
-        try {
-            // Bu bayiye ait bir rapor var mı diye kontrol ediyoruz.
-            existingReport = await pb.collection('denetim_raporlari').getFirstListItem(`bayi_kodu="${bayiKodu}"`);
-        } catch (e) {
-            // Rapor yoksa hata verir, bu normal. 'existingReport' null kalır.
-        }
-
-        if (existingReport && existingReport.rapor_verisi && existingReport.rapor_verisi.auditCompletedTimestamp) {
-            reportData.auditCompletedTimestamp = existingReport.rapor_verisi.auditCompletedTimestamp;
+    firebaseStoreRef.once('value').then(snapshot => {
+        const existingReport = snapshot.val();
+        if (existingReport && existingReport.data && existingReport.data.auditCompletedTimestamp) {
+            reportData.auditCompletedTimestamp = existingReport.data.auditCompletedTimestamp;
         }
 
         if (isFinalizing) {
             if (!auditedThisMonth.includes(bayiKodu)) {
-                 // Raporu tamamlarken, tamamlama zaman damgasını ekliyoruz. PocketBase tarihleri ISO string olarak ister.
-                 reportData.auditCompletedTimestamp = new Date().toISOString();
-                 await removeStoreCodeFromRevertedList(bayiKodu);
+                 reportData.auditCompletedTimestamp = new Date().getTime();
+                 removeStoreCodeFromRevertedList(bayiKodu);
             }
         }
 
-        const dataToSave = { 
-            bayi_kodu: bayiKodu,
-            rapor_verisi: reportData 
-        };
-
-        if (existingReport) {
-            // Rapor zaten varsa, 'update' ile güncelliyoruz.
-            await pb.collection('denetim_raporlari').update(existingReport.id, dataToSave);
-        } else {
-            // Rapor yoksa, 'create' ile yeni bir tane oluşturuyoruz.
-            await pb.collection('denetim_raporlari').create(dataToSave);
-        }
-    } catch (error) {
-        console.error("PocketBase'e yazma hatası:", error);
-    }
+        const dataToSave = { timestamp: new Date().getTime(), data: reportData };
+        firebaseStoreRef.set(dataToSave)
+            .catch(error => console.error("Firebase'e yazma hatası:", error));
+    });
 }
 
 async function removeStoreCodeFromRevertedList(bayiKodu) {
-    if (!pb.authStore.isValid) return;
+    if (!auth.currentUser || !database) return;
 
     const today = new Date();
     const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
+    const geriAlinanlarRef = database.ref('denetimGeriAlinanlar');
 
     try {
-        const records = await pb.collection('geri_alinan_denetimler').getFullList({
-            filter: `yil_ay = "${currentMonthKey}" && bayi_kodu = "${bayiKodu}"`
-        });
+        const snapshot = await geriAlinanlarRef.once('value');
+        let geriAlinanlar = snapshot.exists() ? snapshot.val() : {};
 
-        // Eşleşen tüm kayıtları siliyoruz (normalde 1 tane olmalı).
-        for (const record of records) {
-            await pb.collection('geri_alinan_denetimler').delete(record.id);
-            console.log(`Bayi ${bayiKodu} geri alınanlar listesinden başarıyla çıkarıldı.`);
+        if (geriAlinanlar[currentMonthKey]) {
+            const index = geriAlinanlar[currentMonthKey].indexOf(bayiKodu);
+            if (index > -1) {
+                geriAlinanlar[currentMonthKey].splice(index, 1);
+                await geriAlinanlarRef.set(geriAlinanlar);
+                console.log(`Bayi ${bayiKodu} geri alınanlar listesinden başarıyla çıkarıldı.`);
+            }
         }
     } catch (error) {
         console.error("Geri alınanlar listesi güncellenirken hata oluştu:", error);
     }
 }
 
-async function loadReportForStore(bayiKodu) {
-    if (!pb.authStore.isValid) {
+function loadReportForStore(bayiKodu) {
+    const storeKey = `store_${bayiKodu}`;
+    if (database && auth.currentUser) {
+        const firebaseStoreRef = database.ref('allFideReports/' + storeKey);
+        firebaseStoreRef.once('value', (snapshot) => {
+            if (snapshot.exists()) { 
+                loadReport(snapshot.val().data); 
+            } else { 
+                resetForm(); 
+            }
+        }).catch(error => {
+            console.error("Firebase'den okuma hatası:", error);
+            resetForm();
+        });
+    } else {
         resetForm();
-        return;
     }
-
-    try {
-        const record = await pb.collection('denetim_raporlari').getFirstListItem(`bayi_kodu="${bayiKodu}"`);
-        loadReport(record.rapor_verisi); 
-    } catch (error) {
-        console.log(`Bayi ${bayiKodu} için kayıtlı rapor bulunamadı. Form sıfırlanıyor.`);
-        resetForm();
-    }
-}
-
-
-// --- ARAYÜZ VE FORM İLE İLGİLİ FONKSİYONLAR (Çoğunlukla değişiklik yok) ---
-// Bu kısımdaki fonksiyonlar veritabanıyla doğrudan konuşmadığı için
-// büyük değişiklikler gerektirmedi. Sadece birkaç küçük düzeltme yapıldı.
-
-function returnToMainPage() {
-    const emailDraft = document.getElementById('email-draft-container');
-    if (emailDraft) emailDraft.remove();
-    document.getElementById('dide-upload-card').style.display = 'block';
-    document.getElementById('form-content').style.display = 'block';
-    document.querySelector('.action-button').style.display = 'block';
 }
 
 function getUnitForProduct(productName) {
@@ -424,11 +373,7 @@ function getUnitForProduct(productName) {
     if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; }
     return 'Paket';
 }
-
-function resetForm() { 
-    document.getElementById('form-content').innerHTML = ''; 
-    buildForm(); 
-}
+function resetForm() { document.getElementById('form-content').innerHTML = ''; buildForm(); }
 
 function generateQuestionHtml(q) {
     let questionActionsHTML = '';
@@ -672,6 +617,7 @@ function openEmailDraft() {
     const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
     if (nonExpiredCodes.length === 0) { alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin."); return; }
     
+    // GÜNCELLENDİ: Alıcılar artık Soru Yöneticisi'nden dinamik olarak çekiliyor.
     const popQuestion = fideQuestions.find(q => q.type === 'pop_system') || {};
     const emailTo = (popQuestion.popEmailTo || []).join(',');
     const emailCc = (popQuestion.popEmailCc || []).join(',');
@@ -690,36 +636,26 @@ function openEmailDraft() {
     emailWindow.document.write(emailHTML);
     emailWindow.document.close();
 }
-async function handleFileSelect(event, type) {
+function handleFileSelect(event, type) {
     const file = event.target.files[0];
     if (!file) return;
     const filename = file.name;
     const fileNameSpan = type === 'dide' ? document.getElementById('file-name') : document.getElementById('fide-file-name');
-    fileNameSpan.textContent = `Yükleniyor: ${filename}`;
+    fileNameSpan.textContent = `Yüklü dosya: ${filename}`;
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
-    reader.onload = async function(e) {
+    reader.onload = function(e) {
         try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-            
-            if (type === 'dide') { 
-                await processDideExcelData(dataAsArray, true, filename); 
-            } else { 
-                await processFideExcelData(dataAsArray, true, filename); 
-            }
-            fileNameSpan.textContent = `Başarıyla Yüklendi: ${filename}`;
-        } catch (error) { 
-            alert("Excel dosyası okunurken bir hata oluştu."); 
-            console.error("Excel okuma hatası:", error); 
-            fileNameSpan.textContent = `Hata oluştu: ${filename}`;
-        }
+            if (type === 'dide') { processDideExcelData(dataAsArray, true, filename); } else { processFideExcelData(dataAsArray, true, filename); }
+        } catch (error) { alert("Excel dosyası okunurken bir hata oluştu."); console.error("Excel okuma hatası:", error); }
     };
 }
-async function processDideExcelData(dataAsArray, saveToCloud = false, filename = '') {
+function processDideExcelData(dataAsArray, saveToCloud = false, filename = '') {
     if (dataAsArray.length < 2) return alert('DiDe Excel dosyası beklenen formatta değil (en az 2 satır gerekli).');
     let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
     if (headerRowIndex === -1) return alert('DiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
@@ -741,27 +677,15 @@ async function processDideExcelData(dataAsArray, saveToCloud = false, filename =
         return { 'Bayi Kodu': row[bayiKoduIndex], 'Bayi': row[bayiIndex], 'Bayi Yönetmeni': row[bayiYonetmeniIndex], 'scores': scores };
     }).filter(d => d);
     
-    if (saveToCloud && pb.authStore.isValid) {
-        const dataToSave = { 
-            tip: "dide", 
-            veri: processedData, 
-            dosya_adi: filename 
-        };
-        try {
-            // Mevcut bir 'dide' kaydı var mı diye kontrol et
-            const existing = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
-            await pb.collection('excel_verileri').update(existing.id, dataToSave);
-            alert('DiDe puan dosyası başarıyla işlendi ve sunucudaki mevcut veri güncellendi.');
-        } catch (error) {
-            // Kayıt yoksa yenisini oluştur
-            await pb.collection('excel_verileri').create(dataToSave);
-            alert('DiDe puan dosyası başarıyla işlendi ve sunucuya kaydedildi.');
-        }
+    if (saveToCloud && auth.currentUser && database) {
+        const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
+        database.ref('excelData/dide').set(persistenceData);
+        alert('DiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
     }
     populateDideState(processedData);
 }
 
-async function processFideExcelData(dataAsArray, saveToCloud = false, filename = '') {
+function processFideExcelData(dataAsArray, saveToCloud = false, filename = '') {
     if (dataAsArray.length < 3) return alert('FiDe Excel dosyası beklenen formatta değil (en az 3 satır gerekli).');
     const currentYear = new Date().getFullYear();
     let yearRowIndex = -1;
@@ -802,24 +726,13 @@ async function processFideExcelData(dataAsArray, saveToCloud = false, filename =
         return { 'Bayi Kodu': row[bayiKoduIndex], 'scores': scores };
     }).filter(d => d);
 
-    if (saveToCloud && pb.authStore.isValid) {
-        const dataToSave = { 
-            tip: "fide", 
-            veri: processedData, 
-            dosya_adi: filename 
-        };
-        try {
-            const existing = await pb.collection('excel_verileri').getFirstListItem('tip="fide"');
-            await pb.collection('excel_verileri').update(existing.id, dataToSave);
-            alert('FiDe puan dosyası başarıyla işlendi ve sunucudaki mevcut veri güncellendi.');
-        } catch (error) {
-            await pb.collection('excel_verileri').create(dataToSave);
-            alert('FiDe puan dosyası başarıyla işlendi ve sunucuya kaydedildi.');
-        }
+    if (saveToCloud && auth.currentUser && database) {
+        const persistenceData = { timestamp: new Date().getTime(), data: processedData, filename: filename };
+        database.ref('excelData/fide').set(persistenceData);
+        alert('FiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
     }
     populateFideState(processedData);
 }
-
 function populateDideState(data) {
     dideData = data;
     const storeMap = new Map();
@@ -863,7 +776,9 @@ function selectStore(store, loadSavedData = true) {
             `Rapora devam edebilirsiniz ancak bu işlem aylık denetim sayınızı ARTTIRMAYACAKTIR.\n\n` +
             `Yine de devam etmek istiyor musunuz?`
         );
-        if (!proceed) return;
+        if (!proceed) {
+            return; 
+        }
     }
 
     document.querySelectorAll('.store-item').forEach(i => i.classList.remove('selected'));
@@ -887,6 +802,7 @@ function selectStore(store, loadSavedData = true) {
     updateFormInteractivity(true); 
 }
 
+// GÜNCELLENDİ: E-posta şablonu artık buluttan okunuyor ve fallback mekanizması kaldırıldı.
 async function generateEmail() {
     if (!selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -894,21 +810,24 @@ async function generateEmail() {
     }
 
     let emailTemplate = null;
-    if (pb.authStore.isValid) {
+    if (auth.currentUser && database) {
         try {
-            const record = await pb.collection('ayarlar').getFirstListItem('anahtar="emailTemplate"');
-            emailTemplate = record.deger;
+            const templateRef = database.ref('fideSettings/emailTemplate');
+            const snapshot = await templateRef.once('value');
+            if (snapshot.exists() && snapshot.val()) {
+                emailTemplate = snapshot.val();
+            }
         } catch (error) {
-            console.error("E-posta şablonu sunucudan yüklenemedi.", error);
+            console.error("E-posta şablonu buluttan yüklenemedi.", error);
         }
     }
 
     if (!emailTemplate) {
-        alert("HATA: E-posta şablonu sunucudan yüklenemedi.\n\nLütfen internet bağlantınızı kontrol edin veya Yönetim Panelinden şablonu kaydedin.");
+        alert("HATA: E-posta şablonu buluttan yüklenemedi.\n\nLütfen internet bağlantınızı kontrol edin veya Yönetim Panelinden şablonu kaydedin.");
         return;
     }
 
-    await saveFormState(true);
+    saveFormState(true);
 
     const storeInfo = dideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
     const fideStoreInfo = fideData.find(row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu));
