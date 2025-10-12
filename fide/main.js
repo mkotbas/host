@@ -754,9 +754,8 @@ function updateFormInteractivity(enable) {
     const allElements = formContent.querySelectorAll(
         'button, input, select, textarea'
     );
-
+    
     allElements.forEach(el => {
         el.disabled = !enable;
     });
-}
 }
