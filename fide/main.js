@@ -81,10 +81,7 @@ async function loadInitialData() {
             productList = cloudData.productList || [];
             console.log("Sorular ve ürün listesi başarıyla buluttan yüklendi.");
         } else {
-             // Sorular bulunamazsa hata vermek yerine varsayılan ile devam etmesini sağlayabiliriz.
-             console.warn("fideQuestionsData ayarı bulutta bulunamadı. Varsayılan sorular kullanılacak.");
-             fideQuestions = fallbackFideQuestions;
-             document.getElementById('initialization-error').style.display = 'block';
+            throw new Error("fideQuestionsData bulunamadı");
         }
         
         const popSystemQuestion = fideQuestions.find(q => q.type === 'pop_system');
@@ -93,14 +90,14 @@ async function loadInitialData() {
             expiredCodes = popSystemQuestion.expiredCodes || [];
         }
 
-        // NOT: allStores artık loadExcelData -> populateDideState içinde doldurulacak.
-        // Bu yüzden buradaki 'bayiler' koleksiyonu okuması şimdilik yoruma alınabilir veya silinebilir.
-        // allStores = await pb.collection('bayiler').getFullList({ sort: 'bayiAdi' });
-        // allStores.forEach(store => {
-        //     if (store.email) {
-        //         storeEmails[store.bayiKodu] = store.email;
-        //     }
-        // });
+        // Tüm bayileri ve e-postalarını çek
+        allStores = await pb.collection('bayiler').getFullList({ sort: 'bayiAdi' });
+        // storeEmails nesnesini de dolduralım.
+        allStores.forEach(store => {
+            if (store.email) {
+                storeEmails[store.bayiKodu] = store.email;
+            }
+        });
 
 
         // Excel verilerini yükle
@@ -123,14 +120,14 @@ async function loadExcelData() {
     try {
         // DiDe verisini çek
         const dideRecord = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
-        if (dideRecord && dideRecord.veri) {
+        if (dideRecord) {
             if (dideRecord.dosyaAdi) { document.getElementById('file-name').textContent = `Buluttan yüklendi: ${dideRecord.dosyaAdi}`; }
             populateDideState(dideRecord.veri);
         }
 
         // FiDe verisini çek
         const fideRecord = await pb.collection('excel_verileri').getFirstListItem('tip="fide"');
-        if (fideRecord && fideRecord.veri) {
+        if (fideRecord) {
             if (fideRecord.dosyaAdi) { document.getElementById('fide-file-name').textContent = `Buluttan yüklendi: ${fideRecord.dosyaAdi}`; }
             populateFideState(fideRecord.veri);
         }
@@ -275,17 +272,14 @@ async function saveFormState(isFinalizing = false) {
     const bayiKodu = String(selectedStore.bayiKodu);
     
     // İlişkisel yapı için önce bayi'nin ID'sini bulmalıyız.
-    // DİKKAT: Bu yapı, 'bayiler' koleksiyonunun DiDe'deki bayilerle dolu olmasını gerektirir.
-    // Şimdilik bayi kodunu kaydedelim, ileride ilişki kurulabilir.
-    // const storeRecord = allStores.find(s => s.bayiKodu === bayiKodu);
-    // if (!storeRecord) {
-    //     console.error("Kaydedilecek bayi veritabanında bulunamadı!");
-    //     return;
-    // }
+    const storeRecord = allStores.find(s => s.bayiKodu === bayiKodu);
+    if (!storeRecord) {
+        console.error("Kaydedilecek bayi veritabanında bulunamadı!");
+        return;
+    }
 
     const dataToSave = {
-        // "bayi": storeRecord.id, // Burası önemli: Bayi ID'sini ilişki olarak bağlıyoruz.
-        "bayiKodu": bayiKodu, // Şimdilik ID yerine kodu kaydediyoruz.
+        "bayi": storeRecord.id, // Burası önemli: Bayi ID'sini ilişki olarak bağlıyoruz.
         "soruDurumlari": reportData.questions_status,
     };
     
@@ -321,8 +315,13 @@ async function loadReportForStore(bayiKodu) {
     
     showLoadingOverlay("Rapor yükleniyor...");
     try {
-        // Bayi koduna göre raporu arıyoruz.
-        const reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(`bayiKodu="${bayiKodu}"`, {
+        const storeRecord = allStores.find(s => s.bayiKodu === bayiKodu);
+        if (!storeRecord) {
+            throw new Error("Bayi bulunamadı.");
+        }
+
+        // PocketBase'de bayi ID'sine göre raporu filtreleyerek buluyoruz.
+        const reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(`bayi="${storeRecord.id}"`, {
             sort: '-created' // Birden fazla varsa en yenisini al
         });
 
@@ -754,31 +753,13 @@ async function processFideExcelData(dataAsArray, saveToCloud = false, filename =
     populateFideState(processedData);
 }
 
-// #############################################################################
-// ### DEĞİŞİKLİK BURADA BAŞLIYOR ###
-// #############################################################################
 function populateDideState(data) {
-    // Gelen Excel verisini 'dideData' değişkenine aktarıyoruz.
     dideData = data;
-
-    // SORUNU ÇÖZEN KISIM:
-    // Bayi arama kutusunun kullandığı 'allStores' listesini,
-    // Excel'den gelen verilerle dolduruyoruz.
-    // Excel'deki 'Bayi Kodu' ve 'Bayi' sütunlarını, programın anladığı
-    // 'bayiKodu' ve 'bayiAdi' formatına çeviriyoruz.
-    allStores = data.map(store => ({
-        bayiKodu: store['Bayi Kodu'],
-        bayiAdi: store['Bayi']
-    }));
-
-    // Arayüzü güncelliyoruz.
+    // uniqueStores artık `allStores` değişkeninden geliyor. Bu fonksiyon sadece dideData'yı doldurmalı.
     document.getElementById('store-list').innerHTML = '';
     document.getElementById('store-selection-area').style.display = 'block';
     document.getElementById('clear-excel-btn').style.display = 'inline-flex';
 }
-// #############################################################################
-// ### DEĞİŞİKLİK BURADA BİTİYOR ###
-// #############################################################################
 
 function populateFideState(data) {
     fideData = data;
