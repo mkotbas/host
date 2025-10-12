@@ -1,300 +1,206 @@
 // --- Global Değişkenler ---
-// `pb` değişkeni, bu script'i yükleyen admin.js dosyasında zaten tanımlanmıştır.
-let storeEmailRecords = []; // PocketBase'den gelen kayıtları (id dahil) saklar.
-let tumBayilerRecordId = null; // Mevcut bayi listesi kaydının ID'sini saklar.
+let storeEmails = {};
 
 // --- MODÜL BAŞLATMA FONKSİYONU ---
+// Bu fonksiyon, modül admin paneline yüklendiğinde admin.js tarafından çağrılır.
 async function initializeBayiYoneticisiModule() {
-    // Giriş kontrolü admin.js tarafından yapıldığı için burada tekrar gerekmez.
-    showLoading(true);
-    setupModuleEventListeners_BayiYoneticisi();
-    await loadInitialData_BayiYoneticisi();
-    renderEmailManager();
-    showLoading(false);
-}
-
-// --- Veri Yükleme ---
-async function loadInitialData_BayiYoneticisi() {
-    try {
-        // E-posta listesini yükle
-        storeEmailRecords = await pb.collection('storeEmails').getFullList({
-            sort: 'bayiKodu', // Bayi koduna göre sıralı getir
-        });
-
-        // Tüm bayiler listesi kaydının varlığını kontrol et
-        const tumBayilerListesi = await pb.collection('tumBayilerListesi').getFullList();
-        if (tumBayilerListesi.length > 0) {
-            tumBayilerRecordId = tumBayilerListesi[0].id;
-        } else {
-            tumBayilerRecordId = null;
-        }
-
-    } catch (error) {
-        console.error("Bayi Yöneticisi için başlangıç verileri yüklenemedi:", error);
-        alert("Veriler yüklenirken bir hata oluştu. Lütfen PocketBase sunucunuzun çalıştığından emin olun.");
-    }
-}
-
-// --- Arayüz (UI) Fonksiyonları ---
-function renderEmailManager() {
-    const container = document.getElementById('email-list-container');
-    const searchInput = document.getElementById('email-search-input');
-    const searchTerm = searchInput.value.toLowerCase();
-
-    const filteredEmails = storeEmailRecords.filter(record =>
-        record.bayiKodu.toLowerCase().includes(searchTerm) ||
-        record.eposta.toLowerCase().includes(searchTerm)
-    );
-
-    let tableHtml = `
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Bayi Kodu</th>
-                    <th>E-posta Adresi</th>
-                    <th>İşlemler</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    if (filteredEmails.length > 0) {
-        filteredEmails.forEach(record => {
-            tableHtml += `
-                <tr data-record-id="${record.id}">
-                    <td data-label="Bayi Kodu">${record.bayiKodu}</td>
-                    <td data-label="E-posta Adresi">${record.eposta}</td>
-                    <td data-label="İşlemler">
-                        <button class="btn-icon btn-warning-icon" onclick="editEmail('${record.id}')" title="Düzenle"><i class="fas fa-edit"></i></button>
-                        <button class="btn-icon btn-danger-icon" onclick="deleteEmail('${record.id}')" title="Sil"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                </tr>
-            `;
-        });
+    if (auth.currentUser) {
+        setupModuleEventListeners();
+        await loadStoreEmails();
+        renderEmailManager();
     } else {
-        tableHtml += `<tr><td colspan="3">Gösterilecek e-posta bulunamadı.</td></tr>`;
+        document.getElementById('email-manager').innerHTML = '<p class="empty-list-message">Bu modülü kullanmak için lütfen sisteme giriş yapın.</p>';
     }
-
-    tableHtml += '</tbody></table>';
-    container.innerHTML = tableHtml;
 }
 
+async function loadStoreEmails() {
+    storeEmails = {}; // Her yüklemede sıfırla
 
-// --- Olay Dinleyicileri (Event Listeners) ---
-function setupModuleEventListeners_BayiYoneticisi() {
-    // Tekrar tekrar eklenmesini önlemek için kontrol
+    if (auth.currentUser && database) {
+        try {
+            const emailsRef = database.ref('storeEmails');
+            const snapshot = await emailsRef.once('value');
+            if (snapshot.exists()) {
+                storeEmails = snapshot.val();
+            }
+        } catch (error) {
+            console.error("Buluttan bayi e-postaları yüklenemedi:", error);
+            alert("E-posta listesi buluttan yüklenemedi. Lütfen internet bağlantınızı kontrol edin.");
+        }
+    }
+}
+
+function setupModuleEventListeners() {
+    // Bu fonksiyon sadece bir kere çalışmalı.
     if (document.body.dataset.bayiYoneticisiListenersAttached) return;
     document.body.dataset.bayiYoneticisiListenersAttached = 'true';
 
-    // Arama kutusu
-    document.getElementById('email-search-input').addEventListener('input', renderEmailManager);
-
-    // Yeni e-posta ekleme butonu
-    document.getElementById('add-email-btn').addEventListener('click', addOrUpdateEmail);
-    
-    // Toplu e-posta yükleme
-    document.getElementById('bulk-upload-input').addEventListener('change', handleBulkEmailUpload);
-
-    // Bayi listesi yükleme
-    document.getElementById('store-list-upload-input').addEventListener('change', handleStoreListUpload);
+    document.getElementById('bulk-upload-emails-btn').addEventListener('click', () => document.getElementById('email-bulk-upload-input').click());
+    document.getElementById('email-bulk-upload-input').addEventListener('change', handleBulkEmailUpload);
+    document.getElementById('add-new-email-btn').addEventListener('click', addNewEmailUI);
+    document.getElementById('email-search-input').addEventListener('keyup', () => renderEmailManager());
 }
 
+function renderEmailManager() {
+    const listContainer = document.getElementById('email-manager-list');
+    const filterText = document.getElementById('email-search-input').value.toLowerCase();
+    listContainer.innerHTML = '';
 
-// --- CRUD (Ekleme, Güncelleme, Silme) İşlemleri ---
-async function addOrUpdateEmail() {
-    const koduInput = document.getElementById('bayi-kodu-input');
-    const emailInput = document.getElementById('email-input-field');
-    const recordId = koduInput.dataset.editingId; // Güncelleme için ID'yi al
-
-    const bayiKodu = koduInput.value.trim();
-    const eposta = emailInput.value.trim();
-
-    if (!bayiKodu || !eposta) {
-        alert("Bayi Kodu ve E-posta alanları boş bırakılamaz.");
+    const filteredEntries = Object.entries(storeEmails).filter(([kodu, email]) => {
+        return kodu.toLowerCase().includes(filterText) || email.toLowerCase().includes(filterText);
+    });
+    
+    if(filteredEntries.length === 0 && Object.keys(storeEmails).length > 0) {
+         listContainer.innerHTML = '<p class="empty-list-message">Aramanızla eşleşen bayi e-postası bulunamadı.</p>';
+         return;
+    }
+    
+    if(Object.keys(storeEmails).length === 0) {
+        listContainer.innerHTML = '<p class="empty-list-message">Henüz hiç bayi e-postası eklenmedi.</p>';
         return;
     }
 
-    showLoading(true);
+    filteredEntries.sort((a, b) => a[0].localeCompare(b[0])).forEach(([kodu, email]) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'email-manager-item';
+        itemDiv.dataset.kodu = kodu;
+        itemDiv.innerHTML = `
+            <span class="email-manager-code">${kodu}</span>
+            <input type="email" class="email-manager-input" value="${email}">
+            <div class="email-manager-actions">
+                <button class="btn-success btn-sm" onclick="saveEmail('${kodu}')" title="Değişikliği Kaydet"><i class="fas fa-save"></i></button>
+                <button class="btn-danger btn-sm" onclick="deleteEmail('${kodu}')" title="Bu Kaydı Sil"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        listContainer.appendChild(itemDiv);
+    });
+}
+
+async function saveEmail(kodu, isNew = false) {
+    if (!auth.currentUser || !database) { alert("Bu işlem için sisteme giriş yapmalısınız."); return; }
+    const itemDiv = document.querySelector(`.email-manager-item[data-kodu="${kodu}"]`);
+    if (!itemDiv) return;
+    const emailInput = itemDiv.querySelector('.email-manager-input');
+    const newEmail = emailInput.value.trim();
+    if (!newEmail) { alert("E-posta alanı boş bırakılamaz."); return; }
+    
     try {
-        const data = { bayiKodu, eposta };
-
-        if (recordId) {
-            // Güncelleme
-            await pb.collection('storeEmails').update(recordId, data);
-            alert("E-posta başarıyla güncellendi.");
-        } else {
-            // Yeni Ekleme
-            // Aynı bayi koduna sahip başka bir kayıt var mı diye kontrol et
-            const existing = storeEmailRecords.find(r => r.bayiKodu === bayiKodu);
-            if(existing) {
-                alert(`HATA: '${bayiKodu}' bayi koduna ait bir e-posta zaten mevcut. Lütfen listeyi kontrol edin.`);
-                showLoading(false);
-                return;
-            }
-            await pb.collection('storeEmails').create(data);
-            alert("Yeni e-posta başarıyla eklendi.");
+        await database.ref(`storeEmails/${kodu}`).set(newEmail);
+        storeEmails[kodu] = newEmail;
+        if(isNew) {
+           itemDiv.querySelector('.email-manager-code').textContent = kodu;
+           itemDiv.dataset.kodu = kodu;
+           itemDiv.classList.remove('new-item');
         }
-
-        // Formu temizle ve listeyi yenile
-        koduInput.value = '';
-        emailInput.value = '';
-        koduInput.dataset.editingId = '';
-        document.getElementById('add-email-btn').textContent = 'Ekle';
-        
-        await loadInitialData_BayiYoneticisi();
-        renderEmailManager();
+        emailInput.style.border = '2px solid var(--success, #16a34a)';
+        setTimeout(() => { emailInput.style.border = '1px solid var(--border-color, #374151)'; }, 2000);
 
     } catch (error) {
-        console.error("E-posta ekleme/güncelleme hatası:", error);
-        alert("İşlem sırasında bir hata oluştu.");
-    } finally {
-        showLoading(false);
+        alert("E-posta kaydedilirken bir hata oluştu: " + error.message);
     }
 }
 
-function editEmail(recordId) {
-    const record = storeEmailRecords.find(r => r.id === recordId);
-    if (record) {
-        const koduInput = document.getElementById('bayi-kodu-input');
-        const emailInput = document.getElementById('email-input-field');
-        
-        koduInput.value = record.bayiKodu;
-        emailInput.value = record.eposta;
-        koduInput.dataset.editingId = record.id; // ID'yi sakla
-        
-        document.getElementById('add-email-btn').textContent = 'Güncelle';
-        koduInput.focus();
-    }
+async function deleteEmail(kodu) {
+     if (!auth.currentUser || !database) { alert("Bu işlem için sisteme giriş yapmalısınız."); return; }
+     if (confirm(`'${kodu}' kodlu bayiye ait e-postayı silmek istediğinizden emin misiniz?`)) {
+         try {
+             await database.ref(`storeEmails/${kodu}`).remove();
+             delete storeEmails[kodu];
+             document.querySelector(`.email-manager-item[data-kodu="${kodu}"]`).remove();
+         } catch(error) {
+             alert("E-posta silinirken bir hata oluştu: " + error.message);
+         }
+     }
 }
 
-async function deleteEmail(recordId) {
-    const record = storeEmailRecords.find(r => r.id === recordId);
-    if (record && confirm(`'${record.bayiKodu}' kodlu bayiye ait e-postayı silmek istediğinizden emin misiniz?`)) {
-        showLoading(true);
-        try {
-            await pb.collection('storeEmails').delete(recordId);
-            alert("E-posta başarıyla silindi.");
-            await loadInitialData_BayiYoneticisi();
-            renderEmailManager();
-        } catch (error) {
-            console.error("E-posta silme hatası:", error);
-            alert("Silme işlemi sırasında bir hata oluştu.");
-        } finally {
-            showLoading(false);
-        }
-    }
-}
-
-// --- Toplu Yükleme İşlemleri ---
-async function handleStoreListUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    showLoading(true);
-    const reader = new FileReader();
-    
-    reader.onload = async (e) => {
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" }); // Boş hücreler için varsayılan değer
-
-            const requiredColumns = ["Bayi Kodu", "Bayi Adı", "Bölge", "Şehir", "İlçe", "Yönetmen"];
-            if (!jsonData.length || !requiredColumns.every(col => jsonData[0].hasOwnProperty(col))) {
-                throw new Error("Excel dosyasında gerekli sütunlar bulunamadı: " + requiredColumns.join(', '));
-            }
-            
-            const storeList = jsonData.map(row => ({
-                bayiKodu: String(row["Bayi Kodu"]).trim(),
-                bayiAdi: String(row["Bayi Adı"]).trim(),
-                bolge: String(row["Bölge"]).trim(),
-                sehir: String(row["Şehir"]).trim(),
-                ilce: String(row["İlçe"]).trim(),
-                yonetmen: String(row["Yönetmen"]).trim()
-            }));
-
-            const dataToSave = {
-                bayiListesi: storeList,
-                sonGuncelleme: new Date().toISOString()
-            };
-
-            if (tumBayilerRecordId) {
-                await pb.collection('tumBayilerListesi').update(tumBayilerRecordId, dataToSave);
-            } else {
-                const newRecord = await pb.collection('tumBayilerListesi').create(dataToSave);
-                tumBayilerRecordId = newRecord.id;
-            }
-            alert(`Tüm bayiler listesi başarıyla güncellendi. ${storeList.length} bayi yüklendi.`);
-
-        } catch (error) {
-            alert(`Excel dosyası işlenirken bir hata oluştu: ${error.message}`);
-            console.error("Bayi listesi yükleme hatası:", error);
-        } finally {
-            showLoading(false);
-            event.target.value = ''; // Input'u temizle
-        }
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-async function handleBulkEmailUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    if (!confirm("Bu işlem sunucudaki MEVCUT TÜM e-posta listesini silecek ve bu dosyayı yükleyecektir. Emin misiniz?")) {
-        event.target.value = '';
+function addNewEmailUI() {
+    const listContainer = document.getElementById('email-manager-list');
+    if (document.querySelector('.email-manager-item.new-item')) {
+        document.querySelector('.email-manager-item.new-item .email-manager-code-input').focus();
+        alert("Önce mevcut yeni kaydı tamamlayın.");
         return;
     }
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'email-manager-item new-item';
+    
+    const newCode = 'YENI_BAYI_KODU';
+    itemDiv.dataset.kodu = newCode;
 
-    showLoading(true);
+    itemDiv.innerHTML = `
+        <input type="text" class="email-manager-code-input" placeholder="Bayi Kodu">
+        <input type="email" class="email-manager-input" placeholder="E-posta Adresi">
+        <div class="email-manager-actions">
+            <button class="btn-success btn-sm" onclick="saveNewEmail()" title="Yeni Kaydı Ekle"><i class="fas fa-check"></i></button>
+            <button class="btn-danger btn-sm" onclick="this.closest('.email-manager-item').remove()" title="İptal Et"><i class="fas fa-times"></i></button>
+        </div>`;
+    listContainer.prepend(itemDiv);
+    itemDiv.querySelector('.email-manager-code-input').focus();
+}
+
+async function saveNewEmail() {
+     const newItemDiv = document.querySelector('.email-manager-item.new-item');
+     if (!newItemDiv) return;
+     
+     const codeInput = newItemDiv.querySelector('.email-manager-code-input');
+     const emailInput = newItemDiv.querySelector('.email-manager-input');
+     const newCode = codeInput.value.trim();
+     const newEmail = emailInput.value.trim();
+
+     if (!newCode || !newEmail) {
+         alert("Bayi kodu ve e-posta alanları boş bırakılamaz.");
+         return;
+     }
+    if (storeEmails[newCode]) {
+        alert("Bu bayi kodu zaten mevcut. Lütfen listeden güncelleyin.");
+        return;
+    }
+    
+    newItemDiv.dataset.kodu = newCode;
+    await saveEmail(newCode, true);
+    renderEmailManager();
+}
+
+function handleBulkEmailUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!auth.currentUser || !database) { alert("Bu işlem için sisteme giriş yapmalısınız."); return; }
+
     const reader = new FileReader();
-
-    reader.onload = async (e) => {
+    reader.onload = async function(e) {
         try {
             const text = e.target.result;
             const lines = text.split('\n');
-            const newEmails = [];
-
+            const newEmailData = {};
+            let count = 0;
             lines.forEach(line => {
                 const parts = line.trim().split(/\s+/);
                 if (parts.length >= 2) {
                     const kodu = parts[0];
                     const email = parts[1];
                     if (kodu && email && email.includes('@')) {
-                        newEmails.push({ bayiKodu: kodu, eposta: email });
+                        newEmailData[kodu] = email;
+                        count++;
                     }
                 }
             });
-
-            if (newEmails.length === 0) {
-                throw new Error("Dosya okundu ancak geçerli 'bayikodu e-posta' formatında satır bulunamadı.");
+            
+            if(count === 0) {
+                alert("Dosya okundu ancak geçerli 'bayikodu e-posta' formatında satır bulunamadı.");
+                return;
             }
 
-            // 1. MEVCUT TÜM E-POSTALARI SİL
-            for (const record of storeEmailRecords) {
-                await pb.collection('storeEmails').delete(record.id);
+            if (confirm(`${count} adet e-posta bulundu. Bu işlem buluttaki mevcut tüm bayi e-posta listesinin üzerine yazılacaktır. Devam etmek istiyor musunuz?`)) {
+                await database.ref('storeEmails').set(newEmailData);
+                storeEmails = newEmailData;
+                alert('Toplu e-posta yüklemesi başarıyla tamamlandı!');
+                renderEmailManager();
             }
-
-            // 2. YENİ E-POSTALARI EKLE
-            for (const emailData of newEmails) {
-                await pb.collection('storeEmails').create(emailData);
-            }
-
-            alert(`Toplu e-posta yüklemesi tamamlandı. ${newEmails.length} kayıt başarıyla sunucuya yüklendi.`);
-            await loadInitialData_BayiYoneticisi();
-            renderEmailManager();
 
         } catch (error) {
-            alert(`Toplu yükleme sırasında bir hata oluştu: ${error.message}`);
+            alert('Dosya okunurken veya işlenirken bir hata oluştu!');
             console.error("Toplu e-posta yükleme hatası:", error);
-        } finally {
-            showLoading(false);
-            event.target.value = ''; // Input'u temizle
         }
     };
     reader.readAsText(file);
+    event.target.value = null;
 }
-
-// showLoading fonksiyonu admin.js'de zaten var, tekrar tanımlamaya gerek yok.

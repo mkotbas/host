@@ -28,7 +28,7 @@
                     <button id="logout-btn" class="btn-auth" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
                     
                     <div id="login-popup">
-                        <h3><i class="fas fa-server"></i> Panele Giriş Yap</h3>
+                        <h3><i class="fas fa-cloud"></i> Panele Giriş Yap</h3>
                         <input type="email" id="email-input" placeholder="E-posta">
                         <input type="password" id="password-input" placeholder="Şifre">
                         <button id="login-submit-btn"><i class="fas fa-check"></i> Onayla</button>
@@ -44,9 +44,6 @@
             </div>
             
             <div class="content-wrapper">
-                 <div id="loading-overlay" style="display: none;">
-                    <div class="spinner"></div>
-                </div>
                 <div class="content-body" id="module-container">
                     <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
                 </div>
@@ -54,8 +51,11 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
-
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    
+    <script src="../db-config.js"></script>
     <script src="admin.js"></script>
 
 </body>
