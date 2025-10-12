@@ -1,18 +1,17 @@
-// db-config.js
+// db-config.js (Lokal Kurulum için Güncellendi)
 
-// PocketBase JavaScript SDK'sını (kütüphanesini) projemize dahil ediyoruz.
-// Bu satır, projemizin PocketBase ile konuşabilmesini sağlayan bir tercüman gibidir.
-// Kodu html dosyasından çekeceğimiz için bu dosyada sdk eklemeye gerek yok.
+// PocketBase JavaScript SDK'sını projemize dahil ediyoruz.
+// Bu, index.html dosyasından yüklenecek.
 
-// PocketBase sunucunuzun adresini buraya yazın.
-// Örneğin, 'http://127.0.0.1:8090' veya sunucunuza yüklediyseniz 'https://benimsitem.com' gibi.
-const pocketbaseUrl = 'POCKETBASE_SUNUCU_ADRESINIZI_BURAYA_YAZIN';
+// PocketBase sunucunuzun lokal adresini buraya yazıyoruz.
+// PocketBase'i kendi bilgisayarınızda başlattığınızda varsayılan adres budur.
+const pocketbaseUrl = 'http://127.0.0.1:8090';
 
-// PocketBase istemcisini (client) oluşturuyoruz. 
+// PocketBase istemcisini (client) oluşturuyoruz.
 // Uygulamanın geri kalanındaki tüm veritabanı işlemleri bu 'pb' değişkeni üzerinden yapılacak.
 const pb = new PocketBase(pocketbaseUrl);
 
 // ÖNEMLİ NOT:
-// Bu dosyayı güncelledikten sonra, index.html dosyasını da güncellememiz gerekecek.
-// Çünkü Firebase kütüphanelerini kaldırıp yerine PocketBase kütüphanesini eklemeliyiz.
-// Bir sonraki adımda bunu yapacağız.
+// Eğer PocketBase'i başlatırken farklı bir port veya adres ayarı yaptıysanız,
+// (örneğin: --http="0.0.0.0:8091"), yukarıdaki adresi ona göre düzenlemelisiniz.
+// Varsayılan kurulum için bu adres doğrudur.
