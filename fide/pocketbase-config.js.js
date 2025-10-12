@@ -1,14 +1,11 @@
 // --- PocketBase Başlatma ---
-// Bu dosya, tüm HTML sayfaları tarafından ortak olarak kullanılacak
-// PocketBase veritabanı bağlantı ayarını içerir.
+// Bu dosya, projedeki tüm sayfalar tarafından ortak olarak kullanılacak
+// veritabanı bağlantı ayarlarını ve PocketBase istemcisini içerir.
 
-let pb;
-try {
-    // PocketBase sunucumuzun adresini belirtiyoruz.
-    // Bu, 1. Adım'da başlattığımız sunucunun adresidir.
-    pb = new PocketBase('http://127.0.0.1:8090');
-} catch (e) {
-    console.error("PocketBase başlatılamadı.", e);
-    // Hata durumunda kullanıcıyı bilgilendirmek için bir uyarı gösterebiliriz.
-    alert("Veritabanı bağlantısı kurulamadı. Lütfen PocketBase sunucusunun çalıştığından emin olun.");
-}
+// PocketBase sunucunuzun çalıştığı adres.
+// Kurulum adımında çalıştırdığınız .exe'nin verdiği adres budur.
+const POCKETBASE_URL = 'http://127.0.0.1:8090';
+
+// PocketBase SDK'sından bir istemci (client) örneği oluşturuyoruz.
+// Bu 'pb' nesnesini tüm veritabanı işlemleri için kullanacağız.
+const pb = new PocketBase(POCKETBASE_URL);
