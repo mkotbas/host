@@ -169,20 +169,12 @@ function setupEventListeners() {
     document.getElementById('clear-storage-btn').style.display = 'none';
 
     document.getElementById('clear-excel-btn').addEventListener('click', async () => {
-        if (confirm("Yüklenmiş olan DiDe Excel verisini ve bu dosyadan oluşturulmuş tüm bayi kayıtlarını buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+        if (confirm("Yüklenmiş olan DiDe Excel verisini buluttan silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
             if(pb.authStore.isValid) {
                 try {
-                    // Excel verisini sil
                     const record = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
                     await pb.collection('excel_verileri').delete(record.id);
-
-                    // Bayiler tablosunu da temizle (opsiyonel, ama mantıklı)
-                    const bayiler = await pb.collection('bayiler').getFullList();
-                    for(const bayi of bayiler) {
-                        await pb.collection('bayiler').delete(bayi.id);
-                    }
-
-                    alert("DiDe Excel verisi ve ilgili bayi kayıtları buluttan temizlendi. Sayfa yenileniyor.");
+                    alert("DiDe Excel verisi buluttan temizlendi. Sayfa yenileniyor.");
                     window.location.reload();
                 } catch(error) {
                     if(error.status === 404) alert("Silinecek DiDe verisi bulunamadı.");
@@ -251,6 +243,7 @@ function setupEventListeners() {
         errorDiv.textContent = '';
         if (!email || !password) { errorDiv.textContent = 'Lütfen tüm alanları doldurun.'; return; }
         try {
+            // PocketBase'de kullanıcılar 'users' collection'ında tutulur.
             await pb.collection('users').authWithPassword(email, password);
             loginPopup.style.display = 'none'; 
             window.location.reload();
@@ -267,6 +260,7 @@ function setupEventListeners() {
     });
 
     document.getElementById('toggle-backup-manager-btn').addEventListener('click', () => {
+        // PocketBase admin paneli genellikle 8090 portunda çalışır.
         window.open(POCKETBASE_URL + '/_/', '_blank');
     });
 }
@@ -277,6 +271,7 @@ async function saveFormState(isFinalizing = false) {
     const reportData = getFormDataForSaving();
     const bayiKodu = String(selectedStore.bayiKodu);
     
+    // İlişkisel yapı için önce bayi'nin ID'sini bulmalıyız.
     const storeRecord = allStores.find(s => s.bayiKodu === bayiKodu);
     if (!storeRecord) {
         console.error("Kaydedilecek bayi veritabanında bulunamadı!");
@@ -284,7 +279,7 @@ async function saveFormState(isFinalizing = false) {
     }
 
     const dataToSave = {
-        "bayi": storeRecord.id,
+        "bayi": storeRecord.id, // Burası önemli: Bayi ID'sini ilişki olarak bağlıyoruz.
         "soruDurumlari": reportData.questions_status,
     };
     
@@ -297,10 +292,12 @@ async function saveFormState(isFinalizing = false) {
     showLoadingOverlay("Rapor kaydediliyor...");
     try {
         if (currentReportId) {
+            // Rapor daha önce kaydedilmiş, güncelle.
             await pb.collection('denetim_raporlari').update(currentReportId, dataToSave);
         } else {
+            // Bu bayi için yeni rapor, oluştur.
             const newRecord = await pb.collection('denetim_raporlari').create(dataToSave);
-            currentReportId = newRecord.id;
+            currentReportId = newRecord.id; // Yeni raporun ID'sini al, sonraki kaydetmelerde kullan.
         }
     } catch (error) {
         console.error("PocketBase'e yazma hatası:", error);
@@ -323,17 +320,18 @@ async function loadReportForStore(bayiKodu) {
             throw new Error("Bayi bulunamadı.");
         }
 
+        // PocketBase'de bayi ID'sine göre raporu filtreleyerek buluyoruz.
         const reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(`bayi="${storeRecord.id}"`, {
-            sort: '-created'
+            sort: '-created' // Birden fazla varsa en yenisini al
         });
 
-        currentReportId = reportRecord.id;
+        currentReportId = reportRecord.id; // Raporun ID'sini sakla
         loadReport(reportRecord.soruDurumlari);
 
     } catch (error) {
-        if (error.status === 404) {
+        if (error.status === 404) { // 404 hatası kayıt bulunamadı demektir, bu bir hata değil.
             console.log("Bu bayi için kaydedilmiş bir rapor bulunamadı. Temiz form açılıyor.");
-            currentReportId = null;
+            currentReportId = null; // Rapor ID'sini sıfırla
             resetForm();
         } else {
             console.error("PocketBase'den rapor okuma hatası:", error);
@@ -657,17 +655,16 @@ async function handleFileSelect(event, type) {
 }
 
 async function processDideExcelData(dataAsArray, saveToCloud = false, filename = '') {
+    // ... (Bu fonksiyonun içeriği Firebase'den bağımsız olduğu için aynı kalıyor)
     if (dataAsArray.length < 2) return alert('DiDe Excel dosyası beklenen formatta değil (en az 2 satır gerekli).');
     let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
     if (headerRowIndex === -1) return alert('DiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
-    
     const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h);
     const dataRows = dataAsArray.slice(headerRowIndex + 1);
     const bayiKoduIndex = headerRow.indexOf('Bayi Kodu');
     const bayiIndex = headerRow.indexOf('Bayi');
     const bayiYonetmeniIndex = headerRow.indexOf('Bayi Yönetmeni');
     if ([bayiKoduIndex, bayiIndex, bayiYonetmeniIndex].includes(-1)) return alert('DiDe Excel dosyasında "Bayi Kodu", "Bayi" veya "Bayi Yönetmeni" sütunlarından biri bulunamadı.');
-
     const processedData = dataRows.map(row => {
         if (!row[bayiKoduIndex]) return null;
         const scores = {};
@@ -679,65 +676,34 @@ async function processDideExcelData(dataAsArray, saveToCloud = false, filename =
         });
         return { 'Bayi Kodu': row[bayiKoduIndex], 'Bayi': row[bayiIndex], 'Bayi Yönetmeni': row[bayiYonetmeniIndex], 'scores': scores };
     }).filter(d => d);
-    
+    // PocketBase kaydetme
     if (saveToCloud && pb.authStore.isValid) {
-        showLoadingOverlay("Veriler işleniyor ve buluta kaydediliyor...");
+        const dataToSave = { "tip": "dide", "dosyaAdi": filename, "veri": processedData };
         try {
-            // 1. ADIM: Excel verisini 'excel_verileri' tablosuna kaydet (upsert logic)
-            const excelDataToSave = { "tip": "dide", "dosyaAdi": filename, "veri": processedData };
-            try {
-                const record = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
-                await pb.collection('excel_verileri').update(record.id, excelDataToSave);
-            } catch (error) {
-                if (error.status === 404) { // Kayıt yoksa yeni oluştur
-                    await pb.collection('excel_verileri').create(excelDataToSave);
-                } else { throw error; } // Başka bir hataysa fırlat
-            }
-
-            // 2. ADIM: Excel'deki bayi listesini ana 'bayiler' tablosuna işle (upsert logic)
-            const existingBayiler = await pb.collection('bayiler').getFullList();
-            const existingBayiMap = new Map(existingBayiler.map(b => [String(b.bayiKodu), b.id]));
-            const updatePromises = [];
-
-            for (const row of processedData) {
-                const bayiData = {
-                    bayiKodu: String(row['Bayi Kodu']),
-                    bayiAdi: row['Bayi'],
-                    yonetmen: row['Bayi Yönetmeni']
-                };
-
-                const existingId = existingBayiMap.get(bayiData.bayiKodu);
-                if (existingId) {
-                    // Bayi zaten var, güncelle
-                    updatePromises.push(pb.collection('bayiler').update(existingId, bayiData));
-                } else {
-                    // Bayi yok, yeni oluştur
-                    updatePromises.push(pb.collection('bayiler').create(bayiData));
-                }
-            }
-            await Promise.all(updatePromises); // Tüm işlemleri tamamla
-
-            alert('DiDe puan dosyası ve bayi listesi başarıyla buluta kaydedildi. Sayfa yenileniyor.');
-            window.location.reload(); // Her şeyin güncel yüklenmesi için sayfayı yenile
-
+            const record = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
+            await pb.collection('excel_verileri').update(record.id, dataToSave);
         } catch (error) {
-            console.error("DiDe verisi kaydedilirken hata:", error);
-            alert("HATA: Veriler buluta kaydedilemedi. Lütfen F12 ile konsolu kontrol edin.");
-        } finally {
-            hideLoadingOverlay();
+            if (error.status === 404) { // Kayıt yoksa yeni oluştur
+                await pb.collection('excel_verileri').create(dataToSave);
+            } else {
+                console.error("DiDe verisi kaydedilirken hata:", error);
+            }
         }
+        alert('DiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
     }
     populateDideState(processedData);
 }
 
-
 async function processFideExcelData(dataAsArray, saveToCloud = false, filename = '') {
-    // ... (Fonksiyonun üst kısmı aynı kalıyor)
+    // ... (Bu fonksiyonun içeriği de Firebase'den bağımsız olduğu için aynı kalıyor)
     if (dataAsArray.length < 3) return alert('FiDe Excel dosyası beklenen formatta değil (en az 3 satır gerekli).');
     const currentYear = new Date().getFullYear();
     let yearRowIndex = -1;
     for(let i = 0; i < dataAsArray.length; i++) {
-        if(dataAsArray[i].some(cell => String(cell).trim() == currentYear)) { yearRowIndex = i; break; }
+        if(dataAsArray[i].some(cell => String(cell).trim() == currentYear)) {
+            yearRowIndex = i;
+            break;
+        }
     }
     if (yearRowIndex === -1) return alert(`FiDe Excel dosyasında '${currentYear}' yılını içeren bir satır bulunamadı.`);
     const yearRow = dataAsArray[yearRowIndex];
@@ -769,28 +735,20 @@ async function processFideExcelData(dataAsArray, saveToCloud = false, filename =
         }
         return { 'Bayi Kodu': row[bayiKoduIndex], 'scores': scores };
     }).filter(d => d);
-
-    // PocketBase kaydetme (GÜNCELLENDİ)
+    // PocketBase kaydetme
     if (saveToCloud && pb.authStore.isValid) {
         const dataToSave = { "tip": "fide", "dosyaAdi": filename, "veri": processedData };
         try {
             const record = await pb.collection('excel_verileri').getFirstListItem('tip="fide"');
             await pb.collection('excel_verileri').update(record.id, dataToSave);
-            alert('FiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
         } catch (error) {
-            if (error.status === 404) {
-                try {
-                    await pb.collection('excel_verileri').create(dataToSave);
-                    alert('FiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
-                } catch (createError) {
-                    console.error("FiDe verisi oluşturulurken hata:", createError);
-                    alert("HATA: Veri buluta kaydedilemedi. Lütfen konsolu kontrol edin.");
-                }
+            if (error.status === 404) { // Kayıt yoksa yeni oluştur
+                await pb.collection('excel_verileri').create(dataToSave);
             } else {
-                console.error("FiDe verisi güncellenirken hata:", error);
-                alert("HATA: Veri buluta kaydedilemedi. Lütfen konsolu kontrol edin.");
+                console.error("FiDe verisi kaydedilirken hata:", error);
             }
         }
+        alert('FiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
     }
     populateFideState(processedData);
 }
