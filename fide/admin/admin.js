@@ -54,16 +54,16 @@ let currentModuleId = null;
 window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
-    // PocketBase SDK'sı oturumu otomatik olarak hatırlar.
-    // Kullanıcının giriş yapıp yapmadığını kontrol edip arayüzü güncelliyoruz.
-    updateAuthUI();
-    
-    await checkPocketBaseConnection();
+    // PocketBase, giriş bilgilerini tarayıcıda otomatik olarak saklar.
+    // Kullanıcının giriş yapmış olup olmadığını kontrol ediyoruz.
+    const isLoggedIn = pb.authStore.isValid;
+    updateAuthUI(isLoggedIn);
+    await checkPocketBaseConnection(); // Bağlantı durumunu kontrol et
 
-    if (pb.authStore.isValid) {
+    if (isLoggedIn) {
         renderModuleMenu();
         if (!currentModuleId) {
-            loadModule('denetim-takip'); // Varsayılan olarak bu modülü yükle
+            loadModule('denetim-takip');
         }
     } else {
         document.getElementById('module-menu').innerHTML = '';
@@ -74,18 +74,7 @@ async function initializeAdminPanel() {
     setupEventListeners();
 }
 
-async function checkPocketBaseConnection() {
-    try {
-        const health = await pb.health.check();
-        isPocketBaseConnected = health.code === 200;
-    } catch (error) {
-        isPocketBaseConnected = false;
-        console.error("PocketBase bağlantı hatası:", error);
-    }
-    updateConnectionIndicator();
-}
-
-// --- ALT MENÜ DESTEKLİ YENİ MENÜ OLUŞTURUCU ---
+// --- ALT MENÜ DESTEKLİ MENÜ OLUŞTURUCU (Değişiklik yok) ---
 function renderModuleMenu() {
     const menu = document.getElementById('module-menu');
     menu.innerHTML = ''; 
@@ -133,7 +122,7 @@ function renderModuleMenu() {
     });
 }
 
-
+// --- MODÜL YÜKLEYİCİ (Değişiklik yok) ---
 async function loadModule(moduleId) {
     let module;
     for (const main of modules) {
@@ -194,7 +183,7 @@ async function loadModule(moduleId) {
             const formattedId = module.id.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
             const initFunctionName = `initialize${formattedId}Module`;
             if (typeof window[initFunctionName] === 'function') {
-                window[initFunctionName]();
+                window[initFunctionName](pb); // PocketBase istemcisini modüle gönderiyoruz
             } else {
                 console.warn(`Başlatma fonksiyonu bulunamadı: ${initFunctionName}`);
             }
@@ -206,9 +195,8 @@ async function loadModule(moduleId) {
     }
 }
 
-
-function updateAuthUI() {
-    const isLoggedIn = pb.authStore.isValid;
+// --- GÜNCELLENEN ARAYÜZ FONKSİYONLARI ---
+function updateAuthUI(isLoggedIn) {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const loginPopup = document.getElementById('login-popup');
@@ -221,31 +209,48 @@ function updateAuthUI() {
         logoutBtn.style.display = 'none';
     }
 }
+
+async function checkPocketBaseConnection() {
+    try {
+        // PocketBase sunucusunun sağlık durumunu kontrol ederek bağlantıyı test ederiz.
+        await pb.health.check();
+        isPocketBaseConnected = true;
+    } catch (e) {
+        isPocketBaseConnected = false;
+    }
+    updateConnectionIndicator();
+}
+
 function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
+    // Artık bağlantı durumu, hem sunucuya erişim hem de kullanıcı girişi durumuna bağlı.
     const isOnline = isPocketBaseConnected && pb.authStore.isValid;
     statusSwitch.classList.toggle('connected', isOnline);
     statusSwitch.classList.toggle('disconnected', !isOnline);
-    statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
+    statusText.textContent = isOnline ? 'Sunucuya Bağlı' : 'Bağlı Değil';
 }
 
+// --- GÜNCELLENEN OLAY DİNLEYİCİLERİ (EVENT LISTENERS) ---
 function setupEventListeners() {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const loginPopup = document.getElementById('login-popup');
     const loginSubmitBtn = document.getElementById('login-submit-btn');
 
+    // Giriş yap butonuna tıklandığında popup'ı göster/gizle
     loginToggleBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
+        event.stopPropagation(); // Olayın dışarıya yayılmasını engelle
         loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
     });
     
+    // Çıkış yap butonu
     logoutBtn.addEventListener('click', () => {
-        pb.authStore.clear(); // PocketBase oturumunu sonlandır
-        window.location.reload();
+        pb.authStore.clear(); // PocketBase oturumunu sonlandırır
+        window.location.reload(); // Sayfayı yenileyerek çıkışı tamamla
     });
 
+    // Popup içindeki onayla butonu ile giriş yapma
     loginSubmitBtn.addEventListener('click', async () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
@@ -258,13 +263,19 @@ function setupEventListeners() {
         }
 
         try {
+            // PocketBase'in 'users' collection'ı üzerinden giriş denemesi yapıyoruz.
+            // 'users' collection'ı, kullanıcı bilgilerini tutan standart PocketBase tablosudur.
             await pb.collection('users').authWithPassword(email, password);
+            
+            // Başarılı giriş sonrası sayfayı yenileyerek modüllerin yüklenmesini sağla
             window.location.reload(); 
         } catch (error) {
             errorDiv.textContent = 'E-posta veya şifre hatalı.';
+            console.error('Giriş Hatası:', error);
         }
     });
 
+    // Sayfanın herhangi bir yerine tıklandığında popup'ı kapat
     window.addEventListener('click', function(event) {
         const authControls = document.getElementById('auth-controls');
         if (authControls && !authControls.contains(event.target)) {
