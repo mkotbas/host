@@ -15,11 +15,15 @@ async function initializeDenetimTakipModule(pb) {
     loadingOverlay.style.display = 'flex';
 
     if (pbInstance && pbInstance.authStore.isValid) {
-        setupModuleEventListeners();
+        // HATA BURADAYDI: setupModuleEventListeners() fonksiyonunu en başa koymak yerine,
+        // tüm veriler yüklendikten sonra çağırmalıyız.
         await loadSettings();
         await loadGeriAlinanBayiler();
         await loadAuditedStoresData();
         await loadStoreList(); // Bu fonksiyon içinde runDashboard() çağrılıyor.
+        
+        // DOĞRU YER: Tüm yüklemeler bittikten sonra olay dinleyicilerini kuruyoruz.
+        setupModuleEventListeners();
     } else {
         document.getElementById('upload-area').innerHTML = '<p style="text-align: center; color: var(--danger);">Denetim takip sistemini kullanmak için lütfen sisteme giriş yapın.</p>';
         document.getElementById('upload-area').style.display = 'block';
@@ -158,6 +162,7 @@ async function loadAuditedStoresData() {
 }
 
 function setupModuleEventListeners() {
+    // Bu fonksiyonun birden çok kez çalışmasını engelleyen kontrol
     if (document.body.dataset.denetimTakipListenersAttached) return;
     document.body.dataset.denetimTakipListenersAttached = 'true';
 
