@@ -14,9 +14,14 @@
                 <input type="number" id="monthly-target-input" placeholder="Örn: 47">
                 <small>Yeni hedefi girip kaydettiğinizde panel güncellenecektir.</small>
             </div>
+             <div class="settings-item" style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                <label>Denetim İlerlemesini Sıfırla</label>
+                <button id="reset-data-btn" class="btn-danger btn-sm"><i class="fas fa-eraser"></i> Bu Yılın Verilerini Sıfırla</button>
+                 <small>Bu işlem, bu yıla ait tüm denetim kayıtlarını 'geri alınmış' olarak işaretler. Sayaçlar sıfırlanır ama raporlar silinmez.</small>
+            </div>
         </div>
         <div class="modal-footer">
-            <button id="save-settings-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Kaydet</button>
+            <button id="save-settings-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Hedefi Kaydet</button>
             <button id="close-admin-panel-btn" class="btn-danger btn-sm">Paneli Kapat</button>
         </div>
     </div>
@@ -25,27 +30,12 @@
 
 <div class="card" id="audit-tracker-manager">
     <div class="card-header">
-        <div class="header-placeholder"></div> <button id="open-admin-panel-btn" class="btn-primary btn-sm"><i class="fas fa-cogs"></i> Yönetim Paneli</button>
-    </div>
-    
-    <div id="upload-area">
-        <p style="font-size: 12px; color: var(--secondary-text, #94a3b8); margin-bottom: 20px;">
-            <i class="fas fa-info-circle"></i> Başlamak için lütfen tüm bayilerinizi içeren güncel Excel dosyasını yükleyin. Bu liste bulutta saklanacaktır.
-        </p>
-        <div class="file-input-wrapper" style="margin-bottom: 25px;">
-            <label for="store-list-excel-input" class="file-input-label btn-sm" title="Tüm bayilerinizin listesini içeren Excel dosyasını seçin."><i class="fas fa-file-excel"></i> Bayi Listesi Excel'ini Seç</label>
-            <input type="file" id="store-list-excel-input" accept=".xlsx, .xls" style="display: none;">
-        </div>
-    </div>
-
-    <div id="loaded-data-area" style="display: none;">
-         <div class="loaded-data-info">
-            <p><i class="fas fa-database"></i> Bayi listesi buluttan yüklendi. Listeyi güncellemek için önce mevcut listeyi silmeniz gerekmektedir.</p>
-            <div class="data-actions">
-                <button id="reset-data-btn" class="btn-danger btn-sm"><i class="fas fa-eraser"></i> Verileri Sıfırla</button>
-                <button id="delete-excel-btn" class="btn-danger btn-sm"><i class="fas fa-trash-alt"></i> Excel'i Sil</button>
-            </div>
-        </div>
+        <div class="header-placeholder">
+             <p style="font-size: 12px; color: var(--secondary-text, #94a3b8);">
+                <i class="fas fa-info-circle"></i> Bu modül, bayi bilgilerini ve denetim kayıtlarını doğrudan buluttan okur. Bayi listesini güncellemek için <b>Bayi Yöneticisi -> Bayi Bilgileri</b> menüsünü kullanın.
+            </p>
+        </div> 
+        <button id="open-admin-panel-btn" class="btn-primary btn-sm"><i class="fas fa-cogs"></i> Yönetim Paneli</button>
     </div>
     
     <div id="dashboard-content" style="display: none;">

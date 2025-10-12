@@ -19,10 +19,10 @@ async function initializeDenetimTakipModule(pb) {
         await loadSettings();
         await loadGeriAlinanBayiler();
         await loadAuditedStoresData();
-        await loadStoreList(); // Bu fonksiyon içinde runDashboard() çağrılıyor.
+        await loadStoreListFromDB(); // Fonksiyon adı daha anlaşılır hale getirildi.
     } else {
-        document.getElementById('upload-area').innerHTML = '<p style="text-align: center; color: var(--danger);">Denetim takip sistemini kullanmak için lütfen sisteme giriş yapın.</p>';
-        document.getElementById('upload-area').style.display = 'block';
+        const dashboard = document.getElementById('dashboard-content');
+        if(dashboard) dashboard.innerHTML = '<p style="text-align: center; color: var(--danger);">Denetim takip sistemini kullanmak için lütfen sisteme giriş yapın.</p>';
     }
     
     loadingOverlay.style.display = 'none';
@@ -44,7 +44,7 @@ async function loadSettings() {
     document.getElementById('monthly-target-input').value = aylikHedef > 0 ? aylikHedef : '';
 }
 
-async function loadStoreList() {
+async function loadStoreListFromDB() {
     if (!pbInstance.authStore.isValid) return;
     try {
         // 'bayiler' tablosundaki tüm kayıtları çekiyoruz.
@@ -52,23 +52,20 @@ async function loadStoreList() {
             sort: 'bayiAdi', // Bayi adına göre sıralı getir
         });
 
-        if (allStores.length > 0) {
-            document.getElementById('upload-area').style.display = 'none';
-            document.getElementById('loaded-data-area').style.display = 'block';
-        } else {
-            document.getElementById('upload-area').style.display = 'block';
-            document.getElementById('loaded-data-area').style.display = 'none';
-        }
     } catch (error) {
         console.error("Bayi listesi yüklenemedi:", error);
         allStores = [];
-        document.getElementById('upload-area').style.display = 'block';
-        document.getElementById('loaded-data-area').style.display = 'none';
     }
     runDashboard();
 }
 
 function runDashboard() {
+    if (allStores.length === 0) {
+         const dashboard = document.getElementById('dashboard-content');
+         dashboard.style.display = 'block';
+         dashboard.innerHTML = '<p class="empty-list-message" style="padding: 20px;">Sistemde görüntülenecek bayi bulunamadı. Lütfen <b>Bayi Yöneticisi -> Bayi Bilgileri</b> menüsünden bir Excel dosyası yükleyin.</p>';
+        return;
+    }
     calculateAndDisplayDashboard();
     populateAllFilters(allStores);
     renderRemainingStores(allStores);
@@ -92,9 +89,11 @@ async function loadGeriAlinanBayiler() {
         });
 
         records.forEach(record => {
-            geriAlinanKayitlariBuYil.push(record.expand.bayi.bayiKodu);
-            if (record.yil_ay === currentMonthKey) {
-                geriAlinanKayitlariBuAy.push(record.expand.bayi.bayiKodu);
+            if (record.expand && record.expand.bayi) {
+                geriAlinanKayitlariBuYil.push(record.expand.bayi.bayiKodu);
+                if (record.yil_ay === currentMonthKey) {
+                    geriAlinanKayitlariBuAy.push(record.expand.bayi.bayiKodu);
+                }
             }
         });
 
@@ -168,8 +167,6 @@ function setupModuleEventListeners() {
         document.getElementById('admin-panel-overlay').style.display = 'none';
     });
     document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
-    document.getElementById('store-list-excel-input').addEventListener('change', handleStoreExcelUpload);
-    document.getElementById('delete-excel-btn').addEventListener('click', deleteStoreList);
     document.getElementById('reset-data-btn').addEventListener('click', resetProgress); 
 
     document.getElementById('bolge-filter').addEventListener('change', applyAndRepopulateFilters);
@@ -259,32 +256,6 @@ async function saveSettings() {
     runDashboard();
 }
 
-async function deleteStoreList() {
-    if (!pbInstance.authStore.isValid) return alert("Bu işlem için giriş yapmalısınız.");
-    const dogruSifreHash = 'ZmRlMDAx';
-    const girilenSifre = prompt("DİKKAT! Bu işlem, veritabanındaki TÜM bayi listesini kalıcı olarak siler. Silmek için yönetici şifresini girin:");
-    if (!girilenSifre) return;
-    if (btoa(girilenSifre) !== dogruSifreHash) {
-        alert("Hatalı şifre! İşlem iptal edildi.");
-        return;
-    }
-    if (confirm("Şifre doğru. Veritabanındaki TÜM bayi listesini kalıcı olarak silmek istediğinizden emin misiniz?")) {
-        const loadingOverlay = document.getElementById('loading-overlay');
-        loadingOverlay.style.display = 'flex';
-        try {
-            const records = await pbInstance.collection('bayiler').getFullList({ fields: 'id' });
-            for (const record of records) {
-                await pbInstance.collection('bayiler').delete(record.id);
-            }
-            alert("Tüm bayi listesi başarıyla silindi. Sayfa yeniden başlatılıyor.");
-            window.location.reload();
-        } catch (error) {
-            alert("Bayiler silinirken hata oluştu: " + error.message);
-            loadingOverlay.style.display = 'none';
-        }
-    }
-}
-
 async function revertAudit(bayiKodu) {
     if (!pbInstance.authStore.isValid) return alert("Bu işlem için giriş yapmalısınız.");
     const store = allStores.find(s => s.bayiKodu === bayiKodu);
@@ -315,85 +286,7 @@ async function revertAudit(bayiKodu) {
     }
 }
 
-function handleStoreExcelUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.readAsArrayBuffer(file);
-    reader.onload = function(e) {
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-            processStoreExcelData(dataAsArray);
-        } catch (error) {
-            alert("Excel dosyası okunurken bir hata oluştu.");
-        }
-    };
-}
-
-async function processStoreExcelData(dataAsArray) {
-    if (!pbInstance.authStore.isValid) return alert("Bu işlem için giriş yapmalısınız.");
-    if (dataAsArray.length < 2) return alert('Excel dosyası beklenen formatta değil.');
-    
-    const loadingOverlay = document.getElementById('loading-overlay');
-    loadingOverlay.style.display = 'flex';
-
-    const headerRow = dataAsArray[0].map(h => String(h).trim());
-    const colIndexes = {
-        bolge: headerRow.indexOf('Bölge'), yonetmen: headerRow.indexOf('Bayi Yönetmeni'),
-        sehir: headerRow.indexOf('Şehir'), ilce: headerRow.indexOf('İlçe'),
-        bayiKodu: headerRow.indexOf('Bayi Kodu'), bayiAdi: headerRow.indexOf('Bayiler') // Excel'deki sütun adını düzelttim
-    };
-
-    if (Object.values(colIndexes).some(index => index === -1)) {
-        alert('Excel dosyasında gerekli sütunlar (Bölge, Bayi Yönetmeni, Şehir, İlçe, Bayi Kodu, Bayiler) bulunamadı.');
-        loadingOverlay.style.display = 'none';
-        return;
-    }
-    
-    const dataRows = dataAsArray.slice(1);
-    const storesFromExcel = dataRows.map(row => {
-        const bayiKodu = String(row[colIndexes.bayiKodu]).trim();
-        if (!bayiKodu) return null;
-        return {
-            bayiKodu,
-            bayiAdi: String(row[colIndexes.bayiAdi]).trim(),
-            sehir: String(row[colIndexes.sehir]).trim(),
-            ilce: String(row[colIndexes.ilce]).trim(),
-            bolge: String(row[colIndexes.bolge]).trim(),
-            yonetmen: String(row[colIndexes.yonetmen]).trim()
-        };
-    }).filter(store => store !== null);
-
-    try {
-        // Mevcut tüm bayileri tek seferde çekelim
-        const existingStores = await pbInstance.collection('bayiler').getFullList();
-        const existingStoreMap = new Map(existingStores.map(s => [s.bayiKodu, s.id]));
-
-        for (const store of storesFromExcel) {
-            const existingId = existingStoreMap.get(store.bayiKodu);
-            if (existingId) {
-                // Bayi varsa güncelle
-                await pbInstance.collection('bayiler').update(existingId, store);
-            } else {
-                // Bayi yoksa yeni oluştur
-                await pbInstance.collection('bayiler').create(store);
-            }
-        }
-        
-        alert("Excel listesi başarıyla işlendi ve veritabanı güncellendi.");
-        window.location.reload();
-    } catch (error) {
-        alert("Excel listesi işlenirken hata oluştu: " + error.message);
-        loadingOverlay.style.display = 'none';
-    }
-}
-
 // --- Arayüz Çizim Fonksiyonları (Render) ---
-// Bu kısımdaki fonksiyonlarda büyük değişiklikler yok, sadece veri kaynakları ve isimler güncellendi.
-
 function calculateAndDisplayDashboard() {
     const today = new Date();
     const auditedMonthlyCount = auditedStoreCodesCurrentMonth.length;
