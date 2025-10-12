@@ -15,11 +15,14 @@ async function initializeDenetimTakipModule(pb) {
     loadingOverlay.style.display = 'flex';
 
     if (pbInstance && pbInstance.authStore.isValid) {
-        setupModuleEventListeners();
+        // #############################################################################
+        // ### DEĞİŞİKLİK BURADA: setupModuleEventListeners() çağrısını aşağı taşıdık ###
+        // #############################################################################
         await loadSettings();
         await loadGeriAlinanBayiler();
         await loadAuditedStoresData();
-        await loadStoreListFromDB(); // Fonksiyon adı daha anlaşılır hale getirildi.
+        await loadStoreListFromDB(); // Bu fonksiyon içinde arayüz çiziliyor.
+        setupModuleEventListeners(); // Düğmeler ve filtreler çizildikten SONRA özellikleri ekliyoruz.
     } else {
         const dashboard = document.getElementById('dashboard-content');
         if(dashboard) dashboard.innerHTML = '<p style="text-align: center; color: var(--danger);">Denetim takip sistemini kullanmak için lütfen sisteme giriş yapın.</p>';
