@@ -4,97 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yönetim Paneli</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="css/admin.css">
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-    <div id="app-container">
-        <div id="login-screen">
-            <div class="login-box">
-                <div class="login-header">
-                    <i class="fas fa-shield-halved"></i>
-                    <h2>Yönetim Paneli</h2>
-                    <p>Lütfen devam etmek için giriş yapın.</p>
-                </div>
-                <div class="login-body">
-                    <div class="input-group">
-                        <i class="fas fa-user"></i>
-                        <input type="text" id="username-input" placeholder="Kullanıcı Adı veya E-posta" required>
+
+    <div class="admin-panel">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-cogs"></i> Yönetim Paneli</h3>
+            </div>
+            <ul class="sidebar-menu" id="module-menu">
+                </ul>
+            <div class="sidebar-footer">
+                <div id="connection-status-container">
+                    <div id="connection-status-switch" class="disconnected">
+                        <div class="thumb"></div>
                     </div>
-                    <div class="input-group">
-                        <i class="fas fa-lock"></i>
-                        <input type="password" id="password-input" placeholder="Şifre" required>
-                    </div>
-                    <button id="login-btn" class="btn-primary">Giriş Yap</button>
+                    <span id="connection-status-text">Bağlı Değil</span>
                 </div>
-                <div id="login-error-msg" class="error-message"></div>
+                <div id="auth-controls">
+                    <button id="login-toggle-btn" class="btn-auth"><i class="fas fa-sign-in-alt"></i> Giriş Yap</button>
+                    <button id="logout-btn" class="btn-auth" style="display: none;"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</button>
+                    
+                    <div id="login-popup">
+                        <h3><i class="fas fa-cloud"></i> Panele Giriş Yap</h3>
+                        <input type="email" id="email-input" placeholder="E-posta">
+                        <input type="password" id="password-input" placeholder="Şifre">
+                        <button id="login-submit-btn"><i class="fas fa-check"></i> Onayla</button>
+                        <div id="login-error"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div id="main-panel" style="display: none;">
-            <aside class="sidebar">
-                <div class="sidebar-header">
-                    <h3><i class="fas fa-tools"></i> Yönetim Paneli</h3>
+        <div class="main-content">
+            <div class="content-header">
+                <h2 id="module-title"><i class="fas fa-tachometer-alt"></i> Modül Yöneticisi</h2>
+            </div>
+            
+            <div class="content-wrapper">
+                <div class="content-body" id="module-container">
+                    <p>Lütfen yönetmek istediğiniz bir modülü sol menüden seçin.</p>
                 </div>
-                <nav class="sidebar-nav">
-                    <ul>
-                        <li>
-                            <a href="#" data-module="denetim-takip">
-                                <i class="fas fa-tasks"></i>
-                                <span>Denetim Takip</span>
-                            </a>
-                        </li>
-                         <li>
-                            <a href="#" class="has-submenu">
-                                <i class="fas fa-cogs"></i>
-                                <span>Tüm Ana Sayfalar</span>
-                            </a>
-                            <ul class="submenu">
-                                <li><a href="index.html" target="_blank"><i class="fas fa-home"></i> Ana Sayfa</a></li>
-                                <li><a href="bayi-giris.html" target="_blank"><i class="fas fa-store"></i> Bayi Giriş Sayfası</a></li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" data-module="bayi-yonetimi">
-                                <i class="fas fa-store"></i>
-                                <span>Bayi Yönetimi</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" data-module="soru-yoneticisi">
-                                <i class="fas fa-question-circle"></i>
-                                <span>Soru Yöneticisi</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" data-module="veritabani-modulu">
-                                <i class="fas fa-database"></i>
-                                <span>Veritabanı Modülü</span>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-                <div class="sidebar-footer">
-                    <div id="user-info">
-                        <i class="fas fa-user-circle"></i>
-                        <span id="user-display-name"></span>
-                    </div>
-                    <button id="logout-btn" class="btn-danger btn-sm" title="Çıkış Yap"><i class="fas fa-sign-out-alt"></i></button>
-                </div>
-            </aside>
-            <main class="main-content">
-                <div id="module-container">
-                    <div class="welcome-message">
-                        <h2>Yönetim Paneline Hoş Geldiniz</h2>
-                        <p>Lütfen işlem yapmak için sol menüden bir modül seçin.</p>
-                        <i class="fas fa-hand-point-left fa-3x"></i>
-                    </div>
-                </div>
-            </main>
+            </div>
         </div>
     </div>
-    <script src="js/admin.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
+    
+    <script src="../db-config.js"></script>
+    <script src="admin.js"></script>
+
 </body>
 </html>
