@@ -459,9 +459,6 @@ async function generateEmail() {
 }
 
 function buildReportData() {
-    // Bu fonksiyonun içeriği büyük ölçüde aynı kalabilir, 
-    // çünkü sadece formdaki DOM elemanlarından veri topluyor.
-    // Firebase ile doğrudan bir ilgisi yok.
     const reportData = {
         selectedStore,
         auditCompletedTimestamp: Date.now(),
@@ -474,7 +471,7 @@ function buildReportData() {
         const titleContainer = itemDiv ? itemDiv.querySelector('.fide-title-container') : null;
         const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
         
-        if (!itemDiv && q.isArchived) { return; }
+        if (q.isArchived && !itemDiv) { return; }
 
         const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
 
@@ -537,12 +534,7 @@ async function confirmAndClearAllData() {
     }
 }
 
-
-// --- Diğer Fonksiyonlar (createQuestionHTML, createEmailBody vb.) ---
-// Bu fonksiyonların çoğu doğrudan DOM manipülasyonu yaptığı ve veritabanı
-// ile direkt konuşmadığı için büyük değişikliklere ihtiyaç duymaz.
-// Bu fonksiyonlar aşağıda yer almaktadır ve içerikleri aynı kalmıştır.
-
+// --- DÜZELTİLMİŞ HTML OLUŞTURMA FONKSİYONU ---
 function createQuestionHTML(q, status) {
     if (q.isArchived) return '';
 
@@ -582,7 +574,7 @@ function createQuestionHTML(q, status) {
             `;
             break;
         case 'pop_system':
-            const allPopCodes = [...new Set([...popCodes, ...expiredCodes])];
+            const allPopCodes = [...new Set([...(popCodes || []), ...(expiredCodes || [])])];
             content = `
                 <div class="pop-system-container">
                     ${allPopCodes.map(code => `
@@ -649,7 +641,6 @@ function addProductToList(productCode, quantity) {
     `;
     listDiv.appendChild(newItem);
 
-    // Formu temizle
     qtyInput.value = 1;
 }
 
@@ -705,7 +696,6 @@ function createEmailBody(reportData, template) {
     
     body += "\n\n--- DENETİM DETAYLARI ---\n";
     
-    // DiDe ve FiDe puanlarını ekle
     const storeDideData = dideData.find(d => d.bayiKodu === reportData.selectedStore.bayiKodu);
     const storeFideData = fideData.find(f => f.bayiKodu === reportData.selectedStore.bayiKodu);
     if (storeDideData) body += `\nDiDe Puanı: ${storeDideData.didePuani}`;
