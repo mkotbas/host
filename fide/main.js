@@ -759,3 +759,4 @@ function updateFormInteractivity(enable) {
         el.disabled = !enable;
     });
 }
+}
