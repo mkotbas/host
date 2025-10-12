@@ -15,12 +15,11 @@ async function initializeDenetimTakipModule(pb) {
     loadingOverlay.style.display = 'flex';
 
     if (pbInstance && pbInstance.authStore.isValid) {
+        setupModuleEventListeners();
         await loadSettings();
         await loadGeriAlinanBayiler();
         await loadAuditedStoresData();
-        await loadStoreList();
-        
-        setupModuleEventListeners();
+        await loadStoreList(); // Bu fonksiyon içinde runDashboard() çağrılıyor.
     } else {
         document.getElementById('upload-area').innerHTML = '<p style="text-align: center; color: var(--danger);">Denetim takip sistemini kullanmak için lütfen sisteme giriş yapın.</p>';
         document.getElementById('upload-area').style.display = 'block';
@@ -32,9 +31,11 @@ async function initializeDenetimTakipModule(pb) {
 async function loadSettings() {
     if (!pbInstance.authStore.isValid) return;
     try {
+        // 'ayarlar' tablosundan 'aylikHedef' anahtarına sahip kaydı çekiyoruz.
         const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
         aylikHedef = record.deger || 0;
     } catch (error) {
+        // Kayıt bulunamazsa (404 hatası) veya başka bir hata olursa hedefi 0 yap.
         aylikHedef = 0;
         if (error.status !== 404) {
             console.error("Aylık hedef ayarı yüklenemedi:", error);
@@ -46,8 +47,9 @@ async function loadSettings() {
 async function loadStoreList() {
     if (!pbInstance.authStore.isValid) return;
     try {
+        // 'bayiler' tablosundaki tüm kayıtları çekiyoruz.
         allStores = await pbInstance.collection('bayiler').getFullList({
-            sort: 'bayiAdi',
+            sort: 'bayiAdi', // Bayi adına göre sıralı getir
         });
 
         if (allStores.length > 0) {
@@ -83,9 +85,10 @@ async function loadGeriAlinanBayiler() {
     geriAlinanKayitlariBuYil = [];
 
     try {
+        // Bu yıla ait tüm geri alma kayıtlarını çekiyoruz.
         const records = await pbInstance.collection('denetim_geri_alinanlar').getFullList({
-            filter: `yil_ay ~ "${currentYear}-"`,
-            expand: 'bayi'
+            filter: `yil_ay ~ "${currentYear}-"`, // yil_ay alanı "2025-" ile başlayanları getir.
+            expand: 'bayi' // İlişkili bayi bilgisini de getir.
         });
 
         records.forEach(record => {
@@ -95,6 +98,7 @@ async function loadGeriAlinanBayiler() {
             }
         });
 
+        // Tekrarları temizle
         geriAlinanKayitlariBuAy = [...new Set(geriAlinanKayitlariBuAy)];
         geriAlinanKayitlariBuYil = [...new Set(geriAlinanKayitlariBuYil)];
 
@@ -114,10 +118,11 @@ async function loadAuditedStoresData() {
         const today = new Date();
         const firstDayOfYear = new Date(today.getFullYear(), 0, 1).toISOString();
         
+        // Bu yıla ait tamamlanmış tüm raporları çekiyoruz.
         const records = await pbInstance.collection('denetim_raporlari').getFullList({
             filter: `denetimTamamlanmaTarihi != null && denetimTamamlanmaTarihi >= "${firstDayOfYear}"`,
             expand: 'bayi',
-            sort: '-denetimTamamlanmaTarihi'
+            sort: '-denetimTamamlanmaTarihi' // En yeniden eskiye sırala
         });
 
         const monthlyAuditsMap = new Map();
@@ -132,6 +137,7 @@ async function loadAuditedStoresData() {
             yearlyCodes.push(storeCode);
 
             if (reportDate.getMonth() === today.getMonth()) {
+                // Aynı bayi için birden fazla denetim varsa en yenisini al
                 if (!monthlyAuditsMap.has(storeCode)) {
                     monthlyAuditsMap.set(storeCode, { code: storeCode, timestamp: reportDate.getTime() });
                 }
@@ -162,8 +168,8 @@ function setupModuleEventListeners() {
         document.getElementById('admin-panel-overlay').style.display = 'none';
     });
     document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
-    // KALDIRILDI: document.getElementById('store-list-excel-input').addEventListener('change', handleStoreExcelUpload);
-    // KALDIRILDI: document.getElementById('delete-excel-btn').addEventListener('click', deleteStoreList);
+    document.getElementById('store-list-excel-input').addEventListener('change', handleStoreExcelUpload);
+    document.getElementById('delete-excel-btn').addEventListener('click', deleteStoreList);
     document.getElementById('reset-data-btn').addEventListener('click', resetProgress); 
 
     document.getElementById('bolge-filter').addEventListener('change', applyAndRepopulateFilters);
@@ -186,9 +192,10 @@ async function resetProgress() {
         const currentYear = today.getFullYear();
         const firstDayOfYear = new Date(currentYear, 0, 1).toISOString();
         
+        // Bu yıl denetlenen tüm raporları al
         const reportsToReset = await pbInstance.collection('denetim_raporlari').getFullList({
             filter: `denetimTamamlanmaTarihi != null && denetimTamamlanmaTarihi >= "${firstDayOfYear}"`,
-            fields: 'id, bayi, denetimTamamlanmaTarihi'
+            fields: 'id, bayi, denetimTamamlanmaTarihi' // Sadece gerekli alanları al
         });
 
         if (reportsToReset.length === 0) {
@@ -197,15 +204,17 @@ async function resetProgress() {
             return;
         }
 
+        // Her bir rapor için bir "geri alma" kaydı oluştur
         for (const report of reportsToReset) {
             const reportDate = new Date(report.denetimTamamlanmaTarihi);
             const reportMonthKey = `${reportDate.getFullYear()}-${reportDate.getMonth()}`;
             
             const data = {
                 "yil_ay": reportMonthKey,
-                "bayi": report.bayi
+                "bayi": report.bayi // Raporun bayi ID'sini kullan
             };
             
+            // Aynı ay ve bayi için zaten geri alma kaydı var mı diye kontrol et (opsiyonel ama iyi bir pratik)
             try {
                 await pbInstance.collection('denetim_geri_alinanlar').getFirstListItem(`yil_ay="${reportMonthKey}" && bayi="${report.bayi}"`);
             } catch (error) {
@@ -250,9 +259,31 @@ async function saveSettings() {
     runDashboard();
 }
 
-// KALDIRILDI: deleteStoreList fonksiyonu
-// KALDIRILDI: revertAudit fonksiyonu (Excel ile ilgili değil ama bayi silme ile ilgili,
-// bayi yönetimi başka modülde yapılacaksa buna da gerek yok. Şimdilik kalsın.)
+async function deleteStoreList() {
+    if (!pbInstance.authStore.isValid) return alert("Bu işlem için giriş yapmalısınız.");
+    const dogruSifreHash = 'ZmRlMDAx';
+    const girilenSifre = prompt("DİKKAT! Bu işlem, veritabanındaki TÜM bayi listesini kalıcı olarak siler. Silmek için yönetici şifresini girin:");
+    if (!girilenSifre) return;
+    if (btoa(girilenSifre) !== dogruSifreHash) {
+        alert("Hatalı şifre! İşlem iptal edildi.");
+        return;
+    }
+    if (confirm("Şifre doğru. Veritabanındaki TÜM bayi listesini kalıcı olarak silmek istediğinizden emin misiniz?")) {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        loadingOverlay.style.display = 'flex';
+        try {
+            const records = await pbInstance.collection('bayiler').getFullList({ fields: 'id' });
+            for (const record of records) {
+                await pbInstance.collection('bayiler').delete(record.id);
+            }
+            alert("Tüm bayi listesi başarıyla silindi. Sayfa yeniden başlatılıyor.");
+            window.location.reload();
+        } catch (error) {
+            alert("Bayiler silinirken hata oluştu: " + error.message);
+            loadingOverlay.style.display = 'none';
+        }
+    }
+}
 
 async function revertAudit(bayiKodu) {
     if (!pbInstance.authStore.isValid) return alert("Bu işlem için giriş yapmalısınız.");
@@ -270,9 +301,10 @@ async function revertAudit(bayiKodu) {
             
             const data = {
                 "yil_ay": currentMonthKey,
-                "bayi": store.id
+                "bayi": store.id // Bayinin ID'sini ilişki olarak ekliyoruz
             };
             
+            // PocketBase'e yeni geri alma kaydını oluştur
             await pbInstance.collection('denetim_geri_alinanlar').create(data);
             
             window.location.reload();
@@ -283,10 +315,84 @@ async function revertAudit(bayiKodu) {
     }
 }
 
-// KALDIRILDI: handleStoreExcelUpload fonksiyonu
-// KALDIRILDI: processStoreExcelData fonksiyonu
+function handleStoreExcelUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(file);
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+            processStoreExcelData(dataAsArray);
+        } catch (error) {
+            alert("Excel dosyası okunurken bir hata oluştu.");
+        }
+    };
+}
+
+async function processStoreExcelData(dataAsArray) {
+    if (!pbInstance.authStore.isValid) return alert("Bu işlem için giriş yapmalısınız.");
+    if (dataAsArray.length < 2) return alert('Excel dosyası beklenen formatta değil.');
+    
+    const loadingOverlay = document.getElementById('loading-overlay');
+    loadingOverlay.style.display = 'flex';
+
+    const headerRow = dataAsArray[0].map(h => String(h).trim());
+    const colIndexes = {
+        bolge: headerRow.indexOf('Bölge'), yonetmen: headerRow.indexOf('Bayi Yönetmeni'),
+        sehir: headerRow.indexOf('Şehir'), ilce: headerRow.indexOf('İlçe'),
+        bayiKodu: headerRow.indexOf('Bayi Kodu'), bayiAdi: headerRow.indexOf('Bayiler') // Excel'deki sütun adını düzelttim
+    };
+
+    if (Object.values(colIndexes).some(index => index === -1)) {
+        alert('Excel dosyasında gerekli sütunlar (Bölge, Bayi Yönetmeni, Şehir, İlçe, Bayi Kodu, Bayiler) bulunamadı.');
+        loadingOverlay.style.display = 'none';
+        return;
+    }
+    
+    const dataRows = dataAsArray.slice(1);
+    const storesFromExcel = dataRows.map(row => {
+        const bayiKodu = String(row[colIndexes.bayiKodu]).trim();
+        if (!bayiKodu) return null;
+        return {
+            bayiKodu,
+            bayiAdi: String(row[colIndexes.bayiAdi]).trim(),
+            sehir: String(row[colIndexes.sehir]).trim(),
+            ilce: String(row[colIndexes.ilce]).trim(),
+            bolge: String(row[colIndexes.bolge]).trim(),
+            yonetmen: String(row[colIndexes.yonetmen]).trim()
+        };
+    }).filter(store => store !== null);
+
+    try {
+        // Mevcut tüm bayileri tek seferde çekelim
+        const existingStores = await pbInstance.collection('bayiler').getFullList();
+        const existingStoreMap = new Map(existingStores.map(s => [s.bayiKodu, s.id]));
+
+        for (const store of storesFromExcel) {
+            const existingId = existingStoreMap.get(store.bayiKodu);
+            if (existingId) {
+                // Bayi varsa güncelle
+                await pbInstance.collection('bayiler').update(existingId, store);
+            } else {
+                // Bayi yoksa yeni oluştur
+                await pbInstance.collection('bayiler').create(store);
+            }
+        }
+        
+        alert("Excel listesi başarıyla işlendi ve veritabanı güncellendi.");
+        window.location.reload();
+    } catch (error) {
+        alert("Excel listesi işlenirken hata oluştu: " + error.message);
+        loadingOverlay.style.display = 'none';
+    }
+}
 
 // --- Arayüz Çizim Fonksiyonları (Render) ---
+// Bu kısımdaki fonksiyonlarda büyük değişiklikler yok, sadece veri kaynakları ve isimler güncellendi.
 
 function calculateAndDisplayDashboard() {
     const today = new Date();
@@ -338,6 +444,7 @@ function applyAndRepopulateFilters() {
         sehir: document.getElementById('sehir-filter').value, ilce: document.getElementById('ilce-filter').value
     };
     let filteredStores = [...allStores];
+    let currentScope = [...allStores];
 
     if (selected.bolge !== 'Tümü') {
         filteredStores = filteredStores.filter(s => s.bolge === selected.bolge);
@@ -362,7 +469,7 @@ function applyAndRepopulateFilters() {
 function populateDynamicFilters(storesToUse, filtersToUpdate, currentSelection) {
     filtersToUpdate.forEach(key => {
         const selectElement = document.getElementById(key + '-filter');
-        const currentValue = selectElement.value;
+        const currentValue = selectElement.value; // Mevcut seçimi korumak için
         const uniqueValues = [...new Set(storesToUse.map(store => store[key]))].sort((a, b) => a.localeCompare(b, 'tr'));
         selectElement.innerHTML = '<option value="Tümü">Tümü</option>';
         let valueExists = false;
@@ -425,7 +532,7 @@ function renderRemainingStores(filteredStores) {
 function renderAuditedStores() {
     const container = document.getElementById('denetlenen-bayiler-container');
     if (!allStores || allStores.length === 0) {
-         container.innerHTML = '<p class="empty-list-message">Başlamak için lütfen bayi yöneticisi modülünden bayi ekleyin.</p>';
+         container.innerHTML = '<p class="empty-list-message">Başlamak için lütfen bir bayi listesi Excel\'i yükleyin.</p>';
         return;
     }
     container.innerHTML = '';
