@@ -47,39 +47,53 @@ const modules = [
 ];
 
 // --- Global Değişkenler ---
-let isFirebaseConnected = false;
+let isPocketBaseConnected = false;
 let currentModuleId = null;
 
 // --- Uygulama Başlatma ---
 window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-    auth.onAuthStateChanged(user => {
-        updateAuthUI(user);
-        updateConnectionIndicator();
-        if (user) {
-            renderModuleMenu();
-            if (!currentModuleId) {
-                loadModule('denetim-takip');
-            }
-        } else {
-            document.getElementById('module-menu').innerHTML = '';
-            document.getElementById('module-container').innerHTML = '<p>Lütfen panele erişmek için giriş yapın.</p>';
-            document.getElementById('module-title').innerHTML = '<i class="fas fa-tachometer-alt"></i> Modül Yöneticisi';
+    // PocketBase'de bu adıma gerek yok, SDK oturumu kendi yönetir.
+    // Kullanıcının giriş durumuna göre arayüzü güncelliyoruz.
+    const isLoggedIn = pb.authStore.isValid;
+    updateAuthUI(isLoggedIn);
+    await checkConnection(); // Bağlantıyı kontrol et
+    
+    if (isLoggedIn) {
+        renderModuleMenu();
+        // Eğer daha önce bir modül seçilmemişse, varsayılanı yükle
+        if (!currentModuleId) {
+            loadModule('denetim-takip');
         }
-    });
-    if (database) {
-        const connectionRef = database.ref('.info/connected');
-        connectionRef.on('value', (snapshot) => {
-            isFirebaseConnected = snapshot.val();
-            updateConnectionIndicator();
-        });
+    } else {
+        // Kullanıcı giriş yapmamışsa menüyü ve modül alanını temizle
+        document.getElementById('module-menu').innerHTML = '';
+        document.getElementById('module-container').innerHTML = '<p>Lütfen panele erişmek için giriş yapın.</p>';
+        document.getElementById('module-title').innerHTML = '<i class="fas fa-tachometer-alt"></i> Modül Yöneticisi';
     }
+
+    // Olay dinleyicilerini (buton tıklamaları vb.) ayarla
     setupEventListeners();
 }
 
+// PocketBase bağlantısını kontrol eden fonksiyon
+async function checkConnection() {
+    try {
+        // Sunucunun sağlık durumunu kontrol eden basit bir istek atıyoruz.
+        await pb.health.check();
+        isPocketBaseConnected = true;
+    } catch (error) {
+        console.error("PocketBase sunucusuna bağlanılamadı.", error);
+        isPocketBaseConnected = false;
+    }
+    // Göstergeyi güncelle
+    updateConnectionIndicator();
+}
+
+
 // --- ALT MENÜ DESTEKLİ YENİ MENÜ OLUŞTURUCU ---
+// Bu fonksiyonda veritabanı bağlantısı olmadığı için değişiklik yapılmadı.
 function renderModuleMenu() {
     const menu = document.getElementById('module-menu');
     menu.innerHTML = ''; 
@@ -127,7 +141,7 @@ function renderModuleMenu() {
     });
 }
 
-
+// Bu fonksiyonda veritabanı bağlantısı olmadığı için değişiklik yapılmadı.
 async function loadModule(moduleId) {
     let module;
     for (const main of modules) {
@@ -200,12 +214,12 @@ async function loadModule(moduleId) {
     }
 }
 
-
-function updateAuthUI(user) {
+// Arayüzü kullanıcının giriş durumuna göre güncelleyen fonksiyon
+function updateAuthUI(isLoggedIn) {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const loginPopup = document.getElementById('login-popup');
-    if (user) {
+    if (isLoggedIn) {
         loginToggleBtn.style.display = 'none';
         logoutBtn.style.display = 'inline-flex';
         loginPopup.style.display = 'none';
@@ -214,10 +228,13 @@ function updateAuthUI(user) {
         logoutBtn.style.display = 'none';
     }
 }
+
+// Bağlantı göstergesini güncelleyen fonksiyon
 function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
-    const isOnline = isFirebaseConnected && auth.currentUser;
+    // Artık hem sunucu bağlantısını hem de kullanıcı girişini kontrol ediyoruz
+    const isOnline = isPocketBaseConnected && pb.authStore.isValid;
     statusSwitch.classList.toggle('connected', isOnline);
     statusSwitch.classList.toggle('disconnected', !isOnline);
     statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
@@ -238,11 +255,14 @@ function setupEventListeners() {
     
     // Çıkış yap butonu
     logoutBtn.addEventListener('click', () => {
-        auth.signOut();
+        // PocketBase'den çıkış yap
+        pb.authStore.clear();
+        // Sayfayı yenileyerek arayüzü güncelle
+        window.location.reload();
     });
 
     // Popup içindeki onayla butonu ile giriş yapma
-    loginSubmitBtn.addEventListener('click', () => {
+    loginSubmitBtn.addEventListener('click', async () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
         const errorDiv = document.getElementById('login-error');
@@ -253,14 +273,15 @@ function setupEventListeners() {
             return;
         }
 
-        auth.signInWithEmailAndPassword(email, password)
-            .then(() => {
-                // Başarılı giriş sonrası sayfayı yenileyerek modüllerin yüklenmesini sağla
-                window.location.reload(); 
-            })
-            .catch(error => {
-                errorDiv.textContent = 'E-posta veya şifre hatalı.';
-            });
+        try {
+            // PocketBase 'users' collection'ı ile giriş denemesi
+            await pb.collection('users').authWithPassword(email, password);
+            // Başarılı giriş sonrası sayfayı yenileyerek modüllerin yüklenmesini sağla
+            window.location.reload();
+        } catch (error) {
+            console.error("Giriş hatası:", error);
+            errorDiv.textContent = 'E-posta veya şifre hatalı.';
+        }
     });
 
     // Sayfanın herhangi bir yerine tıklandığında popup'ı kapat
