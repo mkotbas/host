@@ -11,6 +11,9 @@ let auditedThisMonth = [];
 window.onload = initializeApp;
 
 async function initializeApp() {
+    // DÜZELTME: Butonların çalışması için olay dinleyicilerini en başta kuruyoruz.
+    setupEventListeners();
+
     // PocketBase'de oturumun kalıcı olması SDK tarafından otomatik yönetilir.
     // Auth durumunu kontrol edip arayüzü güncelleyelim.
     const userLoggedIn = pb.authStore.isValid;
@@ -30,7 +33,6 @@ async function initializeApp() {
 
     await checkPocketBaseConnection();
     await loadInitialData();
-    setupEventListeners();
     updateFormInteractivity(selectedStore !== null);
 }
 
@@ -457,9 +459,6 @@ async function loadReportForStore(bayiKodu) {
         }
     }
 }
-
-// ... Diğer fonksiyonlar (generateQuestionHtml, buildForm, vs.) büyük ölçüde aynı kalabilir...
-// Değişiklik gerektiren diğer fonksiyonları aşağıda güncelliyorum.
 
 // Bu fonksiyon aynı kalıyor
 function getUnitForProduct(productName) {
@@ -995,7 +994,7 @@ async function generateEmail() {
     
     greetingHtml = greetingHtml.split('\n').map(p => `<p>${p.trim()}</p>`).join('');
 
-    // ... Geri kalan e-posta oluşturma mantığı aynı kalabilir ...
+    // Bu fonksiyon aynı kalıyor
     let fideReportHtml = "";
     fideQuestions.forEach(q => {
         const itemDiv = document.getElementById(`fide-item-${q.id}`);
