@@ -31,7 +31,7 @@
     padding-top: 0;
 }
 
-.section h4, .sub-card h4 {
+.section h4 {
     margin-top: 0;
     margin-bottom: 15px;
     color: #374151 !important;
@@ -41,7 +41,7 @@
     font-size: 16px;
 }
 
-.section h4 i, .sub-card h4 i {
+.section h4 i {
     color: #3b82f6;
 }
 
@@ -187,130 +187,6 @@ button:disabled {
     border-bottom: none;
 }
 
-/* --- Yan Yana Bölümler --- */
-.section-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 25px;
-    padding-top: 20px;
-    margin-top: 20px;
-    border-top: 1px solid #e5e7eb;
-}
-
-.sub-card {
-    background-color: #f8fafc;
-    padding: 20px;
-    border-radius: 6px;
-    border: 1px solid #e5e7eb;
-}
-
-@media (max-width: 900px) {
-    .section-row {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* --- Checkbox Tasarımı --- */
-.checkbox-group { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 12px; 
-    margin-bottom: 20px; 
-}
-
-.custom-checkbox { 
-    display: block; 
-    position: relative; 
-    padding-left: 30px; 
-    cursor: pointer; 
-    user-select: none; 
-}
-
-.custom-checkbox input { 
-    position: absolute; 
-    opacity: 0; 
-    cursor: pointer; 
-    height: 0; 
-    width: 0; 
-}
-
-.custom-checkbox label { 
-    color: #4b5563 !important; 
-    font-weight: 500;
-}
-
-.custom-checkbox label::before {
-    content: '';
-    position: absolute;
-    left: 0; 
-    top: 1px;
-    width: 18px; 
-    height: 18px;
-    background-color: #ffffff;
-    border: 2px solid #d1d5db;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
-
-.custom-checkbox:hover input ~ label::before { 
-    border-color: #3b82f6; 
-}
-
-.custom-checkbox input:checked ~ label::before {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
-}
-
-.custom-checkbox label::after {
-    content: '';
-    position: absolute;
-    display: none;
-    left: 6px; 
-    top: 3px;
-    width: 5px; 
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
-
-.custom-checkbox input:checked ~ label::after { 
-    display: block; 
-}
-
-/* --- Sonuç Alanları --- */
-.results-area {
-    margin-top: 15px; 
-    background-color: #f8fafc;
-    padding: 15px; 
-    border: 1px solid #e5e7eb;
-    border-radius: 6px; 
-    max-height: 200px; 
-    overflow-y: auto;
-    color: #374151 !important;
-}
-
-.results-area h4 { 
-    font-size: 14px; 
-    color: #374151 !important; 
-    margin: 0 0 10px 0;
-}
-
-.results-area ul { 
-    padding-left: 20px; 
-    margin: 10px 0 0 0; 
-    color: #4b5563 !important;
-}
-
-.results-area p { 
-    margin: 0; 
-    color: #6b7280 !important; 
-}
-
-.results-area li {
-    color: #4b5563 !important;
-}
-
 /* --- Uyarı Kutusu --- */
 .info-box.danger {
     padding: 15px; 
@@ -336,6 +212,106 @@ button:disabled {
 .info-box.danger strong {
     color: #991b1b !important;
 }
+
+/* Modal için uyarı kutusu */
+.info-box.warning {
+    padding: 15px; 
+    border-radius: 6px; 
+    margin-bottom: 20px; 
+    display: flex;
+    align-items: center; 
+    gap: 10px; 
+    background-color: #fffbeb;
+    color: #92400e !important; 
+    border: 1px solid #fde68a;
+}
+.info-box.warning i { color: #d97706; }
+.info-box.warning p { color: #92400e !important; margin: 0; }
+.info-box.warning strong { color: #92400e !important; }
+
+/* Modal içindeki select */
+.complex-action select.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background-color: #ffffff;
+    color: #374151 !important;
+    box-sizing: border-box;
+    font-size: 14px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M10 12.586l-4.293-4.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0l5-5a1 1 0 00-1.414-1.414L10 12.586z' clip-rule='evenodd' /%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.25em 1.25em;
+}
+
+/* Modal içindeki checkbox */
+.complex-action .custom-checkbox { 
+    display: block; 
+    position: relative; 
+    padding-left: 30px; 
+    cursor: pointer; 
+    user-select: none; 
+}
+.complex-action .custom-checkbox input { 
+    position: absolute; 
+    opacity: 0; 
+    cursor: pointer; 
+    height: 0; 
+    width: 0; 
+}
+.complex-action .custom-checkbox label { 
+    color: #4b5563 !important; 
+    font-weight: 500;
+}
+.complex-action .custom-checkbox label::before {
+    content: '';
+    position: absolute;
+    left: 0; 
+    top: 1px;
+    width: 18px; 
+    height: 18px;
+    background-color: #ffffff;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+.complex-action .custom-checkbox:hover input ~ label::before { 
+    border-color: #3b82f6; 
+}
+.complex-action .custom-checkbox input:checked ~ label::before {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+.complex-action .custom-checkbox label::after {
+    content: '';
+    position: absolute;
+    display: none;
+    left: 6px; 
+    top: 3px;
+    width: 5px; 
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+.complex-action .custom-checkbox input:checked ~ label::after { 
+    display: block; 
+}
+
+/* Modal içindeki sonuç alanı */
+.complex-action .results-area {
+    margin-top: 15px; 
+    background-color: #f8fafc;
+    padding: 15px; 
+    border: 1px solid #e5e7eb;
+    border-radius: 6px; 
+    max-height: 200px; 
+    overflow-y: auto;
+    color: #374151 !important;
+}
+.complex-action .results-area strong { color: #1f2937 !important; }
 
 /* --- Tablo Stilleri --- */
 #tablo-yonetim-tablosu {
@@ -421,14 +397,14 @@ button:disabled {
 }
 
 /* --- Genel Metin Renkleri --- */
-.card, .sub-card, .results-area, .complex-action {
+.card, .complex-action {
     color: #374151 !important;
 }
 
-.card p, .sub-card p, .results-area p {
+.card p, .complex-action p {
     color: #4b5563 !important;
 }
 
-.card label, .sub-card label {
+.card label, .complex-action label {
     color: #374151 !important;
 }
