@@ -106,6 +106,19 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     const importLoadingText = document.getElementById('import-loading-text');
     const importResults = document.getElementById('import-results');
 
+    // YENİ: Toplu Atama (Bulk Assign) Modal Elementleri
+    const btnOpenBulkAssignModal = document.getElementById('btn-open-bulk-assign-modal');
+    const bulkAssignModal = document.getElementById('bulk-assign-modal');
+    // GÜNCELLENDİ: Filtreler artık <select> değil <div> konteyneri
+    const bulkAssignFilterBolge = document.getElementById('bulk-assign-filter-bolge');
+    const bulkAssignFilterSehir = document.getElementById('bulk-assign-filter-sehir');
+    const bulkAssignFilterYonetmen = document.getElementById('bulk-assign-filter-yonetmen');
+    const bulkAssignUserSelect = document.getElementById('bulk-assign-user-select');
+    const btnExecuteBulkAssign = document.getElementById('btn-execute-bulk-assign');
+    const btnBulkAssignCancel = document.getElementById('btn-bulk-assign-cancel');
+    const bulkAssignLoadingOverlay = document.getElementById('bulk-assign-loading-overlay');
+    const bulkAssignLoadingText = document.getElementById('bulk-assign-loading-text');
+
 
     // --- Ana Veri Yükleme Fonksiyonları ---
 
@@ -870,6 +883,197 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     }
 
 
+    // --- YENİ: Toplu Denetim Uzmanı Atama Fonksiyonları (GÜNCELLENDİ) ---
+
+    /**
+     * Toplu Atama Modalını açar ve filtreleri/kullanıcıları doldurur
+     */
+    function openBulkAssignModal() {
+        // GÜNCELLENDİ: Formları (checkbox konteynerlerini) sıfırla
+        bulkAssignFilterBolge.innerHTML = '';
+        bulkAssignFilterSehir.innerHTML = '';
+        bulkAssignFilterYonetmen.innerHTML = '';
+        bulkAssignUserSelect.innerHTML = '<option value="">Lütfen bir kullanıcı seçin...</option>';
+        
+        // Filtreleri doldur
+        populateBulkAssignFilters();
+        
+        // Kullanıcı listesini doldur
+        populateBulkAssignUserDropdown();
+        
+        bulkAssignModal.style.display = 'flex';
+    }
+
+    /**
+     * Toplu Atama Modalını kapatır
+     */
+    function closeBulkAssignModal() {
+        bulkAssignModal.style.display = 'none';
+        showBulkAssignLoading(false); // Yüklemeyi durdur
+    }
+
+    /**
+     * Toplu Atama Modalı içi yükleme ekranını (spinner) gösterir/gizler
+     */
+    function showBulkAssignLoading(show, text = 'İşlem yürütülüyor...') {
+        if (show) {
+            bulkAssignLoadingText.textContent = text;
+            bulkAssignLoadingOverlay.style.display = 'flex';
+        } else {
+            bulkAssignLoadingOverlay.style.display = 'none';
+        }
+    }
+
+    /**
+     * Toplu Atama Modalı (Adım 1) - Filtre <select> listelerini doldurur
+     * Sadece 'atanmamış' bayilerden veri çeker.
+     * GÜNCELLENDİ: Checkbox listeleri oluşturur
+     */
+    function populateBulkAssignFilters() {
+        // 1. Sadece atanmamış bayileri bul (ID'si olmayanlar)
+        const unassignedBayiler = allBayiler.filter(b => !b.sorumlu_kullanici);
+
+        // 2. Bu bayilerden benzersiz, boş olmayan filtre değerlerini al
+        const bolgeler = [...new Set(unassignedBayiler.map(b => b.bolge).filter(Boolean))].sort();
+        const sehirler = [...new Set(unassignedBayiler.map(b => b.sehir).filter(Boolean))].sort();
+        const yonetmenler = [...new Set(unassignedBayiler.map(b => b.yonetmen).filter(Boolean))].sort();
+
+        // 3. GÜNCELLENDİ: Dropdown'ları değil, Checkbox listelerini doldur
+        
+        // Bölge listesi
+        if(bolgeler.length > 0) {
+            bolgeler.forEach(val => {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" value="${val}"> ${val}`;
+                bulkAssignFilterBolge.appendChild(label);
+            });
+        } else {
+            bulkAssignFilterBolge.innerHTML = '<span style="color: #999;">Filtrelenecek bölge yok.</span>';
+        }
+        
+        // Şehir listesi
+        if(sehirler.length > 0) {
+            sehirler.forEach(val => {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" value="${val}"> ${val}`;
+                bulkAssignFilterSehir.appendChild(label);
+            });
+        } else {
+            bulkAssignFilterSehir.innerHTML = '<span style="color: #999;">Filtrelenecek şehir yok.</span>';
+        }
+
+        // Yönetmen listesi
+        if(yonetmenler.length > 0) {
+            yonetmenler.forEach(val => {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" value="${val}"> ${val}`;
+                bulkAssignFilterYonetmen.appendChild(label);
+            });
+        } else {
+            bulkAssignFilterYonetmen.innerHTML = '<span style="color: #999;">Filtrelenecek yönetmen yok.</span>';
+        }
+    }
+
+    /**
+     * Toplu Atama Modalı (Adım 2) - Kullanıcı <select> listesini doldurur
+     */
+    function populateBulkAssignUserDropdown() {
+        // populateUserDropdown ile aynı mantık, sadece hedef <select> farklı
+        allUsers.forEach(user => {
+            if (user.role === 'client' || user.role === 'admin') {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.name || user.email; // İsim göster
+                bulkAssignUserSelect.appendChild(option);
+            }
+        });
+    }
+    
+    /**
+     * "Atamayı Tamamla" butonuna basıldığında çalışan ana fonksiyon
+     * GÜNCELLENDİ: Çoklu filtre okuma mantığı eklendi
+     */
+    async function executeBulkAssign() {
+        
+        // 1. GÜNCELLENDİ: Seçilen filtreleri checkbox listelerinden al
+        const selectedBolgeler = Array.from(bulkAssignFilterBolge.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+        const selectedSehirler = Array.from(bulkAssignFilterSehir.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+        const selectedYonetmenler = Array.from(bulkAssignFilterYonetmen.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+        
+        const userId = bulkAssignUserSelect.value;
+
+        // 2. Doğrulama
+        if (!userId) {
+            alert('Lütfen atanacak bir Denetim Uzmanı seçin.');
+            return;
+        }
+
+        showBulkAssignLoading(true, 'Bayiler filtreleniyor...');
+        
+        // 3. GÜNCELLENDİ: Hedef bayileri çoklu filtrelere göre filtrele
+        let targetBayiler = allBayiler.filter(b => !b.sorumlu_kullanici); // Sadece atanmamışlar
+
+        // Kullanıcının istediği gibi: Sadece seçim varsa (liste boş değilse) filtrele
+        if (selectedBolgeler.length > 0) {
+            targetBayiler = targetBayiler.filter(b => selectedBolgeler.includes(b.bolge));
+        }
+        if (selectedSehirler.length > 0) {
+            targetBayiler = targetBayiler.filter(b => selectedSehirler.includes(b.sehir));
+        }
+        if (selectedYonetmenler.length > 0) {
+            targetBayiler = targetBayiler.filter(b => selectedYonetmenler.includes(b.yonetmen));
+        }
+        // GÜNCELLEME SONU
+
+        // 4. Hedef kontrolü
+        if (targetBayiler.length === 0) {
+            alert('Bu filtrelere uyan atanmamış bayi bulunamadı.');
+            showBulkAssignLoading(false);
+            return;
+        }
+
+        // 5. Onay al
+        const user = allUsers.find(u => u.id === userId);
+        const userName = user ? (user.name || user.email) : 'Seçilen Kullanıcı';
+        
+        if (!confirm(`${targetBayiler.length} adet atanmamış bayi bulundu.\n\nBu bayileri '${userName}' adlı kullanıcıya atamak istediğinizden emin misiniz?`)) {
+            showBulkAssignLoading(false);
+            return;
+        }
+
+        // 6. Sıralı (Sequential) Güncelleme İşlemi (Import'taki gibi)
+        let successCount = 0;
+        let errorCount = 0;
+        const errors = [];
+        const totalOperations = targetBayiler.length;
+
+        for (const [index, bayi] of targetBayiler.entries()) {
+            showBulkAssignLoading(true, `İşlem ${index + 1} / ${totalOperations} tamamlanıyor... (Bayi: ${bayi.bayiKodu})`);
+            try {
+                // Sadece 'sorumlu_kullanici' alanını güncelle
+                await pb.collection('bayiler').update(bayi.id, { sorumlu_kullanici: userId });
+                successCount++;
+            } catch (error) {
+                errorCount++;
+                errors.push(`Hata (Bayi Kodu: ${bayi.bayiKodu}): ${error.message}`);
+            }
+        }
+
+        // 7. Sonuçları bildir
+        showBulkAssignLoading(false);
+        let resultMessage = `${successCount} bayi başarıyla '${userName}' kullanıcısına atandı.`;
+        if (errorCount > 0) {
+            resultMessage += `\n\n${errorCount} işlemde hata oluştu.\nDetaylar (Konsolu kontrol edin):\n${errors.join('\n')}`;
+            console.error('Toplu atama hataları:', errors);
+        }
+        alert(resultMessage);
+
+        // 8. Modalı kapat ve ana tabloyu yenile
+        closeBulkAssignModal();
+        await loadModuleData();
+    }
+
+
     // --- Yardımcı Fonksiyonlar ---
 
     // Ana tablo yükleme spinner'ı
@@ -924,6 +1128,24 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         mappingContainer.addEventListener('change', (event) => {
             if (event.target && event.target.classList.contains('db-field-select')) {
                 validateMapping(); // Her seçim değiştiğinde zorunlu alanları kontrol et
+            }
+        });
+    }
+
+    // YENİ: Toplu Atama (Bulk Assign)
+    if (btnOpenBulkAssignModal) {
+        btnOpenBulkAssignModal.addEventListener('click', openBulkAssignModal);
+    }
+    if (btnExecuteBulkAssign) {
+        btnExecuteBulkAssign.addEventListener('click', executeBulkAssign);
+    }
+    if (btnBulkAssignCancel) {
+        btnBulkAssignCancel.addEventListener('click', closeBulkAssignModal);
+    }
+    if (bulkAssignModal) {
+        bulkAssignModal.addEventListener('click', function(event) {
+            if (event.target === event.currentTarget) { // Sadece overlay'e tıklanırsa
+                closeBulkAssignModal();
             }
         });
     }

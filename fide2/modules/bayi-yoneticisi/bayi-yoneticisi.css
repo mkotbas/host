@@ -54,22 +54,63 @@
     display: flex;
     flex-wrap: wrap; /* Mobil için alt alta düşebilir */
     gap: 20px;
+    /* YENİ: Kutuların dikeyde esnemesini sağla (varsayılan gerçi) */
+    align-items: stretch;
 }
+
 .report-export-section,
-.report-import-section {
-    flex: 1; /* Her iki bölümün de eşit yer kaplamasını sağlar */
+.report-import-section,
+.report-assign-section { 
+    /* GÜNCELLENDİ: 'flex: 1' ortak kuralı buradan kaldırıldı. */
     min-width: 300px; /* Minimum genişlik */
     border: 1px solid #e9ecef;
     padding: 20px;
     border-radius: 6px;
     background-color: #fcfcfc;
+
+    /* YENİ: Dikey flex layout GEREKLİ (Butonları dibe itmek için) */
+    display: flex;
+    flex-direction: column;
 }
 .report-import-section {
     border-left: 2px solid #007bff; /* İçe aktarma bölümünü ayırmak için */
 }
 
+/* YENİ: İçe aktarma ve atama kutuları için flex tanımı */
+.report-import-section,
+.report-assign-section {
+    flex: 1; /* Standart esneme */
+}
+
+/* YENİ: Raporlama kutusu için daha geniş flex tanımı (sıkışıklığı gidermek için) */
+.report-export-section {
+    flex: 1.5; /* %50 daha fazla esneme payı */
+}
+
+
+/* GÜNCELLENDİ: Sadece İçe Aktarma ve Toplu Atama kutularını yatayda ortala */
+/* (dikey ortalama kaldırıldı) */
+.report-import-section,
+.report-assign-section {
+    align-items: center;     /* İçeriği yatayda ortalar */
+    text-align: center;      /* Metinleri ortalar */
+}
+
+/* YENİ: İçe Aktarma ve Toplu Atama kutularındaki açıklama paragraflarını dikeyde ortala */
+.report-import-section p,
+.report-assign-section p {
+    flex-grow: 1; /* Paragrafın dikeyde genişlemesini sağla */
+    display: flex; /* İçindeki metni ortalamak için */
+    align-items: center; /* Metni dikeyde ortala */
+    justify-content: center; /* Metni yatayda ortala */
+    margin-bottom: 0; /* Standart P marjını sıfırla */
+    padding: 10px 0; /* Üstten ve alttan boşluk ver */
+}
+
+
 .report-export-section strong,
-.report-import-section strong {
+.report-import-section strong,
+.report-assign-section strong { 
     font-size: 1.1em;
     color: #333;
     display: block;
@@ -95,7 +136,15 @@
 .report-actions {
     display: flex;
     gap: 10px;
-    margin-top: 15px;
+    
+    /* GÜNCELLENDİ: Butonları yatayda ortala */
+    justify-content: center;
+
+    /* YENİ: Bu kural, .report-actions div'ini flex container'ın (kutu) en dibine iter */
+    margin-top: auto; 
+    
+    /* YENİ: Ortalamanın düzgün çalışması için genişliği ayarla */
+    width: 100%;
 }
 
 
@@ -472,4 +521,50 @@
     color: #856404;
     display: block;
     margin-bottom: 5px;
+}
+
+
+/* YENİ: Toplu Atama Bölümü (Fieldset içi) */
+.report-assign-section {
+    border-left: 2px solid #ffc107; /* Sarı/Warning rengi */
+}
+
+/* YENİ: Toplu Atama Modalı Filtre Stilleri (GÜNCELLENDİ) */
+.bulk-assign-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Esnek grid */
+    gap: 20px;
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+}
+
+#bulk-assign-user-select-container {
+    margin-top: 20px;
+}
+
+/* YENİ: Toplu Atama Modalı - Çoklu Seçim Checkbox Liste Stilleri */
+.checkbox-list-container {
+    max-height: 150px; /* Yükseklik sınırı, kaydırma çubuğu çıkar */
+    overflow-y: auto;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 10px;
+    background-color: #ffffff;
+    font-size: 0.95em;
+}
+.checkbox-list-container label {
+    display: block; /* Her seçenek bir satırda */
+    margin-bottom: 8px;
+    font-weight: 400; /* Normal font ağırlığı */
+    color: #333;
+    cursor: pointer;
+}
+.checkbox-list-container label input {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+.checkbox-list-container label:last-child {
+    margin-bottom: 0;
 }
