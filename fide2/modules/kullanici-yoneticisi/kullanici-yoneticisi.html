@@ -11,7 +11,7 @@
             <table id="users-table">
                 <thead>
                     <tr>
-                        <th>E-posta</th>
+                        <th>İsim</th> <th>E-posta</th>
                         <th>Rol</th>
                         <th>Mobil Erişim</th>
                         <th>Oluşturulma Tarihi</th>
@@ -28,7 +28,11 @@
         <h3 id="user-form-title">Yeni Kullanıcı Ekle</h3>
         <form id="user-form">
             <input type="hidden" id="user-id-input">
-
+            
+            <div class="form-group">
+                <label for="user-name-input">İsim Soyisim</label>
+                <input type="text" id="user-name-input" required>
+            </div>
             <div class="form-group">
                 <label for="user-email-input">E-posta Adresi</label>
                 <input type="email" id="user-email-input" required>

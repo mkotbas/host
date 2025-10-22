@@ -57,6 +57,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     const columnCheckboxesContainer = document.getElementById('column-checkboxes');
     
     // Raporlama (Dışa Aktarma) için Sütun Tanımları
+    // GÜNCELLENDİ: 'sorumlu_kullanici_email' anahtarı kaldı ancak artık 'İsim' temsil ediyor.
     const fields = [
         { key: 'bolge', label: 'Bölge' },
         { key: 'sehir', label: 'Şehir' },
@@ -65,7 +66,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         { key: 'bayiAdi', label: 'Bayi Adı' },
         { key: 'yonetmen', label: 'Bayi Yönetmeni' }, 
         { key: 'email', label: 'Mail' },
-        { key: 'sorumlu_kullanici_email', label: 'Denetim Uzmanı' } 
+        { key: 'sorumlu_kullanici_email', label: 'Denetim Uzmanı' } // Bu anahtar 'isim' gösterecek
     ];
     const allFieldKeys = fields.map(f => f.key);
 
@@ -82,7 +83,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         { key: 'ilce', label: 'İlçe' },
         { key: 'yonetmen', label: 'Bayi Yönetmeni' }, 
         { key: 'email', label: 'Mail Adresi' },
-        { key: 'sorumlu_kullanici', label: 'Denetim Uzmanı (Email ile)' } 
+        { key: 'sorumlu_kullanici', label: 'Denetim Uzmanı (Email ile)' } // Bu etiket (Email ile) önemli, mantık e-posta'ya göre çalışıyor
     ];
     
     // YENİ: Zorunlu alanların listesi (GÜNCELLENDİ)
@@ -112,7 +113,8 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         showLoading(true);
         try {
             // Bayi uzmanı (sorumlu_kullanici) ataması için tüm kullanıcıları çek
-            allUsers = await pb.collection('users').getFullList({ sort: 'email' });
+            // GÜNCELLENDİ: 'email' yerine 'name' (isime) göre sırala
+            allUsers = await pb.collection('users').getFullList({ sort: 'name' });
             
             // Tüm bayileri, sorumlu kullanıcı bilgisiyle (expand) birlikte çek
             allBayiler = await pb.collection('bayiler').getFullList({
@@ -120,9 +122,13 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
                 expand: 'sorumlu_kullanici' 
             });
 
-            // Her bayi nesnesine, sorumlu kullanıcının e-postasını kolay erişim için ekle
+            // GÜNCELLENDİ: Her bayi nesnesine, sorumlu kullanıcının İSMİNİ ekle.
+            // Arama/filtreleme HTML'ini bozmamak için 'sorumlu_kullanici_email' anahtarı
+            // artık 'isim' tutacak. E-posta ise 'tooltip' için ayrı saklanacak.
             allBayiler.forEach(bayi => {
-                bayi.sorumlu_kullanici_email = bayi.expand?.sorumlu_kullanici?.email || '';
+                const user = bayi.expand?.sorumlu_kullanici;
+                bayi.sorumlu_kullanici_email = user?.name || ''; // Anahtar 'email' kaldı ama DEĞERİ 'name' oldu.
+                bayi.sorumlu_kullanici_email_tooltip = user?.email || ''; // E-postayı tooltip için sakla
             });
 
             populateUserDropdown(); // Ekle/Düzenle modalındaki 'Denetim Uzmanı' listesini doldur
@@ -151,7 +157,10 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         bayilerToRender.forEach(bayi => {
             const tr = document.createElement('tr');
             
-            const uzmanEmail = bayi.sorumlu_kullanici_email || ''; 
+            // GÜNCELLENDİ: 'uzmanEmail' artık 'isim' tutuyor. 'uzmanEmailTooltip' e-postayı tutuyor.
+            const uzmanEmail = bayi.sorumlu_kullanici_email || ''; // Bu artık İSİM
+            const uzmanEmailTooltip = bayi.sorumlu_kullanici_email_tooltip || ''; // Bu e-posta
+            
             const bayiAdi = bayi.bayiAdi || '';
             const bayiYonetmeni = bayi.yonetmen || ''; //
             const bayiEmail = bayi.email || '';
@@ -160,6 +169,8 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             const ilce = bayi.ilce || '';
             const bayiKodu = bayi.bayiKodu || '';
 
+            // GÜNCELLENDİ: 'Denetim Uzmanı' hücresi (td) güncellendi.
+            // 'title' e-postayı, içerik ise ismi gösterecek.
             tr.innerHTML = `
                 <td title="${bolge}" data-column="bolge">${bolge}</td>
                 <td title="${sehir}" data-column="sehir">${sehir}</td>
@@ -168,7 +179,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
                 <td title="${bayiAdi}" data-column="bayiAdi">${bayiAdi}</td>
                 <td title="${bayiYonetmeni}" data-column="yonetmen">${bayiYonetmeni}</td> 
                 <td title="${bayiEmail}" data-column="email">${bayiEmail}</td>
-                <td title="${uzmanEmail}" data-column="sorumlu_kullanici_email">${uzmanEmail || '<span style="color: #999;">Atanmamış</span>'}</td>
+                <td title="${uzmanEmailTooltip}" data-column="sorumlu_kullanici_email">${uzmanEmail || '<span style="color: #999;">Atanmamış</span>'}</td>
                 <td class="action-buttons" data-column="eylemler">
                     <button class="btn btn-warning btn-edit" data-id="${bayi.id}" title="Düzenle">
                         <i class="fas fa-edit"></i>
@@ -197,7 +208,8 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             if (user.role === 'client' || user.role === 'admin') {
                 const option = document.createElement('option');
                 option.value = user.id;
-                option.textContent = user.email;
+                // GÜNCELLENDİ: 'email' yerine 'name' (isim) göster. Yoksa e-posta göster.
+                option.textContent = user.name || user.email;
                 uzmanSelect.appendChild(option);
             }
         });
@@ -214,7 +226,8 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             if (user.role === 'client' || user.role === 'admin') {
                 const option = document.createElement('option');
                 option.value = user.id;
-                option.textContent = user.email;
+                // GÜNCELLENDİ: 'email' yerine 'name' (isim) göster. Yoksa e-posta göster.
+                option.textContent = user.name || user.email;
                 globalSelect.appendChild(option);
             }
         });
@@ -357,7 +370,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
                 case 'no_bayiAdi': passDropdown = !bayi.bayiAdi; break;
                 case 'no_yonetmen': passDropdown = !bayi.yonetmen; break; 
                 case 'no_email': passDropdown = !bayi.email; break;
-                case 'no_uzman': passDropdown = !bayi.sorumlu_kullanici_email; break;
+                case 'no_uzman': passDropdown = !bayi.sorumlu_kullanici_email; break; // Bu artık 'isim' alanını kontrol ediyor
                 default: passDropdown = true;
             }
 
@@ -369,6 +382,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
                 const searchTerm = searchValues[key];
                 if (searchTerm === '') continue; 
 
+                // GÜNCELLENDİ: 'sorumlu_kullanici_email' anahtarı artık 'isim' içeriyor ve arama 'isim' üzerinden yapılıyor.
                 const bayiData = (bayi[key] || '').toLowerCase();
                 
                 if (!bayiData.includes(searchTerm)) {
@@ -411,7 +425,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
                 case 'no_bayiAdi': passDropdown = !bayi.bayiAdi; break;
                 case 'no_yonetmen': passDropdown = !bayi.yonetmen; break; 
                 case 'no_email': passDropdown = !bayi.email; break;
-                case 'no_uzman': passDropdown = !bayi.sorumlu_kullanici_email; break;
+                case 'no_uzman': passDropdown = !bayi.sorumlu_kullanici_email; break; // 'isim' üzerinden filtreler
                 default: passDropdown = true;
             }
             if (!passDropdown) return false;
@@ -420,7 +434,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             for (const key in searchValues) {
                 const searchTerm = searchValues[key];
                 if (searchTerm === '') continue; 
-                const bayiData = (bayi[key] || '').toLowerCase();
+                const bayiData = (bayi[key] || '').toLowerCase(); // 'isim' üzerinden arar
                 if (!bayiData.includes(searchTerm)) {
                     passSearch = false; 
                     break;
@@ -435,7 +449,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             keysToExport.forEach(key => {
                 let value;
                 if (key === 'sorumlu_kullanici_email') {
-                    value = bayi.sorumlu_kullanici_email || '';
+                    value = bayi.sorumlu_kullanici_email || ''; // Bu artık 'isim'
                 } else {
                     value = bayi[key] || '';
                 }
@@ -715,6 +729,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         });
 
         // 2. Denetim Uzmanı (sorumlu_kullanici) e-postalarını ID'ye çevirmek için map hazırla
+        // Bu mantık hala E-POSTA'ya göre çalışır, bu doğru.
         const userEmailToIdMap = new Map();
         allUsers.forEach(user => userEmailToIdMap.set(user.email.toLowerCase(), user.id));
 

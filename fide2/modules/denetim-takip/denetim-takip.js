@@ -135,7 +135,8 @@ async function populateUserFilterDropdown() {
     if (currentUserRole !== 'admin') return;
 
     try {
-        allUsers = await pbInstance.collection('users').getFullList({ sort: 'email' });
+        // GÜNCELLENDİ: 'email' yerine 'name' (isime) göre sırala
+        allUsers = await pbInstance.collection('users').getFullList({ sort: 'name' });
         const selectElement = document.getElementById('admin-user-filter');
         selectElement.innerHTML = ''; // Temizle
 
@@ -147,8 +148,10 @@ async function populateUserFilterDropdown() {
         allUsers.forEach(user => {
             // Adminin kendisini 'Benim Verilerim' dışında tekrar listeleme
             if (user.id !== currentUserId) {
+                // GÜNCELLENDİ: 'email' yerine 'name' (isim) göster. Yoksa e-posta göster.
+                const displayName = user.name || user.email;
                 const roleLabel = user.role === 'admin' ? 'Admin' : 'Client';
-                selectElement.innerHTML += `<option value="${user.id}">${user.email} (${roleLabel})</option>`;
+                selectElement.innerHTML += `<option value="${user.id}">${displayName} (${roleLabel})</option>`;
             }
         });
 

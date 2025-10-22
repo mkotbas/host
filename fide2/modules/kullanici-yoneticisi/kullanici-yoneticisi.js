@@ -1,276 +1,317 @@
-// /modules/kullanici-yoneticisi/kullanici-yoneticisi.js
-
-// GÜNCELLENDİ: (function() { ... })() sarmalayıcısı kaldırıldı.
-
-// Modüle özel değişkenler
-let pbInstance;
-
-// DOM Elementleri
-let userListView, userFormView, usersTableBody, addNewUserBtn, userForm, userFormTitle,
-    userIdInput, userEmailInput, userPasswordInput, userPasswordConfirmInput,
-    userRoleSelect, userMobileAccessCheckbox, 
-    deviceKeyInfo, resetDeviceKeyBtn, 
-    saveUserBtn, cancelUserFormBtn;
-
 /**
- * Modülün başlangıç fonksiyonu. admin.js tarafından çağrılır.
- * GÜNCELLENDİ: 'export' anahtar kelimesi eklendi.
+ * Kullanıcı Yönetimi Modülü
+ * admin.js tarafından çağrılan ana başlatma fonksiyonu.
+ * (v2.17) ES6 Modül mimarisine ve 'name' alanı desteğine göre güncellendi.
  */
-export async function initializeKullaniciYoneticisiModule(pb) {
-    pbInstance = pb;
+export function initializeKullaniciYoneticisiModule(pbInstance) {
     
-    // DOM elementlerini değişkene ata
-    cacheDOMElements();
-    
-    // Olay dinleyicilerini kur
-    setupEventListeners();
-    
-    // Başlangıçta kullanıcı listesini göster
-    showView('list');
-    await fetchAndDisplayUsers();
-}
+    // --- Global Değişkenler ve DOM Elementleri ---
+    const pb = pbInstance;
+    let allUsersCache = []; // Kullanıcıları hafızada tutmak için
 
-/**
- * Gerekli tüm DOM elementlerini seçip değişkenlere atar.
- */
-function cacheDOMElements() {
-    userListView = document.getElementById('user-list-view');
-    userFormView = document.getElementById('user-form-view');
-    usersTableBody = document.getElementById('users-table-body');
-    addNewUserBtn = document.getElementById('add-new-user-btn');
-    userForm = document.getElementById('user-form');
-    userFormTitle = document.getElementById('user-form-title');
-    userIdInput = document.getElementById('user-id-input');
-    userEmailInput = document.getElementById('user-email-input');
-    userPasswordInput = document.getElementById('user-password-input');
-    userPasswordConfirmInput = document.getElementById('user-password-confirm-input');
-    userRoleSelect = document.getElementById('user-role-select');
-    userMobileAccessCheckbox = document.getElementById('user-mobile-access-checkbox');
+    // Ana Görünümler
+    const listView = document.getElementById('user-list-view');
+    const formView = document.getElementById('user-form-view');
     
-    deviceKeyInfo = document.getElementById('device-key-info');
-    resetDeviceKeyBtn = document.getElementById('reset-device-key-btn');
+    // Liste Elemanları
+    const tableBody = document.getElementById('users-table-body');
     
-    saveUserBtn = document.getElementById('save-user-btn');
-    cancelUserFormBtn = document.getElementById('cancel-user-form-btn');
-}
+    // Form Elemanları
+    const form = document.getElementById('user-form');
+    const formTitle = document.getElementById('user-form-title');
+    const userIdInput = document.getElementById('user-id-input');
+    
+    // GÜNCELLENDİ: 'name' alanı eklendi
+    const userNameInput = document.getElementById('user-name-input'); 
+    const userEmailInput = document.getElementById('user-email-input');
+    
+    // Parola Elemanları (v2.17: Sadece yeni kullanıcıda kullanılır)
+    const passwordWrapper = document.getElementById('password-fields-wrapper');
+    const userPasswordInput = document.getElementById('user-password-input');
+    const userPasswordConfirmInput = document.getElementById('user-password-confirm-input');
+    
+    // Diğer Form Elemanları
+    const userRoleSelect = document.getElementById('user-role-select');
+    const mobileAccessCheckbox = document.getElementById('user-mobile-access-checkbox');
+    
+    // Cihaz Anahtarı Elemanları
+    const deviceKeyInfo = document.getElementById('device-key-info');
+    const resetDeviceKeyBtn = document.getElementById('reset-device-key-btn');
+    
+    // Butonlar
+    const addNewUserBtn = document.getElementById('add-new-user-btn');
+    const saveUserBtn = document.getElementById('save-user-btn');
+    const cancelUserFormBtn = document.getElementById('cancel-user-form-btn');
 
-/**
- * Modül içindeki butonlar ve formlar için olay dinleyicilerini ayarlar.
- */
-function setupEventListeners() {
-    addNewUserBtn.addEventListener('click', handleAddNewUser);
-    cancelUserFormBtn.addEventListener('click', () => showView('list'));
-    userForm.addEventListener('submit', handleFormSubmit);
     
-    resetDeviceKeyBtn.addEventListener('click', handleResetDeviceKey);
-}
-
-/**
- * Veritabanından tüm kullanıcıları çeker ve tabloya ekler.
- */
-async function fetchAndDisplayUsers() {
-    usersTableBody.innerHTML = '<tr><td colspan="5">Kullanıcılar yükleniyor...</td></tr>';
-    try {
-        const users = await pbInstance.collection('users').getFullList({ sort: '-created' });
-        usersTableBody.innerHTML = ''; // Tabloyu temizle
-        if (users.length === 0) {
-            usersTableBody.innerHTML = '<tr><td colspan="5">Sistemde kayıtlı kullanıcı bulunamadı.</td></tr>';
-        } else {
-            users.forEach(user => renderUserRow(user));
+    // --- 1. Ana Veri Yükleme Fonksiyonu ---
+    
+    /**
+     * Tüm kullanıcıları PocketBase'den çeker ve tabloyu doldurur.
+     */
+    async function loadUsers() {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Kullanıcılar yükleniyor...</td></tr>';
+        
+        try {
+            // 'name' alanı artık veritabanından otomatik olarak 'getFullList' ile gelecek.
+            allUsersCache = await pb.collection('users').getFullList({
+                sort: 'name', // İsime göre sırala
+            });
+            renderUsersTable(allUsersCache);
+        } catch (error) {
+            console.error('Kullanıcılar yüklenirken hata:', error);
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Kullanıcılar yüklenemedi. Lütfen konsolu kontrol edin.</td></tr>';
         }
-    } catch (error) {
-        console.error("Kullanıcılar çekilirken hata:", error);
-        usersTableBody.innerHTML = '<tr><td colspan="5" style="color: red;">Kullanıcılar yüklenemedi.</td></tr>';
     }
-}
 
-/**
- * Tek bir kullanıcı verisi için tablo satırı oluşturur ve ekler.
- */
-function renderUserRow(user) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td>${user.email}</td>
-        <td><span class="role-badge role-${user.role}">${user.role || 'client'}</span></td>
-        <td>${user.mobile_access ? 'Evet' : 'Hayır'}</td>
-        <td>${new Date(user.created).toLocaleString('tr-TR')}</td>
-        <td class="actions-cell">
-            <button class="btn-primary btn-sm edit-btn" data-id="${user.id}"><i class="fas fa-edit"></i> Düzenle</button>
-            <button class="btn-danger btn-sm delete-btn" data-id="${user.id}"><i class="fas fa-trash"></i> Sil</button>
-        </td>
-    `;
-    // Butonlara olay dinleyicilerini ekle
-    tr.querySelector('.edit-btn').addEventListener('click', () => handleEditUser(user.id));
-    tr.querySelector('.delete-btn').addEventListener('click', () => handleDeleteUser(user.id, user.email));
     
-    usersTableBody.appendChild(tr);
-}
+    // --- 2. Arayüz (UI) Çizim Fonksiyonları ---
 
-/**
- * "Yeni Kullanıcı Ekle" butonu tıklandığında formu hazırlar.
- */
-function handleAddNewUser() {
-    userForm.reset();
-    userIdInput.value = '';
-    userFormTitle.textContent = 'Yeni Kullanıcı Ekle';
+    /**
+     * Kullanıcı listesini HTML tablosuna çizer.
+     * @param {Array} users - Çizdirilecek kullanıcı dizisi.
+     */
+    function renderUsersTable(users) {
+        tableBody.innerHTML = '';
+        if (users.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Sistemde kayıtlı kullanıcı bulunamadı.</td></tr>';
+            return;
+        }
 
-    // Parola alanlarını göster
-    userPasswordInput.parentElement.style.display = 'block';
-    userPasswordConfirmInput.parentElement.style.display = 'block';
+        users.forEach(user => {
+            const tr = document.createElement('tr');
+            tr.dataset.userId = user.id;
+
+            // GÜNCELLENDİ: 'name' alanı eklendi
+            const userName = user.name || '<span style="color: #999;">İsimsiz</span>';
+            const userEmail = user.email;
+            
+            const roleText = user.role === 'admin' ? 'Yönetici' : 'Standart Kullanıcı';
+            const roleClass = user.role === 'admin' ? 'role-admin' : 'role-client';
+            const mobileAccessText = user.mobile_access ? 'Evet' : 'Hayır';
+            const createdDate = new Date(user.created).toLocaleString('tr-TR', { 
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+            });
+
+            tr.innerHTML = `
+                <td data-label="İsim"><strong>${userName}</strong></td> <td data-label="E-posta">${userEmail}</td>
+                <td data-label="Rol"><span class="role-badge ${roleClass}">${roleText}</span></td>
+                <td data-label="Mobil Erişim">${mobileAccessText}</td>
+                <td data-label="Oluşturulma Tarihi">${createdDate}</td>
+                <td class="actions-cell">
+                    <button class="btn-warning btn-sm btn-edit" title="Düzenle"><i class="fas fa-edit"></i> Düzenle</button>
+                    <button class="btn-danger btn-sm btn-delete" title="Sil"><i class="fas fa-trash"></i> Sil</button>
+                </td>
+            `;
+
+            // Oluşturulan butonlara olay dinleyicileri ekle
+            tr.querySelector('.btn-edit').addEventListener('click', () => handleEdit(user.id));
+            tr.querySelector('.btn-delete').addEventListener('click', () => handleDelete(user.id));
+
+            tableBody.appendChild(tr);
+        });
+    }
+
     
-    userPasswordInput.placeholder = 'Yeni parola belirleyin';
-    userPasswordInput.required = true;
-    userPasswordConfirmInput.required = true;
+    // --- 3. Görünüm (View) Değiştirme Fonksiyonları ---
 
-    // Cihaz anahtarı bölümünü gizle
-    resetDeviceKeyBtn.style.display = 'none';
-    deviceKeyInfo.parentElement.style.display = 'none';
-    showView('form');
-}
+    /**
+     * Form görünümünü açar, liste görünümünü gizler.
+     */
+    function showFormView() {
+        listView.style.display = 'none';
+        formView.style.display = 'block';
+    }
 
-/**
- * "Düzenle" butonu tıklandığında formu doldurur.
- */
-async function handleEditUser(userId) {
-    try {
-        const user = await pbInstance.collection('users').getOne(userId);
-        userForm.reset();
+    /**
+     * Liste görünümünü açar, form görünümünü gizler ve formu sıfırlar.
+     */
+    function showListView() {
+        formView.style.display = 'none';
+        listView.style.display = 'block';
+        form.reset();
+        userIdInput.value = '';
+        userEmailInput.disabled = false; // E-posta alanını tekrar aç
+    }
+
+    
+    // --- 4. CRUD (Oluştur, Oku, Güncelle, Sil) İşleyici Fonksiyonları ---
+    
+    /**
+     * "Yeni Kullanıcı Ekle" formunu hazırlar ve gösterir.
+     */
+    function handleNew() {
+        form.reset();
+        userIdInput.value = '';
+        formTitle.textContent = 'Yeni Kullanıcı Ekle';
+        
+        // Dokümantasyon v2.17: Parola sadece yeni kullanıcıda atanır.
+        passwordWrapper.style.display = 'block'; 
+        userPasswordInput.required = true;
+        userPasswordConfirmInput.required = true;
+        
+        resetDeviceKeyBtn.style.display = 'none';
+        deviceKeyInfo.textContent = 'Kullanıcı ilk giriş yaptığında cihaz anahtarı atanacaktır.';
+        userEmailInput.disabled = false; 
+        
+        showFormView();
+    }
+
+    /**
+     * "Düzenle" butonuna basıldığında formu doldurur ve gösterir.
+     * @param {string} userId - Düzenlenecek kullanıcının ID'si.
+     */
+    function handleEdit(userId) {
+        const user = allUsersCache.find(u => u.id === userId);
+        if (!user) return;
+
+        form.reset();
         userIdInput.value = user.id;
+        formTitle.textContent = 'Kullanıcıyı Düzenle';
+
+        // GÜNCELLENDİ: 'name' alanı dolduruldu
+        userNameInput.value = user.name || ''; 
+        
         userEmailInput.value = user.email;
-        userRoleSelect.value = user.role || 'client';
-        userMobileAccessCheckbox.checked = user.mobile_access;
+        userEmailInput.disabled = true; // PocketBase, e-postanın düzenlenmesine izin vermez.
+        userRoleSelect.value = user.role;
+        mobileAccessCheckbox.checked = user.mobile_access;
 
-        // Parola alanlarını gizle
-        userPasswordInput.parentElement.style.display = 'none';
-        userPasswordConfirmInput.parentElement.style.display = 'none';
-
+        // Dokümantasyon v2.17: Parola değiştirme özelliği kaldırıldı.
+        passwordWrapper.style.display = 'none'; 
         userPasswordInput.required = false;
         userPasswordConfirmInput.required = false;
-
-        // Cihaz anahtarı bölümünü göster ve doldur
-        deviceKeyInfo.parentElement.style.display = 'block';
-        resetDeviceKeyBtn.style.display = 'inline-block';
         
-        // `device_key` alanını kontrol et
+        // Cihaz Anahtarı
         if (user.device_key) {
-            deviceKeyInfo.textContent = 'KİLİTLİ (Anahtar: ' + user.device_key.substring(0, 10) + '...)';
-            deviceKeyInfo.style.color = '#495057';
+            deviceKeyInfo.textContent = `Kilitli Anahtar: ${user.device_key.substring(0, 15)}...`;
+            resetDeviceKeyBtn.style.display = 'inline-block';
         } else {
             deviceKeyInfo.textContent = 'Henüz bir cihaz kaydedilmemiş.';
-            deviceKeyInfo.style.color = '#6c757d';
+            resetDeviceKeyBtn.style.display = 'none';
+        }
+        
+        showFormView();
+    }
+
+    /**
+     * "Sil" butonuna basıldığında kullanıcıyı siler.
+     * @param {string} userId - Silinecek kullanıcının ID'si.
+     */
+    async function handleDelete(userId) {
+        const user = allUsersCache.find(u => u.id === userId);
+        if (!user) return;
+
+        // GÜNCELLENDİ: Silme uyarısında e-posta yerine 'name' kullanıldı
+        const userNameForConfirm = user.name || user.email;
+        if (!confirm(`'${userNameForConfirm}' adlı kullanıcıyı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+            return;
         }
 
-        userFormTitle.textContent = 'Kullanıcıyı Düzenle';
-        showView('form');
-    } catch (error) {
-        console.error("Kullanıcı bilgisi alınamadı:", error);
-        alert("Kullanıcı bilgileri yüklenirken bir hata oluştu.");
+        try {
+            await pb.collection('users').delete(userId);
+            await loadUsers(); // Tabloyu yenile
+        } catch (error) {
+            console.error('Kullanıcı silinirken hata:', error);
+            alert('Kullanıcı silinirken bir hata oluştu: ' + error.message);
+        }
     }
-}
 
-/**
- * "Kaydet" butonuna basıldığında formu işler (yeni kayıt veya güncelleme).
- */
-async function handleFormSubmit(event) {
-    event.preventDefault();
-    saveUserBtn.disabled = true;
-    saveUserBtn.textContent = 'Kaydediliyor...';
-    
-    const userId = userIdInput.value;
-    const data = {
-        email: userEmailInput.value,
-        role: userRoleSelect.value,
-        mobile_access: userMobileAccessCheckbox.checked,
-    };
+    /**
+     * Form "Kaydet" butonuna basıldığında (submit) tetiklenir.
+     * Yeni kullanıcı oluşturur veya mevcut kullanıcıyı günceller.
+     */
+    async function handleFormSubmit(event) {
+        event.preventDefault();
+        saveUserBtn.disabled = true;
+        saveUserBtn.textContent = 'Kaydediliyor...';
 
-    const password = userPasswordInput.value;
-    const passwordConfirm = userPasswordConfirmInput.value;
+        const userId = userIdInput.value;
+        
+        // GÜNCELLENDİ: 'name' alanı veriye eklendi
+        const data = {
+            name: userNameInput.value,
+            email: userEmailInput.value,
+            role: userRoleSelect.value,
+            mobile_access: mobileAccessCheckbox.checked,
+            // 'emailVisibility: true' gibi ayarlar varsayılan olarak bırakıldı
+        };
 
-    try {
-        if (userId) { // --- GÜNCELLEME İŞLEMİ ---
-            if (password) {
-                if (password !== passwordConfirm) {
-                    throw new Error("Parolalar eşleşmiyor!");
+        try {
+            if (userId) { 
+                // --- GÜNCELLEME ---
+                // v2.17 gereği parola güncellemesi yapılmaz.
+                await pb.collection('users').update(userId, data);
+
+            } else { 
+                // --- YENİ KAYIT ---
+                if (!userPasswordInput.value || !userPasswordConfirmInput.value) {
+                    throw new Error('Yeni kullanıcı için parola zorunludur.');
                 }
-                data.password = password;
-                data.passwordConfirm = passwordConfirm;
+                if (userPasswordInput.value !== userPasswordConfirmInput.value) {
+                    throw new Error('Parolalar eşleşmiyor.');
+                }
+                data.password = userPasswordInput.value;
+                data.passwordConfirm = userPasswordConfirmInput.value;
+                
+                await pb.collection('users').create(data);
             }
-            await pbInstance.collection('users').update(userId, data);
-            alert("Kullanıcı başarıyla güncellendi.");
+            
+            await loadUsers(); // Tabloyu yenile
+            showListView(); // Listeye dön
 
-        } else { // --- YENİ OLUŞTURMA İŞLEMİ ---
-            if (!password || !passwordConfirm) {
-                throw new Error("Yeni kullanıcı için parola alanları zorunludur.");
-            }
-            if (password !== passwordConfirm) {
-                throw new Error("Parolalar eşleşmiyor!");
-            }
-            data.password = password;
-            data.passwordConfirm = passwordConfirm;
-            data.emailVisibility = true;
-            await pbInstance.collection('users').create(data);
-            alert("Kullanıcı başarıyla oluşturuldu.");
-        }
-
-        showView('list');
-        await fetchAndDisplayUsers();
-    } catch (error) {
-        console.error("Kullanıcı kaydedilirken hata:", error);
-        alert(`Bir hata oluştu: ${error.message}`);
-    } finally {
-        saveUserBtn.disabled = false;
-        saveUserBtn.textContent = 'Kaydet';
-    }
-}
-
-/**
- * "Sil" butonu tıklandığında kullanıcıyı siler.
- */
-async function handleDeleteUser(userId, userEmail) {
-    if (confirm(`'${userEmail}' kullanıcısını kalıcı olarak silmek istediğinizden emin misiniz?`)) {
-        try {
-            await pbInstance.collection('users').delete(userId);
-            alert("Kullanıcı başarıyla silindi.");
-            await fetchAndDisplayUsers();
         } catch (error) {
-            console.error("Kullanıcı silinirken hata:", error);
-            alert("Kullanıcı silinirken bir hata oluştu.");
+            console.error('Kullanıcı kaydedilirken hata:', error);
+            alert('Hata: ' + (error.message || 'Lütfen tüm zorunlu alanları doldurun.'));
+        } finally {
+            saveUserBtn.disabled = false;
+            saveUserBtn.textContent = 'Kaydet';
         }
     }
-}
+    
+    /**
+     * "Cihaz Anahtarı Kilidini Sıfırla" butonuna basıldığında tetiklenir.
+     */
+    async function handleResetDeviceKey() {
+        const userId = userIdInput.value;
+        if (!userId) return;
 
-/**
- * Cihaz anahtarı kilidini sıfırlama fonksiyonu
- */
-async function handleResetDeviceKey() {
-    const userId = userIdInput.value;
-    if (!userId) return;
+        if (!confirm("Kullanıcının cihaz kilidini sıfırlamak istediğinizden emin misiniz? Kullanıcı bir sonraki girişinde yeni bir cihaz kaydedebilecektir.")) {
+            return;
+        }
+        
+        resetDeviceKeyBtn.disabled = true;
+        resetDeviceKeyBtn.textContent = 'Sıfırlanıyor...';
 
-    if (confirm("Bu kullanıcının cihaz anahtarı kilidini sıfırlamak istediğinizden emin misiniz? Kullanıcı bir sonraki girişinde herhangi bir cihazdan bağlanabilir ve o cihaz yeniden kilitlenir.")) {
         try {
-            // `device_key` alanını boş string olarak güncelle
-            await pbInstance.collection('users').update(userId, { 'device_key': '' });
-            alert("Cihaz anahtarı kilidi başarıyla sıfırlandı.");
-            deviceKeyInfo.textContent = 'Cihaz anahtarı sıfırlandı. Kullanıcı bir sonraki girişinde kilitlenecek.';
-            deviceKeyInfo.style.color = '#28a745';
+            // Sadece 'device_key' alanını null olarak güncelle
+            await pb.collection('users').update(userId, { 'device_key': null });
+            deviceKeyInfo.textContent = 'Cihaz anahtarı sıfırlandı. Değişikliği tamamlamak için "Kaydet" butonuna basın.';
+            resetDeviceKeyBtn.style.display = 'none';
         } catch (error) {
-            console.error("Cihaz anahtarı sıfırlanırken hata:", error);
-            alert("Cihaz anahtarı sıfırlanırken bir hata oluştu.");
+            console.error('Cihaz anahtarı sıfırlanırken hata:', error);
+            alert('Hata: ' + error.message);
+        } finally {
+            resetDeviceKeyBtn.disabled = false;
+            resetDeviceKeyBtn.textContent = 'Cihaz Anahtarı Kilidini Sıfırla';
         }
     }
-}
 
-/**
- * Liste ve form görünümleri arasında geçiş yapar.
- */
-function showView(viewName) {
-    if (viewName === 'form') {
-        userListView.style.display = 'none';
-        userFormView.style.display = 'block';
-    } else { // 'list'
-        userListView.style.display = 'block';
-        userFormView.style.display = 'none';
+
+    // --- 5. Olay Dinleyicileri (Event Listeners) ---
+    
+    /**
+     * Modül içindeki tüm butonlar için olay dinleyicilerini ayarlar.
+     */
+    function setupEventListeners() {
+        // HTML'den kopyalanan elementlere güvenli atama
+        if (addNewUserBtn) addNewUserBtn.addEventListener('click', handleNew);
+        if (cancelUserFormBtn) cancelUserFormBtn.addEventListener('click', showListView);
+        if (form) form.addEventListener('submit', handleFormSubmit);
+        if (resetDeviceKeyBtn) resetDeviceKeyBtn.addEventListener('click', handleResetDeviceKey);
     }
-}
 
-// GÜNCELLENDİ: 'window.initialize...' satırı kaldırıldı.
+    // --- 6. Modülü Başlat ---
+    setupEventListeners();
+    loadUsers(); // Modül ilk yüklendiğinde kullanıcıları çek
+}
