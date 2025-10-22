@@ -47,8 +47,6 @@ function setupModuleEventListeners() {
     // Grup 1 Dinleyicileri
     document.getElementById('bayi-arama-silme-input').addEventListener('keyup', searchStoreForDeletion);
     document.getElementById('sil-bayi-raporlari-btn').addEventListener('click', deleteBayiRaporlari);
-    document.getElementById('indir-rapor-btn').addEventListener('click', downloadReport);
-    document.getElementById('listele-eksik-bilgi-btn').addEventListener('click', listEksikBilgiler);
     
     // Grup 2 Eylemleri 'populateTableManagement' içinde dinamik olarak atanıyor.
 
@@ -334,63 +332,6 @@ async function deleteBayiRaporlari() {
         document.getElementById('sil-bayi-raporlari-btn').disabled = true;
         showLoading(false);
     }
-}
-
-function downloadReport() {
-    const options = document.querySelectorAll('#export-options input:checked');
-    if (options.length === 0) { alert("Lütfen indirmek için en az bir bilgi türü seçin."); return; }
-    
-    let headersSet = new Set();
-    options.forEach(opt => {
-        switch(opt.value) {
-            case 'bayiAdi': headersSet.add('Bayi Adı'); break;
-            case 'kod+isim': headersSet.add('Bayi Kodu').add('Bayi Adı'); break;
-            case 'kod+mail': headersSet.add('Bayi Kodu').add('Mail Adresi'); break;
-            case 'il+isim': headersSet.add('İl').add('Bayi Adı'); break;
-            case 'il+kod+isim': headersSet.add('İl').add('Bayi Kodu').add('Bayi Adı'); break;
-        }
-    });
-    const headers = Array.from(headersSet);
-    const data = [headers];
-
-    allStores.forEach(store => {
-        const row = headers.map(header => {
-            if (header === 'İl') return store.sehir || '';
-            if (header === 'Bayi Kodu') return store.bayiKodu || '';
-            if (header === 'Bayi Adı') return store.bayiAdi || '';
-            if (header === 'Mail Adresi') return store.email || '';
-            return '';
-        });
-        data.push(row);
-    });
-
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Bayi Listesi");
-    XLSX.writeFile(wb, "Bayi_Bilgi_Raporu.xlsx");
-}
-
-function listEksikBilgiler() {
-    const options = document.querySelectorAll('#quality-check-options input:checked');
-    const resultsDiv = document.getElementById('eksik-bilgi-sonuc');
-    resultsDiv.innerHTML = '';
-    if (options.length === 0) { alert("Lütfen kontrol etmek için en az bir kriter seçin."); return; }
-
-    let resultsHtml = '';
-    options.forEach(opt => {
-        const checkType = opt.value;
-        let missing = [];
-        let title = '';
-        if (checkType === 'email') { title = 'E-posta Adresi Olmayanlar'; missing = allStores.filter(s => !s.email || s.email.trim() === ''); }
-        else if (checkType === 'yonetmen') { title = 'Bayi Yönetmeni Atanmamışlar'; missing = allStores.filter(s => !s.yonetmen || s.yonetmen.trim() === ''); }
-        else if (checkType === 'bolge') { title = 'Bölge Bilgisi Olmayanlar'; missing = allStores.filter(s => !s.bolge || s.bolge.trim() === ''); }
-
-        resultsHtml += `<h4>${title} (${missing.length} adet)</h4>`;
-        if (missing.length > 0) {
-            resultsHtml += `<ul>${missing.map(s => `<li>${s.bayiAdi} (${s.bayiKodu})</li>`).join('')}</ul>`;
-        } else { resultsHtml += '<p>Bu kritere uyan eksik bilgili bayi bulunamadı.</p>'; }
-    });
-    resultsDiv.innerHTML = resultsHtml;
 }
 
 function populateTableManagement() {
