@@ -9,7 +9,7 @@
 
 // PocketBase'in bilgisayarınızda çalıştığı adresi buraya yazıyoruz.
 // Genellikle bu adres http://127.0.0.1:8090 şeklindedir.
-const POCKETBASE_URL = 'http://127.0.0.1:8090';
+const POCKETBASE_URL = 'https://melih.zelab.uk/';
 
 // 'pb' adında global bir değişken oluşturup PocketBase istemcisini başlatıyoruz.
 // Uygulamanın diğer tüm JavaScript dosyaları veritabanına erişmek için bu 'pb' değişkenini kullanacak.
