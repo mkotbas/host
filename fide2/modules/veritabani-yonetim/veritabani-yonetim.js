@@ -336,11 +336,8 @@ async function deleteBayiRaporlari() {
 
 function populateTableManagement() {
     const tables = [
-        { name: 'users', desc: 'Sisteme giriş yapan kullanıcılar.', impact: 'Silinirse <strong>kimse giriş yapamaz.</strong>', allowDelete: false, allowUpload: false }, 
-        { name: 'bayiler', desc: 'Tüm bayilerin ana listesi.', impact: 'Silinirse <strong>hiçbir bayi görünmez.</strong>', allowDelete: false, allowUpload: false }, 
         { name: 'denetim_raporlari', desc: 'Yapılmış tüm denetimlerin cevapları.', impact: 'Silinirse <strong>tüm denetim geçmişi kaybolur.</strong>', allowDelete: true, allowUpload: false }, 
         { name: 'excel_verileri', desc: 'Yüklenen DiDe ve FiDe puanları.', impact: 'Silinirse puan tabloları boş çıkar.', allowDelete: true, allowUpload: false }, 
-        { name: 'ayarlar', desc: 'Tüm denetim soruları ve sistem ayarları.', impact: 'Silinirse <strong>denetim formu boşalır.</strong>', allowDelete: false, allowUpload: false }, 
         { name: 'denetim_geri_alinanlar', desc: 'İptal edilen denetimlerin kaydı.', impact: 'Temizlenmesi sorun teşkil etmez.', allowDelete: true, allowUpload: false } 
     ];
 
