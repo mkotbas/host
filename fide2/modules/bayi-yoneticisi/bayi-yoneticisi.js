@@ -691,7 +691,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
 
     /**
      * (Adım 2 -> Adım 3) Eşleştirmeyi kullanarak veriyi veritabanına aktarır (Oluşturma/Güncelleme).
-     * (GÜNCELLENDİ: Hata mesajı güncellendi)
+     * (GÜNCELLENDİ: 'bayiAdi' için veri temizleme eklendi)
      */
     async function executeImport() {
         
@@ -760,6 +760,14 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
                 } else if (dbField === 'bayiKodu') {
                     bayiKodu = excelValue;
                     pbData[dbField] = bayiKodu;
+                
+                } else if (dbField === 'bayiAdi') {
+                    // --- YENİ GÜNCELLEME (v2.17) ---
+                    // Bayi Adı temizleme kuralı: Başta 4+ rakam ve boşluk varsa kaldır.
+                    // Örn: "21234567 BAYİ ADI" -> "BAYİ ADI"
+                    const cleanBayiAdi = excelValue.replace(/^(\d{4,}\s+)/, '');
+                    pbData[dbField] = cleanBayiAdi;
+                    // --- YENİ GÜNCELLEME SONU ---
 
                 } else {
                     // Diğer tüm alanlar
