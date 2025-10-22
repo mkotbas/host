@@ -1,0 +1,88 @@
+<div class="card" id="grup1-card">
+    <h2><i class="fas fa-robot"></i> Grup 1: Otomasyon Sistemi Yönetimi</h2>
+    
+    <div class="section">
+        <div class="complex-action">
+            <label>Bir Bayinin Tüm Denetim Raporlarını Kalıcı Sil:</label>
+            <input type="text" id="bayi-arama-silme-input" placeholder="Bayi adı veya kodu ile arayın...">
+            <div id="bayi-arama-sonuc-listesi"></div>
+            <button id="sil-bayi-raporlari-btn" class="btn-danger" disabled><i class="fas fa-trash"></i> Seçilen Bayinin Raporlarını Sil</button>
+        </div>
+    </div>
+
+    <div class="section-row">
+        <div class="sub-card">
+            <h4><i class="fas fa-file-excel"></i> Veri Raporlama ve İndirme</h4>
+            <div class="checkbox-group" id="export-options">
+                <div class="custom-checkbox">
+                    <input type="checkbox" id="export1" value="bayiAdi"><label for="export1">Bayi İsimleri</label>
+                </div>
+                <div class="custom-checkbox">
+                    <input type="checkbox" id="export2" value="kod+isim"><label for="export2">Bayi Kodu + Bayi İsmi</label>
+                </div>
+                <div class="custom-checkbox">
+                    <input type="checkbox" id="export3" value="kod+mail"><label for="export3">Bayi Kodu + Mail Adresi</label>
+                </div>
+                <div class="custom-checkbox">
+                    <input type="checkbox" id="export4" value="il+isim"><label for="export4">İl + Bayi İsmi</label>
+                </div>
+                <div class="custom-checkbox">
+                    <input type="checkbox" id="export5" value="il+kod+isim"><label for="export5">İl + Bayi Kodu + Bayi İsmi</label>
+                </div>
+            </div>
+            <button id="indir-rapor-btn" class="btn-success full-width"><i class="fas fa-download"></i> Seçili Bilgileri İndir</button>
+        </div>
+
+        <div class="sub-card">
+            <h4><i class="fas fa-tasks"></i> Veri Kalitesi Kontrolü</h4>
+            <div class="checkbox-group" id="quality-check-options">
+                <div class="custom-checkbox">
+                    <input type="checkbox" id="quality1" value="email"><label for="quality1">E-posta Adresi Olmayanlar</label>
+                </div>
+                 <div class="custom-checkbox">
+                    <input type="checkbox" id="quality2" value="yonetmen"><label for="quality2">Bayi Yönetmeni Atanmamışlar</label>
+                </div>
+                 <div class="custom-checkbox">
+                    <input type="checkbox" id="quality3" value="bolge"><label for="quality3">Bölge Bilgisi Olmayanlar</label>
+                </div>
+            </div>
+            <button id="listele-eksik-bilgi-btn" class="btn-primary full-width"><i class="fas fa-list"></i> Eksik Bilgileri Listele</button>
+            <div id="eksik-bilgi-sonuc" class="results-area"></div>
+        </div>
+    </div>
+</div>
+
+
+<div class="card" id="grup2-card">
+    <h2><i class="fas fa-database"></i> Grup 2: Veritabanı Yönetimi</h2>
+    <div class="info-box danger">
+        <p><i class="fas fa-skull-crossbones"></i> <strong>UYARI:</strong> Bu bölümdeki işlemler geri alınamaz ve sisteminize kalıcı zarar verebilir.</p>
+    </div>
+
+    <div class="section">
+        <h4>Veritabanı Tablo Yönetimi</h4>
+        <table id="tablo-yonetim-tablosu">
+            <thead>
+                <tr>
+                    <th>Tablo Adı</th>
+                    <th>Açıklaması</th>
+                    <th>Etkisi</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+         <input type="file" id="tablo-yukle-input" style="display:none;" accept=".json">
+    </div>
+</div>
+
+<div id="modal-container" style="display: none;">
+    <div id="modal-content">
+        <h3 id="modal-title"></h3>
+        <div id="modal-body"></div>
+        <div id="modal-footer">
+            <button id="modal-close-btn" class="btn-secondary">Kapat</button>
+        </div>
+    </div>
+</div>

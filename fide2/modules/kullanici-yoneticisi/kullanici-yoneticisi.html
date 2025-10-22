@@ -1,0 +1,83 @@
+<div class="card">
+    <div id="user-list-view">
+        <div class="module-header">
+            <h3 class="module-title">Sistem Kullanıcıları</h3>
+            <button id="add-new-user-btn" class="btn-success btn-sm"><i class="fas fa-plus"></i> Yeni Kullanıcı Ekle</button>
+        </div>
+        <p class="module-description">
+            Sisteme kayıtlı tüm kullanıcıları burada yönetebilirsiniz. Bir kullanıcıyı düzenlemek veya silmek için ilgili satırdaki butonları kullanın.
+        </p>
+        <div class="table-responsive">
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>E-posta</th>
+                        <th>Rol</th>
+                        <th>Mobil Erişim</th>
+                        <th>Oluşturulma Tarihi</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="user-form-view" style="display: none;">
+        <h3 id="user-form-title">Yeni Kullanıcı Ekle</h3>
+        <form id="user-form">
+            <input type="hidden" id="user-id-input">
+
+            <div class="form-group">
+                <label for="user-email-input">E-posta Adresi</label>
+                <input type="email" id="user-email-input" required>
+            </div>
+
+            <div id="password-fields-wrapper">
+                <div class="form-group">
+                    <label for="user-password-input">Parola</label>
+                    <input type="password" id="user-password-input" placeholder="Yeni parola belirleyin">
+                </div>
+
+                <div class="form-group">
+                    <label for="user-password-confirm-input">Parola (Tekrar)</label>
+                    <input type="password" id="user-password-confirm-input" placeholder="Yeni parolayı doğrulayın">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="user-role-select">Kullanıcı Rolü</label>
+                <select id="user-role-select" required>
+                    <option value="client">Standart Kullanıcı (Client)</option>
+                    <option value="admin">Yönetici (Admin)</option>
+                </select>
+            </div>
+
+            <hr>
+            <h4><i class="fas fa-shield-alt"></i> Güvenlik Ayarları</h4>
+
+            <div class="form-group-checkbox">
+                <label for="user-mobile-access-checkbox">
+                    Mobil Cihazlardan Erişime İzin Verilsin mi?
+                </label>
+                <input type="checkbox" id="user-mobile-access-checkbox">
+            </div>
+
+            <div class="form-group">
+                <label>Benzersiz Cihaz Anahtarı Kilidi</label>
+                <div id="device-key-info" class="readonly-field">
+                    Henüz bir cihaz kaydedilmemiş.
+                </div>
+                <button type="button" id="reset-device-key-btn" class="btn-warning btn-sm" style="margin-top: 5px; display: none;">
+                    <i class="fas fa-unlock-alt"></i> Cihaz Anahtarı Kilidini Sıfırla
+                </button>
+                <small>Kullanıcı ilk başarılı girişinde, tarayıcısına benzersiz bir 'cihaz anahtarı' kaydedilir ve kilitlenir. Bu kilidi sıfırlamak, kullanıcının bir sonraki girişini (herhangi bir cihazdan) 'ilk giriş' olarak kabul eder.</small>
+            </div>
+            <div class="form-actions">
+                <button type="submit" id="save-user-btn" class="btn-primary">Kaydet</button>
+                <button type="button" id="cancel-user-form-btn" class="btn-secondary">İptal</button>
+            </div>
+        </form>
+    </div>
+</div>
