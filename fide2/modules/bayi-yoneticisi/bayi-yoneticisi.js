@@ -76,17 +76,17 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     //
     const dbFieldsForMapping = [
         { key: 'bayiKodu', label: 'Bayi Kodu (Zorunlu)' },
-        { key: 'bayiAdi', label: 'Bayi Adı (Zorunlu)' },
+        { key: 'bayiAdi', label: 'Bayi Adı' },
         { key: 'bolge', label: 'Bölge' },
-        { key: 'sehir', label: 'Şehir (Zorunlu)' },
-        { key: 'ilce', label: 'İlçe (Zorunlu)' },
-        { key: 'yonetmen', label: 'Bayi Yönetmeni (Zorunlu)' }, 
+        { key: 'sehir', label: 'Şehir' },
+        { key: 'ilce', label: 'İlçe' },
+        { key: 'yonetmen', label: 'Bayi Yönetmeni' }, 
         { key: 'email', label: 'Mail Adresi' },
         { key: 'sorumlu_kullanici', label: 'Denetim Uzmanı (Email ile)' } 
     ];
     
-    // YENİ: Zorunlu alanların listesi
-    const requiredFields = ['bayiKodu', 'bayiAdi', 'sehir', 'ilce', 'yonetmen'];
+    // YENİ: Zorunlu alanların listesi (GÜNCELLENDİ)
+    const requiredFields = ['bayiKodu'];
 
     let excelHeaders = []; // Yüklenen Excel'in başlıkları (örn: ["Kod", "İsim"])
     let excelData = [];    // Yüklenen Excel'in verisi (örn: [{Kod: "123", İsim: "A Bayi"}])
@@ -626,6 +626,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
 
     /**
      * (Adım 2) Excel başlıkları ve DB alanları ile eşleştirme arayüzünü oluşturur.
+     * (GÜNCELLENDİ: Akıllı eşleştirme kaldırıldı)
      */
     function populateMappingUI(headers) {
         mappingContainer.innerHTML = ''; // Temizle
@@ -639,31 +640,8 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             const row = document.createElement('div');
             row.className = 'mapping-row';
 
-            // Akıllı eşleştirme (basit)
-            const normalizedHeader = header.toLowerCase().replace(/[^a-z0-9]/gi, '');
-            let bestMatchKey = '';
-            
-            // Veritabanı alanlarını kontrol et
-            const matchedField = dbFieldsForMapping.find(field => {
-                 const normLabel = field.label.toLowerCase().replace(/[^a-z0-9]/gi, '');
-                 
-                 // Etiket 'bayi adi' ise ve başlık 'unvan' içeriyorsa eşleştir
-                 if (field.key === 'bayiAdi' && normalizedHeader.includes('unvan')) {
-                    return true;
-                 }
-                 // Etiket 'yonetmen' ise ve başlık 'bayiyonetmeni' içeriyorsa eşleştir
-                 if (field.key === 'yonetmen' && normalizedHeader.includes('bayiyonetmeni')) {
-                    return true;
-                 }
-
-                 return normalizedHeader.includes(field.key.toLowerCase()) || 
-                        normLabel.includes(normalizedHeader) ||
-                        normalizedHeader.includes(normLabel);
-            });
-
-            if (matchedField) {
-                bestMatchKey = matchedField.key;
-            }
+            // Akıllı eşleştirme kaldırıldı. 
+            // Tüm alanlar varsayılan olarak 'Eşleştirme / Boş Geç' ile gelecek.
 
             row.innerHTML = `
                 <label class="excel-column-label">${header} (Excel)</label>
@@ -673,10 +651,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
                 </select>
             `;
 
-            if (bestMatchKey) {
-                row.querySelector('select').value = bestMatchKey;
-            }
-
             mappingContainer.appendChild(row);
         });
 
@@ -685,8 +659,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     }
 
     /**
-     * (Adım 2) Eşleştirmeyi doğrular. (GÜNCELLENDİ: Yeni zorunlu alanlar eklendi)
-     * `bayiKodu`, `bayiAdi`, `sehir`, `ilce`, `yonetmen` zorunludur.
+     * (Adım 2) Eşleştirmeyi doğrular. (GÜNCELLENDİ: Sadece bayiKodu kontrol ediliyor)
      */
     function validateMapping() {
         const selects = mappingContainer.querySelectorAll('.db-field-select');
@@ -718,7 +691,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
 
     /**
      * (Adım 2 -> Adım 3) Eşleştirmeyi kullanarak veriyi veritabanına aktarır (Oluşturma/Güncelleme).
-     * (GÜNCELLENDİ: Hata düzeltmesi - Paralel yerine Sıralı (Sequential) aktarım)
+     * (GÜNCELLENDİ: Hata mesajı güncellendi)
      */
     async function executeImport() {
         
@@ -796,7 +769,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
 
             // Zorunlu eşleştirilmiş alanlardan herhangi biri Excel'de boşsa bu satırı atla
             if (missingRequiredField) {
-                 importErrors.push(`Satır ${index + 2} (Excel): Zorunlu alanlardan (Bayi Kodu, Adı, Şehir, İlçe, Yönetmen) biri veya birkaçı boş. Atlandı.`);
+                 importErrors.push(`Satır ${index + 2} (Excel): Zorunlu alan 'Bayi Kodu' boş. Atlandı.`);
                 return;
             }
 
