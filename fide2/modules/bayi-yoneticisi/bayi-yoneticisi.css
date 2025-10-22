@@ -568,3 +568,16 @@
 .checkbox-list-container label:last-child {
     margin-bottom: 0;
 }
+
+/* YENİ: "Yönetmeni Olmayanlar" seçeneğini vurgulamak için */
+.checkbox-list-container label strong {
+    color: #0d6efd; /* Vurgu rengi (mavi) */
+    font-weight: 600;
+}
+
+/* YENİ: "Yönetmeni Olmayanlar" seçeneğini ayırmak için çizgi */
+.checkbox-list-container hr {
+    margin: 8px -2px;
+    border: none;
+    border-top: 1px solid #eee;
+}

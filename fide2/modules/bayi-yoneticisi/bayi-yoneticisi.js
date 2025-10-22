@@ -963,14 +963,26 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         }
 
         // Yönetmen listesi
+        
+        // YENİ: "Yönetmeni Olmayanlar" seçeneğini en başa ekle
+        const nullYonetmenLabel = document.createElement('label');
+        // Özel bir değer ([IS_NULL]) kullanarak bu seçeneği daha sonra tanıyacağız
+        nullYonetmenLabel.innerHTML = `<input type="checkbox" value="[IS_NULL]"> <strong>Yönetmeni Olmayanlar</strong>`;
+        bulkAssignFilterYonetmen.appendChild(nullYonetmenLabel);
+
         if(yonetmenler.length > 0) {
+            // Ayırıcı çizgi ekle
+            const hr = document.createElement('hr');
+            bulkAssignFilterYonetmen.appendChild(hr);
+
             yonetmenler.forEach(val => {
                 const label = document.createElement('label');
                 label.innerHTML = `<input type="checkbox" value="${val}"> ${val}`;
                 bulkAssignFilterYonetmen.appendChild(label);
             });
         } else {
-            bulkAssignFilterYonetmen.innerHTML = '<span style="color: #999;">Filtrelenecek yönetmen yok.</span>';
+             // 'Yönetmeni Olmayanlar' dışında filtrelenecek yönetmen yoksa bile, 
+             // 'Yönetmeni Olmayanlar' seçeneği eklendiği için buraya "yok" yazmıyoruz.
         }
     }
 
@@ -998,8 +1010,14 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         // 1. GÜNCELLENDİ: Seçilen filtreleri checkbox listelerinden al
         const selectedBolgeler = Array.from(bulkAssignFilterBolge.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
         const selectedSehirler = Array.from(bulkAssignFilterSehir.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-        const selectedYonetmenler = Array.from(bulkAssignFilterYonetmen.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
         
+        // YENİ: 'Yönetmen' filtresini özel olarak işle
+        const selectedYonetmenValues = Array.from(bulkAssignFilterYonetmen.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+        // "Yönetmeni Olmayanlar" seçeneği işaretli mi?
+        const filterForNullYonetmen = selectedYonetmenValues.includes('[IS_NULL]');
+        // Diğer yönetmen isimleri
+        const selectedYonetmenler = selectedYonetmenValues.filter(v => v !== '[IS_NULL]');
+
         const userId = bulkAssignUserSelect.value;
 
         // 2. Doğrulama
@@ -1020,8 +1038,22 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         if (selectedSehirler.length > 0) {
             targetBayiler = targetBayiler.filter(b => selectedSehirler.includes(b.sehir));
         }
-        if (selectedYonetmenler.length > 0) {
-            targetBayiler = targetBayiler.filter(b => selectedYonetmenler.includes(b.yonetmen));
+        
+        // YENİ: Güncellenmiş yönetmen filtreleme mantığı
+        // Eğer (Yönetmeni olmayanlar seçiliyse) VEYA (diğer yönetmenlerden seçilen varsa)
+        if (filterForNullYonetmen || selectedYonetmenler.length > 0) {
+            targetBayiler = targetBayiler.filter(b => {
+                // 1. Koşul: "Yönetmeni Olmayanlar" seçili VE bayinin yönetmeni yok (boş, null, undefined)
+                if (filterForNullYonetmen && !b.yonetmen) {
+                    return true;
+                }
+                // 2. Koşul: Diğer yönetmen listesi bayinin yönetmenini içeriyor
+                if (selectedYonetmenler.includes(b.yonetmen)) {
+                    return true;
+                }
+                // Bu iki koşula da uymuyorsa filtre dışı kalır
+                return false;
+            });
         }
         // GÜNCELLEME SONU
 
