@@ -293,7 +293,7 @@ export async function clearExcelFromCloud(type) {
 }
 
 /**
- * YENİ VE GÜNCELLENMİŞ: Kullanıcı girişi ve BİREYSEL cihaz limiti.
+ * DÜZELTİLDİ: Kullanıcı girişi ve BİREYSEL cihaz limiti.
  * @param {string} email 
  * @param {string} password 
  * @returns {Promise<{success: boolean, message: string}>} Giriş denemesinin sonucunu döner.
@@ -305,7 +305,14 @@ export async function loginUser(email, password) {
     try {
         // 1. Adım: Şifre ile kimlik doğrulama
         const authData = await pb.collection('users').authWithPassword(email, password);
-        user = authData.record; // Kullanıcı verisini al
+        
+        // --- DÜZELTME BURADA ---
+        // 'authData.record' (dönen kayıt), 'device_limit' gibi özel alanlarımızı içermeyebilir.
+        // Bu nedenle, 'device_limit' gibi alanlara güvenli erişim için
+        // kullanıcının tam kaydını 'getOne' ile tekrar çekiyoruz.
+        user = await pb.collection('users').getOne(authData.record.id);
+        // --- DÜZELTME BİTTİ ---
+
     } catch (error) {
         console.error("Login error:", error);
         return { success: false, message: "E-posta veya şifre hatalı." };
@@ -354,17 +361,19 @@ export async function loginUser(email, password) {
                 return { success: true, message: "Giriş başarılı." };
 
             } catch (error) {
+                // Hata 404 (Not Found) ise: Tarayıcıdaki anahtar veritabanında yok.
+                // (Muhtemelen admin tarafından silinmiş veya eski sistemden kalma).
+                // Anahtarı temizle ve yeniden giriş yapmayı dene (yeni cihaz gibi).
                 localStorage.removeItem('myAppDeviceKey');
-                return loginUser(email, password); 
+                return loginUser(email, password); // Fonksiyonu yeniden çağır
             }
 
         } else {
             // --- CİHAZDA ANAHTAR YOK (Yeni Cihaz Kaydı) ---
             
-            // *** DEĞİŞİKLİK BURADA ***
-            // Cihaz limitini global 'ayarlar' yerine doğrudan 'user' kaydından oku
-            const deviceLimit = user.device_limit || 1; // Adım 1'de eklediğimiz 'device_limit' alanı.
-            // *** DEĞİŞİKLİK BİTTİ ***
+            // Cihaz limitini doğrudan tam 'user' kaydından oku
+            // (Artık 'user' nesnesinde 'device_limit' alanı garanti)
+            const deviceLimit = user.device_limit || 1; 
 
             const userDevices = await pb.collection('user_devices').getFullList({
                 filter: `user="${user.id}"`
@@ -395,8 +404,11 @@ export async function loginUser(email, password) {
         }
 
     } catch (error) {
+        // Bu 'catch' bloğu, 4. Adımdaki (client güvenliği) tüm hataları yakalar.
         console.error("Login security check error:", error);
         logoutUser();
+        // Hatanın nedeni büyük ihtimalle 'user_devices' tablosunun bulunamaması
+        // veya 'device_limit' alanının 'users' tablosuna eklenmemiş olmasıdır.
         return { success: false, message: "Güvenlik kontrolü sırasında bir hata oluştu." };
     }
 }
