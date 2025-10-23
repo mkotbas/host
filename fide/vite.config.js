@@ -1,26 +1,30 @@
+import { resolve } from 'path';
 import { defineConfig } from 'vite';
+import { fileURLToPath } from 'url';
+
+// Bu bölüm, ES Modüllerinde klasör yolunu bulmak için gereklidir
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = resolve(__filename, '..');
 
 export default defineConfig({
   build: {
-    // Kodları çirkinleştirme (obfuscation) ve sıkıştırma (minification)
-    // 'terser' varsayılan olarak JS kodlarınızı okunaksız hale getirir.
+    // Kodların karmaşıklaşması (minification) için 'terser' kullanılır
     minify: 'terser',
     terserOptions: {
       compress: {
-        // Geliştirme sırasında kullandığınız console.log() mesajlarını
-        // son kullanıcıya göstermemek için kaldırır.
-        drop_console: true, 
+        // Kod çalışırken 'console.log' ile yazdırılan notları kaldırır
+        drop_console: true,
       },
     },
     rollupOptions: {
-      // Projenizin iki farklı giriş noktası olduğunu burada belirtiyoruz.
+      // Netlify'ın build etmesi gereken HTML dosyalarınız
+      // Proje yapınıza göre (index.html ve admin/admin.html) ayarlandı
       input: {
-        // Ana site (index.html)
-        main: 'index.html',
-        
-        // Yönetim paneli (admin/admin.html)
-        admin: 'admin/admin.html'
-      }
-    }
-  }
+        main: resolve(__dirname, 'index.html'),
+        admin: resolve(__dirname, 'admin/admin.html'),
+      },
+    },
+    // Build edilen kodların konulacağı klasör
+    outDir: 'dist',
+  },
 });

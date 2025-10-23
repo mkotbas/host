@@ -1,6 +1,5 @@
-# Vite ve Node.js tarafından oluşturulan gereksiz dosyalar
-node_modules/
-dist/
+# Netlify'ın ürettiği build klasörü
+dist
 
-# İşletim sistemi dosyaları
-.DS_Store
+# Netlify'ın kurduğu kütüphane klasörü
+node_modules
