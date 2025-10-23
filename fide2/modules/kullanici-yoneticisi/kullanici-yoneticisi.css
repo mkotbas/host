@@ -352,7 +352,7 @@
 }
 
 /* Modern Checkbox'ın etiketini (Mobil Erişim İzni) gizle */
-.form-group-checkbox-modern > label {
+.form-grop-checkbox-modern > label {
     /* Bu etiketi kullanıyoruz, gizlemiyoruz */
      margin-bottom: 13px; /* Input ile arası açılsın */
 }
@@ -429,4 +429,12 @@
 #user-devices-table .btn-danger {
     padding: 5px 10px;
     font-size: 0.8em;
+}
+
+/* === YENİ DÜZELTME (OKUNMAYAN METİN): Cihaz açıklama paragrafı === */
+#devices-description {
+    font-size: 0.9em;
+    color: #666; /* Koyu gri (okunabilir renk) */
+    margin-bottom: 20px;
+    line-height: 1.5;
 }
