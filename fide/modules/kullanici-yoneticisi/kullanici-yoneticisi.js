@@ -3,6 +3,7 @@
  * YENİ: Global cihaz limiti kaldırıldı, BİREYSEL cihaz limiti eklendi.
  * GÜNCELLEME 2.28: Kaydetme sonrası listeye dönme iptal edildi, formda kalınması sağlandı.
  * GÜNCELLEME 2.29: Cihaz listesi (Sil/Kilitle) butonlarının formu submit etmesi engellendi (type="button" eklendi).
+ * GÜNCELLEME (SİZİN İSTEĞİNİZ): 'is_banned' (Hesap Kilitleme) özelliği tekrar aktifleştirildi.
  */
 export function initializeKullaniciYoneticisiModule(pbInstance) {
     
@@ -123,7 +124,8 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     // --- 2. Arayüz (UI) Çizim Fonksiyonları ---
 
     /**
-     * Kullanıcı listesini HTML tablosuna çizer. (Değişiklik yok)
+     * Kullanıcı listesini HTML tablosuna çizer.
+     * DÜZELTME: 'is_banned' alanı artık okunuyor.
      */
     function renderUsersTable(users) {
         tableBody.innerHTML = '';
@@ -142,12 +144,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             const roleText = user.role === 'admin' ? 'Yönetici' : 'Standart Kullanıcı';
             const roleClass = user.role === 'admin' ? 'role-admin' : 'role-client';
             
-            // Dokümandaki (v2.25) 'is_banned' alanı bu JS'de yok,
-            // 'ban' butonu 'users' tablosunda böyle bir alan bekliyor.
-            // Bu JS, dokümandaki 'users' (v2.25) şemasıyla uyumsuz görünüyor.
-            // 'is_banned' alanı olmadığını varsayarak kodu düzeltiyorum.
-            const banStatusText = 'Aktif'; // user.is_banned ? 'Kilitli (Ban)' : 'Aktif';
-            const banStatusClass = 'status-active'; // user.is_banned ? 'status-banned' : 'status-active';
+            // DÜZELTME: is_banned alanı artık veritabanından (varsayılan olarak) okunuyor.
+            const banStatusText = user.is_banned ? 'Kilitli (Ban)' : 'Aktif';
+            const banStatusClass = user.is_banned ? 'status-banned' : 'status-active';
 
             const mobileAccessText = user.mobile_access ? 'Evet' : 'Hayır';
             const createdDate = new Date(user.created).toLocaleString('tr-TR', { 
@@ -176,7 +175,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
     /**
      * Cihaz listesini HTML tablosuna çizer. 
-     * GÜNCELLEME 2.29: Butonlara type="button" eklendi.
+     * GÜNCELLEME 2.29: Butonlara type="button" eklendi. (Değişiklik yok)
      */
     function renderUserDevicesTable(devices) {
         userDevicesTableBody.innerHTML = '';
@@ -257,7 +256,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         
         userEmailInput.disabled = false; 
 
-        // Ban/cihaz bölümlerini gizle
+        // Ban/cihaz bölümlerini gizle (Yeni kullanıcı banlı olamaz)
         userBanSection.style.display = 'none';
         devicesHr.style.display = 'none';
         devicesTitle.style.display = 'none';
@@ -274,6 +273,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
     /**
      * "Düzenle" butonuna basıldığında formu doldurur ve gösterir.
+     * DÜZELTME: 'is_banned' bölümü aktifleştirildi.
      */
     function handleEdit(userId) {
         const user = allUsersCache.find(u => u.id === userId);
@@ -293,16 +293,14 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         userPasswordInput.required = false;
         userPasswordConfirmInput.required = false;
         
-        // Ban bölümünü ayarla
+        // --- DÜZELTME BAŞLANGICI ---
+        // Ban bölümünü ayarla ve GÖSTER
         userBanSection.style.display = 'block';
-        // 'is_banned' alanı 'users' tablosunda yoksa bu hata verir.
-        // Dokümandaki (v2.25) şemada 'is_banned' YOK. 'device_keys' var.
-        // Bu JS dosyası, dokümandan (v2.25) daha eski bir şemaya (v2.23?) ait görünüyor.
-        // Şimdilik 'is_banned' olmadığını varsayarak butonu gizliyorum.
-        // Eğer varsa, aşağıdaki satırı aktif edin.
-        // updateBanButton(user.is_banned); 
-        // Şimdilik BAN butonunu (dokümanda olmayan alana dayandığı için) gizle:
-         userBanSection.style.display = 'none';
+        
+        // 'is_banned' alanını (Bool) okuyup butonu ayarla
+        // (eğer veri undefined ise 'false' varsay)
+        updateBanButton(user.is_banned || false); 
+        // --- DÜZELTME BİTTİ ---
 
 
         // Cihaz listesi bölümünü göster
@@ -363,7 +361,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
     /**
      * Form "Kaydet" butonuna basıldığında (submit) tetiklenir.
-     * GÜNCELLEME 2.28: Artık güncelleme sonrası formda kalıyor.
+     * GÜNCELLEME 2.28: Artık güncelleme sonrası formda kalıyor. (Değişiklik yok)
      */
     async function handleFormSubmit(event) {
         event.preventDefault();
@@ -433,8 +431,8 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
      */
     
     /**
-     * "Hesabı Kilitle / Kilidi Aç" butonu (Değişiklik yok)
-     * NOT: Bu fonksiyon 'is_banned' alanı bekliyor. Dokümanda (v2.25) bu alan yok.
+     * "Hesabı Kilitle / Kilidi Aç" butonu
+     * DÜZELTME: Hata mesajı basitleştirildi.
      */
     async function handleToggleBanUser() {
         const userId = userIdInput.value;
@@ -463,12 +461,11 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             // Ana listedeki cache'i de güncelleyelim:
             const userInCache = allUsersCache.find(u => u.id === userId);
             if(userInCache) userInCache.is_banned = newBanStatus;
-            // Listeyi yeniden çiz (GÜNCELLEME 2.28: Gerek yok, zaten formdayız)
-            // renderUsersTable(allUsersCache);
             
         } catch (error) {
             console.error('Kullanıcı kilitlenirken hata:', error);
-            alert('Hata: ' + error.message + " ('is_banned' alanı eksik olabilir)");
+            // DÜZELTME: Hata mesajı basitleştirildi.
+            alert('Hata: ' + error.message);
             updateBanButton(user.is_banned); 
         } finally {
             toggleBanUserBtn.disabled = false;
@@ -527,7 +524,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
 
     /**
-     * YENİ: Kullanıcı rolü değiştikçe cihaz limiti alanını göster/gizle.
+     * YENİ: Kullanıcı rolü değiştikçe cihaz limiti alanını göster/gizle. (Değişiklik yok)
      */
     function handleRoleChange() {
         if (userRoleSelect.value === 'admin') {
