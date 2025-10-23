@@ -198,6 +198,7 @@ async function handleDeleteUserAndData_Modal() {
 /**
  * (Yıkıcı Senaryo 2)
  * "Atanmamış Bayileri Temizle" eylemini çalıştırır.
+ * (GÜNCELLENDİ: 400 Bad Request hatasını önlemek için toplu silme yerine döngü ile teker teker silme işlemine geçirildi)
  */
 async function handleDeleteUnassignedBayis() {
     const unassignedBayiler = allStores.filter(s => !s.sorumlu_kullanici);
@@ -208,24 +209,51 @@ async function handleDeleteUnassignedBayis() {
     if (!confirm(`ÇOK YÜKSEK RİSK!\n\nSistemde 'Atanmamış' olarak görünen ${unassignedBayiler.length} adet bayi bulundu.\n\nBu işlem, bu bayileri VE bu bayilere ait (başka kullanıcılara ait olsalar bile) TÜM denetim raporlarını kalıcı olarak silecektir.\n\nBu işlem GERİ ALINAMAZ.\n\nEmin misiniz?`)) { return; }
 
     showLoading(true, `Yıkıcı temizlik başlatıldı... ${unassignedBayiler.length} atanmamış bayi işleniyor...`);
+    
     try {
-        const bayiIds = unassignedBayiler.map(b => b.id);
-        
-        showLoading(true, `Adım 1/2: ${bayiIds.length} bayiye ait raporlar aranıyor...`);
-        const reportFilter = bayiIds.map(id => `bayi = "${id}"`).join(' || ');
-        const reports = await pbInstance.collection('denetim_raporlari').getFullList({ filter: reportFilter, fields: 'id' });
+        let deletedReportsCount = 0;
+        let deletedBayilerCount = 0;
+        const totalBayiler = unassignedBayiler.length;
 
-        if (reports.length > 0) {
-            showLoading(true, `Adım 1/2: ${reports.length} adet ilişkili rapor siliniyor...`);
-            const deletePromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
-            await Promise.all(deletePromises);
+        for (let i = 0; i < totalBayiler; i++) {
+            const bayi = unassignedBayiler[i];
+            const bayiInfo = `${bayi.bayiAdi || 'İsimsiz'} (${bayi.bayiKodu || 'Kodsuz'})`;
+            
+            showLoading(true, `[${i + 1}/${totalBayiler}] İşleniyor: ${bayiInfo}\n(Adım 1/2: Raporlar siliniyor...)`);
+
+            // Adım 1: Bu TEK bayiye ait raporları bul ve sil
+            try {
+                const reports = await pbInstance.collection('denetim_raporlari').getFullList({
+                    filter: `bayi = "${bayi.id}"`,
+                    fields: 'id'
+                });
+
+                if (reports.length > 0) {
+                    const deletePromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
+                    await Promise.all(deletePromises);
+                    deletedReportsCount += reports.length;
+                }
+            } catch (reportError) {
+                // Raporları silerken bir hata olursa (örn: başka bir kısıtlama), bu bayiyi atla ve logla
+                // Bayiyi silme, çünkü raporları hâlâ var.
+                console.error(`'${bayiInfo}' için raporlar silinemedi, bayi atlanıyor:`, reportError);
+                handleError(reportError, `'${bayiInfo}' bayisinin raporları silinirken bir hata oluştu. Bu bayi atlanacak.`);
+                continue; // Bir sonraki bayiye geç
+            }
+
+            // Adım 2: Raporlar başarıyla silindiyse (veya yoksa), bayiyi sil
+            showLoading(true, `[${i + 1}/${totalBayiler}] İşleniyor: ${bayiInfo}\n(Adım 2/2: Bayi siliniyor...)`);
+            try {
+                await pbInstance.collection('bayiler').delete(bayi.id);
+                deletedBayilerCount++;
+            } catch (bayiError) {
+                // Bayi silinirken bir hata olursa (çok olası değil ama güvenli olmalı)
+                console.error(`'${bayiInfo}' silinemedi:`, bayiError);
+                handleError(bayiError, `'${bayiInfo}' bayisi silinirken bir hata oluştu.`);
+            }
         }
 
-        showLoading(true, `Adım 2/2: ${bayiIds.length} adet atanmamış bayi siliniyor...`);
-        const deleteBayiPromises = bayiIds.map(id => pbInstance.collection('bayiler').delete(id));
-        await Promise.all(deleteBayiPromises);
-
-        alert(`YIKICI TEMİZLİK TAMAMLANDI:\n\n- ${reports.length} adet ilişkili denetim raporu silindi.\n- ${bayiIds.length} adet atanmamış bayi silindi.`);
+        alert(`YIKICI TEMİZLİK TAMAMLANDI:\n\n- ${deletedReportsCount} adet ilişkili denetim raporu silindi.\n- ${deletedBayilerCount} adet atanmamış bayi silindi.`);
         await loadInitialData(); // Verileri yenile
         
     } catch (error) {
