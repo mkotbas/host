@@ -3,7 +3,7 @@ import * as state from './state.js';
 
 let pb; // PocketBase instance
 
-// --- YENİ YARDIMCI GÜVENLİK FONKSİYONLARI ---
+// --- YARDIMCI GÜVENLİK FONKSİYONLARI ---
 
 /**
  * Cihazın mobil olup olmadığını User Agent üzerinden kontrol eder.
@@ -14,7 +14,33 @@ function isMobileDevice() {
 }
 
 /**
- * YENİ FONKSİYON: Rastgele, benzersiz bir cihaz anahtarı oluşturur.
+ * YENİ FONKSİYON: Kullanıcının cihaz bilgilerini (Tarayıcı ve OS)
+ * admin panelinde gösterilecek basit bir metne dönüştürür.
+ * @returns {string} Örn: "Chrome on Windows"
+ */
+function getDeviceDescription() {
+    const ua = navigator.userAgent;
+    let os = "Unknown OS";
+    let browser = "Unknown Browser";
+
+    // İşletim Sistemi Tespiti
+    if (/Windows/.test(ua)) os = "Windows";
+    else if (/Macintosh/.test(ua)) os = "MacOS";
+    else if (/iPhone|iPad|iPod/.test(ua)) os = "iOS";
+    else if (/Android/.test(ua)) os = "Android";
+    else if (/Linux/.test(ua)) os = "Linux";
+
+    // Tarayıcı Tespiti
+    if (/Edg/.test(ua)) browser = "Edge";
+    else if (/Chrome/.test(ua) && !/Edg/.test(ua)) browser = "Chrome";
+    else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = "Safari";
+    else if (/Firefox/.test(ua)) browser = "Firefox";
+    
+    return `${browser} on ${os}`;
+}
+
+/**
+ * Rastgele, benzersiz bir cihaz anahtarı oluşturur.
  * @returns {string} Örneğin: "AHS7-8J3K-9B3D-N1C9"
  */
 function generateDeviceKey() {
@@ -24,10 +50,6 @@ function generateDeviceKey() {
     // Sayıları 36'lık tabana (harf+rakam) çevir ve birleştir
     return Array.from(arr, dec => dec.toString(36)).join('-').toUpperCase();
 }
-
-/**
- * KALDIRILDI: getFormattedUserAgent() fonksiyonu artık kullanılmıyor.
- */
 
 
 /**
@@ -274,7 +296,7 @@ export async function clearExcelFromCloud(type) {
 }
 
 /**
- * GÜNCELLENDİ: Kullanıcı girişi ve YENİ cihaz anahtarı kontrolünü gerçekleştirir.
+ * YENİ VE GÜNCELLENMİŞ: Kullanıcı girişi, Admin bypass, Client cihaz limiti ve kilitleme.
  * @param {string} email 
  * @param {string} password 
  * @returns {Promise<{success: boolean, message: string}>} Giriş denemesinin sonucunu döner.
@@ -282,53 +304,109 @@ export async function clearExcelFromCloud(type) {
 export async function loginUser(email, password) {
     if (!pb) return { success: false, message: "Veritabanı bağlantısı kurulamadı." };
 
+    let user;
     try {
         // 1. Adım: Şifre ile kimlik doğrulama
-        await pb.collection('users').authWithPassword(email, password);
+        const authData = await pb.collection('users').authWithPassword(email, password);
+        user = authData.record; // Kullanıcı verisini al
     } catch (error) {
         console.error("Login error:", error);
         return { success: false, message: "E-posta veya şifre hatalı." };
     }
 
     try {
-        // 2. Adım: Güvenlik alanlarını içeren tam kullanıcı kaydını çek
-        const user = await pb.collection('users').getOne(pb.authStore.model.id);
+        // 2. Adım: Kullanıcı KİLİTLİ (BANNED) mi? (Adım 1'de eklediğimiz 'is_banned' alanı)
+        if (user.is_banned === true) {
+            logoutUser();
+            return { success: false, message: "Bu hesap yönetici tarafından kilitlenmiştir." };
+        }
 
-        // 3. Adım: Mobil Erişim Kontrolü
+        // 3. Adım: Kullanıcı ROLÜ 'admin' mi? (İstediğiniz 1. madde)
+        if (user.role === 'admin') {
+            // ADMIN GİRİŞİ: Cihaz kilidi veya mobil kontrolü yapma.
+            return { success: true, message: "Yönetici girişi başarılı." };
+        }
+
+        // 4. Adım: 'client' (Standart Kullanıcı) için Güvenlik Kontrolleri
+        
+        // 4a. Mobil Erişim Kontrolü
         if (user.mobile_access === false && isMobileDevice()) {
-            logoutUser(); // Güvenlik ihlalinde oturumu hemen kapat
+            logoutUser();
             return { success: false, message: "Bu hesaptan mobil cihaz ile giriş izni yoktur." };
         }
 
-        // 4. Adım: Cihaz Anahtarı (Device Key) Kontrolü
-        // Tarayıcının hafızasındaki anahtarı al
+        // 4b. Yeni Cihaz Yönetimi (Adım 1'de oluşturduğumuz 'user_devices' tablosu)
         const browserDeviceKey = localStorage.getItem('myAppDeviceKey');
-        // Veritabanındaki anahtarı al
-        const dbDeviceKey = user.device_key;
+        const currentDeviceDesc = getDeviceDescription(); // "Chrome on Windows" vb.
 
-        if (!dbDeviceKey) {
-            // Senaryo 1: İLK GİRİŞ. Kullanıcının veritabanında anahtarı yok.
-            // Yeni bir anahtar oluştur, tarayıcıya ve veritabanına kaydet.
-            const newKey = generateDeviceKey();
-            localStorage.setItem('myAppDeviceKey', newKey);
-            await pb.collection('users').update(user.id, { 'device_key': newKey });
+        if (browserDeviceKey) {
+            // --- CİHAZDA ANAHTAR VAR (Normal giriş denemesi) ---
+            try {
+                const deviceRecord = await pb.collection('user_devices').getFirstListItem(
+                    `user="${user.id}" && device_key="${browserDeviceKey}"`
+                );
+
+                // Cihaz kilitli mi?
+                if (deviceRecord.is_locked) {
+                    logoutUser();
+                    return { success: false, message: "Bu cihaz yönetici tarafından kilitlenmiştir." };
+                }
+
+                // Cihaz kilitli değil. Son giriş tarihini güncelle ve devam et.
+                await pb.collection('user_devices').update(deviceRecord.id, {
+                    'last_login': new Date().toISOString(),
+                    'device_info': currentDeviceDesc // Cihaz bilgisini de güncelleyelim
+                });
+                return { success: true, message: "Giriş başarılı." };
+
+            } catch (error) {
+                // Hata 404 (Not Found) ise:
+                // Tarayıcıda bir anahtar var, ama veritabanında yok.
+                // (Muhtemelen admin tarafından silinmiş).
+                // Anahtarı tarayıcıdan temizle ve yeni cihaz gibi davran.
+                localStorage.removeItem('myAppDeviceKey');
+                return loginUser(email, password); // Fonksiyonu yeniden çağır (bu kez anahtarsız girecek)
+            }
+
+        } else {
+            // --- CİHAZDA ANAHTAR YOK (Yeni Cihaz Kaydı) ---
             
-        } else if (dbDeviceKey !== browserDeviceKey) {
-            // Senaryo 2: ENGELLEME. 
-            // Veritabanında bir anahtar var, ancak tarayıcıdaki anahtar onunla eşleşmiyor
-            // (ya başka bir cihazdan giriyor ya da tarayıcı hafızası silinmiş).
-            logoutUser(); // Güvenlik ihlalinde oturumu hemen kapat
-            return { success: false, message: `Bu hesaba sadece kayıtlı cihazdan giriş yapılabilir. Bu cihazı ilk kez kullanıyorsanız veya tarayıcı verilerini sildiyseniz, yöneticinizden cihaz kilidini sıfırlamasını isteyin.` };
+            // Cihaz limitini kontrol et (İstediğiniz 2. madde)
+            const limitSetting = await pb.collection('ayarlar').getFirstListItem('anahtar="clientDeviceLimit"');
+            const deviceLimit = parseInt(limitSetting.deger) || 1; // Varsayılan 1 olsun
+
+            const userDevices = await pb.collection('user_devices').getFullList({
+                filter: `user="${user.id}"`
+            });
+            
+            if (userDevices.length >= deviceLimit) {
+                // CİHAZ LİMİTİ DOLU
+                logoutUser();
+                return { 
+                    success: false, 
+                    message: `Cihaz limitiniz (${deviceLimit}) dolmuştur. Yeni bir cihaz ekleyemezsiniz. Lütfen yöneticinizle iletişime geçin.` 
+                };
+            }
+
+            // LİMİT DOLU DEĞİL: Yeni cihazı kaydet
+            const newKey = generateDeviceKey();
+            
+            await pb.collection('user_devices').create({
+                'user': user.id,
+                'device_key': newKey,
+                'device_info': currentDeviceDesc,
+                'last_login': new Date().toISOString(),
+                'is_locked': false
+            });
+
+            // Yeni anahtarı tarayıcı hafızasına kaydet
+            localStorage.setItem('myAppDeviceKey', newKey);
+            return { success: true, message: "Yeni cihaz kaydedildi ve giriş yapıldı." };
         }
-        
-        // Senaryo 3: BAŞARILI GİRİŞ.
-        // dbDeviceKey var VE browserDeviceKey ile eşleşiyor.
-        // Tüm kontrollerden geçti
-        return { success: true, message: "Giriş başarılı." };
 
     } catch (error) {
         console.error("Login security check error:", error);
-        logoutUser(); // Herhangi bir hata durumunda oturumu kapat
+        logoutUser();
         return { success: false, message: "Güvenlik kontrolü sırasında bir hata oluştu." };
     }
 }
@@ -336,9 +414,7 @@ export async function loginUser(email, password) {
 /**
  * Kullanıcı çıkış işlemini yapar.
  * (Bu fonksiyonda değişiklik yok)
- * ÖNEMLİ NOT: Çıkış yaparken 'myAppDeviceKey'i localStorage'dan SİLMEYİZ.
- * Silinirse, kullanıcı kendi cihazından bile kilitlenir. 
- * Anahtar tarayıcıda kalıcı olmalıdır.
+ * Cihaz anahtarını (myAppDeviceKey) SİLMEZ, bu doğru.
  */
 export function logoutUser() {
     if (pb) {
