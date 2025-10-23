@@ -45,8 +45,12 @@ async function initializeApp() {
             }
              if(state.fideData.length > 0) {
                  document.getElementById('clear-fide-excel-btn').style.display = 'inline-flex';
+            }
         }
-    }
+        
+        // YENİ EKLENDİ: Anlık ban (kilitleme) sistemini dinlemeyi başlat
+        subscribeToUserChanges();
+
     } else {
         // Giriş yapılmamışsa, formu varsayılan sorularla ve interaktif olmayan modda çiz
         state.setIsPocketBaseConnected(false);
@@ -86,7 +90,7 @@ function setupEventListeners() {
         window.location.reload();
     });
 
-    // === GÜNCELLENEN BÖLÜM: GİRİŞ BUTONU MANTIĞI ===
+    // === GİRİŞ BUTONU MANTIĞI (Önceki adımda güncellenmişti, değişiklik yok) ===
     loginSubmitBtn.addEventListener('click', async () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
@@ -118,7 +122,7 @@ function setupEventListeners() {
         }
     });
 
-    // --- Uygulama İçi Olay Dinleyicileri ---
+    // --- Uygulama İçi Olay Dinleyicileri (Değişiklik yok) ---
     document.getElementById('excel-file-input').addEventListener('change', async (e) => {
        const success = await excel.handleFileSelect(e, 'dide');
        if(success) {
@@ -166,6 +170,43 @@ function setupEventListeners() {
         window.open('admin/admin.html', '_blank');
     });
 }
+
+/**
+ * YENİ FONKSİYON: Anlık ban sistemini dinler.
+ * Kullanıcının 'users' tablosundaki kendi kaydını dinler.
+ * Eğer 'is_banned' true olursa, kullanıcıyı anında atar.
+ */
+function subscribeToUserChanges() {
+    if (!pb || !pb.authStore.isValid) {
+        return; // Giriş yapılmamışsa dinleme
+    }
+
+    const userId = pb.authStore.model.id;
+
+    try {
+        // 'users' tablosundaki SADECE bu kullanıcının ID'sini dinle
+        pb.collection('users').subscribe(userId, function(e) {
+            // console.log('Kullanıcı kaydı güncellendi:', e.record);
+            
+            // Kilitlenme (ban) durumu kontrolü
+            if (e.record && e.record.is_banned === true) {
+                console.warn('Kullanıcı kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
+                
+                // Kullanıcıyı bilgilendir
+                alert("Hesabınız bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor.");
+                
+                // Oturumu kapat
+                api.logoutUser();
+                
+                // Sayfayı yenileyerek giriş ekranına at
+                window.location.reload();
+            }
+        });
+    } catch (error) {
+        console.error('Kullanıcı dinlemesi (subscribe) başlatılamadı:', error);
+    }
+}
+
 
 /**
  * Oturum durumuna göre giriş/çıkış butonlarını günceller.

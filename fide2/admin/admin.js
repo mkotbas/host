@@ -37,18 +37,17 @@ const modules = [
         icon: 'fas fa-cogs',
         path: '../modules/veritabani-yonetim/'
     },
-    // --- YENİ EKLENEN MODÜL ---
     {
         id: 'kullanici-yoneticisi',
         name: 'Kullanıcı Yönetimi',
         icon: 'fas fa-users-cog',
         path: '../modules/kullanici-yoneticisi/'
     }
-    // --- EKLEME BİTTİ ---
 ];
 
 // --- Global Değişkenler ---
 let currentModuleId = null;
+// 'pb' değişkeni 'db-config.js' dosyasından global olarak geliyor.
 
 // --- Uygulama Başlatma ---
 window.onload = initializeAdminPanel;
@@ -64,10 +63,15 @@ async function initializeAdminPanel() {
     if (isAdmin) {
         // Kullanıcı admin ise, paneli normal şekilde yükle
         renderModuleMenu();
+        
         // Varsayılan olarak 'denetim-takip' modülünü yükle
         if (!currentModuleId) {
             loadModule('denetim-takip');
         }
+
+        // YENİ EKLENDİ: Anlık ban (kilitleme) sistemini dinlemeyi başlat
+        subscribeToAdminChanges();
+
     } else {
         // Kullanıcı admin değilse veya giriş yapmamışsa, erişimi engelle
         document.getElementById('module-menu').innerHTML = ''; // Menüyü temizle
@@ -84,7 +88,7 @@ async function initializeAdminPanel() {
     setupEventListeners();
 }
 
-// --- ALT MENÜ DESTEKLİ MENÜ OLUŞTURUCU (DEĞİŞİKLİK YOK) ---
+// --- ALT MENÜ DESTEKLİ MENÜ OLUŞTURUCU (DEĞİİŞKLİK YOK) ---
 function renderModuleMenu() {
     const menu = document.getElementById('module-menu');
     menu.innerHTML = ''; 
@@ -132,7 +136,7 @@ function renderModuleMenu() {
     });
 }
 
-// --- MODÜL YÜKLEYİCİ (GÜNCELLENDİ: SADECE MODERN YAPI) ---
+// --- MODÜL YÜKLEYİCİ (MODERN YAPI - DEĞİŞİKLİK YOK) ---
 async function loadModule(moduleId) {
     let module;
     for (const main of modules) {
@@ -153,7 +157,7 @@ async function loadModule(moduleId) {
 
     currentModuleId = moduleId;
 
-    // Aktif menü öğesini ayarla (Değişiklik yok)
+    // Aktif menü öğesini ayarla
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     const activeLink = document.querySelector(`.sidebar-menu a[data-module-id="${moduleId}"]`);
     if(activeLink) {
@@ -171,12 +175,12 @@ async function loadModule(moduleId) {
     title.innerHTML = `<i class="${module.icon}"></i> ${module.name}`;
     
     try {
-        // HTML Yükle (Değişiklik yok)
+        // HTML Yükle
         const htmlResponse = await fetch(`${module.path}${module.id}.html`);
         if (!htmlResponse.ok) throw new Error(`Dosya bulunamadı: ${module.id}.html`);
         container.innerHTML = await htmlResponse.text();
 
-        // CSS Yükle (Değişiklik yok)
+        // CSS Yükle
         const cssId = `module-css-${module.id}`;
         if (!document.getElementById(cssId)) {
             const link = document.createElement('link');
@@ -186,44 +190,64 @@ async function loadModule(moduleId) {
             document.head.appendChild(link);
         }
 
-        // *** BAŞLANGIÇ: GÜNCELLENMİŞ (SADECE MODERN) JAVASCRIPT YÜKLEYİCİ ***
-        
-        // Önceki modülün 'eski tip' script etiketini (varsa) kaldır
+        // JAVASCRIPT YÜKLEYİCİ (Modern 'import' yöntemi)
         const oldScript = document.getElementById('module-script');
         if (oldScript) oldScript.remove();
 
-        // Fonksiyon adını hazırla (örn: initializeBayiYoneticisiModule)
         const formattedId = module.id.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
         const initFunctionName = `initialize${formattedId}Module`;
 
-        // GÜNCELLENDİ: Hibrid 'if/else' yapısı kaldırıldı.
-        // Artık TÜM modüller 'Modern (import)' yöntemiyle yüklenecek.
-            
-        // 1. YÖNTEM: MODERN (import)
-        // Bu modül 'export' kullandığı için bu yöntemle yüklenmeli
-        
         // Önbelleğe takılmamak için URL'ye zaman damgası ekle
         const moduleUrl = `${module.path}${module.id}.js?v=${new Date().getTime()}`;
         
         // 'import()' komutu, 'export' içeren modern JS dosyalarını yükler
         const moduleExports = await import(moduleUrl);
         
-        // Yüklenen modülün (moduleExports) içinde bu isimde bir fonksiyon var mı?
         if (typeof moduleExports[initFunctionName] === 'function') {
-            // Varsa, PocketBase bağlantısını (pb) vererek çalıştır.
             moduleExports[initFunctionName](pb);
         } else {
             console.error(`Modern modül (import) başlatma fonksiyonu bulunamadı: ${initFunctionName}. Modülün .js dosyasının bu fonksiyonu 'export' ettiğinden emin olun.`);
         }
-        // 'else' bloğu (Eski Tip yükleyici) tamamen kaldırıldı.
-        
-        // *** BİTİŞ: GÜNCELLENMİŞ JAVASCRIPT YÜKLEYİCİ ***
 
     } catch (error) {
         console.error("Modül yüklenirken hata oluştu:", error);
         container.innerHTML = `<p style="color: red;">'${module.name}' modülü yüklenemedi. <br>Hata: ${error.message}. <br>Lütfen '../modules/${module.id}/' klasörünün ve ilgili dosyaların sunucuda olduğundan emin olun.</p>`;
     }
 }
+
+/**
+ * YENİ FONKSİYON: Anlık ban sistemini dinler (Admin paneli için).
+ * Adminin kendi kaydını dinler. 'is_banned' true olursa, paneli kapatır.
+ */
+function subscribeToAdminChanges() {
+    if (!pb || !pb.authStore.isValid) {
+        return; // Giriş yapılmamış veya yetkisiz
+    }
+
+    const adminId = pb.authStore.model.id;
+    
+    try {
+        // Adminin kendi 'users' kaydını dinle
+        pb.collection('users').subscribe(adminId, function(e) {
+            // console.log('Admin kullanıcı kaydı güncellendi:', e.record);
+            
+            if (e.record && e.record.is_banned === true) {
+                console.warn('Admin kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
+                
+                alert("Hesabınız başka bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor.");
+                
+                // Oturumu kapat (Bu dosyada 'api.js' import edilmediği için direkt metot kullanıyoruz)
+                pb.authStore.clear();
+                
+                // Sayfayı yenileyerek giriş ekranına at
+                window.location.reload();
+            }
+        });
+    } catch (error) {
+        console.error('Admin dinlemesi (subscribe) başlatılamadı:', error);
+    }
+}
+
 
 // --- ARAYÜZ GÜNCELLEME FONKSİYONLARI (DEĞİŞİKLİK YOK)---
 function updateAuthUI(isLoggedIn) {
