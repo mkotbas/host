@@ -198,7 +198,7 @@ async function handleDeleteUserAndData_Modal() {
 /**
  * (Yıkıcı Senaryo 2)
  * "Atanmamış Bayileri Temizle" eylemini çalıştırır.
- * (GÜNCELLENDİ: 400 Bad Request hatasını önlemek için toplu silme yerine döngü ile teker teker silme işlemine geçirildi)
+ * (GÜNCELLENDİ: Hem alert() bloklamasını engellemek hem de raporları teker teker silmek için mantık güncellendi)
  */
 async function handleDeleteUnassignedBayis() {
     const unassignedBayiler = allStores.filter(s => !s.sorumlu_kullanici);
@@ -210,56 +210,81 @@ async function handleDeleteUnassignedBayis() {
 
     showLoading(true, `Yıkıcı temizlik başlatıldı... ${unassignedBayiler.length} atanmamış bayi işleniyor...`);
     
-    try {
-        let deletedReportsCount = 0;
-        let deletedBayilerCount = 0;
-        const totalBayiler = unassignedBayiler.length;
+    let deletedReportsCount = 0;
+    let deletedBayilerCount = 0;
+    const totalBayiler = unassignedBayiler.length;
+    const errorLogs = []; // Hataları alert() yerine burada topla
 
+    try {
         for (let i = 0; i < totalBayiler; i++) {
             const bayi = unassignedBayiler[i];
             const bayiInfo = `${bayi.bayiAdi || 'İsimsiz'} (${bayi.bayiKodu || 'Kodsuz'})`;
             
-            showLoading(true, `[${i + 1}/${totalBayiler}] İşleniyor: ${bayiInfo}\n(Adım 1/2: Raporlar siliniyor...)`);
+            showLoading(true, `[${i + 1}/${totalBayiler}] İşleniyor: ${bayiInfo}\n(Adım 1/2: Raporlar aranıyor...)`);
 
-            // Adım 1: Bu TEK bayiye ait raporları bul ve sil
+            let reports;
             try {
-                const reports = await pbInstance.collection('denetim_raporlari').getFullList({
+                // Adım 1a: Bayiye ait raporları bul
+                reports = await pbInstance.collection('denetim_raporlari').getFullList({
                     filter: `bayi = "${bayi.id}"`,
                     fields: 'id'
                 });
-
-                if (reports.length > 0) {
-                    const deletePromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
-                    await Promise.all(deletePromises);
-                    deletedReportsCount += reports.length;
-                }
-            } catch (reportError) {
-                // Raporları silerken bir hata olursa (örn: başka bir kısıtlama), bu bayiyi atla ve logla
-                // Bayiyi silme, çünkü raporları hâlâ var.
-                console.error(`'${bayiInfo}' için raporlar silinemedi, bayi atlanıyor:`, reportError);
-                handleError(reportError, `'${bayiInfo}' bayisinin raporları silinirken bir hata oluştu. Bu bayi atlanacak.`);
-                continue; // Bir sonraki bayiye geç
+            } catch (reportFindError) {
+                // Raporları ararken hata olursa (örn: 'Something went wrong')
+                console.error(`'${bayiInfo}' için raporlar ARANIRKEN hata oluştu, bayi atlanıyor:`, reportFindError);
+                errorLogs.push(`'${bayiInfo}' (Rapor ARAMA): ${reportFindError.message}`);
+                continue; // Bu bayiyi atla, sonrakine geç
             }
 
-            // Adım 2: Raporlar başarıyla silindiyse (veya yoksa), bayiyi sil
-            showLoading(true, `[${i + 1}/${totalBayiler}] İşleniyor: ${bayiInfo}\n(Adım 2/2: Bayi siliniyor...)`);
+            // Adım 1b: Raporları teker teker sil
+            if (reports.length > 0) {
+                try {
+                    for (let j = 0; j < reports.length; j++) {
+                        // Yükleme ekranını alt ilerleme için güncelle
+                        showLoading(true, `[${i + 1}/${totalBayiler}] ${bayiInfo}\n(Adım 1/2: Rapor ${j + 1}/${reports.length} siliniyor...)`);
+                        await pbInstance.collection('denetim_raporlari').delete(reports[j].id);
+                    }
+                    deletedReportsCount += reports.length;
+                } catch (reportDeleteError) {
+                    // Raporları silerken bir hata olursa
+                    console.error(`'${bayiInfo}' için raporlar SİLİNİRKEN hata oluştu, bayi atlanıyor:`, reportDeleteError);
+                    errorLogs.push(`'${bayiInfo}' (Rapor SİLME): ${reportDeleteError.message}`);
+                    continue; // Bayiyi silme, sonrakine geç
+                }
+            }
+
+            // Adım 2: Raporlar silindiyse veya yoksa, bayiyi sil
+            showLoading(true, `[${i + 1}/${totalBayiler}] ${bayiInfo}\n(Adım 2/2: Bayi siliniyor...)`);
             try {
                 await pbInstance.collection('bayiler').delete(bayi.id);
                 deletedBayilerCount++;
             } catch (bayiError) {
-                // Bayi silinirken bir hata olursa (çok olası değil ama güvenli olmalı)
+                // Bayiyi silerken hata olursa
                 console.error(`'${bayiInfo}' silinemedi:`, bayiError);
-                handleError(bayiError, `'${bayiInfo}' bayisi silinirken bir hata oluştu.`);
+                errorLogs.push(`'${bayiInfo}' (Bayi SİLME): ${bayiError.message}`);
+            }
+        } // Ana for döngüsünün sonu
+
+        // --- İşlem Sonu Özet Raporu ---
+        let alertMessage = `YIKICI TEMİZLİK TAMAMLANDI:\n\n- ${deletedReportsCount} adet ilişkili denetim raporu silindi.\n- ${deletedBayilerCount} adet atanmamış bayi silindi.`;
+        
+        if (errorLogs.length > 0) {
+            alertMessage += `\n\n${errorLogs.length} ADET HATA ALINDI (ve atlandı):\n`;
+            // Çok uzun bir alert olmasın diye ilk 5 hatayı göster
+            alertMessage += errorLogs.slice(0, 5).join('\n');
+            if (errorLogs.length > 5) {
+                alertMessage += `\n...ve ${errorLogs.length - 5} hata daha. (Detaylar için konsolu F12 ile açıp 'Console' sekmesine bakabilirsiniz.)`;
             }
         }
 
-        alert(`YIKICI TEMİZLİK TAMAMLANDI:\n\n- ${deletedReportsCount} adet ilişkili denetim raporu silindi.\n- ${deletedBayilerCount} adet atanmamış bayi silindi.`);
+        alert(alertMessage); // Sadece 1 kez, en sonda göster
         await loadInitialData(); // Verileri yenile
         
     } catch (error) {
-        handleError(error, "Atanmamış bayiler temizlenirken kritik bir hata oluştu.");
+        // Beklenmedik genel bir hata olursa
+        handleError(error, "Atanmamış bayiler temizlenirken kritik bir genel hata oluştu.");
     } finally {
-        showLoading(false);
+        showLoading(false); // Her durumda yükleme ekranını kapat
     }
 }
 
@@ -360,9 +385,15 @@ async function deleteBayiRaporlari() {
     try {
         const reports = await pbInstance.collection('denetim_raporlari').getFullList({ filter: `bayi = "${selectedStoreForDeletion.id}"`, fields: 'id' });
         if (reports.length === 0) { alert("Bu bayiye ait silinecek rapor bulunamadı."); return; }
-        const deletePromises = reports.map(report => pbInstance.collection('denetim_raporlari').delete(report.id));
-        await Promise.all(deletePromises);
-        alert(`${reports.length} adet rapor başarıyla silindi.`);
+        
+        // Raporları teker teker sil
+        const totalReports = reports.length;
+        for (let i = 0; i < totalReports; i++) {
+            showLoading(true, `'${selectedStoreForDeletion.bayiAdi}' bayisinin raporları siliniyor... (${i + 1}/${totalReports})`);
+            await pbInstance.collection('denetim_raporlari').delete(reports[i].id);
+        }
+        
+        alert(`${totalReports} adet rapor başarıyla silindi.`);
     } catch (error) {
         handleError(error, "Bayi raporları silinirken hata oluştu.");
     } finally {
@@ -474,9 +505,14 @@ async function deleteTable(collectionName) {
         const records = await pbInstance.collection(collectionName).getFullList({ fields: 'id' });
         if (records.length === 0) { alert(`'${collectionName}' tablosu zaten boş.`); return; }
         
-        const deletePromises = records.map(r => pbInstance.collection(collectionName).delete(r.id));
-        await Promise.all(deletePromises);
-        alert(`'${collectionName}' tablosundaki ${records.length} adet kayıt başarıyla silindi.`);
+        // Toplu silme yerine teker teker sil (sunucu limitlerini aşmamak için)
+        const totalRecords = records.length;
+        for(let i=0; i < totalRecords; i++) {
+            showLoading(true, `'${collectionName}' tablosu siliniyor... (${i + 1}/${totalRecords})`);
+            await pbInstance.collection(collectionName).delete(records[i].id);
+        }
+        
+        alert(`'${collectionName}' tablosundaki ${totalRecords} adet kayıt başarıyla silindi.`);
     } catch (error) {
         handleError(error, `'${collectionName}' silinirken hata oluştu.`);
     } finally {
