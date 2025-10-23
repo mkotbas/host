@@ -356,6 +356,7 @@ function selectStoreForDeletion(store) {
 
 /**
  * (DÜZELTİLDİ: 'geri alınan' ile ilgili hatalı varsayım kaldırıldı)
+ * (DÜZELTİLDİ: catch (error { -> catch (error) {  YAZIM HATASI DÜZELTİLDİ)
  */
 async function deleteBayiRaporlari() {
     if (!selectedStoreForDeletion) return;
@@ -371,7 +372,7 @@ async function deleteBayiRaporlari() {
         const deletePromises = reports.map(report => pbInstance.collection('denetim_raporlari').delete(report.id));
         await Promise.all(deletePromises);
         alert(`${reports.length} adet rapor başarıyla silindi.`);
-    } catch (error {
+    } catch (error) { // <-- HATA BURADAYDI, DÜZELTİLDİ
         handleError(error, "Bayi raporları silinirken hata oluştu.");
     } finally {
         selectedStoreForDeletion = null;
