@@ -202,6 +202,7 @@ async function handleDeleteUserAndData_Modal() {
 /**
  * (Yıkıcı Senaryo 2 - YENİ MODAL)
  * "Atanmamış Bayileri Temizle" eylemi için modalı açar.
+ * (GÜNCELLENDİ: HTML yapısı düzeltildi)
  */
 function openUnassignedBayiDeletionModal() {
     const unassignedBayiler = allStores.filter(s => !s.sorumlu_kullanici);
@@ -212,11 +213,14 @@ function openUnassignedBayiDeletionModal() {
         return;
     }
 
+    // (DÜZELTME) HTML, sıkışmayı önlemek için tek bir <p> etiketi içine alındı ve <br> kullanıldı.
     let modalBodyHtml = `
         <div class="info-box danger">
-            <p><i class="fas fa-biohazard"></i> <strong>ÇOK YÜKSEK RİSK!</strong></p>
-            <p>Sistemde 'Atanmamış' olarak görünen <strong>${unassignedCount} adet</strong> bayi bulundu.</p>
-            <p>Bu işlem, bu bayileri VE bu bayilere ait (başka kullanıcılara ait olsalar bile) TÜM denetim raporlarını kalıcı olarak silecektir. Bu işlem GERİ ALINAMAZ.</p>
+            <p>
+                <i class="fas fa-biohazard"></i> <strong>ÇOK YÜKSEK RİSK!</strong><br>
+                Sistemde 'Atanmamış' olarak görünen <strong>${unassignedCount} adet</strong> bayi bulundu.<br>
+                Bu işlem, bu bayileri VE bu bayilere ait (başka kullanıcılara ait olsalar bile) TÜM denetim raporlarını kalıcı olarak silecektir. Bu işlem GERİ ALINAMAZ.
+            </p>
         </div>
         <div class="complex-action">
             <div class="custom-checkbox" style="margin-top: 15px;">
@@ -294,6 +298,7 @@ async function handleDeleteUnassignedBayis_Modal() {
                     fields: 'id'
                 });
             } catch (reportFindError) {
+                // Raporları ararken hata olursa (örn: 'Something went wrong')
                 console.error(`'${bayiInfo}' için raporlar ARANIRKEN hata oluştu, bayi atlanıyor:`, reportFindError);
                 errorLogs.push(`'${bayiInfo}' (Rapor ARAMA): ${reportFindError.message}`);
                 continue; // Bu bayiyi atla, sonrakine geç
@@ -310,6 +315,7 @@ async function handleDeleteUnassignedBayis_Modal() {
                     }
                     deletedReportsCount += reports.length;
                 } catch (reportDeleteError) {
+                    // Raporları silerken bir hata olursa
                     console.error(`'${bayiInfo}' için raporlar SİLİNİRKEN hata oluştu, bayi atlanıyor:`, reportDeleteError);
                     errorLogs.push(`'${bayiInfo}' (Rapor SİLME): ${reportDeleteError.message}`);
                     continue; // Bayiyi silme, sonrakine geç
@@ -323,6 +329,7 @@ async function handleDeleteUnassignedBayis_Modal() {
                 await pbInstance.collection('bayiler').delete(bayi.id);
                 deletedBayilerCount++;
             } catch (bayiError) {
+                // Bayiyi silerken hata olursa
                 console.error(`'${bayiInfo}' silinemedi:`, bayiError);
                 errorLogs.push(`'${bayiInfo}' (Bayi SİLME): ${bayiError.message}`);
             }
