@@ -48,8 +48,9 @@ async function initializeApp() {
             }
         }
         
-        // YENİ EKLENDİ: Anlık ban (kilitleme) sistemini dinlemeyi başlat
-        subscribeToUserChanges();
+        // --- GÜNCELLENDİ ---
+        // Anlık hesap kilidi (ban) ve cihaz kilidi (lock) dinlemesini başlat
+        api.subscribeToRealtimeChanges();
 
     } else {
         // Giriş yapılmamışsa, formu varsayılan sorularla ve interaktif olmayan modda çiz
@@ -90,7 +91,7 @@ function setupEventListeners() {
         window.location.reload();
     });
 
-    // === GİRİŞ BUTONU MANTIĞI (Önceki adımda güncellenmişti, değişiklik yok) ===
+    // === GİRİŞ BUTONU MANTIĞI (Bu kısımda değişiklik yok) ===
     loginSubmitBtn.addEventListener('click', async () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
@@ -171,45 +172,20 @@ function setupEventListeners() {
     });
 }
 
+
 /**
+ * --- KALDIRILDI ---
  * YENİ FONKSİYON: Anlık ban sistemini dinler.
- * Kullanıcının 'users' tablosundaki kendi kaydını dinler.
- * Eğer 'is_banned' true olursa, kullanıcıyı anında atar.
+ * (Bu fonksiyon 'api.js' içindeki 'subscribeToRealtimeChanges' 
+ * fonksiyonuna taşındı ve genişletildi. 
+ * [2025-10-02] kuralı gereği kaldırıldı.)
  */
-function subscribeToUserChanges() {
-    if (!pb || !pb.authStore.isValid) {
-        return; // Giriş yapılmamışsa dinleme
-    }
-
-    const userId = pb.authStore.model.id;
-
-    try {
-        // 'users' tablosundaki SADECE bu kullanıcının ID'sini dinle
-        pb.collection('users').subscribe(userId, function(e) {
-            // console.log('Kullanıcı kaydı güncellendi:', e.record);
-            
-            // Kilitlenme (ban) durumu kontrolü
-            if (e.record && e.record.is_banned === true) {
-                console.warn('Kullanıcı kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
-                
-                // Kullanıcıyı bilgilendir
-                alert("Hesabınız bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor.");
-                
-                // Oturumu kapat
-                api.logoutUser();
-                
-                // Sayfayı yenileyerek giriş ekranına at
-                window.location.reload();
-            }
-        });
-    } catch (error) {
-        console.error('Kullanıcı dinlemesi (subscribe) başlatılamadı:', error);
-    }
-}
+// function subscribeToUserChanges() { ... }
 
 
 /**
  * Oturum durumuna göre giriş/çıkış butonlarını günceller.
+ * (Bu fonksiyonda değişiklik yok)
  */
 function updateAuthUI() {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
