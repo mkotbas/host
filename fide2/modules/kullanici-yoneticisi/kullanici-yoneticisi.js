@@ -1,7 +1,6 @@
 /**
  * Kullanıcı Yönetimi Modülü
- * DÜZELTME v2.27.1: Yeni sekmeli arayüzde kaldırılan 
- * (devicesHr, devicesTitle) HTML elemanlarına yapılan çağrılar temizlendi.
+ * YENİ: Global cihaz limiti kaldırıldı, BİREYSEL cihaz limiti eklendi.
  */
 export function initializeKullaniciYoneticisiModule(pbInstance) {
     
@@ -12,6 +11,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     // Ana Görünümler
     const listView = document.getElementById('user-list-view');
     const formView = document.getElementById('user-form-view');
+    
+    // Global Ayarlar Elemanları (KALDIRILDI)
+    // clientDeviceLimitInput, saveDeviceLimitBtn, deviceLimitStatus KALDIRILDI.
     
     // Liste Elemanları
     const tableBody = document.getElementById('users-table-body');
@@ -32,7 +34,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     const userRoleSelect = document.getElementById('user-role-select');
     const mobileAccessCheckbox = document.getElementById('user-mobile-access-checkbox');
 
-    // Bireysel Cihaz Limiti Elemanları
+    // YENİ: Bireysel Cihaz Limiti Elemanları
     const userDeviceLimitSection = document.getElementById('user-device-limit-section');
     const userDeviceLimitInput = document.getElementById('user-device-limit-input');
     
@@ -41,61 +43,23 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     const toggleBanUserBtn = document.getElementById('toggle-ban-user-btn');
     
     // Cihaz Listesi Elemanları
-    // KALDIRILDI: const devicesHr = document.getElementById('devices-hr');
-    // KALDIRILDI: const devicesTitle = document.getElementById('devices-title');
+    const devicesHr = document.getElementById('devices-hr');
+    const devicesTitle = document.getElementById('devices-title');
     const devicesDescription = document.getElementById('devices-description');
     const devicesListLoading = document.getElementById('devices-list-loading');
     const userDevicesTableWrapper = document.getElementById('user-devices-table-wrapper');
     const userDevicesTableBody = document.getElementById('user-devices-table-body');
-
-    // Sekme Elemanları
-    const tabLinks = formView.querySelectorAll('.ky-tab-link');
-    const tabPanes = formView.querySelectorAll('.ky-tab-pane');
-    const devicesTabLink = formView.querySelector('a[data-tab="tab-cihazlar"]');
     
     // Butonlar
     const addNewUserBtn = document.getElementById('add-new-user-btn');
     const saveUserBtn = document.getElementById('save-user-btn');
     const cancelUserFormBtn = document.getElementById('cancel-user-form-btn');
 
-    // --- 0. Sekme (Tab) Arayüzü Mantığı ---
-    function setupTabNavigation() {
-        tabLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetTabId = link.dataset.tab;
-                tabLinks.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
-                tabPanes.forEach(pane => {
-                    if (pane.id === targetTabId) {
-                        pane.classList.add('active');
-                    } else {
-                        pane.classList.remove('active');
-                    }
-                });
-            });
-        });
-    }
-
-    function resetToDefaultTab() {
-        tabLinks.forEach((link, index) => {
-            if (index === 0) {
-                link.classList.add('active');
-            } else {
-                link.classList.remove('active');
-            }
-        });
-        tabPanes.forEach((pane, index) => {
-            if (index === 0) {
-                pane.classList.add('active');
-            } else {
-                pane.classList.remove('active');
-            }
-        });
-    }
-
     // --- 1. Ana Veri Yükleme Fonksiyonları ---
     
+    /**
+     * Tüm kullanıcıları PocketBase'den çeker ve tabloyu doldurur.
+     */
     async function loadUsers() {
         tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Kullanıcılar yükleniyor...</td></tr>';
         
@@ -110,6 +74,13 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
     }
 
+    /**
+     * Global Cihaz limiti ayarını çeken 'loadDeviceLimitSetting' fonksiyonu KALDIRILDI.
+     */
+
+    /**
+     * Belirli bir kullanıcının kayıtlı cihazlarını çeker. (Değişiklik yok)
+     */
     async function loadUserDevices(userId) {
         devicesListLoading.style.display = 'block';
         userDevicesTableWrapper.style.display = 'none';
@@ -121,8 +92,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 sort: '-last_login'
             });
             renderUserDevicesTable(devices);
-        } catch (error)
-        {
+        } catch (error) {
             console.error('Kullanıcı cihazları yüklenirken hata:', error);
             userDevicesTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Cihazlar yüklenemedi.</td></tr>';
         } finally {
@@ -134,6 +104,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     
     // --- 2. Arayüz (UI) Çizim Fonksiyonları ---
 
+    /**
+     * Kullanıcı listesini HTML tablosuna çizer. (Değişiklik yok)
+     */
     function renderUsersTable(users) {
         tableBody.innerHTML = '';
         if (users.length === 0) {
@@ -179,10 +152,13 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         });
     }
 
+    /**
+     * Cihaz listesini HTML tablosuna çizer. (Değişiklik yok)
+     */
     function renderUserDevicesTable(devices) {
         userDevicesTableBody.innerHTML = '';
         if (devices.length === 0) {
-            userDevicesTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #555;">Bu kullanıcı için kayıtlı cihaz bulunamadı.</td></tr>';
+            userDevicesTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Bu kullanıcı için kayıtlı cihaz bulunamadı.</td></tr>';
             return;
         }
 
@@ -204,7 +180,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 <td data-label="Cihaz Bilgisi">${deviceInfo}</td>
                 <td data-label="Son Giriş">${lastLogin}</td>
                 <td data-label="Durum"><span class="status-badge ${deviceStatusClass}">${deviceStatusText}</span></td>
-                <td class="actions-cell">
+                <td class="actions-cell" style="min-width: 200px;">
                     <button class="btn-sm ${lockButtonClass} btn-lock-device" title="${lockButtonText}">
                         <i class="fas ${lockButtonIcon}"></i>
                     </button>
@@ -225,12 +201,11 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         });
     }
 
-    // --- 3. Görünüm (View) Değiştirme Fonksiyonları ---
+    // --- 3. Görünüm (View) Değiştirme Fonksiyonları (Değişiklik yok) ---
 
     function showFormView() {
         listView.style.display = 'none';
         formView.style.display = 'block';
-        resetToDefaultTab(); // Formu açarken her zaman ilk sekmeyi göster
     }
 
     function showListView() {
@@ -243,6 +218,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
     // --- 4. CRUD ve Diğer İşleyici Fonksiyonlar ---
     
+    /**
+     * "Yeni Kullanıcı Ekle" formunu hazırlar ve gösterir.
+     */
     function handleNew() {
         form.reset();
         userIdInput.value = '';
@@ -254,26 +232,24 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         
         userEmailInput.disabled = false; 
 
-        // Ban bölümünü gizle
+        // Ban/cihaz bölümlerini gizle
         userBanSection.style.display = 'none';
+        devicesHr.style.display = 'none';
+        devicesTitle.style.display = 'none';
+        devicesDescription.style.display = 'none';
+        devicesListLoading.style.display = 'none';
+        userDevicesTableWrapper.style.display = 'none';
         
-        // Cihazlar sekmesini gizle (yeni kullanıcıda cihaz olmaz)
-        devicesTabLink.style.display = 'none';
-
-        // DÜZELTME: Kaldırılan elemanlara yapılan çağrılar silindi
-        // devicesHr.style.display = 'none';
-        // devicesTitle.style.display = 'none';
-        if (devicesDescription) devicesDescription.style.display = 'none';
-        if (devicesListLoading) devicesListLoading.style.display = 'none';
-        if (userDevicesTableWrapper) userDevicesTableWrapper.style.display = 'none';
-        
-        // Rol 'client' olarak varsayılan seçili olduğu için cihaz limitini göster
+        // YENİ: Rol 'client' olarak varsayılan seçili olduğu için cihaz limitini göster
         userDeviceLimitSection.style.display = 'block';
         userDeviceLimitInput.value = 1; // Varsayılan
 
         showFormView();
     }
 
+    /**
+     * "Düzenle" butonuna basıldığında formu doldurur ve gösterir.
+     */
     function handleEdit(userId) {
         const user = allUsersCache.find(u => u.id === userId);
         if (!user) return;
@@ -288,36 +264,39 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         userRoleSelect.value = user.role;
         mobileAccessCheckbox.checked = user.mobile_access;
 
-        // Düzenleme modunda parola alanları gizli ve zorunlu değil
         passwordWrapper.style.display = 'none'; 
         userPasswordInput.required = false;
         userPasswordConfirmInput.required = false;
-        userPasswordInput.value = '';
-        userPasswordConfirmInput.value = '';
         
         // Ban bölümünü ayarla
         userBanSection.style.display = 'block';
         updateBanButton(user.is_banned);
-        
-        // Cihazlar sekmesini göster
-        devicesTabLink.style.display = 'block';
+
+        // Cihaz listesi bölümünü göster
+        devicesHr.style.display = 'block';
+        devicesTitle.style.display = 'block';
+        devicesDescription.style.display = 'block';
         
         if (user.role === 'admin') {
+            // Admin ise: Cihaz yönetimi ve limiti gerekmez
             devicesDescription.textContent = 'Yönetici (Admin) kullanıcıları için cihaz kilidi/limiti uygulanmaz.';
             devicesListLoading.style.display = 'none';
             userDevicesTableWrapper.style.display = 'none';
-            userDeviceLimitSection.style.display = 'none';
-            devicesTabLink.style.display = 'none'; // Admin ise Cihazlar sekmesini de gizle
+            userDeviceLimitSection.style.display = 'none'; // Bireysel limiti gizle
         } else {
+            // Client ise: Cihaz yönetimi ve limiti göster
             devicesDescription.textContent = 'Kullanıcının giriş yaptığı ve kayıtlı olan cihazları. Buradan tek tek cihazları silebilir (sıfırlayabilir) veya kilitleyebilirsiniz.';
-            userDeviceLimitSection.style.display = 'block'; 
-            userDeviceLimitInput.value = user.device_limit || 1; 
-            loadUserDevices(user.id);
+            userDeviceLimitSection.style.display = 'block'; // Bireysel limiti göster
+            userDeviceLimitInput.value = user.device_limit || 1; // Adım 1'de eklediğimiz alanı doldur
+            loadUserDevices(user.id); // Cihazları yükle
         }
         
         showFormView();
     }
 
+    /**
+     * "Sil" butonuna basıldığında kullanıcıyı siler. (Değişiklik yok)
+     */
     async function handleDelete(userId) {
         const user = allUsersCache.find(u => u.id === userId);
         if (!user) return;
@@ -340,62 +319,48 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
     }
 
+    /**
+     * Form "Kaydet" butonuna basıldığında (submit) tetiklenir.
+     */
     async function handleFormSubmit(event) {
         event.preventDefault();
         saveUserBtn.disabled = true;
-        saveUserBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+        saveUserBtn.textContent = 'Kaydediliyor...';
 
         const userId = userIdInput.value;
         
+        // YENİ: Bireysel cihaz limiti veriye eklendi
         const data = {
             name: userNameInput.value,
             email: userEmailInput.value,
             role: userRoleSelect.value,
             mobile_access: mobileAccessCheckbox.checked,
-            device_limit: 1 
+            device_limit: 1 // Varsayılan (eğer admin ise)
         };
 
+        // Eğer rol client ise, bireysel limiti al
         if (data.role === 'client') {
             let limit = parseInt(userDeviceLimitInput.value);
             if (isNaN(limit) || limit < 1) limit = 1;
-            if (limit > 5) limit = 5; 
+            if (limit > 5) limit = 5; // Veritabanı kuralına ek olarak JS'de de kontrol edelim
             data.device_limit = limit;
-        }
-        
-        const newPassword = userPasswordInput.value;
-        const confirmPassword = userPasswordConfirmInput.value;
-
-        if (!userId) { 
-            if (!newPassword || !confirmPassword) {
-                // Hata durumunu düzgünce işle
-                alert('Yeni kullanıcı için parola zorunludur.');
-                saveUserBtn.disabled = false;
-                saveUserBtn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
-                return; 
-            }
-            if (newPassword !== confirmPassword) {
-                alert('Parolalar eşleşmiyor.');
-                saveUserBtn.disabled = false;
-                saveUserBtn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
-                return;
-            }
-            data.password = newPassword;
-            data.passwordConfirm = confirmPassword;
-        } else if (userId && newPassword) {
-             if (newPassword !== confirmPassword) {
-                alert('Parolalar eşleşmiyor.');
-                saveUserBtn.disabled = false;
-                saveUserBtn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
-                return;
-            }
-            data.password = newPassword;
-            data.passwordConfirm = confirmPassword;
         }
 
         try {
             if (userId) { 
+                // --- GÜNCELLEME ---
                 await pb.collection('users').update(userId, data);
             } else { 
+                // --- YENİ KAYIT ---
+                if (!userPasswordInput.value || !userPasswordConfirmInput.value) {
+                    throw new Error('Yeni kullanıcı için parola zorunludur.');
+                }
+                if (userPasswordInput.value !== userPasswordConfirmInput.value) {
+                    throw new Error('Parolalar eşleşmiyor.');
+                }
+                data.password = userPasswordInput.value;
+                data.passwordConfirm = userPasswordConfirmInput.value;
+                
                 await pb.collection('users').create(data);
             }
             
@@ -407,10 +372,17 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             alert('Hata: ' + (error.message || 'Lütfen tüm zorunlu alanları doldurun.'));
         } finally {
             saveUserBtn.disabled = false;
-            saveUserBtn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
+            saveUserBtn.textContent = 'Kaydet';
         }
     }
     
+    /**
+     * 'handleSaveDeviceLimit' fonksiyonu (global ayar için) KALDIRILDI.
+     */
+    
+    /**
+     * "Hesabı Kilitle / Kilidi Aç" butonu (Değişiklik yok)
+     */
     async function handleToggleBanUser() {
         const userId = userIdInput.value;
         if (!userId) return;
@@ -442,6 +414,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
     }
     
+    /**
+     * Ban butonunu günceller (Değişiklik yok)
+     */
     function updateBanButton(isBanned) {
         if (isBanned) {
             toggleBanUserBtn.innerHTML = '<i class="fas fa-lock-open"></i> Bu Kullanıcının Kilidini Aç';
@@ -454,6 +429,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
     }
     
+    /**
+     * Cihazı siler (Değişiklik yok)
+     */
     async function handleDeleteDevice(deviceId) {
         if (!confirm("Bu cihaz kaydını silmek istediğinizden emin misiniz?")) {
             return;
@@ -467,6 +445,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
     }
     
+    /**
+     * Cihazı kilitler (Değişiklik yok)
+     */
     async function handleToggleLockDevice(deviceId, currentLockStatus) {
         const newLockStatus = !currentLockStatus;
         const actionText = newLockStatus ? 'kilitlemek' : 'kilidini açmak';
@@ -483,13 +464,14 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
     }
 
+    /**
+     * YENİ: Kullanıcı rolü değiştikçe cihaz limiti alanını göster/gizle.
+     */
     function handleRoleChange() {
         if (userRoleSelect.value === 'admin') {
             userDeviceLimitSection.style.display = 'none';
-            devicesTabLink.style.display = 'none';
         } else {
             userDeviceLimitSection.style.display = 'block';
-            devicesTabLink.style.display = 'block';
         }
     }
 
@@ -500,13 +482,15 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         if (cancelUserFormBtn) cancelUserFormBtn.addEventListener('click', showListView);
         if (form) form.addEventListener('submit', handleFormSubmit);
         
+        // Global ayar butonu dinleyicisi KALDIRILDI
         if (toggleBanUserBtn) toggleBanUserBtn.addEventListener('click', handleToggleBanUser);
+        
+        // YENİ Dinleyici
         if (userRoleSelect) userRoleSelect.addEventListener('change', handleRoleChange);
-
-        setupTabNavigation();
     }
 
     // --- 6. Modülü Başlat ---
     setupEventListeners();
-    loadUsers();
+    loadUsers(); // Ana kullanıcı listesini yükle
+    // loadDeviceLimitSetting() çağrısı KALDIRILDI.
 }
