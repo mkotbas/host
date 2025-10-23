@@ -106,7 +106,6 @@ function openUserDeletionModal() {
 /**
  * (Güvenli Senaryo 1)
  * Modal içindeki "Onayla" butonuna basıldığında çalışan ana eylem.
- * (DÜZELTİLDİ: Rapor silme mantığı düzeltildi, 'geri alınan' ile ilgili hatalı varsayım kaldırıldı)
  */
 async function handleDeleteUserAndData_Modal() {
     const userSelect = document.getElementById('modal-kullanici-silme-select');
@@ -135,8 +134,6 @@ async function handleDeleteUserAndData_Modal() {
 
     try {
         // --- Adım 1: Kullanıcıya ait 'denetim_raporlari'nı sil ---
-        // (DÜZELTME: 'denetim_geri_alinanlar' tablosu raporlara değil, bayilere bağlı.
-        // Bu nedenle raporları silerken ekstra bir işlem gerekmez.)
         resultsDiv.innerHTML = `Adım 1/3: '${userName}' kullanıcısına ait denetim raporları aranıyor...`;
         const reports = await pbInstance.collection('denetim_raporlari').getFullList({ filter: `user = "${userId}"`, fields: 'id' });
         
@@ -172,7 +169,6 @@ async function handleDeleteUserAndData_Modal() {
         userSelect.innerHTML = '<option value="">-- Bir kullanıcı seçin --</option>' + newSelectHtml;
 
     } catch (error) {
-        // Hata raporlamasını 'handleError' fonksiyonuna devret
         handleError(error, "Kullanıcı silme işlemi sırasında kritik bir hata oluştu.");
         resultsDiv.innerHTML += `<br><strong style="color: red;">HATA: ${error.message}</strong>`;
     } finally {
@@ -189,7 +185,7 @@ async function handleDeleteUserAndData_Modal() {
 /**
  * (Yıkıcı Senaryo 2)
  * "Atanmamış Bayileri Temizle" eylemini çalıştırır.
- * (DÜZELTİLDİ: Artık 3 aşamalı silme yapıyor: 1. geri_alinanlar, 2. raporlar, 3. bayi)
+ * (GÜNCELLENDİ: Arayüz donmasını ve sunucu timeout hatasını engellemek için döngüye gecikme eklendi)
  */
 async function handleDeleteUnassignedBayis() {
     const unassignedBayiler = allStores.filter(s => !s.sorumlu_kullanici);
@@ -213,39 +209,39 @@ async function handleDeleteUnassignedBayis() {
             const bayiName = bayi.bayiAdi || bayi.bayiKodu;
             const currentCount = i + 1;
             
+            // --- YENİ ADIM: Arayüz Güncellemesini Zorla ve Sunucuyu Yavaşlat ---
+            // Arayüzün donmasını engeller ve "Something went wrong" hatasını önler.
+            const message = `(${currentCount}/${totalBayiCount}) '${bayiName}' işleniyor... (Geri Alınan: ${totalGeriAlinanDeleted}, Rapor: ${totalReportsDeleted}, Bayi: ${totalBayisDeleted})`;
+            showLoading(true, message);
+            // Tarayıcının arayüzü güncellemesine ve sunucunun nefes almasına izin ver
+            await new Promise(resolve => setTimeout(resolve, 10)); // 10 milisaniye bekle
+            
+
             // --- SİLME AŞAMA 1: 'denetim_geri_alinanlar' ---
-            // Bu bayiye bağlı 'geri alınan' kayıtları bul (Alan adı: 'bayi')
-            showLoading(true, `(${currentCount}/${totalBayiCount}) '${bayiName}' için 'Geri Alınan' kayıtlar (Adım 1/3) aranıyor...`);
             const geriAlinanRecords = await pbInstance.collection('denetim_geri_alinanlar').getFullList({
                 filter: `bayi = "${bayi.id}"`,
                 fields: 'id'
             });
             
             if (geriAlinanRecords.length > 0) {
-                showLoading(true, `(${currentCount}/${totalBayiCount}) ${geriAlinanRecords.length} adet 'Geri Alınan' kayıt (Adım 1/3) siliniyor...`);
                 const deleteGeriAlinanPromises = geriAlinanRecords.map(r => pbInstance.collection('denetim_geri_alinanlar').delete(r.id));
                 await Promise.all(deleteGeriAlinanPromises);
                 totalGeriAlinanDeleted += geriAlinanRecords.length;
             }
 
             // --- SİLME AŞAMA 2: 'denetim_raporlari' ---
-            // Bu bayiye bağlı 'rapor' kayıtlarını bul (Alan adı: 'bayi')
-            showLoading(true, `(${currentCount}/${totalBayiCount}) '${bayiName}' için 'Rapor' kayıtları (Adım 2/3) aranıyor...`);
             const reports = await pbInstance.collection('denetim_raporlari').getFullList({ 
                 filter: `bayi = "${bayi.id}"`, 
                 fields: 'id' 
             });
             
             if (reports.length > 0) {
-                showLoading(true, `(${currentCount}/${totalBayiCount}) ${reports.length} adet 'Rapor' (Adım 2/3) siliniyor...`);
                 const deleteReportPromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
                 await Promise.all(deleteReportPromises);
                 totalReportsDeleted += reports.length;
             }
             
             // --- SİLME AŞAMA 3: 'bayiler' (Bayinin kendisi) ---
-            // Artık güvenli: Bayiye bağlı hiçbir kayıt kalmadı.
-            showLoading(true, `(${currentCount}/${totalBayiCount}) '${bayiName}' bayisi (Adım 3/3) siliniyor...`);
             await pbInstance.collection('bayiler').delete(bayi.id);
             totalBayisDeleted++;
         } // end for (bayi loop)
@@ -254,8 +250,8 @@ async function handleDeleteUnassignedBayis() {
         await loadInitialData(); // Verileri yenile
         
     } catch (error) {
-        // Hata durumunda ilerlemeyi bildir
-        handleError(error, `Atanmamış bayiler temizlenirken kritik bir hata oluştu.\n\nİşlem durduruldu.\nToplam ${totalBayisDeleted} bayi, ${totalReportsDeleted} rapor ve ${totalGeriAlinanDeleted} 'geri alınan' kayıt şimdiye kadar silindi.\n\Hata Mesajı: ${error.message}\n\nİşlemi tekrar başlatarak kalanları temizleyebilirsiniz.`);
+        // Hata durumunda ilerlemeyi bildir (DÜZELTİLDİ: Çift hata mesajı kaldırıldı)
+        handleError(error, `Atanmamış bayiler temizlenirken kritik bir hata oluştu.\n\nİşlem durduruldu.\nToplam ${totalBayisDeleted} bayi, ${totalReportsDeleted} rapor ve ${totalGeriAlinanDeleted} 'geri alınan' kayıt şimdiye kadar silindi.\n\nİşlemi tekrar başlatarak kalanları temizleyebilirsiniz.`);
     } finally {
         showLoading(false);
     }
@@ -264,9 +260,6 @@ async function handleDeleteUnassignedBayis() {
 
 // --- Mevcut Fonksiyonlar ---
 
-/**
- * (DÜZELTİLDİ: 'geri alınan' ile ilgili hatalı varsayım kaldırıldı)
- */
 async function deleteCurrentMonthAudits() {
     showLoading(true, "Mevcut ayın raporları kontrol ediliyor...");
     try {
@@ -295,8 +288,6 @@ async function deleteCurrentMonthAudits() {
         
         showLoading(true, `${reports.length} adet rapor siliniyor...`);
 
-        // DÜZELTME: Raporları silmek için 'geri alınan' kayıtları silmeye gerek YOKTUR.
-        // 'geri alınan' kayıtlar bayilere bağlıdır, raporlara değil.
         const deletePromises = reports.map(report => pbInstance.collection('denetim_raporlari').delete(report.id));
         await Promise.all(deletePromises);
         alert(`${currentMonthName} ayına ait ${reports.length} adet rapor başarıyla silindi. Denetim takip sayacı sıfırlandı.`);
@@ -354,10 +345,6 @@ function selectStoreForDeletion(store) {
     document.getElementById('sil-bayi-raporlari-btn').disabled = false;
 }
 
-/**
- * (DÜZELTİLDİ: 'geri alınan' ile ilgili hatalı varsayım kaldırıldı)
- * (DÜZELTİLDİ: catch (error { -> catch (error) {  YAZIM HATASI DÜZELTİLDİ)
- */
 async function deleteBayiRaporlari() {
     if (!selectedStoreForDeletion) return;
     const confirmation = prompt(`GERİ ALINAMAZ İŞLEM! '${selectedStoreForDeletion.bayiAdi}' adlı bayiye ait TÜM denetim raporlarını kalıcı olarak silmek için 'SİL' yazın.`);
@@ -368,11 +355,10 @@ async function deleteBayiRaporlari() {
         const reports = await pbInstance.collection('denetim_raporlari').getFullList({ filter: `bayi = "${selectedStoreForDeletion.id}"`, fields: 'id' });
         if (reports.length === 0) { alert("Bu bayiye ait silinecek rapor bulunamadı."); return; }
         
-        // DÜZELTME: Raporları silmek için 'geri alınan' kayıtları silmeye gerek YOKTUR.
         const deletePromises = reports.map(report => pbInstance.collection('denetim_raporlari').delete(report.id));
         await Promise.all(deletePromises);
         alert(`${reports.length} adet rapor başarıyla silindi.`);
-    } catch (error) { // <-- HATA BURADAYDI, DÜZELTİLDİ
+    } catch (error) {
         handleError(error, "Bayi raporları silinirken hata oluştu.");
     } finally {
         selectedStoreForDeletion = null;
@@ -473,9 +459,6 @@ function populateTableManagement() {
     });
 }
 
-/**
- * (DÜZELTİLDİ: 'geri alınan' ile ilgili hatalı varsayım kaldırıldı ve 'bayiler' için güvenlik eklendi)
- */
 async function deleteTable(collectionName) {
     const confirmation = prompt(`ÇOK TEHLİKELİ İŞLEM! '${collectionName}' tablosundaki TÜM verileri kalıcı olarak silmek için '${collectionName.toUpperCase()}' yazın.`);
     if (confirmation !== collectionName.toUpperCase()) { alert("Onay metni yanlış. İşlem iptal edildi."); return; }
@@ -490,10 +473,6 @@ async function deleteTable(collectionName) {
             alert("TEHLİKELİ İŞLEM ENGELLEDİ!\n\n'bayiler' tablosunu buradan toplu silemezsiniz.\n\nBu işlem, 'denetim_raporlari' ve 'denetim_geri_alinanlar' tablolarıyla olan ilişkileri bozacaktır.\n\nBayileri silmek için 'Atanmamış Bayileri Temizle' özelliğini kullanın.");
             return;
         }
-
-        // GÜVENLİK: 'denetim_raporlari' silinirken, 'denetim_geri_alinanlar' da silinmelidir.
-        // DÜZELTME: Bu mantık yanlıştı. 'denetim_geri_alinanlar' bayilere bağlı, raporlara değil.
-        // Bu nedenle 'denetim_raporlari' silinirken ekstra bir işlem gerekmez.
 
         // GÜVENLİK: 'users' tablosu buradan silinemez.
         if (collectionName === 'users') {
@@ -540,16 +519,20 @@ function showModal(show, title = '', body = '', actionButton = null) {
 }
 
 /**
- * (DÜZELTİLDİ: Hata mesajı artık daha genel ve açıklayıcı)
+ * (DÜZELTİLDİ: Hata mesajları artık çift yazılmayacak)
  */
 function handleError(error, userMessage) {
     console.error(userMessage, error);
     const errorMessage = (error.message || '').toLowerCase();
-    
+    const errorDetails = `Detaylı Hata: ${error.message || error}`;
+
     // Veritabanı ilişki/bütünlük hatası
     if (errorMessage.includes('relation') || errorMessage.includes('reference') || errorMessage.includes('constraint')) {
-        alert(`İşlem Başarısız!\n\n${userMessage}\n\nSebep: Silinmeye çalışılan bir kayıt (örn: bayi), başka bir tablodaki (örn: denetim_geri_alinanlar) bir veri tarafından 'gerekli' olarak kullanılıyor.\nVeri bütünlüğünü korumak için bu silme işlemi engellendi.\n\nÇözüm: Önce bu kayda bağlı olan diğer verilerin (örn: 'geri alınan' kayıtlar) silinmesi gerekmektedir.`);
+        // userMessage zaten "İşlem durduruldu..." diyor.
+        // Biz sadece sebebi ekleyelim.
+        alert(`İşlem Başarısız!\n\n${userMessage}\n\nSebep: Silinmeye çalışılan bir kayıt, başka bir tablodaki veri tarafından kullanılıyor.\nVeri bütünlüğünü korumak için bu silme işlemi engellendi.\n\n${errorDetails}`);
     } else {
-        alert(`${userMessage}: ${error.message || error}`);
+        // Diğer tüm hatalar (örn: "Something went wrong")
+        alert(`${userMessage}\n\n${errorDetails}`);
     }
 }
