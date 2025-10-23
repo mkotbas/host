@@ -1,5 +1,0 @@
-# Netlify'ın ürettiği build klasörü
-dist
-
-# Netlify'ın kurduğu kütüphane klasörü
-node_modules

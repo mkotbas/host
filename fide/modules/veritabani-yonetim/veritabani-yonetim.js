@@ -110,7 +110,6 @@ function openUserDeletionModal() {
 /**
  * (Güvenli Senaryo 1)
  * Modal içindeki "Onayla" butonuna basıldığında çalışan ana eylem.
- * (GÜNCELLENDİ: 'user_devices' temizleme adımı eklendi)
  */
 async function handleDeleteUserAndData_Modal() {
     const userSelect = document.getElementById('modal-kullanici-silme-select');
@@ -127,12 +126,11 @@ async function handleDeleteUserAndData_Modal() {
     const selectedUser = allUsers.find(u => u.id === userId);
     const userName = selectedUser ? (selectedUser.name || selectedUser.email) : 'Bilinmeyen Kullanıcı';
 
-    // Güvenlik teyidi - Bu modal içinde olduğu için aslında gerekmeyebilir ancak ekstra güvenlik katmanı
     if (!confirm(`'${userName}' adlı kullanıcıyı ve raporlarını silmek üzeresiniz. Bayileri 'Atanmamış' olarak güncellenecek. Emin misiniz?`)) {
         return;
     }
 
-    showLoading(true, `'${userName}' için 4 adımlı silme işlemi başlatıldı...`);
+    showLoading(true, `'${userName}' için 3 adımlı silme işlemi başlatıldı...`);
     deleteBtn.disabled = true;
     userSelect.disabled = true;
     onayCheck.disabled = true;
@@ -140,44 +138,32 @@ async function handleDeleteUserAndData_Modal() {
 
     try {
         // --- Adım 1: Kullanıcıya ait 'denetim_raporlari'nı sil ---
-        resultsDiv.innerHTML = `Adım 1/4: '${userName}' kullanıcısına ait denetim raporları aranıyor...`;
+        resultsDiv.innerHTML = `Adım 1/3: '${userName}' kullanıcısına ait denetim raporları aranıyor...`;
         const reports = await pbInstance.collection('denetim_raporlari').getFullList({ filter: `user = "${userId}"`, fields: 'id' });
         if (reports.length > 0) {
-            resultsDiv.innerHTML = `Adım 1/4: ${reports.length} adet denetim raporu siliniyor...`;
+            resultsDiv.innerHTML = `Adım 1/3: ${reports.length} adet denetim raporu siliniyor...`;
             const deletePromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
             await Promise.all(deletePromises);
-            resultsDiv.innerHTML = `Adım 1/4: ${reports.length} adet denetim raporu başarıyla silindi.`;
-        } else { resultsDiv.innerHTML = `Adım 1/4: Kullanıcıya ait denetim raporu bulunamadı.`; }
+            resultsDiv.innerHTML = `Adım 1/3: ${reports.length} adet denetim raporu başarıyla silindi.`;
+        } else { resultsDiv.innerHTML = `Adım 1/3: Kullanıcıya ait denetim raporu bulunamadı.`; }
 
         // --- Adım 2: Kullanıcıya atanmış 'bayiler'in 'sorumlu_kullanici' alanını null yap ---
-        resultsDiv.innerHTML += `<br>Adım 2/4: '${userName}' kullanıcısına atanmış bayiler aranıyor...`;
+        resultsDiv.innerHTML += `<br>Adım 2/3: '${userName}' kullanıcısına atanmış bayiler aranıyor...`;
         const bayiler = await pbInstance.collection('bayiler').getFullList({ filter: `sorumlu_kullanici = "${userId}"`, fields: 'id' });
         if (bayiler.length > 0) {
-            resultsDiv.innerHTML += `<br>Adım 2/4: ${bayiler.length} adet bayi ataması kaldırılıyor...`;
+            resultsDiv.innerHTML += `<br>Adım 2/3: ${bayiler.length} adet bayi ataması kaldırılıyor...`;
             const updatePromises = bayiler.map(b => pbInstance.collection('bayiler').update(b.id, { 'sorumlu_kullanici': null }));
             await Promise.all(updatePromises);
-            resultsDiv.innerHTML += `<br>Adım 2/4: ${bayiler.length} adet bayi ataması başarıyla kaldırıldı.`;
-        } else { resultsDiv.innerHTML += `<br>Adım 2/4: Kullanıcıya atanmış bayi bulunamadı.`; }
+            resultsDiv.innerHTML += `<br>Adım 2/3: ${bayiler.length} adet bayi ataması başarıyla kaldırıldı.`;
+        } else { resultsDiv.innerHTML += `<br>Adım 2/3: Kullanıcıya atanmış bayi bulunamadı.`; }
         
-        // --- YENİ ADIM (Adım 3): Kullanıcıya ait 'user_devices' kayıtlarını sil ---
-        resultsDiv.innerHTML += `<br>Adım 3/4: '${userName}' kullanıcısına ait cihaz kayıtları aranıyor...`;
-        const devices = await pbInstance.collection('user_devices').getFullList({ filter: `user = "${userId}"`, fields: 'id' });
-        if (devices.length > 0) {
-            resultsDiv.innerHTML += `<br>Adım 3/4: ${devices.length} adet cihaz kaydı siliniyor...`;
-            const deleteDevicePromises = devices.map(d => pbInstance.collection('user_devices').delete(d.id));
-            await Promise.all(deleteDevicePromises);
-            resultsDiv.innerHTML += `<br>Adım 3/4: ${devices.length} adet cihaz kaydı başarıyla silindi.`;
-        } else { resultsDiv.innerHTML += `<br>Adım 3/4: Kullanıcıya ait cihaz kaydı bulunamadı.`; }
-
-        // --- Adım 4 (Eski Adım 3): Kullanıcıyı 'users' tablosundan sil ---
-        resultsDiv.innerHTML += `<br>Adım 4/4: '${userName}' kullanıcısı sistemden siliniyor...`;
+        // --- Adım 3: Kullanıcıyı 'users' tablosundan sil ---
+        resultsDiv.innerHTML += `<br>Adım 3/3: '${userName}' kullanıcısı sistemden siliniyor...`;
         await pbInstance.collection('users').delete(userId);
-        resultsDiv.innerHTML += `<br>Adım 4/4: Kullanıcı başarıyla silindi.`;
+        resultsDiv.innerHTML += `<br>Adım 3/3: Kullanıcı başarıyla silindi.`;
         resultsDiv.innerHTML += `<br><br><strong style="color: green;">GÜVENLİ SİLME TAMAMLANDI.</strong>`;
         
-        await loadInitialData(); // Verileri yenile
-        
-        // Modaldaki select'i güncelle
+        await loadInitialData();
         const newSelectHtml = allUsers.map(user => {
             if (user.id === pbInstance.authStore.model.id || user.id === userId) return '';
             return `<option value="${user.id}">${user.name || 'İsimsiz'} (${user.email})</option>`;
@@ -188,8 +174,7 @@ async function handleDeleteUserAndData_Modal() {
         handleError(error, "Kullanıcı silme işlemi sırasında kritik bir hata oluştu.");
         resultsDiv.innerHTML += `<br><strong style="color: red;">HATA: ${error.message}</strong>`;
     } finally {
-        showLoading(false); // Global yükleyiciyi kapat
-        // Modal kontrollerini sıfırla
+        showLoading(false);
         onayCheck.checked = false;
         userSelect.value = '';
         userSelect.disabled = false;
@@ -200,169 +185,170 @@ async function handleDeleteUserAndData_Modal() {
 }
 
 /**
- * (Yıkıcı Senaryo 2 - YENİ MODAL)
- * "Atanmamış Bayileri Temizle" eylemi için modalı açar.
- * (GÜNCELLENDİ: HTML yapısı düzeltildi)
+ * (YENİ GÜVENLİ SENARYO)
+ * "Sadece Kullanıcı Raporlarını Sil" eylemi için modalı (açılır pencere) açar.
  */
-function openUnassignedBayiDeletionModal() {
-    const unassignedBayiler = allStores.filter(s => !s.sorumlu_kullanici);
-    const unassignedCount = unassignedBayiler.length;
-
-    if (unassignedCount === 0) {
-        alert("Sistemde 'Atanmamış' bayi bulunamadı. İşlem yapılmasına gerek yok.");
-        return;
-    }
-
-    // (DÜZELTME) HTML, sıkışmayı önlemek için tek bir <p> etiketi içine alındı ve <br> kullanıldı.
+function openDeleteUserReportsModal() {
     let modalBodyHtml = `
-        <div class="info-box danger">
-            <p>
-                <i class="fas fa-biohazard"></i> <strong>ÇOK YÜKSEK RİSK!</strong><br>
-                Sistemde 'Atanmamış' olarak görünen <strong>${unassignedCount} adet</strong> bayi bulundu.<br>
-                Bu işlem, bu bayileri VE bu bayilere ait (başka kullanıcılara ait olsalar bile) TÜM denetim raporlarını kalıcı olarak silecektir. Bu işlem GERİ ALINAMAZ.
-            </p>
+        <div class="info-box info">
+            <p><i class="fas fa-info-circle"></i> <strong>BİLGİ:</strong> Bu işlem, sadece seçilen kullanıcının <strong>denetim raporlarını</strong> siler. Kullanıcının hesabı veya bayi atamaları <strong>SİLİNMEZ</strong>.</p>
         </div>
         <div class="complex-action">
+            <label for="modal-kullanici-rapor-silme-select">Raporları Silinecek Kullanıcıyı Seçin:</label>
+            <select id="modal-kullanici-rapor-silme-select" class="form-control">
+                <option value="">-- Bir kullanıcı seçin --</option>
+                ${allUsers.map(user => {
+                    // Kendi raporlarını silmek mantıklı olmayabilir ama engellemiyoruz
+                    return `<option value="${user.id}">${user.name || 'İsimsiz'} (${user.email})</option>`;
+                }).join('')}
+            </select>
             <div class="custom-checkbox" style="margin-top: 15px;">
-                <input type="checkbox" id="modal-yikici-silme-onay">
-                <label for="modal-yikici-silme-onay">Tüm ${unassignedCount} atanmamış bayinin ve ilişkili tüm raporlarının kalıcı olarak silineceğini anladım ve onaylıyorum.</label>
+                <input type="checkbox" id="modal-kullanici-rapor-silme-onay">
+                <label for="modal-kullanici-rapor-silme-onay">Seçilen kullanıcının sadece raporlarının silineceğini, hesabının SİLİNMEYECEĞİNİ anladım ve onaylıyorum.</label>
             </div>
-            
-            <div id="modal-yikici-silme-sonuc" class="results-area" style="margin-top: 10px; min-height: 180px; overflow-y: auto; background: #f1f1f1; padding: 10px; border-radius: 4px; line-height: 1.4;">
-                İşlemi başlatmak için lütfen onay kutusunu işaretleyin ve butona basın.
-            </div>
+            <div id="modal-kullanici-rapor-silme-sonuc" class="results-area" style="margin-top: 10px;"></div>
         </div>
     `;
 
     const actionButton = document.createElement('button');
     actionButton.id = 'modal-action-btn';
-    actionButton.className = 'btn-danger'; 
-    actionButton.innerHTML = '<i class="fas fa-store-slash"></i> Yıkıcı Temizliği Onayla';
+    actionButton.className = 'btn-warning'; 
+    actionButton.innerHTML = '<i class="fas fa-comment-slash"></i> Sadece Raporları Sil';
     actionButton.disabled = true;
 
-    showModal(true, 'Atanmamış Bayileri Temizle (Yıkıcı)', modalBodyHtml, actionButton);
+    showModal(true, 'Kullanıcıyı Korumadan Sadece Raporları Sil', modalBodyHtml, actionButton);
 
-    const check = document.getElementById('modal-yikici-silme-onay');
+    const select = document.getElementById('modal-kullanici-rapor-silme-select');
+    const check = document.getElementById('modal-kullanici-rapor-silme-onay');
     const checkButtonState = () => {
-        actionButton.disabled = !check.checked;
+        actionButton.disabled = !(select.value && check.checked);
     };
     
+    select.addEventListener('change', checkButtonState);
     check.addEventListener('change', checkButtonState);
-    actionButton.addEventListener('click', handleDeleteUnassignedBayis_Modal);
+    actionButton.addEventListener('click', handleDeleteUserReports_Modal);
+}
+
+/**
+ * (YENİ GÜVENLİ SENARYO)
+ * "Sadece Raporları Sil" modalı içindeki "Onayla" butonuna basıldığında çalışan ana eylem.
+ */
+async function handleDeleteUserReports_Modal() {
+    const userSelect = document.getElementById('modal-kullanici-rapor-silme-select');
+    const onayCheck = document.getElementById('modal-kullanici-rapor-silme-onay');
+    const deleteBtn = document.getElementById('modal-action-btn');
+    const resultsDiv = document.getElementById('modal-kullanici-rapor-silme-sonuc');
+
+    const userId = userSelect.value;
+    if (!userId || !onayCheck.checked) {
+        alert("Lütfen bir kullanıcı seçin ve onayı işaretleyin.");
+        return;
+    }
+
+    const selectedUser = allUsers.find(u => u.id === userId);
+    const userName = selectedUser ? (selectedUser.name || selectedUser.email) : 'Bilinmeyen Kullanıcı';
+
+    if (!confirm(`'${userName}' adlı kullanıcının TÜM raporlarını silmek üzeresiniz. Kullanıcının hesabı SİLİNMEYECEK. Emin misiniz?`)) {
+        return;
+    }
+
+    showLoading(true, `'${userName}' için rapor silme işlemi başlatıldı...`);
+    deleteBtn.disabled = true;
+    userSelect.disabled = true;
+    onayCheck.disabled = true;
+    resultsDiv.innerHTML = 'İşlem başlatıldı...';
+
+    try {
+        // --- Adım 1: Kullanıcıya ait 'denetim_raporlari'nı sil ---
+        resultsDiv.innerHTML = `Adım 1/1: '${userName}' kullanıcısına ait denetim raporları aranıyor...`;
+        const reports = await pbInstance.collection('denetim_raporlari').getFullList({ filter: `user = "${userId}"`, fields: 'id' });
+        
+        if (reports.length > 0) {
+            resultsDiv.innerHTML = `Adım 1/1: ${reports.length} adet denetim raporu siliniyor...`;
+            // Raporları toplu sil
+            const deletePromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
+            await Promise.all(deletePromises);
+            resultsDiv.innerHTML = `Adım 1/1: ${reports.length} adet denetim raporu başarıyla silindi.`;
+        } else {
+            resultsDiv.innerHTML = `Adım 1/1: Kullanıcıya ait denetim raporu bulunamadı.`;
+        }
+
+        resultsDiv.innerHTML += `<br><br><strong style="color: green;">RAPOR SİLME TAMAMLANDI.</strong>`;
+        
+        // Kullanıcı silinmediği için 'allUsers' listesini veya 'select'i yeniden yüklemeye gerek yok.
+
+    } catch (error) {
+        handleError(error, "Kullanıcı raporlarını silme işlemi sırasında kritik bir hata oluştu.");
+        resultsDiv.innerHTML += `<br><strong style="color: red;">HATA: ${error.message}</strong>`;
+    } finally {
+        showLoading(false);
+        onayCheck.checked = false;
+        userSelect.value = '';
+        userSelect.disabled = false;
+        onayCheck.disabled = false;
+        // Buton durumunu sıfırla
+        const checkButtonState = () => { deleteBtn.disabled = !(userSelect.value && onayCheck.checked); };
+        checkButtonState(); 
+    }
 }
 
 
 /**
- * (Yıkıcı Senaryo 2 - YENİ LOGIC)
- * Modal içinden tetiklenen "Atanmamış Bayileri Temizle" ana eylemi.
- * Global 'showLoading' yerine ilerlemeyi modal içindeki 'resultsDiv'e yazar.
+ * (Yıkıcı Senaryo 2)
+ * "Atanmamış Bayileri Temizle" eylemini çalıştırır.
+ * (GÜNCELLENDİ: 400 Bad Request hatasını önlemek için toplu sorgu yerine döngü kullanır)
  */
-async function handleDeleteUnassignedBayis_Modal() {
-    // Modal elemanlarını al
-    const deleteBtn = document.getElementById('modal-action-btn');
-    const onayCheck = document.getElementById('modal-yikici-silme-onay');
-    const resultsDiv = document.getElementById('modal-yikici-silme-sonuc');
-
-    // Kontrolleri kilitle
-    deleteBtn.disabled = true;
-    onayCheck.disabled = true;
-
-    // Veriyi tekrar kontrol et
+async function handleDeleteUnassignedBayis() {
     const unassignedBayiler = allStores.filter(s => !s.sorumlu_kullanici);
     if (unassignedBayiler.length === 0) {
-         resultsDiv.innerHTML = "<strong style='color:red;'>Hata:</strong> İşlem başladığında atanmamış bayi bulunamadı. Muhtemelen başka bir sekmede temizlendiler.";
-         onayCheck.disabled = false; // Kontrolü aç
-         return;
+        alert("Sistemde 'Atanmamış' bayi bulunamadı. İşlem yapılmasına gerek yok.");
+        return;
     }
+    if (!confirm(`ÇOK YÜKSEK RİSK!\n\nSistemde 'Atanmamış' olarak görünen ${unassignedBayiler.length} adet bayi bulundu.\n\nBu işlem, bu bayileri VE bu bayilere ait (başka kullanıcılara ait olsalar bile) TÜM denetim raporlarını kalıcı olarak silecektir.\n\Bu işlem GERİ ALINAMAZ.\n\nEmin misiniz?`)) { return; }
+
+    showLoading(true, `Yıkıcı temizlik başlatıldı... ${unassignedBayiler.length} atanmamış bayi işleniyor...`);
     
-    resultsDiv.innerHTML = `Yıkıcı temizlik başlatıldı... ${unassignedBayiler.length} atanmamış bayi işleniyor...`;
-    
-    let deletedReportsCount = 0;
-    let deletedBayilerCount = 0;
-    const totalBayiler = unassignedBayiler.length;
-    const errorLogs = []; // Hataları topla
+    let totalReportsDeleted = 0;
+    let totalBayisDeleted = 0;
+    const totalBayiCount = unassignedBayiler.length;
 
     try {
-        for (let i = 0; i < totalBayiler; i++) {
+        // HATA ÖNLEME: Toplu filtre (reportFilter) yerine her bayiyi döngüde tek tek işle.
+        for (let i = 0; i < totalBayiCount; i++) {
             const bayi = unassignedBayiler[i];
-            const bayiInfo = `${bayi.bayiAdi || 'İsimsiz'} (${bayi.bayiKodu || 'Kodsuz'})`;
-            
-            // İlerlemeyi global 'showLoading' yerine modal'a yaz
-            resultsDiv.innerHTML = `[${i + 1}/${totalBayiler}] İşleniyor: ${bayiInfo}<br>(Adım 1/2: Raporlar aranıyor...)`;
-            resultsDiv.scrollTop = resultsDiv.scrollHeight; // Otomatik olarak en alta kaydır
+            const bayiName = bayi.bayiAdi || bayi.bayiKodu;
+            const currentCount = i + 1;
 
-            let reports;
-            try {
-                // Adım 1a: Bayiye ait raporları bul
-                reports = await pbInstance.collection('denetim_raporlari').getFullList({
-                    filter: `bayi = "${bayi.id}"`,
-                    fields: 'id'
-                });
-            } catch (reportFindError) {
-                // Raporları ararken hata olursa (örn: 'Something went wrong')
-                console.error(`'${bayiInfo}' için raporlar ARANIRKEN hata oluştu, bayi atlanıyor:`, reportFindError);
-                errorLogs.push(`'${bayiInfo}' (Rapor ARAMA): ${reportFindError.message}`);
-                continue; // Bu bayiyi atla, sonrakine geç
-            }
+            // Adım 1: Bu bayiye ait raporları bul
+            showLoading(true, `(${currentCount}/${totalBayiCount}) '${bayiName}' için raporlar aranıyor...`);
+            const reports = await pbInstance.collection('denetim_raporlari').getFullList({ 
+                filter: `bayi = "${bayi.id}"`, 
+                fields: 'id' 
+            });
 
-            // Adım 1b: Raporları teker teker sil
+            // Adım 2: Raporları sil (varsa)
             if (reports.length > 0) {
-                try {
-                    for (let j = 0; j < reports.length; j++) {
-                        // İlerlemeyi modal'a yaz
-                        resultsDiv.innerHTML = `[${i + 1}/${totalBayiler}] ${bayiInfo}<br>(Adım 1/2: Rapor ${j + 1}/${reports.length} siliniyor...)`;
-                        resultsDiv.scrollTop = resultsDiv.scrollHeight; 
-                        await pbInstance.collection('denetim_raporlari').delete(reports[j].id);
-                    }
-                    deletedReportsCount += reports.length;
-                } catch (reportDeleteError) {
-                    // Raporları silerken bir hata olursa
-                    console.error(`'${bayiInfo}' için raporlar SİLİNİRKEN hata oluştu, bayi atlanıyor:`, reportDeleteError);
-                    errorLogs.push(`'${bayiInfo}' (Rapor SİLME): ${reportDeleteError.message}`);
-                    continue; // Bayiyi silme, sonrakine geç
-                }
+                showLoading(true, `(${currentCount}/${totalBayiCount}) ${reports.length} adet rapor siliniyor...`);
+                // Bu bayiye ait raporları toplu sil (Promise.all)
+                const deleteReportPromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
+                await Promise.all(deleteReportPromises);
+                totalReportsDeleted += reports.length;
             }
 
-            // Adım 2: Raporlar silindiyse veya yoksa, bayiyi sil
-            resultsDiv.innerHTML = `[${i + 1}/${totalBayiler}] ${bayiInfo}<br>(Adım 2/2: Bayi siliniyor...)`;
-            resultsDiv.scrollTop = resultsDiv.scrollHeight;
-            try {
-                await pbInstance.collection('bayiler').delete(bayi.id);
-                deletedBayilerCount++;
-            } catch (bayiError) {
-                // Bayiyi silerken hata olursa
-                console.error(`'${bayiInfo}' silinemedi:`, bayiError);
-                errorLogs.push(`'${bayiInfo}' (Bayi SİLME): ${bayiError.message}`);
-            }
-        } // Ana for döngüsünün sonu
-
-        // --- İşlem Sonu Özet Raporu ---
-        let summaryMessage = `<strong style="color:green;">YIKICI TEMİZLİK TAMAMLANDI:</strong><br>- ${deletedReportsCount} adet rapor silindi.<br>- ${deletedBayilerCount} adet bayi silindi.`;
-        
-        if (errorLogs.length > 0) {
-            summaryMessage += `<br><br><strong style="color:red;">${errorLogs.length} ADET HATA ALINDI (ve atlandı):</strong><br>`;
-            summaryMessage += errorLogs.slice(0, 5).join('<br>');
-            if (errorLogs.length > 5) {
-                summaryMessage += `<br>...ve ${errorLogs.length - 5} hata daha. (Detaylar için F12 > Console).`;
-            }
+            // Adım 3: Bayinin kendisini sil
+            showLoading(true, `(${currentCount}/${totalBayiCount}) '${bayiName}' bayisi siliniyor...`);
+            await pbInstance.collection('bayiler').delete(bayi.id);
+            totalBayisDeleted++;
         }
-        
-        resultsDiv.innerHTML = summaryMessage; // alert() yerine modal'a yaz
-        resultsDiv.scrollTop = resultsDiv.scrollHeight;
 
-        await loadInitialData(); // Arka planda verileri yenile
-        populateTableManagement(); // Tabloyu yenile
+        alert(`YIKICI TEMİZLİK TAMAMLANDI:\n\n- ${totalReportsDeleted} adet ilişkili denetim raporu silindi.\n- ${totalBayisDeleted} adet atanmamış bayi silindi.`);
+        await loadInitialData(); // Verileri yenile
         
     } catch (error) {
-        // Beklenmedik genel bir hata olursa
-        resultsDiv.innerHTML = `<strong style="color:red;">Kritik Hata:</strong> ${error.message}`;
-        // Hata mesajını da göster (handleError alert ile gösterir)
-        handleError(error, "Atanmamış bayiler temizlenirken kritik bir genel hata oluştu.");
+        // Hata durumunda ilerlemeyi bildir
+        handleError(error, `Atanmamış bayiler temizlenirken kritik bir hata oluştu.\n\nİşlem durduruldu.\nToplam ${totalBayisDeleted} bayi ve ${totalReportsDeleted} rapor şimdiye kadar silindi.\n\Hata Mesajı: ${error.message}\n\nİşlemi tekrar başlatarak kalanları temizleyebilirsiniz.`);
     } finally {
-        // İşlem bittiğinde kontrolleri tekrar aç
-        onayCheck.checked = false;
-        onayCheck.disabled = false;
-        deleteBtn.disabled = true; // Onay kaldırıldığı için
+        showLoading(false);
     }
 }
 
@@ -463,15 +449,9 @@ async function deleteBayiRaporlari() {
     try {
         const reports = await pbInstance.collection('denetim_raporlari').getFullList({ filter: `bayi = "${selectedStoreForDeletion.id}"`, fields: 'id' });
         if (reports.length === 0) { alert("Bu bayiye ait silinecek rapor bulunamadı."); return; }
-        
-        // Raporları teker teker sil
-        const totalReports = reports.length;
-        for (let i = 0; i < totalReports; i++) {
-            showLoading(true, `'${selectedStoreForDeletion.bayiAdi}' bayisinin raporları siliniyor... (${i + 1}/${totalReports})`);
-            await pbInstance.collection('denetim_raporlari').delete(reports[i].id);
-        }
-        
-        alert(`${totalReports} adet rapor başarıyla silindi.`);
+        const deletePromises = reports.map(report => pbInstance.collection('denetim_raporlari').delete(report.id));
+        await Promise.all(deletePromises);
+        alert(`${reports.length} adet rapor başarıyla silindi.`);
     } catch (error) {
         handleError(error, "Bayi raporları silinirken hata oluştu.");
     } finally {
@@ -482,9 +462,6 @@ async function deleteBayiRaporlari() {
     }
 }
 
-/**
- * (GÜNCELLENDİ) Artık eylemler için modal açma fonksiyonlarını (örn: openUserDeletionModal) çağırıyor.
- */
 function populateTableManagement() {
     const tables = [
         { name: 'denetim_raporlari', desc: 'Yapılmış tüm denetimlerin cevapları.', impact: 'Silinirse <strong>tüm denetim geçmişi kaybolur.</strong>', allowDelete: true, allowUpload: false }, 
@@ -498,17 +475,29 @@ function populateTableManagement() {
             desc: "Seçilen bir kullanıcının raporlarını siler ve bayilerini 'Atanmamış' yapar.", 
             impact: 'Kullanıcı silinir; bayiler korunur. (Modal açılır)',
             isAction: true,
-            action: openUserDeletionModal, // Modal açıcıyı çağır
+            action: openUserDeletionModal,
             btnClass: 'btn-warning', 
             btnIcon: 'fa-user-slash',
             btnTitle: 'Kullanıcıyı Sil...'
         },
+        // --- YENİ EKLENEN ÖZELLİK ---
+        { 
+            name: 'Sadece Kullanıcı Raporlarını Sil',
+            desc: "Seçilen bir kullanıcının TÜM denetim raporlarını siler. Kullanıcı hesabı SİLİNMEZ.", 
+            impact: 'Kullanıcı kalır, rapor geçmişi silinir. (Modal açılır)',
+            isAction: true,
+            action: openDeleteUserReportsModal, // Yeni modal açma fonksiyonu
+            btnClass: 'btn-warning', 
+            btnIcon: 'fa-comment-slash', // Rapor/geçmiş silme ikonu
+            btnTitle: 'Sadece Raporları Sil...'
+        },
+        // --- YENİ EKLENEN ÖZELLİK SONU ---
         { 
             name: 'Atanmamış Bayileri Temizle (Yıkıcı)',
             desc: "'Atanmamış' durumdaki TÜM bayileri VE bu bayilere ait TÜM raporları (diğer kullanıcılara ait olanlar dahil) kalıcı olarak siler.", 
             impact: '<strong>YÜKSEK RİSK.</strong> Bayi listesi ve raporlar kalıcı olarak silinir.',
             isAction: true,
-            action: openUnassignedBayiDeletionModal, // Modal açıcıyı çağır (Eski: handleDeleteUnassignedBayis)
+            action: handleDeleteUnassignedBayis,
             btnClass: 'btn-danger', 
             btnIcon: 'fa-store-slash',
             btnTitle: 'Atanmamış Bayileri Temizle'
@@ -586,14 +575,9 @@ async function deleteTable(collectionName) {
         const records = await pbInstance.collection(collectionName).getFullList({ fields: 'id' });
         if (records.length === 0) { alert(`'${collectionName}' tablosu zaten boş.`); return; }
         
-        // Toplu silme yerine teker teker sil (sunucu limitlerini aşmamak için)
-        const totalRecords = records.length;
-        for(let i=0; i < totalRecords; i++) {
-            showLoading(true, `'${collectionName}' tablosu siliniyor... (${i + 1}/${totalRecords})`);
-            await pbInstance.collection(collectionName).delete(records[i].id);
-        }
-        
-        alert(`'${collectionName}' tablosundaki ${totalRecords} adet kayıt başarıyla silindi.`);
+        const deletePromises = records.map(r => pbInstance.collection(collectionName).delete(r.id));
+        await Promise.all(deletePromises);
+        alert(`'${collectionName}' tablosundaki ${records.length} adet kayıt başarıyla silindi.`);
     } catch (error) {
         handleError(error, `'${collectionName}' silinirken hata oluştu.`);
     } finally {
@@ -635,8 +619,8 @@ function handleError(error, userMessage) {
     console.error(userMessage, error);
     const errorMessage = (error.message || '').toLowerCase();
     if (errorMessage.includes('relation') || errorMessage.includes('reference') || errorMessage.includes('constraint')) {
-        alert(`İşlem Başarısız!\n\n${userMessage}\n\nSebep: Bu tablodaki veriler, başka bir tablo (örneğin 'denetim_raporlari') tarafından kullanılıyor. Veri bütünlüğünü korumak için bu silme işlemi engellendi.\n\NÇözüm: Önce bu tabloya bağlı olan diğer tablodaki verileri silmeniz gerekmektedir.`);
+        alert(`İşlem Başarısız!\n\n${userMessage}\n\nSebep: Bu tablodaki veriler, başka bir tablo (örneğin 'denetim_raporlari') tarafından kullanılıyor. Veri bütünlüğünü korumak için bu silme işlemi engellendi.\n\nÇözüm: Önce bu tabloya bağlı olan diğer tablodaki verileri silmeniz gerekmektedir.`);
     } else {
-        alert(`${userMessage}: ${error.message}`);
+        alert(`${userMessage}: ${error.message || error}`);
     }
 }
