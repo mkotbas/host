@@ -60,12 +60,12 @@ export function initApi(pbInstance) {
     pb = pbInstance;
 }
 
-// --- (DÜZELTİLDİ) ANLIK ABONELİK FONKSİYONU ---
+// --- (DÜZELTİLDİ v3) ANLIK ABONELİK FONKSİYONU ---
 
 /**
- * (DÜZELTİLDİ)
+ * (DÜZELTİLDİ v3)
  * Kullanıcının kilit (ban) ve cihaz kilidi (lock) durumlarını anlık dinler.
- * Bir kilitlenme tespit ederse, kullanıcıyı bilgilendirir ve sistemden atar.
+ * ÖNCE cihazın mevcut durumunu kontrol eder, SONRA değişiklikleri dinler.
  */
 export async function subscribeToRealtimeChanges() {
     if (!pb || !pb.authStore.isValid) {
@@ -77,22 +77,26 @@ export async function subscribeToRealtimeChanges() {
 
     // 1. Hesap Kilidi (Ban) Dinlemesi (Bu kısım doğruydu, değişiklik yok)
     try {
+        // --- ANINDA KONTROL (Hesap Banı) ---
+        // (Not: 'pb.authStore.model' oturum açılırken çekilir,
+        // bu yüzden 'is_banned' verisi güncel olmayabilir.
+        // En güvenli yol, 'users' kaydını tekrar çekmektir.)
+        const currentUserRecord = await pb.collection('users').getOne(userId);
+        if (currentUserRecord.is_banned === true) {
+             console.warn('Hesap zaten kilitli. Oturum sonlandırılıyor.');
+             showLockoutOverlay("Hesabınız bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
+             logoutUser();
+             setTimeout(() => window.location.reload(), 2000);
+             return; // Fonksiyondan çık
+        }
+        
+        // --- GELECEKTEKİ DEĞİŞİKLİKLERİ DİNLE (Hesap Banı) ---
         pb.collection('users').subscribe(userId, function(e) {
-            // console.log('Kullanıcı kaydı güncellendi (is_banned?):', e.record);
-            
             if (e.record && e.record.is_banned === true) {
                 console.warn('Kullanıcı kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
-                
-                // utils.js'teki yeni kilit ekranını göster
                 showLockoutOverlay("Hesabınız bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
-                
-                // Oturumu temizle
                 logoutUser();
-                
-                // Kullanıcının mesajı görmesi için 2 saniye bekle ve sayfayı yenile
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
+                setTimeout(() => window.location.reload(), 2000);
             }
         });
     } catch (error) {
@@ -100,41 +104,44 @@ export async function subscribeToRealtimeChanges() {
     }
 
     // 2. Cihaz Kilidi Dinlemesi (Sadece 'client' rolü ve kayıtlı anahtar varsa)
-    // --- BURASI DÜZELTİLDİ ---
+    // --- BURASI TAMAMEN YENİDEN YAZILDI (v3) ---
     if (pb.authStore.model.role === 'client' && browserDeviceKey) {
         try {
-            // HATA DÜZELTME: subscribe('*') yerine, önce cihazın ID'sini bul.
-            // (Dokümantasyon 5.3: 'client' sadece kendi cihazını listeleyebilir, '*' kullanamaz)
+            // 1. Cihazın mevcut kaydını bul
             const deviceRecord = await pb.collection('user_devices').getFirstListItem(
                 `user="${userId}" && device_key="${browserDeviceKey}"`
             );
 
-            // HATA DÜZELTME: Artık '*' yerine doğrudan bulunan cihazın ID'sini dinle.
-            pb.collection('user_devices').subscribe(deviceRecord.id, function(e) {
-                // console.log('Bu cihazın kaydı güncellendi:', e.record);
+            // 2. (YENİ) ANINDA KONTROL: Cihaz zaten kilitli mi?
+            // Kullanıcı sayfayı yenilediğinde bu kontrol çalışır.
+            if (deviceRecord.is_locked === true) {
+                console.warn('Cihaz zaten kilitli. Oturum sonlandırılıyor.');
+                showLockoutOverlay("Bu cihaz bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
+                logoutUser();
+                setTimeout(() => window.location.reload(), 2000);
+                return; // Fonksiyondan çık, abonelik kurma
+            }
 
-                // Artık filtrelemeye (e.record.user === ...) gerek yok, 
-                // çünkü SADECE bu cihazı dinliyoruz.
+            // 3. (MEVCUT) GELECEKTEKİ DEĞİŞİKLİKLERİ DİNLE: Cihaz şu an kilitli değil.
+            pb.collection('user_devices').subscribe(deviceRecord.id, function(e) {
                 if (e.record && e.record.is_locked === true) {
                     console.warn('Cihaz kilitlendi (is_locked=true). Oturum sonlandırılıyor.');
-
-                    // utils.js'teki yeni kilit ekranını göster
                     showLockoutOverlay("Bu cihaz bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
-                    
-                    // Oturumu temizle
                     logoutUser();
-                    
-                    // Kullanıcının mesajı görmesi için 2 saniye bekle ve sayfayı yenile
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
+                    setTimeout(() => window.location.reload(), 2000);
                 }
             });
 
         } catch (error) {
-            // Bu hata, cihaz kaydı bulunamazsa (getFirstListItem) VEYA 
-            // abonelik (subscribe) başarısız olursa tetiklenir.
-            console.error('Cihaz (lock) dinlemesi başlatılamadı:', error);
+            // Hata (örn: 404 Not Found), cihaz kaydının silindiği anlamına gelir.
+            console.error('Cihaz (lock) dinlemesi başlatılamadı veya cihaz kaydı bulunamadı:', error);
+            
+            // (YENİ) Güvenlik önlemi: Cihaz kaydı bulunamazsa (silinmişse)
+            // bozuk anahtarı temizle ve kullanıcıyı at.
+            showLockoutOverlay("Cihaz kaydınız bulunamadı veya geçersiz. Güvenlik nedeniyle çıkış yapılıyor...");
+            logoutUser();
+            localStorage.removeItem('myAppDeviceKey'); // Bozuk anahtarı temizle
+            setTimeout(() => window.location.reload(), 2000);
         }
     }
 }
