@@ -1,22 +1,4 @@
 <div class="card">
-    <div class="card" id="global-settings-card" style="margin-bottom: 20px; background-color: #f8f9fa;">
-        <div class="module-header" style="padding: 15px 20px; border-bottom: 1px solid #dee2e6;">
-            <h3 class="module-title" style="margin: 0; padding: 0; border: 0;">Genel Ayarlar</h3>
-        </div>
-        <div style="padding: 20px;">
-            <div class="form-group" style="max-width: 400px;">
-                <label for="client-device-limit-input">Standart Kullanıcı Cihaz Limiti (Max: 5)</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="number" id="client-device-limit-input" min="1" max="5" value="1" style="flex-grow: 1;">
-                    <button id="save-device-limit-btn" class="btn-primary btn-sm">
-                        <i class="fas fa-save"></i> Limiti Kaydet
-                    </button>
-                </div>
-                <div id="device-limit-status" style="font-size: 0.9em; margin-top: 8px;"></div>
-            </div>
-        </div>
-    </div>
-
     <div id="user-list-view">
         <div class="module-header">
             <h3 class="module-title">Sistem Kullanıcıları</h3>
@@ -32,7 +14,8 @@
                         <th>İsim</th>
                         <th>E-posta</th>
                         <th>Rol</th>
-                        <th>Durum (Ban)</th> <th>Mobil Erişim</th>
+                        <th>Durum (Ban)</th>
+                        <th>Mobil Erişim</th>
                         <th>Oluşturulma Tarihi</th>
                         <th>İşlemler</th>
                     </tr>
@@ -86,6 +69,12 @@
                 <input type="checkbox" id="user-mobile-access-checkbox">
             </div>
 
+            <div class="form-group" id="user-device-limit-section" style="display: none;">
+                <label for="user-device-limit-input">Bireysel Cihaz Limiti (Max: 5)</label>
+                <input type="number" id="user-device-limit-input" min="1" max="5" value="1">
+                <small>Bu standart kullanıcının kaç farklı cihazdan giriş yapabileceğini belirler.</small>
+            </div>
+
             <div class="form-group" id="user-ban-section" style="display: none;">
                 <label>Hesap Durumu (Anlık Kilitleme)</label>
                 <button type="button" id="toggle-ban-user-btn" class="btn-danger" style="width: 100%;">
@@ -117,7 +106,7 @@
                         </tbody>
                 </table>
             </div>
-
+            
             <div class="form-actions">
                 <button type="submit" id="save-user-btn" class="btn-primary">Kaydet</button>
                 <button type="button" id="cancel-user-form-btn" class="btn-secondary">İptal</button>

@@ -1,22 +1,19 @@
 /**
  * Kullanıcı Yönetimi Modülü
- * YENİ: Cihaz Yönetimi, Limit Ayarı ve Anlık Ban Sistemi eklendi.
+ * YENİ: Global cihaz limiti kaldırıldı, BİREYSEL cihaz limiti eklendi.
  */
 export function initializeKullaniciYoneticisiModule(pbInstance) {
     
     // --- Global Değişkenler ve DOM Elementleri ---
     const pb = pbInstance;
-    let allUsersCache = []; // Kullanıcıları hafızada tutmak için
-    let clientDeviceLimitRecordId = null; // 'ayarlar' tablosundaki limit kaydının ID'si
+    let allUsersCache = []; 
 
     // Ana Görünümler
     const listView = document.getElementById('user-list-view');
     const formView = document.getElementById('user-form-view');
     
-    // Global Ayarlar Elemanları (YENİ)
-    const clientDeviceLimitInput = document.getElementById('client-device-limit-input');
-    const saveDeviceLimitBtn = document.getElementById('save-device-limit-btn');
-    const deviceLimitStatus = document.getElementById('device-limit-status');
+    // Global Ayarlar Elemanları (KALDIRILDI)
+    // clientDeviceLimitInput, saveDeviceLimitBtn, deviceLimitStatus KALDIRILDI.
     
     // Liste Elemanları
     const tableBody = document.getElementById('users-table-body');
@@ -36,12 +33,16 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     // Diğer Form Elemanları
     const userRoleSelect = document.getElementById('user-role-select');
     const mobileAccessCheckbox = document.getElementById('user-mobile-access-checkbox');
+
+    // YENİ: Bireysel Cihaz Limiti Elemanları
+    const userDeviceLimitSection = document.getElementById('user-device-limit-section');
+    const userDeviceLimitInput = document.getElementById('user-device-limit-input');
     
-    // Hesap Kilitleme (BAN) Elemanları (YENİ)
+    // Hesap Kilitleme (BAN) Elemanları
     const userBanSection = document.getElementById('user-ban-section');
     const toggleBanUserBtn = document.getElementById('toggle-ban-user-btn');
     
-    // Cihaz Listesi Elemanları (YENİ)
+    // Cihaz Listesi Elemanları
     const devicesHr = document.getElementById('devices-hr');
     const devicesTitle = document.getElementById('devices-title');
     const devicesDescription = document.getElementById('devices-description');
@@ -64,7 +65,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         
         try {
             allUsersCache = await pb.collection('users').getFullList({
-                sort: 'name', // İsime göre sırala
+                sort: 'name',
             });
             renderUsersTable(allUsersCache);
         } catch (error) {
@@ -74,23 +75,11 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
 
     /**
-     * YENİ: Cihaz limiti ayarını çeker.
+     * Global Cihaz limiti ayarını çeken 'loadDeviceLimitSetting' fonksiyonu KALDIRILDI.
      */
-    async function loadDeviceLimitSetting() {
-        try {
-            const record = await pb.collection('ayarlar').getFirstListItem('anahtar="clientDeviceLimit"');
-            clientDeviceLimitRecordId = record.id; // Kaydet butonu için ID'yi sakla
-            clientDeviceLimitInput.value = parseInt(record.deger) || 1;
-        } catch (error) {
-            console.error('Cihaz limiti ayarı yüklenemedi:', error);
-            deviceLimitStatus.textContent = 'Hata: Cihaz limiti ayarı yüklenemedi.';
-            deviceLimitStatus.style.color = 'red';
-        }
-    }
 
     /**
-     * YENİ: Belirli bir kullanıcının kayıtlı cihazlarını çeker.
-     * @param {string} userId - Cihazları yüklenecek kullanıcının ID'si.
+     * Belirli bir kullanıcının kayıtlı cihazlarını çeker. (Değişiklik yok)
      */
     async function loadUserDevices(userId) {
         devicesListLoading.style.display = 'block';
@@ -100,7 +89,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         try {
             const devices = await pb.collection('user_devices').getFullList({
                 filter: `user = "${userId}"`,
-                sort: '-last_login' // En son giriş yapan üstte
+                sort: '-last_login'
             });
             renderUserDevicesTable(devices);
         } catch (error) {
@@ -116,8 +105,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     // --- 2. Arayüz (UI) Çizim Fonksiyonları ---
 
     /**
-     * Kullanıcı listesini HTML tablosuna çizer.
-     * @param {Array} users - Çizdirilecek kullanıcı dizisi.
+     * Kullanıcı listesini HTML tablosuna çizer. (Değişiklik yok)
      */
     function renderUsersTable(users) {
         tableBody.innerHTML = '';
@@ -136,7 +124,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             const roleText = user.role === 'admin' ? 'Yönetici' : 'Standart Kullanıcı';
             const roleClass = user.role === 'admin' ? 'role-admin' : 'role-client';
             
-            // YENİ: Ban durumu
             const banStatusText = user.is_banned ? 'Kilitli (Ban)' : 'Aktif';
             const banStatusClass = user.is_banned ? 'status-banned' : 'status-active';
 
@@ -166,8 +153,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
 
     /**
-     * YENİ: Cihaz listesini HTML tablosuna çizer.
-     * @param {Array} devices - Çizdirilecek cihaz dizisi.
+     * Cihaz listesini HTML tablosuna çizer. (Değişiklik yok)
      */
     function renderUserDevicesTable(devices) {
         userDevicesTableBody.innerHTML = '';
@@ -204,7 +190,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 </td>
             `;
 
-            // Olay dinleyicileri
             tr.querySelector('.btn-lock-device').addEventListener('click', () => 
                 handleToggleLockDevice(device.id, device.is_locked)
             );
@@ -216,19 +201,13 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         });
     }
 
-    // --- 3. Görünüm (View) Değiştirme Fonksiyonları ---
+    // --- 3. Görünüm (View) Değiştirme Fonksiyonları (Değişiklik yok) ---
 
-    /**
-     * Form görünümünü açar, liste görünümünü gizler.
-     */
     function showFormView() {
         listView.style.display = 'none';
         formView.style.display = 'block';
     }
 
-    /**
-     * Liste görünümünü açar, form görünümünü gizler ve formu sıfırlar.
-     */
     function showListView() {
         formView.style.display = 'none';
         listView.style.display = 'block';
@@ -253,7 +232,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         
         userEmailInput.disabled = false; 
 
-        // Yeni kullanıcıda ban/cihaz bölümünü gizle
+        // Ban/cihaz bölümlerini gizle
         userBanSection.style.display = 'none';
         devicesHr.style.display = 'none';
         devicesTitle.style.display = 'none';
@@ -261,12 +240,15 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         devicesListLoading.style.display = 'none';
         userDevicesTableWrapper.style.display = 'none';
         
+        // YENİ: Rol 'client' olarak varsayılan seçili olduğu için cihaz limitini göster
+        userDeviceLimitSection.style.display = 'block';
+        userDeviceLimitInput.value = 1; // Varsayılan
+
         showFormView();
     }
 
     /**
      * "Düzenle" butonuna basıldığında formu doldurur ve gösterir.
-     * @param {string} userId - Düzenlenecek kullanıcının ID'si.
      */
     function handleEdit(userId) {
         const user = allUsersCache.find(u => u.id === userId);
@@ -278,7 +260,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
         userNameInput.value = user.name || ''; 
         userEmailInput.value = user.email;
-        userEmailInput.disabled = true; // E-posta değiştirilemez
+        userEmailInput.disabled = true;
         userRoleSelect.value = user.role;
         mobileAccessCheckbox.checked = user.mobile_access;
 
@@ -286,31 +268,34 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         userPasswordInput.required = false;
         userPasswordConfirmInput.required = false;
         
-        // YENİ: Ban (Kilitleme) bölümünü ayarla
+        // Ban bölümünü ayarla
         userBanSection.style.display = 'block';
         updateBanButton(user.is_banned);
 
-        // YENİ: Cihaz listesi bölümünü göster ve yükle
+        // Cihaz listesi bölümünü göster
         devicesHr.style.display = 'block';
         devicesTitle.style.display = 'block';
         devicesDescription.style.display = 'block';
         
-        // Admin kullanıcısı için cihaz yönetimi gerekmez (her yerden girer)
         if (user.role === 'admin') {
-            devicesDescription.textContent = 'Yönetici (Admin) kullanıcıları için cihaz kilidi uygulanmaz.';
+            // Admin ise: Cihaz yönetimi ve limiti gerekmez
+            devicesDescription.textContent = 'Yönetici (Admin) kullanıcıları için cihaz kilidi/limiti uygulanmaz.';
             devicesListLoading.style.display = 'none';
             userDevicesTableWrapper.style.display = 'none';
+            userDeviceLimitSection.style.display = 'none'; // Bireysel limiti gizle
         } else {
+            // Client ise: Cihaz yönetimi ve limiti göster
             devicesDescription.textContent = 'Kullanıcının giriş yaptığı ve kayıtlı olan cihazları. Buradan tek tek cihazları silebilir (sıfırlayabilir) veya kilitleyebilirsiniz.';
-            loadUserDevices(user.id); // Client kullanıcısının cihazlarını yükle
+            userDeviceLimitSection.style.display = 'block'; // Bireysel limiti göster
+            userDeviceLimitInput.value = user.device_limit || 1; // Adım 1'de eklediğimiz alanı doldur
+            loadUserDevices(user.id); // Cihazları yükle
         }
         
         showFormView();
     }
 
     /**
-     * "Sil" butonuna basıldığında kullanıcıyı siler.
-     * @param {string} userId - Silinecek kullanıcının ID'si.
+     * "Sil" butonuna basıldığında kullanıcıyı siler. (Değişiklik yok)
      */
     async function handleDelete(userId) {
         const user = allUsersCache.find(u => u.id === userId);
@@ -322,15 +307,12 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
 
         try {
-            // İlgili cihazları da temizle (opsiyonel ama iyi bir pratik)
             const devices = await pb.collection('user_devices').getFullList({ filter: `user = "${userId}"` });
             for (const device of devices) {
                 await pb.collection('user_devices').delete(device.id);
             }
-            
-            // Kullanıcıyı sil
             await pb.collection('users').delete(userId);
-            await loadUsers(); // Tabloyu yenile
+            await loadUsers();
         } catch (error) {
             console.error('Kullanıcı silinirken hata:', error);
             alert('Kullanıcı silinirken bir hata oluştu: ' + error.message);
@@ -347,12 +329,22 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
         const userId = userIdInput.value;
         
+        // YENİ: Bireysel cihaz limiti veriye eklendi
         const data = {
             name: userNameInput.value,
             email: userEmailInput.value,
             role: userRoleSelect.value,
             mobile_access: mobileAccessCheckbox.checked,
+            device_limit: 1 // Varsayılan (eğer admin ise)
         };
+
+        // Eğer rol client ise, bireysel limiti al
+        if (data.role === 'client') {
+            let limit = parseInt(userDeviceLimitInput.value);
+            if (isNaN(limit) || limit < 1) limit = 1;
+            if (limit > 5) limit = 5; // Veritabanı kuralına ek olarak JS'de de kontrol edelim
+            data.device_limit = limit;
+        }
 
         try {
             if (userId) { 
@@ -368,13 +360,12 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 }
                 data.password = userPasswordInput.value;
                 data.passwordConfirm = userPasswordConfirmInput.value;
-                // Yeni kullanıcıda ban durumu varsayılan false (veritabanı ayarı)
                 
                 await pb.collection('users').create(data);
             }
             
-            await loadUsers(); // Tabloyu yenile
-            showListView(); // Listeye dön
+            await loadUsers(); 
+            showListView(); 
 
         } catch (error) {
             console.error('Kullanıcı kaydedilirken hata:', error);
@@ -386,45 +377,11 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
     
     /**
-     * YENİ: "Limiti Kaydet" butonuna basıldığında tetiklenir.
+     * 'handleSaveDeviceLimit' fonksiyonu (global ayar için) KALDIRILDI.
      */
-    async function handleSaveDeviceLimit() {
-        if (!clientDeviceLimitRecordId) {
-            alert('Ayar IDsi bulunamadı. Sayfayı yenileyin.');
-            return;
-        }
-
-        let limit = parseInt(clientDeviceLimitInput.value);
-        if (isNaN(limit) || limit < 1) {
-            limit = 1;
-        } else if (limit > 5) { // Kullanıcının istediği maksimum 5 limiti
-            limit = 5;
-        }
-        clientDeviceLimitInput.value = limit;
-
-        saveDeviceLimitBtn.disabled = true;
-        deviceLimitStatus.textContent = 'Kaydediliyor...';
-        deviceLimitStatus.style.color = '#333';
-
-        try {
-            await pb.collection('ayarlar').update(clientDeviceLimitRecordId, {
-                'deger': limit.toString()
-            });
-            deviceLimitStatus.textContent = 'Limit başarıyla güncellendi.';
-            deviceLimitStatus.style.color = 'green';
-        } catch (error) {
-            console.error('Cihaz limiti kaydedilirken hata:', error);
-            deviceLimitStatus.textContent = 'Hata: Limit kaydedilemedi.';
-            deviceLimitStatus.style.color = 'red';
-        } finally {
-            saveDeviceLimitBtn.disabled = false;
-            setTimeout(() => { deviceLimitStatus.textContent = ''; }, 3000);
-        }
-    }
     
     /**
-     * YENİ: "Hesabı Kilitle / Kilidi Aç" butonuna basıldığında tetiklenir.
-     * Bu işlem ANLIKTIR, "Kaydet" butonunu beklemez.
+     * "Hesabı Kilitle / Kilidi Aç" butonu (Değişiklik yok)
      */
     async function handleToggleBanUser() {
         const userId = userIdInput.value;
@@ -445,28 +402,20 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
         try {
             await pb.collection('users').update(userId, { 'is_banned': newBanStatus });
-            
-            // Lokal önbelleği (cache) güncelle
             user.is_banned = newBanStatus;
-            
-            // Butonun durumunu güncelle
             updateBanButton(newBanStatus);
-            
-            // Ana kullanıcı listesini de arka planda yenile (durumun görünmesi için)
             loadUsers();
-            
         } catch (error) {
             console.error('Kullanıcı kilitlenirken hata:', error);
             alert('Hata: ' + error.message);
-            updateBanButton(user.is_banned); // Hata olursa eski duruma dön
+            updateBanButton(user.is_banned); 
         } finally {
             toggleBanUserBtn.disabled = false;
         }
     }
     
     /**
-     * YENİ: Ban butonunun metnini ve rengini günceller.
-     * @param {boolean} isBanned - Kullanıcının kilitli olup olmadığı.
+     * Ban butonunu günceller (Değişiklik yok)
      */
     function updateBanButton(isBanned) {
         if (isBanned) {
@@ -481,19 +430,15 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
     
     /**
-     * YENİ: Bir cihazı siler (sıfırlar).
-     * @param {string} deviceId - Silinecek cihazın 'user_devices' tablosundaki ID'si.
+     * Cihazı siler (Değişiklik yok)
      */
     async function handleDeleteDevice(deviceId) {
-        if (!confirm("Bu cihaz kaydını silmek istediğinizden emin misiniz? Kullanıcı bu cihazdan tekrar giriş yaparsa, limit dahilindeyse yeni bir kayıt oluşturulur.")) {
+        if (!confirm("Bu cihaz kaydını silmek istediğinizden emin misiniz?")) {
             return;
         }
-        
         try {
             await pb.collection('user_devices').delete(deviceId);
-            // Cihaz listesini yenile
-            const userId = userIdInput.value;
-            loadUserDevices(userId);
+            loadUserDevices(userIdInput.value);
         } catch (error) {
             console.error('Cihaz silinirken hata:', error);
             alert('Hata: Cihaz silinemedi.');
@@ -501,9 +446,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
     
     /**
-     * YENİ: Bir cihazı kilitler veya kilidini açar.
-     * @param {string} deviceId - İşlem yapılacak cihazın ID'si.
-     * @param {boolean} currentLockStatus - Cihazın mevcut kilit durumu.
+     * Cihazı kilitler (Değişiklik yok)
      */
     async function handleToggleLockDevice(deviceId, currentLockStatus) {
         const newLockStatus = !currentLockStatus;
@@ -512,15 +455,23 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         if (!confirm(`Bu cihazı ${actionText} istediğinizden emin misiniz?`)) {
             return;
         }
-
         try {
             await pb.collection('user_devices').update(deviceId, { 'is_locked': newLockStatus });
-            // Cihaz listesini yenile
-            const userId = userIdInput.value;
-            loadUserDevices(userId);
+            loadUserDevices(userIdInput.value);
         } catch (error) {
             console.error('Cihaz kilitlenirken hata:', error);
             alert('Hata: Cihaz durumu güncellenemedi.');
+        }
+    }
+
+    /**
+     * YENİ: Kullanıcı rolü değiştikçe cihaz limiti alanını göster/gizle.
+     */
+    function handleRoleChange() {
+        if (userRoleSelect.value === 'admin') {
+            userDeviceLimitSection.style.display = 'none';
+        } else {
+            userDeviceLimitSection.style.display = 'block';
         }
     }
 
@@ -531,15 +482,15 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         if (cancelUserFormBtn) cancelUserFormBtn.addEventListener('click', showListView);
         if (form) form.addEventListener('submit', handleFormSubmit);
         
-        // YENİ Dinleyiciler
-        if (saveDeviceLimitBtn) saveDeviceLimitBtn.addEventListener('click', handleSaveDeviceLimit);
+        // Global ayar butonu dinleyicisi KALDIRILDI
         if (toggleBanUserBtn) toggleBanUserBtn.addEventListener('click', handleToggleBanUser);
         
-        // ESKİ Cihaz Sıfırlama Dinleyicisi Kaldırıldı
+        // YENİ Dinleyici
+        if (userRoleSelect) userRoleSelect.addEventListener('change', handleRoleChange);
     }
 
     // --- 6. Modülü Başlat ---
     setupEventListeners();
     loadUsers(); // Ana kullanıcı listesini yükle
-    loadDeviceLimitSetting(); // Global cihaz limit ayarını yükle
+    // loadDeviceLimitSetting() çağrısı KALDIRILDI.
 }
