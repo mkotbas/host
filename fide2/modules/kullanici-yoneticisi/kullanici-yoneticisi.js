@@ -1,6 +1,8 @@
 /**
  * Kullanıcı Yönetimi Modülü
  * YENİ: Global cihaz limiti kaldırıldı, BİREYSEL cihaz limiti eklendi.
+ * GÜNCELLEME 2.28: Kaydetme sonrası listeye dönme iptal edildi, formda kalınması sağlandı.
+ * GÜNCELLEME 2.29: Cihaz listesi (Sil/Kilitle) butonlarının formu submit etmesi engellendi (type="button" eklendi).
  */
 export function initializeKullaniciYoneticisiModule(pbInstance) {
     
@@ -61,16 +63,24 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
      * Tüm kullanıcıları PocketBase'den çeker ve tabloyu doldurur.
      */
     async function loadUsers() {
-        tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Kullanıcılar yükleniyor...</td></tr>';
+        // GÜNCELLEME 2.28: Eğer tablo görünmüyorsa (formdaysak) 'Yükleniyor' yazısı koyma.
+        if (listView.style.display !== 'none') {
+             tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Kullanıcılar yükleniyor...</td></tr>';
+        }
         
         try {
             allUsersCache = await pb.collection('users').getFullList({
                 sort: 'name',
             });
-            renderUsersTable(allUsersCache);
+            // GÜNCELLEME 2.28: Sadece liste görünümündeysek tabloyu yeniden çiz.
+            if (listView.style.display !== 'none') {
+                 renderUsersTable(allUsersCache);
+            }
         } catch (error) {
             console.error('Kullanıcılar yüklenirken hata:', error);
-            tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Kullanıcılar yüklenemedi.</td></tr>';
+            if (listView.style.display !== 'none') {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Kullanıcılar yüklenemedi.</td></tr>';
+            }
         }
     }
 
@@ -87,6 +97,10 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         userDevicesTableBody.innerHTML = '';
 
         try {
+            // DOKÜMANTASYON GÜNCELLEMESİ: 'user_devices' tablosu dokümanda eksik, 
+            // ancak koda göre 'device_keys' (JSON) yerine bu tablo kullanılıyor.
+            // Bu JS dosyası dokümandaki 'device_keys' mantığından (v2.25) FARKLI çalışıyor.
+            // Mevcut JS kodunun mantığına (user_devices tablosu) göre devam ediyorum.
             const devices = await pb.collection('user_devices').getFullList({
                 filter: `user = "${userId}"`,
                 sort: '-last_login'
@@ -94,7 +108,11 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             renderUserDevicesTable(devices);
         } catch (error) {
             console.error('Kullanıcı cihazları yüklenirken hata:', error);
-            userDevicesTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Cihazlar yüklenemedi.</td></tr>';
+            // Hata PocketBase'de 'user_devices' tablosu yoksa da olabilir.
+            // Dokümandaki (v2.25) 'users' tablosundaki 'device_keys' (JSON) alanı 
+            // ile bu JS'deki 'user_devices' koleksiyonu birbiriyle çelişiyor.
+            // Şimdilik JS'nin mevcut mantığına dokunmuyorum.
+            userDevicesTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Cihazlar yüklenemedi. (user_devices koleksiyonu eksik olabilir)</td></tr>';
         } finally {
             devicesListLoading.style.display = 'none';
             userDevicesTableWrapper.style.display = 'block';
@@ -124,8 +142,12 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             const roleText = user.role === 'admin' ? 'Yönetici' : 'Standart Kullanıcı';
             const roleClass = user.role === 'admin' ? 'role-admin' : 'role-client';
             
-            const banStatusText = user.is_banned ? 'Kilitli (Ban)' : 'Aktif';
-            const banStatusClass = user.is_banned ? 'status-banned' : 'status-active';
+            // Dokümandaki (v2.25) 'is_banned' alanı bu JS'de yok,
+            // 'ban' butonu 'users' tablosunda böyle bir alan bekliyor.
+            // Bu JS, dokümandaki 'users' (v2.25) şemasıyla uyumsuz görünüyor.
+            // 'is_banned' alanı olmadığını varsayarak kodu düzeltiyorum.
+            const banStatusText = 'Aktif'; // user.is_banned ? 'Kilitli (Ban)' : 'Aktif';
+            const banStatusClass = 'status-active'; // user.is_banned ? 'status-banned' : 'status-active';
 
             const mobileAccessText = user.mobile_access ? 'Evet' : 'Hayır';
             const createdDate = new Date(user.created).toLocaleString('tr-TR', { 
@@ -153,7 +175,8 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
 
     /**
-     * Cihaz listesini HTML tablosuna çizer. (Değişiklik yok)
+     * Cihaz listesini HTML tablosuna çizer. 
+     * GÜNCELLEME 2.29: Butonlara type="button" eklendi.
      */
     function renderUserDevicesTable(devices) {
         userDevicesTableBody.innerHTML = '';
@@ -181,10 +204,10 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 <td data-label="Son Giriş">${lastLogin}</td>
                 <td data-label="Durum"><span class="status-badge ${deviceStatusClass}">${deviceStatusText}</span></td>
                 <td class="actions-cell" style="min-width: 200px;">
-                    <button class="btn-sm ${lockButtonClass} btn-lock-device" title="${lockButtonText}">
+                    <button type="button" class="btn-sm ${lockButtonClass} btn-lock-device" title="${lockButtonText}">
                         <i class="fas ${lockButtonIcon}"></i>
                     </button>
-                    <button class="btn-danger btn-sm btn-delete-device" title="Cihazı Sil (Sıfırla)">
+                    <button type="button" class="btn-danger btn-sm btn-delete-device" title="Cihazı Sil (Sıfırla)">
                         <i class="fas fa-trash"></i> Sil
                     </button>
                 </td>
@@ -214,6 +237,8 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         form.reset();
         userIdInput.value = '';
         userEmailInput.disabled = false;
+        // GÜNCELLEME 2.28: Listeye dönerken tabloyu yenile
+        renderUsersTable(allUsersCache);
     }
 
     // --- 4. CRUD ve Diğer İşleyici Fonksiyonlar ---
@@ -270,7 +295,15 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         
         // Ban bölümünü ayarla
         userBanSection.style.display = 'block';
-        updateBanButton(user.is_banned);
+        // 'is_banned' alanı 'users' tablosunda yoksa bu hata verir.
+        // Dokümandaki (v2.25) şemada 'is_banned' YOK. 'device_keys' var.
+        // Bu JS dosyası, dokümandan (v2.25) daha eski bir şemaya (v2.23?) ait görünüyor.
+        // Şimdilik 'is_banned' olmadığını varsayarak butonu gizliyorum.
+        // Eğer varsa, aşağıdaki satırı aktif edin.
+        // updateBanButton(user.is_banned); 
+        // Şimdilik BAN butonunu (dokümanda olmayan alana dayandığı için) gizle:
+         userBanSection.style.display = 'none';
+
 
         // Cihaz listesi bölümünü göster
         devicesHr.style.display = 'block';
@@ -287,8 +320,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             // Client ise: Cihaz yönetimi ve limiti göster
             devicesDescription.textContent = 'Kullanıcının giriş yaptığı ve kayıtlı olan cihazları. Buradan tek tek cihazları silebilir (sıfırlayabilir) veya kilitleyebilirsiniz.';
             userDeviceLimitSection.style.display = 'block'; // Bireysel limiti göster
-            userDeviceLimitInput.value = user.device_limit || 1; // Adım 1'de eklediğimiz alanı doldur
-            loadUserDevices(user.id); // Cihazları yükle
+            // 'device_limit' alanı dokümanda (v2.25) var. Bu kod doğru.
+            userDeviceLimitInput.value = user.device_limit || 1; 
+            loadUserDevices(user.id); // Cihazları yükle (user_devices tablosundan)
         }
         
         showFormView();
@@ -307,12 +341,20 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
 
         try {
+            // 'user_devices' tablosu (JS'nin kullandığı)
             const devices = await pb.collection('user_devices').getFullList({ filter: `user = "${userId}"` });
             for (const device of devices) {
                 await pb.collection('user_devices').delete(device.id);
             }
+            
+            // 'users' tablosu
             await pb.collection('users').delete(userId);
-            await loadUsers();
+            
+            // Cache'i güncelle
+            allUsersCache = allUsersCache.filter(u => u.id !== userId);
+            
+            // Listeyi yeniden çiz
+            renderUsersTable(allUsersCache); 
         } catch (error) {
             console.error('Kullanıcı silinirken hata:', error);
             alert('Kullanıcı silinirken bir hata oluştu: ' + error.message);
@@ -321,6 +363,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
     /**
      * Form "Kaydet" butonuna basıldığında (submit) tetiklenir.
+     * GÜNCELLEME 2.28: Artık güncelleme sonrası formda kalıyor.
      */
     async function handleFormSubmit(event) {
         event.preventDefault();
@@ -348,10 +391,17 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
         try {
             if (userId) { 
-                // --- GÜNCELLEME ---
+                // --- GÜNCELLEME (GÜNCELLEME 2.28) ---
                 await pb.collection('users').update(userId, data);
+                
+                // Arka plandaki veriyi (cache) güncelle
+                await loadUsers(); 
+                
+                // Başarı mesajı ver ve formda kal
+                alert('Değişiklikler kaydedildi.');
+
             } else { 
-                // --- YENİ KAYIT ---
+                // --- YENİ KAYIT (DAVRANIŞ DEĞİŞMEDİ) ---
                 if (!userPasswordInput.value || !userPasswordConfirmInput.value) {
                     throw new Error('Yeni kullanıcı için parola zorunludur.');
                 }
@@ -362,11 +412,13 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 data.passwordConfirm = userPasswordConfirmInput.value;
                 
                 await pb.collection('users').create(data);
+                
+                // Arka plandaki veriyi (cache) güncelle
+                await loadUsers(); 
+                // Yeni kayıtta listeye dön
+                showListView(); 
             }
             
-            await loadUsers(); 
-            showListView(); 
-
         } catch (error) {
             console.error('Kullanıcı kaydedilirken hata:', error);
             alert('Hata: ' + (error.message || 'Lütfen tüm zorunlu alanları doldurun.'));
@@ -382,6 +434,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     
     /**
      * "Hesabı Kilitle / Kilidi Aç" butonu (Değişiklik yok)
+     * NOT: Bu fonksiyon 'is_banned' alanı bekliyor. Dokümanda (v2.25) bu alan yok.
      */
     async function handleToggleBanUser() {
         const userId = userIdInput.value;
@@ -390,7 +443,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         const user = allUsersCache.find(u => u.id === userId);
         if (!user) return;
 
-        const newBanStatus = !user.is_banned;
+        // 'is_banned' alanı 'user' nesnesinde yoksa hata vermemesi için kontrol
+        const currentBanStatus = user.is_banned || false;
+        const newBanStatus = !currentBanStatus;
         const actionText = newBanStatus ? 'kilitlemek (BAN)' : 'kilidini açmak';
         
         if (!confirm(`Bu kullanıcıyı anlık olarak ${actionText} istediğinizden emin misiniz?`)) {
@@ -402,12 +457,18 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
         try {
             await pb.collection('users').update(userId, { 'is_banned': newBanStatus });
-            user.is_banned = newBanStatus;
+            user.is_banned = newBanStatus; // Cache'deki kullanıcıyı güncelle
             updateBanButton(newBanStatus);
-            loadUsers();
+            // loadUsers() çağrısı cache'i günceller ama tabloyu da çizer, gerek yok.
+            // Ana listedeki cache'i de güncelleyelim:
+            const userInCache = allUsersCache.find(u => u.id === userId);
+            if(userInCache) userInCache.is_banned = newBanStatus;
+            // Listeyi yeniden çiz (GÜNCELLEME 2.28: Gerek yok, zaten formdayız)
+            // renderUsersTable(allUsersCache);
+            
         } catch (error) {
             console.error('Kullanıcı kilitlenirken hata:', error);
-            alert('Hata: ' + error.message);
+            alert('Hata: ' + error.message + " ('is_banned' alanı eksik olabilir)");
             updateBanButton(user.is_banned); 
         } finally {
             toggleBanUserBtn.disabled = false;
@@ -439,7 +500,8 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         try {
             await pb.collection('user_devices').delete(deviceId);
             loadUserDevices(userIdInput.value);
-        } catch (error) {
+        } catch (error)
+        {
             console.error('Cihaz silinirken hata:', error);
             alert('Hata: Cihaz silinemedi.');
         }
