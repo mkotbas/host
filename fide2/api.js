@@ -14,7 +14,7 @@ function isMobileDevice() {
 }
 
 /**
- * YENİ FONKSİYON: Kullanıcının cihaz bilgilerini (Tarayıcı ve OS)
+ * Kullanıcının cihaz bilgilerini (Tarayıcı ve OS)
  * admin panelinde gösterilecek basit bir metne dönüştürür.
  * @returns {string} Örn: "Chrome on Windows"
  */
@@ -45,9 +45,7 @@ function getDeviceDescription() {
  */
 function generateDeviceKey() {
     const arr = new Uint32Array(4);
-    // Kriptografik olarak güvenli rastgele sayılar kullan
     window.crypto.getRandomValues(arr); 
-    // Sayıları 36'lık tabana (harf+rakam) çevir ve birleştir
     return Array.from(arr, dec => dec.toString(36)).join('-').toUpperCase();
 }
 
@@ -61,7 +59,7 @@ export function initApi(pbInstance) {
 }
 
 /**
- * O anki aya ait denetim verilerini (kimler denetlenmiş) yükler.
+ * O anki aya ait denetim verilerini yükler.
  * (Bu fonksiyonda değişiklik yok)
  */
 async function loadMonthlyAuditData() {
@@ -133,8 +131,7 @@ export async function loadExcelDataFromCloud() {
 }
 
 /**
- * Uygulama için gerekli tüm başlangıç verilerini (sorular, bayiler vb.) yükler.
- * @returns {boolean} Veri yükleme başarılı olursa true, aksi takdirde false döner.
+ * Uygulama için gerekli tüm başlangıç verilerini yükler.
  * (Bu fonksiyonda değişiklik yok)
  */
 export async function loadInitialData() {
@@ -296,7 +293,7 @@ export async function clearExcelFromCloud(type) {
 }
 
 /**
- * YENİ VE GÜNCELLENMİŞ: Kullanıcı girişi, Admin bypass, Client cihaz limiti ve kilitleme.
+ * YENİ VE GÜNCELLENMİŞ: Kullanıcı girişi ve BİREYSEL cihaz limiti.
  * @param {string} email 
  * @param {string} password 
  * @returns {Promise<{success: boolean, message: string}>} Giriş denemesinin sonucunu döner.
@@ -315,15 +312,14 @@ export async function loginUser(email, password) {
     }
 
     try {
-        // 2. Adım: Kullanıcı KİLİTLİ (BANNED) mi? (Adım 1'de eklediğimiz 'is_banned' alanı)
+        // 2. Adım: Kullanıcı KİLİTLİ (BANNED) mi?
         if (user.is_banned === true) {
             logoutUser();
             return { success: false, message: "Bu hesap yönetici tarafından kilitlenmiştir." };
         }
 
-        // 3. Adım: Kullanıcı ROLÜ 'admin' mi? (İstediğiniz 1. madde)
+        // 3. Adım: Kullanıcı ROLÜ 'admin' mi?
         if (user.role === 'admin') {
-            // ADMIN GİRİŞİ: Cihaz kilidi veya mobil kontrolü yapma.
             return { success: true, message: "Yönetici girişi başarılı." };
         }
 
@@ -335,9 +331,9 @@ export async function loginUser(email, password) {
             return { success: false, message: "Bu hesaptan mobil cihaz ile giriş izni yoktur." };
         }
 
-        // 4b. Yeni Cihaz Yönetimi (Adım 1'de oluşturduğumuz 'user_devices' tablosu)
+        // 4b. Yeni Cihaz Yönetimi
         const browserDeviceKey = localStorage.getItem('myAppDeviceKey');
-        const currentDeviceDesc = getDeviceDescription(); // "Chrome on Windows" vb.
+        const currentDeviceDesc = getDeviceDescription(); 
 
         if (browserDeviceKey) {
             // --- CİHAZDA ANAHTAR VAR (Normal giriş denemesi) ---
@@ -346,34 +342,29 @@ export async function loginUser(email, password) {
                     `user="${user.id}" && device_key="${browserDeviceKey}"`
                 );
 
-                // Cihaz kilitli mi?
                 if (deviceRecord.is_locked) {
                     logoutUser();
                     return { success: false, message: "Bu cihaz yönetici tarafından kilitlenmiştir." };
                 }
 
-                // Cihaz kilitli değil. Son giriş tarihini güncelle ve devam et.
                 await pb.collection('user_devices').update(deviceRecord.id, {
                     'last_login': new Date().toISOString(),
-                    'device_info': currentDeviceDesc // Cihaz bilgisini de güncelleyelim
+                    'device_info': currentDeviceDesc 
                 });
                 return { success: true, message: "Giriş başarılı." };
 
             } catch (error) {
-                // Hata 404 (Not Found) ise:
-                // Tarayıcıda bir anahtar var, ama veritabanında yok.
-                // (Muhtemelen admin tarafından silinmiş).
-                // Anahtarı tarayıcıdan temizle ve yeni cihaz gibi davran.
                 localStorage.removeItem('myAppDeviceKey');
-                return loginUser(email, password); // Fonksiyonu yeniden çağır (bu kez anahtarsız girecek)
+                return loginUser(email, password); 
             }
 
         } else {
             // --- CİHAZDA ANAHTAR YOK (Yeni Cihaz Kaydı) ---
             
-            // Cihaz limitini kontrol et (İstediğiniz 2. madde)
-            const limitSetting = await pb.collection('ayarlar').getFirstListItem('anahtar="clientDeviceLimit"');
-            const deviceLimit = parseInt(limitSetting.deger) || 1; // Varsayılan 1 olsun
+            // *** DEĞİŞİKLİK BURADA ***
+            // Cihaz limitini global 'ayarlar' yerine doğrudan 'user' kaydından oku
+            const deviceLimit = user.device_limit || 1; // Adım 1'de eklediğimiz 'device_limit' alanı.
+            // *** DEĞİŞİKLİK BİTTİ ***
 
             const userDevices = await pb.collection('user_devices').getFullList({
                 filter: `user="${user.id}"`
@@ -384,7 +375,7 @@ export async function loginUser(email, password) {
                 logoutUser();
                 return { 
                     success: false, 
-                    message: `Cihaz limitiniz (${deviceLimit}) dolmuştur. Yeni bir cihaz ekleyemezsiniz. Lütfen yöneticinizle iletişime geçin.` 
+                    message: `Kişisel cihaz limitiniz (${deviceLimit}) dolmuştur. Yeni bir cihaz ekleyemezsiniz. Lütfen yöneticinizle iletişime geçin.` 
                 };
             }
 
@@ -399,7 +390,6 @@ export async function loginUser(email, password) {
                 'is_locked': false
             });
 
-            // Yeni anahtarı tarayıcı hafızasına kaydet
             localStorage.setItem('myAppDeviceKey', newKey);
             return { success: true, message: "Yeni cihaz kaydedildi ve giriş yapıldı." };
         }
@@ -414,7 +404,6 @@ export async function loginUser(email, password) {
 /**
  * Kullanıcı çıkış işlemini yapar.
  * (Bu fonksiyonda değişiklik yok)
- * Cihaz anahtarını (myAppDeviceKey) SİLMEZ, bu doğru.
  */
 export function logoutUser() {
     if (pb) {
