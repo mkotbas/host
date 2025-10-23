@@ -60,14 +60,14 @@ export function initApi(pbInstance) {
     pb = pbInstance;
 }
 
-// --- (YENİ) ANLIK ABONELİK FONKSİYONU ---
+// --- (DÜZELTİLDİ) ANLIK ABONELİK FONKSİYONU ---
 
 /**
- * (YENİ FONKSİYON)
+ * (DÜZELTİLDİ)
  * Kullanıcının kilit (ban) ve cihaz kilidi (lock) durumlarını anlık dinler.
  * Bir kilitlenme tespit ederse, kullanıcıyı bilgilendirir ve sistemden atar.
  */
-export function subscribeToRealtimeChanges() {
+export async function subscribeToRealtimeChanges() {
     if (!pb || !pb.authStore.isValid) {
         return; // Giriş yapılmamışsa dinleme
     }
@@ -75,10 +75,10 @@ export function subscribeToRealtimeChanges() {
     const userId = pb.authStore.model.id;
     const browserDeviceKey = localStorage.getItem('myAppDeviceKey');
 
-    // 1. Hesap Kilidi (Ban) Dinlemesi
+    // 1. Hesap Kilidi (Ban) Dinlemesi (Bu kısım doğruydu, değişiklik yok)
     try {
         pb.collection('users').subscribe(userId, function(e) {
-            console.log('Kullanıcı kaydı güncellendi (is_banned?):', e.record);
+            // console.log('Kullanıcı kaydı güncellendi (is_banned?):', e.record);
             
             if (e.record && e.record.is_banned === true) {
                 console.warn('Kullanıcı kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
@@ -100,32 +100,40 @@ export function subscribeToRealtimeChanges() {
     }
 
     // 2. Cihaz Kilidi Dinlemesi (Sadece 'client' rolü ve kayıtlı anahtar varsa)
+    // --- BURASI DÜZELTİLDİ ---
     if (pb.authStore.model.role === 'client' && browserDeviceKey) {
         try {
-            // 'user_devices' tablosunu dinle, ama SADECE bu kullanıcıya VE bu cihaza ait kayıtlar için filtrele
-            pb.collection('user_devices').subscribe('*', async function(e) {
-                // console.log('Cihaz kaydı güncellendi (is_locked?):', e.record);
+            // HATA DÜZELTME: subscribe('*') yerine, önce cihazın ID'sini bul.
+            // (Dokümantasyon 5.3: 'client' sadece kendi cihazını listeleyebilir, '*' kullanamaz)
+            const deviceRecord = await pb.collection('user_devices').getFirstListItem(
+                `user="${userId}" && device_key="${browserDeviceKey}"`
+            );
 
-                // Gelen güncelleme bu kullanıcıya ve bu cihaza mı ait?
-                if (e.record && e.record.user === userId && e.record.device_key === browserDeviceKey) {
+            // HATA DÜZELTME: Artık '*' yerine doğrudan bulunan cihazın ID'sini dinle.
+            pb.collection('user_devices').subscribe(deviceRecord.id, function(e) {
+                // console.log('Bu cihazın kaydı güncellendi:', e.record);
+
+                // Artık filtrelemeye (e.record.user === ...) gerek yok, 
+                // çünkü SADECE bu cihazı dinliyoruz.
+                if (e.record && e.record.is_locked === true) {
+                    console.warn('Cihaz kilitlendi (is_locked=true). Oturum sonlandırılıyor.');
+
+                    // utils.js'teki yeni kilit ekranını göster
+                    showLockoutOverlay("Bu cihaz bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
                     
-                    if (e.record.is_locked === true) {
-                        console.warn('Cihaz kilitlendi (is_locked=true). Oturum sonlandırılıyor.');
-
-                        // utils.js'teki yeni kilit ekranını göster
-                        showLockoutOverlay("Bu cihaz bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
-                        
-                        // Oturumu temizle
-                        logoutUser();
-                        
-                        // Kullanıcının mesajı görmesi için 2 saniye bekle ve sayfayı yenile
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    }
+                    // Oturumu temizle
+                    logoutUser();
+                    
+                    // Kullanıcının mesajı görmesi için 2 saniye bekle ve sayfayı yenile
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
                 }
             });
+
         } catch (error) {
+            // Bu hata, cihaz kaydı bulunamazsa (getFirstListItem) VEYA 
+            // abonelik (subscribe) başarısız olursa tetiklenir.
             console.error('Cihaz (lock) dinlemesi başlatılamadı:', error);
         }
     }
