@@ -1,4 +1,22 @@
 <div class="card">
+    <div class="card" id="global-settings-card" style="margin-bottom: 20px; background-color: #f8f9fa;">
+        <div class="module-header" style="padding: 15px 20px; border-bottom: 1px solid #dee2e6;">
+            <h3 class="module-title" style="margin: 0; padding: 0; border: 0;">Genel Ayarlar</h3>
+        </div>
+        <div style="padding: 20px;">
+            <div class="form-group" style="max-width: 400px;">
+                <label for="client-device-limit-input">Standart Kullanıcı Cihaz Limiti (Max: 5)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="client-device-limit-input" min="1" max="5" value="1" style="flex-grow: 1;">
+                    <button id="save-device-limit-btn" class="btn-primary btn-sm">
+                        <i class="fas fa-save"></i> Limiti Kaydet
+                    </button>
+                </div>
+                <div id="device-limit-status" style="font-size: 0.9em; margin-top: 8px;"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="user-list-view">
         <div class="module-header">
             <h3 class="module-title">Sistem Kullanıcıları</h3>
@@ -11,9 +29,10 @@
             <table id="users-table">
                 <thead>
                     <tr>
-                        <th>İsim</th> <th>E-posta</th>
+                        <th>İsim</th>
+                        <th>E-posta</th>
                         <th>Rol</th>
-                        <th>Mobil Erişim</th>
+                        <th>Durum (Ban)</th> <th>Mobil Erişim</th>
                         <th>Oluşturulma Tarihi</th>
                         <th>İşlemler</th>
                     </tr>
@@ -43,7 +62,6 @@
                     <label for="user-password-input">Parola</label>
                     <input type="password" id="user-password-input" placeholder="Yeni parola belirleyin">
                 </div>
-
                 <div class="form-group">
                     <label for="user-password-confirm-input">Parola (Tekrar)</label>
                     <input type="password" id="user-password-confirm-input" placeholder="Yeni parolayı doğrulayın">
@@ -68,16 +86,38 @@
                 <input type="checkbox" id="user-mobile-access-checkbox">
             </div>
 
-            <div class="form-group">
-                <label>Benzersiz Cihaz Anahtarı Kilidi</label>
-                <div id="device-key-info" class="readonly-field">
-                    Henüz bir cihaz kaydedilmemiş.
-                </div>
-                <button type="button" id="reset-device-key-btn" class="btn-warning btn-sm" style="margin-top: 5px; display: none;">
-                    <i class="fas fa-unlock-alt"></i> Cihaz Anahtarı Kilidini Sıfırla
+            <div class="form-group" id="user-ban-section" style="display: none;">
+                <label>Hesap Durumu (Anlık Kilitleme)</label>
+                <button type="button" id="toggle-ban-user-btn" class="btn-danger" style="width: 100%;">
+                    <i class="fas fa-ban"></i> Bu Kullanıcının Hesabını Kilitle (BAN)
                 </button>
-                <small>Kullanıcı ilk başarılı girişinde, tarayıcısına benzersiz bir 'cihaz anahtarı' kaydedilir ve kilitlenir. Bu kilidi sıfırlamak, kullanıcının bir sonraki girişini (herhangi bir cihazdan) 'ilk giriş' olarak kabul eder.</small>
+                <small>Bu işlem anlıktır. Kullanıcı o anda ne yaparsa yapsın sistemden atılır ve "Hesap kilitlendi" mesajı alır.</small>
             </div>
+
+            <hr id="devices-hr" style="display: none;">
+
+            <h4 id="devices-title" style="display: none;"><i class="fas fa-desktop"></i> Kayıtlı Cihazlar</h4>
+            <p id="devices-description" style="display: none;">Kullanıcının giriş yaptığı ve kayıtlı olan cihazları. Buradan tek tek cihazları silebilir (sıfırlayabilir) veya kilitleyebilirsiniz.</p>
+            
+            <div id="devices-list-loading" style="display: none; text-align: center; padding: 20px;">
+                <i class="fas fa-spinner fa-spin"></i> Cihazlar yükleniyor...
+            </div>
+            
+            <div class="table-responsive" id="user-devices-table-wrapper" style="display: none;">
+                <table id="user-devices-table">
+                    <thead>
+                        <tr>
+                            <th>Cihaz Bilgisi</th>
+                            <th>Son Giriş</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-devices-table-body">
+                        </tbody>
+                </table>
+            </div>
+
             <div class="form-actions">
                 <button type="submit" id="save-user-btn" class="btn-primary">Kaydet</button>
                 <button type="button" id="cancel-user-form-btn" class="btn-secondary">İptal</button>
