@@ -232,6 +232,7 @@
 .form-group input[type="email"],
 .form-group input[type="password"],
 .form-group input[type="text"], /* YENİ EKLENDİ */
+.form-group input[type="number"], /* YENİ EKLENDİ */
 .form-group select {
     width: 100%;
     padding: 12px;
@@ -316,4 +317,116 @@
     display: flex;
     gap: 15px; /* Butonlar arası boşluk */
     justify-content: flex-end; /* Butonları sağa hizala */
+}
+
+
+/* =================================================================== */
+/* === YENİ EKLENEN BÖLÜM (GÜNCELLEME 2.27): Modern Form Düzeni     === */
+/* =================================================================== */
+
+/* Ayarları (Mobil, Limit) yan yana getiren esnek satır */
+.form-row {
+    display: flex;
+    flex-wrap: wrap; /* Küçük ekranlarda alt alta geçmesi için */
+    gap: 20px; /* İki kutu arası boşluk */
+    margin-bottom: 20px;
+}
+
+.form-row > .form-group {
+    flex: 1; /* Her iki öğe de eşit yer kaplasın */
+    min-width: 250px; /* Minimum genişlik (küçük ekranlar için) */
+    margin-bottom: 0; /* Satırın kendi boşluğu var */
+}
+
+/* Yeni Modern Checkbox Kutusu (Mobil Erişim) */
+.form-group-checkbox-modern {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 12px; /* DİĞER KUTULARLA HİZALAMAK İÇİN AYARLANDI */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* İçeriği üste hizala */
+    min-height: 108.5px; /* Diğer input ile aynı hizada durması için */
+    box-sizing: border-box;
+}
+
+/* Modern Checkbox'ın etiketini (Mobil Erişim İzni) gizle */
+.form-group-checkbox-modern > label {
+    /* Bu etiketi kullanıyoruz, gizlemiyoruz */
+     margin-bottom: 13px; /* Input ile arası açılsın */
+}
+
+.form-group-checkbox-modern .checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    padding-top: 8px; /* Hizalama için eklendi */
+}
+
+.form-group-checkbox-modern .checkbox-wrapper input[type="checkbox"] {
+    transform: scale(1.3);
+    margin: 0;
+    margin-right: 12px;
+    cursor: pointer;
+}
+
+.form-group-checkbox-modern .checkbox-wrapper .checkbox-label {
+    margin: 0;
+    font-weight: normal;
+    color: #333;
+    font-size: 0.95em; /* Diğer input yazılarıyla aynı */
+}
+
+
+/* =================================================================== */
+/* === YENİ EKLENEN BÖLÜM (GÜNCELLEME 2.27): Cihaz Tablosu Düzeltmesi === */
+/* =================================================================== */
+
+/* Kayıtlı Cihazlar tablosunun stillerini ana tabloyla eşitle */
+#user-devices-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 15px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden; /* Köşeler için */
+}
+
+/* OKUNMAYAN METİN DÜZELTMESİ: */
+/* Cihaz tablosunun 'th' (başlık) stillerini ayarla */
+#user-devices-table th {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #333; /* Metin rengi koyu */
+    background-color: #f5f5f5;
+}
+
+/* OKUNMAYAN METİN DÜZELTMESİ: */
+/* Cihaz tablosunun 'td' (hücre) stillerini ayarla */
+#user-devices-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: middle;
+    font-size: 0.9em;
+    color: #333; /* Metin rengi koyu */
+}
+
+#user-devices-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+#user-devices-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Cihaz tablosundaki "Sil" butonu */
+#user-devices-table .btn-danger {
+    padding: 5px 10px;
+    font-size: 0.8em;
 }
