@@ -185,37 +185,44 @@ async function handleDeleteUserAndData_Modal() {
 /**
  * (Yıkıcı Senaryo 2)
  * "Atanmamış Bayileri Temizle" eylemini çalıştırır.
- * (GÜNCELLENDİ: Arayüz donmasını ve sunucu timeout hatasını engellemek için döngüye gecikme eklendi)
+ * (GÜNCELLENDİ: Gecikme 100ms'ye çıkarıldı ve döngüden önce UI güncellemesi eklendi)
  */
 async function handleDeleteUnassignedBayis() {
+    // 1. Bayileri bul
     const unassignedBayiler = allStores.filter(s => !s.sorumlu_kullanici);
     if (unassignedBayiler.length === 0) {
         alert("Sistemde 'Atanmamış' bayi bulunamadı. İşlem yapılmasına gerek yok.");
         return;
     }
+    // 2. Onay al
     if (!confirm(`ÇOK YÜKSEK RİSK!\n\nSistemde 'Atanmamış' olarak görünen ${unassignedBayiler.length} adet bayi bulundu.\n\nBu işlem, bu bayileri VE bu bayilere ait TÜM denetim raporlarını VE TÜM 'geri alınan' kayıtlarını kalıcı olarak silecektir.\n\nBu işlem GERİ ALINAMAZ.\n\nEmin misiniz?`)) { return; }
 
-    showLoading(true, `Yıkıcı temizlik başlatıldı... ${unassignedBayiler.length} atanmamış bayi işleniyor...`);
-    
+    // 3. Yükleme ekranını GÖSTER (Döngüden önce)
+    showLoading(true, `Yıkıcı temizlik başlatıldı... ${unassignedBayiler.length} bayi işlenecek...`);
+    // 4. YENİ ADIM: Tarayıcının bu mesajı ekrana çizmesi için ZORLA bekle.
+    // Bu, "hiçbir ekran görmüyorum" sorununu çözer.
+    await new Promise(resolve => setTimeout(resolve, 50)); // 50ms bekle
+
     let totalReportsDeleted = 0;
     let totalBayisDeleted = 0;
     let totalGeriAlinanDeleted = 0;
     const totalBayiCount = unassignedBayiler.length;
 
     try {
-        // Her bayiyi döngüde tek tek işle
+        // 5. Döngüyü başlat
         for (let i = 0; i < totalBayiCount; i++) {
             const bayi = unassignedBayiler[i];
             const bayiName = bayi.bayiAdi || bayi.bayiKodu;
             const currentCount = i + 1;
             
-            // --- YENİ ADIM: Arayüz Güncellemesini Zorla ve Sunucuyu Yavaşlat ---
-            // Arayüzün donmasını engeller ve "Something went wrong" hatasını önler.
-            const message = `(${currentCount}/${totalBayiCount}) '${bayiName}' işleniyor... (Geri Alınan: ${totalGeriAlinanDeleted}, Rapor: ${totalReportsDeleted}, Bayi: ${totalBayisDeleted})`;
+            // 6. Yükleme mesajını GÜNCELLE
+            // (Not: \n ile mesajı iki satıra böldüm, daha okunaklı olması için)
+            const message = `(${currentCount}/${totalBayiCount}) '${bayiName}' işleniyor...\n(Silinen: ${totalGeriAlinanDeleted} geri-alınan, ${totalReportsDeleted} rapor, ${totalBayisDeleted} bayi)`;
             showLoading(true, message);
-            // Tarayıcının arayüzü güncellemesine ve sunucunun nefes almasına izin ver
-            await new Promise(resolve => setTimeout(resolve, 10)); // 10 milisaniye bekle
             
+            // 7. GÜNCELLENMİŞ GECİKME: Sunucuya nefes aldır ve UI'yi güncelle
+            // Gecikmeyi 10ms'den 100ms'ye çıkar. "Something went wrong" hatasını çözer.
+            await new Promise(resolve => setTimeout(resolve, 100)); 
 
             // --- SİLME AŞAMA 1: 'denetim_geri_alinanlar' ---
             const geriAlinanRecords = await pbInstance.collection('denetim_geri_alinanlar').getFullList({
@@ -250,7 +257,6 @@ async function handleDeleteUnassignedBayis() {
         await loadInitialData(); // Verileri yenile
         
     } catch (error) {
-        // Hata durumunda ilerlemeyi bildir (DÜZELTİLDİ: Çift hata mesajı kaldırıldı)
         handleError(error, `Atanmamış bayiler temizlenirken kritik bir hata oluştu.\n\nİşlem durduruldu.\nToplam ${totalBayisDeleted} bayi, ${totalReportsDeleted} rapor ve ${totalGeriAlinanDeleted} 'geri alınan' kayıt şimdiye kadar silindi.\n\nİşlemi tekrar başlatarak kalanları temizleyebilirsiniz.`);
     } finally {
         showLoading(false);
@@ -496,7 +502,10 @@ function showLoading(show, message = "İşlem yapılıyor...") {
     const overlay = document.getElementById('loading-overlay'); 
     if (overlay) {
         const textElement = overlay.querySelector('p');
-        if (textElement) { textElement.textContent = message; }
+        if (textElement) { 
+            // \n (yeni satır) karakterlerini <br> etiketine çevir
+            textElement.innerHTML = message.replace(/\n/g, '<br>'); 
+        }
         overlay.style.display = show ? 'flex' : 'none';
     }
 }
@@ -519,20 +528,23 @@ function showModal(show, title = '', body = '', actionButton = null) {
 }
 
 /**
- * (DÜZELTİLDİ: Hata mesajları artık çift yazılmayacak)
+ * (DÜZELTİLDİ: Hata mesajı artık temizlendi)
  */
 function handleError(error, userMessage) {
     console.error(userMessage, error);
     const errorMessage = (error.message || '').toLowerCase();
     const errorDetails = `Detaylı Hata: ${error.message || error}`;
 
+    // userMessage zaten "İşlem durduruldu..." gibi açıklayıcı bir metin içeriyor.
+    // Bu yüzden hatayı basitçe birleştiriyoruz.
+    let fullUserMessage = userMessage;
+
     // Veritabanı ilişki/bütünlük hatası
     if (errorMessage.includes('relation') || errorMessage.includes('reference') || errorMessage.includes('constraint')) {
-        // userMessage zaten "İşlem durduruldu..." diyor.
-        // Biz sadece sebebi ekleyelim.
-        alert(`İşlem Başarısız!\n\n${userMessage}\n\nSebep: Silinmeye çalışılan bir kayıt, başka bir tablodaki veri tarafından kullanılıyor.\nVeri bütünlüğünü korumak için bu silme işlemi engellendi.\n\n${errorDetails}`);
-    } else {
-        // Diğer tüm hatalar (örn: "Something went wrong")
-        alert(`${userMessage}\n\n${errorDetails}`);
+        fullUserMessage += `\n\nSebep: Silinmeye çalışılan bir kayıt, başka bir tablodaki veri tarafından kullanılıyor.\nVeri bütünlüğünü korumak için bu silme işlemi engellendi.`;
     }
+    
+    fullUserMessage += `\n\n${errorDetails}`;
+    
+    alert(fullUserMessage);
 }
