@@ -7,28 +7,35 @@
 export function showLoadingOverlay(message) {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
-        // Varsa kilit ikonunu kaldır, spinner'ı göster
+
+        // --- (YENİ) KİLİT STİLLERİNİ SIFIRLAMA ---
+        
+        // 1. İkonu bul ve spinner'a geri döndür
+        // (HTML'de 'i' etiketi olduğunu varsayıyoruz)
         const icon = overlay.querySelector('i');
         if (icon) {
-            icon.className = 'fas fa-spinner fa-spin'; // Spinner ikonu
-            // (DÜZELTME) Mobil düzeltmelerin spinner'da kalmamasını sağla
-            icon.style.fontSize = '';
-            icon.style.marginBottom = '';
-            overlay.querySelector('p').style.maxWidth = '';
-            overlay.querySelector('p').style.textAlign = '';
-            overlay.querySelector('p').style.padding = '';
-            overlay.querySelector('p').style.wordWrap = '';
-            overlay.querySelector('p').style.overflowWrap = '';
+            icon.className = 'fas fa-spinner fa-spin'; // Spinner
+            icon.style.fontSize = ''; // Stili sıfırla
+            icon.style.marginBottom = ''; // Stili sıfırla
         }
-        
-        overlay.querySelector('p').textContent = message;
-        overlay.style.display = 'flex';
-        // (DÜZELTME) Kilit ekranından kalma renkleri sıfırla
-        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+
+        // 2. Paragrafı bul ve stilleri sıfırla
+        const p = overlay.querySelector('p');
+        p.textContent = message;
+        p.style.wordWrap = '';
+        p.style.overflowWrap = '';
+        p.style.textAlign = '';
+        p.style.padding = '';
+        p.style.maxWidth = '';
+
+        // 3. Overlay'i sıfırla (Arka plan, renk, hizalama)
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'; // Siyah
         overlay.style.color = 'white';
-        overlay.style.flexDirection = 'column';
+        overlay.style.flexDirection = 'column'; // Dikey
         overlay.style.justifyContent = 'center';
         overlay.style.alignItems = 'center';
+        
+        overlay.style.display = 'flex';
     }
 }
 
@@ -42,50 +49,43 @@ export function hideLoadingOverlay() {
     }
 }
 
+
 /**
  * (YENİ FONKSİYON - Mobil Cihazlar İçin Düzeltildi)
  * Kullanıcının erişimini engelleyen bir kilit ekranı gösterir.
- * Bu ekran kapatılamaz ve kullanıcıyı sistemde kilitler.
  * @param {string} message Engelleme mesajı (örn: "Cihazınız kilitlendi.").
  */
 export function showLockoutOverlay(message) {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
-        // Spinner yerine kilit ikonu göster
-        let icon = overlay.querySelector('i');
-        if (!icon) {
-            icon = document.createElement('i');
-            overlay.prepend(icon);
+        
+        // 1. İkonu bul ve kilide dönüştür
+        // (HTML'de 'i' etiketi olduğunu varsayıyoruz)
+        const icon = overlay.querySelector('i');
+        if (icon) {
+            icon.className = 'fas fa-lock'; // Kilit ikonu
+            icon.style.fontSize = '40px';
+            icon.style.marginBottom = '20px';
         }
-        icon.className = 'fas fa-lock'; // FontAwesome kilit ikonu
-        icon.style.fontSize = '40px'; // İkonu büyüt
-        icon.style.marginBottom = '20px'; // Mesajla arasına boşluk koy
 
-        // --- MOBİL TAŞMA DÜZELTMELERİ ---
+        // 2. Paragrafı bul ve KULLANICININ İSTEDİĞİ GİBİ STİLLENDİR
         const p = overlay.querySelector('p');
         p.textContent = message;
         
-        // 1. Metnin satır atlamasını (kaymasını) sağla
-        p.style.wordWrap = 'break-word';
-        p.style.overflowWrap = 'break-word';
-        // 2. Metni her zaman ortala
-        p.style.textAlign = 'center';
-        // 3. Ekran kenarlarına boşluk ver (taşmayı engeller)
-        p.style.padding = '0 20px'; 
-        // 4. Paragrafın genişliğini %90 ile sınırla
-        p.style.maxWidth = '90%'; 
-        // --- DÜZELTME BİTTİ ---
+        p.style.wordWrap = 'break-word';        // Satır atlamayı aç (taşmayı önler)
+        p.style.overflowWrap = 'break-word';  // Satır atlamayı aç (taşmayı önler)
+        p.style.textAlign = 'center';       // Metni ortala
+        p.style.padding = '0 20px';         // **İSTEĞİNİZ: Sağdan ve soldan boşluk**
+        p.style.maxWidth = '90%';         // Ekranın %90'ını kapla (taşmayı önler)
 
-        // Stili ayarla (kapatılamaz)
-        overlay.style.display = 'flex';
-        // (YENİ) Flex ayarlarını garantile (dikeyde ve yatayda ortalama)
-        overlay.style.flexDirection = 'column';
-        overlay.style.justifyContent = 'center';
-        overlay.style.alignItems = 'center';
-        
-        // Kırmızı uyarı rengi
-        overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+        // 3. Overlay'i ayarla (Arka plan, renk, hizalama)
+        overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.7)'; // Kırmızı
         overlay.style.color = 'white';
-        overlay.style.zIndex = '2000'; // En üstte olmasını garantile
+        overlay.style.flexDirection = 'column'; // Dikey
+        overlay.style.justifyContent = 'center'; // Dikeyde ortala
+        overlay.style.alignItems = 'center'; // Yatayda ortala
+        
+        overlay.style.display = 'flex';
+        overlay.style.zIndex = '2000'; // En üstte
     }
 }
