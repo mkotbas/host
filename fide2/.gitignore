@@ -1,0 +1,6 @@
+# Vite ve Node.js tarafından oluşturulan gereksiz dosyalar
+node_modules/
+dist/
+
+# İşletim sistemi dosyaları
+.DS_Store
