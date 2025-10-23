@@ -1,7 +1,7 @@
 /**
  * Kullanıcı Yönetimi Modülü
- * YENİ: v2.27 - Sekmeli (Tab) Arayüz mantığı eklendi.
- * Bireysel cihaz limiti ve anlık ban sistemi.
+ * DÜZELTME v2.27.1: Yeni sekmeli arayüzde kaldırılan 
+ * (devicesHr, devicesTitle) HTML elemanlarına yapılan çağrılar temizlendi.
  */
 export function initializeKullaniciYoneticisiModule(pbInstance) {
     
@@ -41,14 +41,14 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     const toggleBanUserBtn = document.getElementById('toggle-ban-user-btn');
     
     // Cihaz Listesi Elemanları
-    const devicesHr = document.getElementById('devices-hr'); // Artık kullanılmıyor ama ID durabilir
-    const devicesTitle = document.getElementById('devices-title'); // Artık kullanılmıyor ama ID durabilir
+    // KALDIRILDI: const devicesHr = document.getElementById('devices-hr');
+    // KALDIRILDI: const devicesTitle = document.getElementById('devices-title');
     const devicesDescription = document.getElementById('devices-description');
     const devicesListLoading = document.getElementById('devices-list-loading');
     const userDevicesTableWrapper = document.getElementById('user-devices-table-wrapper');
     const userDevicesTableBody = document.getElementById('user-devices-table-body');
 
-    // Sekme Elemanları (YENİ v2.27)
+    // Sekme Elemanları
     const tabLinks = formView.querySelectorAll('.ky-tab-link');
     const tabPanes = formView.querySelectorAll('.ky-tab-pane');
     const devicesTabLink = formView.querySelector('a[data-tab="tab-cihazlar"]');
@@ -58,31 +58,25 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     const saveUserBtn = document.getElementById('save-user-btn');
     const cancelUserFormBtn = document.getElementById('cancel-user-form-btn');
 
-    // --- 0. YENİ Sekme (Tab) Arayüzü Mantığı ---
+    // --- 0. Sekme (Tab) Arayüzü Mantığı ---
     function setupTabNavigation() {
         tabLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetTabId = link.dataset.tab;
-
-                // Tüm linklerden 'active' classını kaldır
                 tabLinks.forEach(l => l.classList.remove('active'));
-                // Tıklanan linke 'active' classını ekle
                 link.classList.add('active');
-
-                // Tüm panelleri gizle
                 tabPanes.forEach(pane => {
                     if (pane.id === targetTabId) {
-                        pane.classList.add('active'); // Hedef paneli göster
+                        pane.classList.add('active');
                     } else {
-                        pane.classList.remove('active'); // Diğerlerini gizle
+                        pane.classList.remove('active');
                     }
                 });
             });
         });
     }
 
-    // Varsayılan sekmeyi (ilk sekmeyi) göster
     function resetToDefaultTab() {
         tabLinks.forEach((link, index) => {
             if (index === 0) {
@@ -265,6 +259,13 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         
         // Cihazlar sekmesini gizle (yeni kullanıcıda cihaz olmaz)
         devicesTabLink.style.display = 'none';
+
+        // DÜZELTME: Kaldırılan elemanlara yapılan çağrılar silindi
+        // devicesHr.style.display = 'none';
+        // devicesTitle.style.display = 'none';
+        if (devicesDescription) devicesDescription.style.display = 'none';
+        if (devicesListLoading) devicesListLoading.style.display = 'none';
+        if (userDevicesTableWrapper) userDevicesTableWrapper.style.display = 'none';
         
         // Rol 'client' olarak varsayılan seçili olduğu için cihaz limitini göster
         userDeviceLimitSection.style.display = 'block';
@@ -291,7 +292,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         passwordWrapper.style.display = 'none'; 
         userPasswordInput.required = false;
         userPasswordConfirmInput.required = false;
-        // Parolaları temizle (tarayıcı dolgusu kalmasın)
         userPasswordInput.value = '';
         userPasswordConfirmInput.value = '';
         
@@ -303,17 +303,16 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         devicesTabLink.style.display = 'block';
         
         if (user.role === 'admin') {
-            // Admin ise: Cihaz yönetimi ve limiti gerekmez
             devicesDescription.textContent = 'Yönetici (Admin) kullanıcıları için cihaz kilidi/limiti uygulanmaz.';
             devicesListLoading.style.display = 'none';
             userDevicesTableWrapper.style.display = 'none';
-            userDeviceLimitSection.style.display = 'none'; // Bireysel limiti gizle
+            userDeviceLimitSection.style.display = 'none';
+            devicesTabLink.style.display = 'none'; // Admin ise Cihazlar sekmesini de gizle
         } else {
-            // Client ise: Cihaz yönetimi ve limiti göster
             devicesDescription.textContent = 'Kullanıcının giriş yaptığı ve kayıtlı olan cihazları. Buradan tek tek cihazları silebilir (sıfırlayabilir) veya kilitleyebilirsiniz.';
-            userDeviceLimitSection.style.display = 'block'; // Bireysel limiti göster
+            userDeviceLimitSection.style.display = 'block'; 
             userDeviceLimitInput.value = user.device_limit || 1; 
-            loadUserDevices(user.id); // Cihazları yükle
+            loadUserDevices(user.id);
         }
         
         showFormView();
@@ -363,24 +362,31 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             data.device_limit = limit;
         }
         
-        // Parola GÜNCELLENİYOR MU? (Sadece yeni kayıtta veya parola girildiyse)
         const newPassword = userPasswordInput.value;
         const confirmPassword = userPasswordConfirmInput.value;
 
         if (!userId) { 
-            // --- YENİ KAYIT ---
             if (!newPassword || !confirmPassword) {
-                throw new Error('Yeni kullanıcı için parola zorunludur.');
+                // Hata durumunu düzgünce işle
+                alert('Yeni kullanıcı için parola zorunludur.');
+                saveUserBtn.disabled = false;
+                saveUserBtn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
+                return; 
             }
             if (newPassword !== confirmPassword) {
-                throw new Error('Parolalar eşleşmiyor.');
+                alert('Parolalar eşleşmiyor.');
+                saveUserBtn.disabled = false;
+                saveUserBtn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
+                return;
             }
             data.password = newPassword;
             data.passwordConfirm = confirmPassword;
         } else if (userId && newPassword) {
-            // --- GÜNCELLEME VE PAROLA DEĞİŞİKLİĞİ ---
              if (newPassword !== confirmPassword) {
-                throw new Error('Parolalar eşleşmiyor.');
+                alert('Parolalar eşleşmiyor.');
+                saveUserBtn.disabled = false;
+                saveUserBtn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
+                return;
             }
             data.password = newPassword;
             data.passwordConfirm = confirmPassword;
@@ -480,7 +486,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     function handleRoleChange() {
         if (userRoleSelect.value === 'admin') {
             userDeviceLimitSection.style.display = 'none';
-            devicesTabLink.style.display = 'none'; // Admin ise Cihazlar sekmesini de gizle
+            devicesTabLink.style.display = 'none';
         } else {
             userDeviceLimitSection.style.display = 'block';
             devicesTabLink.style.display = 'block';
@@ -497,11 +503,10 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         if (toggleBanUserBtn) toggleBanUserBtn.addEventListener('click', handleToggleBanUser);
         if (userRoleSelect) userRoleSelect.addEventListener('change', handleRoleChange);
 
-        // YENİ: Sekme navigasyonunu ayarla
         setupTabNavigation();
     }
 
     // --- 6. Modülü Başlat ---
     setupEventListeners();
-    loadUsers(); // Ana kullanıcı listesini yükle
+    loadUsers();
 }
