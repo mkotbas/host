@@ -1,9 +1,11 @@
-import { showLoadingOverlay, hideLoadingOverlay } from './utils.js';
+// 'showLockoutOverlay' fonksiyonunu utils.js'den içeri aktar
+import { showLoadingOverlay, hideLoadingOverlay, showLockoutOverlay } from './utils.js';
 import * as state from './state.js';
 
 let pb; // PocketBase instance
 
 // --- YARDIMCI GÜVENLİK FONKSİYONLARI ---
+// (Bu bölümde değişiklik yok)
 
 /**
  * Cihazın mobil olup olmadığını User Agent üzerinden kontrol eder.
@@ -57,6 +59,80 @@ function generateDeviceKey() {
 export function initApi(pbInstance) {
     pb = pbInstance;
 }
+
+// --- (YENİ) ANLIK ABONELİK FONKSİYONU ---
+
+/**
+ * (YENİ FONKSİYON)
+ * Kullanıcının kilit (ban) ve cihaz kilidi (lock) durumlarını anlık dinler.
+ * Bir kilitlenme tespit ederse, kullanıcıyı bilgilendirir ve sistemden atar.
+ */
+export function subscribeToRealtimeChanges() {
+    if (!pb || !pb.authStore.isValid) {
+        return; // Giriş yapılmamışsa dinleme
+    }
+
+    const userId = pb.authStore.model.id;
+    const browserDeviceKey = localStorage.getItem('myAppDeviceKey');
+
+    // 1. Hesap Kilidi (Ban) Dinlemesi
+    try {
+        pb.collection('users').subscribe(userId, function(e) {
+            console.log('Kullanıcı kaydı güncellendi (is_banned?):', e.record);
+            
+            if (e.record && e.record.is_banned === true) {
+                console.warn('Kullanıcı kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
+                
+                // utils.js'teki yeni kilit ekranını göster
+                showLockoutOverlay("Hesabınız bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
+                
+                // Oturumu temizle
+                logoutUser();
+                
+                // Kullanıcının mesajı görmesi için 2 saniye bekle ve sayfayı yenile
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        });
+    } catch (error) {
+        console.error('Kullanıcı (ban) dinlemesi başlatılamadı:', error);
+    }
+
+    // 2. Cihaz Kilidi Dinlemesi (Sadece 'client' rolü ve kayıtlı anahtar varsa)
+    if (pb.authStore.model.role === 'client' && browserDeviceKey) {
+        try {
+            // 'user_devices' tablosunu dinle, ama SADECE bu kullanıcıya VE bu cihaza ait kayıtlar için filtrele
+            pb.collection('user_devices').subscribe('*', async function(e) {
+                // console.log('Cihaz kaydı güncellendi (is_locked?):', e.record);
+
+                // Gelen güncelleme bu kullanıcıya ve bu cihaza mı ait?
+                if (e.record && e.record.user === userId && e.record.device_key === browserDeviceKey) {
+                    
+                    if (e.record.is_locked === true) {
+                        console.warn('Cihaz kilitlendi (is_locked=true). Oturum sonlandırılıyor.');
+
+                        // utils.js'teki yeni kilit ekranını göster
+                        showLockoutOverlay("Bu cihaz bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
+                        
+                        // Oturumu temizle
+                        logoutUser();
+                        
+                        // Kullanıcının mesajı görmesi için 2 saniye bekle ve sayfayı yenile
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Cihaz (lock) dinlemesi başlatılamadı:', error);
+        }
+    }
+}
+
+
+// --- MEVCUT FONKSİYONLAR (Bu bölümde değişiklik yok) ---
 
 /**
  * O anki aya ait denetim verilerini yükler.
@@ -297,6 +373,7 @@ export async function clearExcelFromCloud(type) {
  * @param {string} email 
  * @param {string} password 
  * @returns {Promise<{success: boolean, message: string}>} Giriş denemesinin sonucunu döner.
+ * (Bu fonksiyonda değişiklik yok)
  */
 export async function loginUser(email, password) {
     if (!pb) return { success: false, message: "Veritabanı bağlantısı kurulamadı." };
