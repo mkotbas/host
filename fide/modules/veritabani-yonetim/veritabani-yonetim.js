@@ -228,7 +228,7 @@ function openUnassignedBayiDeletionModal() {
                 <label for="modal-yikici-silme-onay">Tüm ${unassignedCount} atanmamış bayinin ve ilişkili tüm raporlarının kalıcı olarak silineceğini anladım ve onaylıyorum.</label>
             </div>
             
-            <div id="modal-yikici-silme-sonuc" class="results-area" style="margin-top: 10px; max-height: 300px; overflow-y: auto; background: #f1f1f1; padding: 10px; border-radius: 4px; line-height: 1.4;">
+            <div id="modal-yikici-silme-sonuc" class="results-area" style="margin-top: 10px; max-height: 500px; overflow-y: auto; background: #f1f1f1; padding: 10px; border-radius: 4px; line-height: 1.4;">
                 İşlemi başlatmak için lütfen onay kutusunu işaretleyin ve butona basın.
             </div>
         </div>
