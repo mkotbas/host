@@ -31,7 +31,7 @@ button i, .btn-like-label i, a.btn-primary i, a.btn-warning i, a.btn-success i, 
 .fide-item.question-removed { opacity: 0.6; background-color: #fafafa; }
 .fide-item.archived-item { border: 2px dashed var(--warning); background-color: #fffbeb; }
 .fide-item.archived-item .fide-title-container p { color: var(--warning); }
-.fide-item.archived-item .fide-title-container p::after { content: '(Arşivlenmiş Soru)'; font-weight: bold; font-size: 10px; color: white; background-color: var(--warning); padding: 2px 6px; border-radius: 10px; margin-left: 10px; }
+.fide-item.archived-item .fide-title-container p::after { content: '(ArÅŸivlenmiÅŸ Soru)'; font-weight: bold; font-size: 10px; color: white; background-color: var(--warning); padding: 2px 6px; border-radius: 10px; margin-left: 10px; }
 .fide-title-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px;}
 .fide-title-container p { font-weight: 600; margin: 0; flex-grow: 1; font-size: 16px; color: var(--dark); }
 .fide-title-container.question-completed p { color: var(--success); text-decoration: line-through; }
@@ -61,6 +61,7 @@ button i, .btn-like-label i, a.btn-primary i, a.btn-warning i, a.btn-success i, 
 }
 .product-adder input[type="number"] { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
 .selected-product-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--light); border-radius: 8px; margin-bottom: 8px; }
+.selected-product-item .product-quantity { font-weight: bold; }
 .delete-item-btn { background-color: var(--danger); color: white; margin-left:10px;}
 .delete-item-btn i { margin-right: 0; }
 textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; margin-bottom: 16px; resize: vertical;}
@@ -405,6 +406,10 @@ input:checked + .slider.green {
 .region-header span {
     display: block;
     margin-bottom: 8px;
+}
+.plexi-header {
+    display: block;
+    margin-top: 10px;
 }
 @media (max-width: 900px) {
     .audit-lists-container {

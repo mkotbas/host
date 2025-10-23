@@ -1,4 +1,4 @@
-// --- Modül Tanımlamaları (Alt Menü Destekli Yapı) ---
+// --- Modül Tanımlamaları (Alt Menü Destekli Yeni Yapı) ---
 const modules = [
     {
         id: 'denetim-takip',
@@ -20,10 +20,17 @@ const modules = [
         ]
     },
     {
-        id: 'bayi-yoneticisi', // ID, modül klasör adıyla aynı olmalı
+        id: 'bayi-yoneticisi-parent', // Ana menü olduğu için benzersiz bir ID
         name: 'Bayi Yöneticisi',
-        icon: 'fas fa-store', 
-        path: '../modules/bayi-yoneticisi/'
+        icon: 'fas fa-store',
+        submenu: [
+            {
+                id: 'bayi-yoneticisi', // Bu ID, modül klasör adıyla aynı olmalı
+                name: 'E-posta Sistemi',
+                icon: 'fas fa-at',
+                path: '../modules/bayi-yoneticisi/'
+            }
+        ]
     },
     {
         id: 'soru-yoneticisi',
@@ -32,63 +39,47 @@ const modules = [
         path: '../modules/soru-yoneticisi/'
     },
     {
-        id: 'veritabani-yonetim',
-        name: 'Veritabanı Yönetimi',
-        icon: 'fas fa-cogs',
-        path: '../modules/veritabani-yonetim/'
-    },
-    {
-        id: 'kullanici-yoneticisi',
-        name: 'Kullanıcı Yönetimi',
-        icon: 'fas fa-users-cog',
-        path: '../modules/kullanici-yoneticisi/'
+        id: 'veritabani',
+        name: 'Veritabanı Modülü',
+        icon: 'fas fa-database',
+        path: '../modules/veritabani/'
     }
 ];
 
 // --- Global Değişkenler ---
+let isFirebaseConnected = false;
 let currentModuleId = null;
-// 'pb' değişkeni 'db-config.js' dosyasından global olarak geliyor.
 
 // --- Uygulama Başlatma ---
 window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
-    // --- GÜVENLİK KONTROLÜ ---
-    // Kullanıcının oturumu geçerli mi VE rolü 'admin' mi diye kontrol et
-    const isAdmin = pb.authStore.isValid && pb.authStore.model.role === 'admin';
-
-    updateAuthUI(pb.authStore.isValid);
-    updateConnectionIndicator(pb.authStore.isValid);
-
-    if (isAdmin) {
-        // Kullanıcı admin ise, paneli normal şekilde yükle
-        renderModuleMenu();
-        
-        // Varsayılan olarak 'denetim-takip' modülünü yükle
-        if (!currentModuleId) {
-            loadModule('denetim-takip');
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    auth.onAuthStateChanged(user => {
+        updateAuthUI(user);
+        updateConnectionIndicator();
+        if (user) {
+            renderModuleMenu();
+            if (!currentModuleId) {
+                loadModule('denetim-takip');
+            }
+        } else {
+            document.getElementById('module-menu').innerHTML = '';
+            document.getElementById('module-container').innerHTML = '<p>Lütfen panele erişmek için giriş yapın.</p>';
+            document.getElementById('module-title').innerHTML = '<i class="fas fa-tachometer-alt"></i> Modül Yöneticisi';
         }
-
-        // YENİ EKLENDİ: Anlık ban (kilitleme) sistemini dinlemeyi başlat
-        subscribeToAdminChanges();
-
-    } else {
-        // Kullanıcı admin değilse veya giriş yapmamışsa, erişimi engelle
-        document.getElementById('module-menu').innerHTML = ''; // Menüyü temizle
-        const container = document.getElementById('module-container');
-        container.innerHTML = `
-            <div style="text-align: center; padding: 50px; color: #dc3545;">
-                <i class="fas fa-exclamation-triangle fa-3x"></i>
-                <h2>Erişim Reddedildi</h2>
-                <p>Bu alana erişim yetkiniz bulunmamaktadır.</p>
-            </div>
-        `;
-        document.getElementById('module-title').innerHTML = '<i class="fas fa-ban"></i> Yetkisiz Erişim';
+    });
+    if (database) {
+        const connectionRef = database.ref('.info/connected');
+        connectionRef.on('value', (snapshot) => {
+            isFirebaseConnected = snapshot.val();
+            updateConnectionIndicator();
+        });
     }
     setupEventListeners();
 }
 
-// --- ALT MENÜ DESTEKLİ MENÜ OLUŞTURUCU (DEĞİİŞKLİK YOK) ---
+// --- ALT MENÜ DESTEKLİ YENİ MENÜ OLUŞTURUCU ---
 function renderModuleMenu() {
     const menu = document.getElementById('module-menu');
     menu.innerHTML = ''; 
@@ -136,7 +127,7 @@ function renderModuleMenu() {
     });
 }
 
-// --- MODÜL YÜKLEYİCİ (MODERN YAPI - DEĞİŞİKLİK YOK) ---
+
 async function loadModule(moduleId) {
     let module;
     for (const main of modules) {
@@ -157,7 +148,6 @@ async function loadModule(moduleId) {
 
     currentModuleId = moduleId;
 
-    // Aktif menü öğesini ayarla
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     const activeLink = document.querySelector(`.sidebar-menu a[data-module-id="${moduleId}"]`);
     if(activeLink) {
@@ -175,12 +165,10 @@ async function loadModule(moduleId) {
     title.innerHTML = `<i class="${module.icon}"></i> ${module.name}`;
     
     try {
-        // HTML Yükle
         const htmlResponse = await fetch(`${module.path}${module.id}.html`);
         if (!htmlResponse.ok) throw new Error(`Dosya bulunamadı: ${module.id}.html`);
         container.innerHTML = await htmlResponse.text();
 
-        // CSS Yükle
         const cssId = `module-css-${module.id}`;
         if (!document.getElementById(cssId)) {
             const link = document.createElement('link');
@@ -190,107 +178,71 @@ async function loadModule(moduleId) {
             document.head.appendChild(link);
         }
 
-        // JAVASCRIPT YÜKLEYİCİ (Modern 'import' yöntemi)
         const oldScript = document.getElementById('module-script');
         if (oldScript) oldScript.remove();
-
-        const formattedId = module.id.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
-        const initFunctionName = `initialize${formattedId}Module`;
-
-        // Önbelleğe takılmamak için URL'ye zaman damgası ekle
-        const moduleUrl = `${module.path}${module.id}.js?v=${new Date().getTime()}`;
         
-        // 'import()' komutu, 'export' içeren modern JS dosyalarını yükler
-        const moduleExports = await import(moduleUrl);
-        
-        if (typeof moduleExports[initFunctionName] === 'function') {
-            moduleExports[initFunctionName](pb);
-        } else {
-            console.error(`Modern modül (import) başlatma fonksiyonu bulunamadı: ${initFunctionName}. Modülün .js dosyasının bu fonksiyonu 'export' ettiğinden emin olun.`);
-        }
+        const script = document.createElement('script');
+        script.id = 'module-script';
+        script.src = `${module.path}${module.id}.js`;
+        script.onload = () => {
+            const formattedId = module.id.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+            const initFunctionName = `initialize${formattedId}Module`;
+            if (typeof window[initFunctionName] === 'function') {
+                window[initFunctionName]();
+            } else {
+                console.warn(`Başlatma fonksiyonu bulunamadı: ${initFunctionName}`);
+            }
+        };
+        document.body.appendChild(script);
 
     } catch (error) {
         console.error("Modül yüklenirken hata oluştu:", error);
-        container.innerHTML = `<p style="color: red;">'${module.name}' modülü yüklenemedi. <br>Hata: ${error.message}. <br>Lütfen '../modules/${module.id}/' klasörünün ve ilgili dosyaların sunucuda olduğundan emin olun.</p>`;
-    }
-}
-
-/**
- * YENİ FONKSİYON: Anlık ban sistemini dinler (Admin paneli için).
- * Adminin kendi kaydını dinler. 'is_banned' true olursa, paneli kapatır.
- */
-function subscribeToAdminChanges() {
-    if (!pb || !pb.authStore.isValid) {
-        return; // Giriş yapılmamış veya yetkisiz
-    }
-
-    const adminId = pb.authStore.model.id;
-    
-    try {
-        // Adminin kendi 'users' kaydını dinle
-        pb.collection('users').subscribe(adminId, function(e) {
-            // console.log('Admin kullanıcı kaydı güncellendi:', e.record);
-            
-            if (e.record && e.record.is_banned === true) {
-                console.warn('Admin kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
-                
-                alert("Hesabınız başka bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor.");
-                
-                // Oturumu kapat (Bu dosyada 'api.js' import edilmediği için direkt metot kullanıyoruz)
-                pb.authStore.clear();
-                
-                // Sayfayı yenileyerek giriş ekranına at
-                window.location.reload();
-            }
-        });
-    } catch (error) {
-        console.error('Admin dinlemesi (subscribe) başlatılamadı:', error);
     }
 }
 
 
-// --- ARAYÜZ GÜNCELLEME FONKSİYONLARI (DEĞİŞİKLİK YOK)---
-function updateAuthUI(isLoggedIn) {
+function updateAuthUI(user) {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const loginPopup = document.getElementById('login-popup');
-    if (isLoggedIn) {
+    if (user) {
         loginToggleBtn.style.display = 'none';
         logoutBtn.style.display = 'inline-flex';
-        if(loginPopup) loginPopup.style.display = 'none';
+        loginPopup.style.display = 'none';
     } else {
         loginToggleBtn.style.display = 'inline-flex';
         logoutBtn.style.display = 'none';
     }
 }
-
-function updateConnectionIndicator(isLoggedIn) {
+function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
-    
-    statusSwitch.classList.toggle('connected', isLoggedIn);
-    statusSwitch.classList.toggle('disconnected', !isLoggedIn);
-    statusText.textContent = isLoggedIn ? 'Buluta Bağlı' : 'Bağlı Değil';
+    const isOnline = isFirebaseConnected && auth.currentUser;
+    statusSwitch.classList.toggle('connected', isOnline);
+    statusSwitch.classList.toggle('disconnected', !isOnline);
+    statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
 }
 
-// --- GİRİŞ/ÇIKIŞ OLAY DİNLEYİCİLERİ (DEĞİŞİKLİK YOK) ---
+// --- GÜNCELLENEN OLAY DİNLEYİCİLERİ ---
 function setupEventListeners() {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const loginPopup = document.getElementById('login-popup');
     const loginSubmitBtn = document.getElementById('login-submit-btn');
 
+    // Giriş yap butonuna tıklandığında popup'ı göster/gizle
     loginToggleBtn.addEventListener('click', (event) => {
-        event.stopPropagation();
+        event.stopPropagation(); // Olayın dışarıya yayılmasını engelle
         loginPopup.style.display = loginPopup.style.display === 'block' ? 'none' : 'block';
     });
     
+    // Çıkış yap butonu
     logoutBtn.addEventListener('click', () => {
-        pb.authStore.clear();
-        window.location.reload();
+        auth.signOut();
     });
 
-    loginSubmitBtn.addEventListener('click', async () => {
+    // Popup içindeki onayla butonu ile giriş yapma
+    loginSubmitBtn.addEventListener('click', () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
         const errorDiv = document.getElementById('login-error');
@@ -301,18 +253,21 @@ function setupEventListeners() {
             return;
         }
 
-        try {
-            await pb.collection('users').authWithPassword(email, password);
-            window.location.reload(); 
-        } catch (error) {
-            errorDiv.textContent = 'E-posta veya şifre hatalı.';
-        }
+        auth.signInWithEmailAndPassword(email, password)
+            .then(() => {
+                // Başarılı giriş sonrası sayfayı yenileyerek modüllerin yüklenmesini sağla
+                window.location.reload(); 
+            })
+            .catch(error => {
+                errorDiv.textContent = 'E-posta veya şifre hatalı.';
+            });
     });
 
+    // Sayfanın herhangi bir yerine tıklandığında popup'ı kapat
     window.addEventListener('click', function(event) {
         const authControls = document.getElementById('auth-controls');
         if (authControls && !authControls.contains(event.target)) {
-            if(loginPopup) loginPopup.style.display = 'none';
+            loginPopup.style.display = 'none';
         }
     });
 }

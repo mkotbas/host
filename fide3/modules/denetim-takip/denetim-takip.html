@@ -10,9 +10,9 @@
         </div>
         <div class="modal-body">
             <div class="settings-item">
-                <label for="monthly-target-input">Global Aylık Ziyaret Hedefi</label>
+                <label for="monthly-target-input">Aylık Ziyaret Hedefini Değiştir</label>
                 <input type="number" id="monthly-target-input" placeholder="Örn: 47">
-                <small>Bu, "Genel Bakış (Tüm Sistem)" görünümünün hedefini belirler. Kullanıcıların kişisel hedefleri, onlara atanan bayi sayısıdır.</small>
+                <small>Yeni hedefi girip kaydettiğinizde panel güncellenecektir.</small>
             </div>
         </div>
         <div class="modal-footer">
@@ -29,16 +29,21 @@
     </div>
     
     <div id="upload-area">
-        <p style="font-size: 13px; color: var(--light-text-secondary); margin: 20px; text-align: center;">
-            <i class="fas fa-info-circle"></i> Sistemde görüntülenecek bayi listesi bulunamadı. Lütfen veritabanını kontrol edin.
+        <p style="font-size: 12px; color: var(--secondary-text, #94a3b8); margin-bottom: 20px;">
+            <i class="fas fa-info-circle"></i> Başlamak için lütfen tüm bayilerinizi içeren güncel Excel dosyasını yükleyin. Bu liste bulutta saklanacaktır.
         </p>
+        <div class="file-input-wrapper" style="margin-bottom: 25px;">
+            <label for="store-list-excel-input" class="file-input-label btn-sm" title="Tüm bayilerinizin listesini içeren Excel dosyasını seçin."><i class="fas fa-file-excel"></i> Bayi Listesi Excel'ini Seç</label>
+            <input type="file" id="store-list-excel-input" accept=".xlsx, .xls" style="display: none;">
+        </div>
     </div>
 
     <div id="loaded-data-area" style="display: none;">
          <div class="loaded-data-info">
-            <p><i class="fas fa-database"></i> Veriler buluttan yüklendi.</p>
+            <p><i class="fas fa-database"></i> Bayi listesi buluttan yüklendi. Listeyi güncellemek için önce mevcut listeyi silmeniz gerekmektedir.</p>
             <div class="data-actions">
-                <button id="reset-data-btn" class="btn-danger btn-sm" title="Sadece 'Genel Bakış' görünümünde etkindir"><i class="fas fa-eraser"></i> Yıllık Verileri Sıfırla</button>
+                <button id="reset-data-btn" class="btn-danger btn-sm"><i class="fas fa-eraser"></i> Verileri Sıfırla</button>
+                <button id="delete-excel-btn" class="btn-danger btn-sm"><i class="fas fa-trash-alt"></i> Excel'i Sil</button>
             </div>
         </div>
     </div>
@@ -68,13 +73,6 @@
             </div>
         </div>
 
-        <div class="admin-user-selector-container" id="admin-user-selector-container" style="display: none;">
-            <div class="filter-item">
-                <label for="admin-user-filter"><i class="fas fa-user-shield"></i> Admin: Veri Görünümü Seç</label>
-                <select id="admin-user-filter"></select>
-            </div>
-            <small>Varsayılan olarak 'Benim Verilerim' gösterilir. Global veriler veya başka bir kullanıcı için seçim yapabilirsiniz.</small>
-        </div>
         <div class="multi-filter-container">
             <div class="filter-item">
                 <label for="bolge-filter">Bölge</label>

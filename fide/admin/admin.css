@@ -38,8 +38,6 @@ body {
     flex-direction: column;
     flex-shrink: 0;
     border-right: 1px solid var(--border-color);
-    
-    /* YENİ EKLENEN SABİTLEME KODLARI */
     position: sticky;
     top: 0;
     height: 100vh;
@@ -119,18 +117,18 @@ body {
     gap: 10px;
 }
 
-/* --- Sağ İçerik Alanı --- */
+/* --- Ana İçerik Alanı --- */
 .main-content {
     flex-grow: 1;
     background-color: #e9e9e9;
-    padding: 0; 
-    overflow-y: auto; /* İçerik taşarsa kaydırma çubuğu burada çıksın */
+    padding: 0;
+    overflow-y: auto;
 }
 
-/* --- YENİ BAŞLIK BANDI STİLİ --- */
+/* --- Başlık Bandı --- */
 .content-header {
     background-color: var(--bg-dark);
-    padding: 17px 25px; 
+    padding: 17px 25px;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -143,20 +141,20 @@ body {
     color: var(--primary-text);
 }
 
-/* --- İÇERİK ALANI STİLİ --- */
+/* --- MODÜL İÇERİK ALANI - TAMAMEN NÖTR --- */
 .content-wrapper {
     max-width: 1600px;
     margin: 0 auto;
     padding: 25px;
+    background-color: #e9e9e9;
 }
 
 .content-body {
-    background-color: var(--bg-dark);
-    padding: 20px;
-    border-radius: 8px;
-    color: var(--secondary-text);
+    background-color: #e9e9e9;
+    min-height: 600px;
+    /* MODÜL CSS'İNE TAM ÖZGÜRLÜK - SADECE ARKAPLAN */
+    /* Renk, font, border vs. hiçbir stil uygulanmıyor */
 }
-
 
 /* --- Alt Kısım (Footer) ve Bağlantı Durumu --- */
 .sidebar-footer {
@@ -232,9 +230,9 @@ body {
     border-color: var(--primary-accent);
 }
 
-/* --- YENİ EKLENEN GİRİŞ POPUP STİLLERİ --- */
+/* --- Giriş Popup Stilleri --- */
 #login-popup {
-    display: none; /* Başlangıçta gizli */
+    display: none;
     flex-direction: column;
     gap: 12px;
     padding: 20px;
