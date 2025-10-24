@@ -113,8 +113,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // --- 2c. GENEL MALZEMELERİ EKLEME ---
+        
         if (toplamCihazSayisi > 0) {
-            stokKoduEkle("8907071600", 1); // MGM KUMANDA
+            stokKoduEkle("8907071600", 1); // MGM KUMANDA (1 adet)
+            
+            // --- KALDIRILDI ---
+            // 9241501600 (Hook Askılık) ve 9241511600 (Hook Çözücü)
+            // talebiniz üzerine buradan kaldırıldı.
+            // --- KALDIRILDI ---
         }
 
         let telefonVePcAdedi = 0;
@@ -145,10 +151,14 @@ document.addEventListener("DOMContentLoaded", () => {
             stokKoduEkle("8906971600", gerekliPanelAdedi);
         }
         
+        // Cihaz Başına Eklenen Genel Malzemeler
+        // (Akıllı Saatler Hariç)
         const genelCihazAdedi = telefonVePcAdedi + tabletAdedi;
         if (genelCihazAdedi > 0) {
              stokKoduEkle("8907081600", genelCihazAdedi); // MGM KONNEKTÖR 10 LÜ
              stokKoduEkle("9220951600", genelCihazAdedi); // MGM AKRİLİK TBNT YPŞKAN
+             stokKoduEkle("8907091600", genelCihazAdedi); // EKLENDİ: MGM DMLA YPŞKAN
+             stokKoduEkle("9224911600", genelCihazAdedi); // EKLENDİ: MGM AKRİLİK YPŞ. EK
         }
 
         // --- 2d. YARDIMCI STOK KODU EKLEME FONKSİYONU ---
@@ -194,10 +204,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 </tr>
             `;
 
+            // Kategori "Genel" VEYA "Aksesuar" ise alttaki listeye grupla
             if (malzeme.kategori === "Genel" || malzeme.kategori === "Aksesuar") {
-                 // --- DÜZELTME BURADA YAPILDI ---
-                 // Ürün adı (malzeme.urun_adi) zaten stok kodunu içerdiği için
-                 // sona ekstra '(${stokKodu})' eklemesi kaldırıldı.
                  sabitMalzemelerHTML += `<li><b>${gerekliPaketAdedi} Paket</b> - ${malzeme.urun_adi}</li>`;
             } else {
                 sonucTablosuBody.innerHTML += satirHTML;
