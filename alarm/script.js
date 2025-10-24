@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const ozetBilgi = document.getElementById("ozetBilgi");
     const genelMalzemeListesi = document.getElementById("genelMalzemeListesi");
 
-    // --- 2. VERİLERİ YÜKLEME (GÜNCELLENDİ) ---
+    // --- 2. VERİLERİ YÜKLEME ---
     async function verileriYukle() {
         try {
             // fetch komutuyla dosyaları okuyoruz
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
     
-    // Arayüzü Aktif Etme Fonksiyonu
+    // Arayüzü Aktif Etme Fonksiyonu (Zamanlama hatasını çözer)
     function aktiveEtArayuzu() {
         aramaCubugu.disabled = false;
         adetInput.disabled = false;
@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const gerekliPaketAdedi = Math.ceil(toplamGerekliAdet / paketIciAdet);
             toplamPaketSayisi += gerekliPaketAdedi;
 
-            // --- YAZIM HATASI DÜZELTMESİ ---
+            // --- YAZIM HATASI DÜZELTMESİ (ÖNGÖRÜLEN HATA) ---
             // 'toplamGihazAdedi' (hatalı) -> 'toplamGerekliAdet' (doğru) olarak düzeltildi.
             const satirHTML = `
                 <tr>
@@ -276,6 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${malzeme.kullanim_amaci}</td>
                 </tr>
             `;
+            // --- DÜZELTME SONU ---
 
             if (malzeme.kategori === "Genel" || malzeme.kategori === "Aksesuar") {
                  sabitMalzemelerHTML += `<li><b>${gerekliPaketAdedi} Paket</b> - ${malzeme.urun_adi}</li>`;
@@ -299,5 +300,6 @@ document.addEventListener("DOMContentLoaded", () => {
     hesaplaButton.addEventListener("click", hesapla);
     
     // Sayfa açıldığında ilk olarak verileri yükle
+    // (Arayüzü 'aktiveEtArayuzu' fonksiyonu ile o açacak)
     verileriYukle();
 });
