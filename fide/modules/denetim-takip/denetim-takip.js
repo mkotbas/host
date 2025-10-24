@@ -574,7 +574,7 @@ function getRemainingWorkdays() {
     const today = new Date(); const year = today.getFullYear(); const month = today.getMonth();
     // Ayın son gününü al (bir sonraki ayın 0. günü)
     const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-    let remainingWorkDays = 0;
+    let remainingWorkdays = 0;
     
     // Eğer ayın son gününü geçtiysek (örn. 31'i olan ayda 32. gün hesaplaması gibi bir durumda) 0 dön
     if (today.getDate() > lastDayOfMonth) return 0;
@@ -588,6 +588,3 @@ function getRemainingWorkdays() {
     }
     return remainingWorkdays;
 }
-
-// GÜNCELLENDİ: 'window.initializeDenetimTakipModule = ...' satırı kaldırıldı.
-// Artık fonksiyon doğrudan 'export' ediliyor.
