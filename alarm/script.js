@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const adetInput = document.getElementById("adetInput");
     const ekleButton = document.getElementById("ekleButton");
     const secilenUrunListesi = document.getElementById("secilenUrunListesi");
-    const yuklemeDurumu = document.getElementById("yuklemeDurumu"); // Yükleme mesajı alanı
+    const yuklemeDurumu = document.getElementById("yuklemeDurumu");
 
     // Hesaplama ve Sonuç Alanı
     const hesaplaButton = document.getElementById("hesaplaButton");
@@ -25,8 +25,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- 2. VERİLERİ YÜKLEME (GÜNCELLENDİ) ---
     async function verileriYukle() {
         try {
+            // fetch komutuyla dosyaları okuyoruz
             const cihazResponse = await fetch('cihazlar.json');
-            if (!cihazResponse.ok) throw new Error(`'cihazlar.json' yüklenemedi`);
+            if (!cihazResponse.ok) throw new Error(`'cihazlar.json' yüklenemedi (Hata Kodu: ${cihazResponse.status})`);
             const cihazData = await cihazResponse.json();
             cihazVeritabani = cihazData.cihazlar.map(cihaz => ({
                 ...cihaz,
@@ -34,15 +35,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }));
 
             const malzemeResponse = await fetch('malzemeler.json');
-            if (!malzemeResponse.ok) throw new Error(`'malzemeler.json' yüklenemedi`);
+            if (!malzemeResponse.ok) throw new Error(`'malzemeler.json' yüklenemedi (Hata Kodu: ${malzemeResponse.status})`);
             malzemeVeritabani = await malzemeResponse.json();
 
             console.log("Veri tabanları başarıyla yüklendi.");
             
-            // --- GÜNCELLEME BAŞLANGICI ---
             // Yükleme başarılıysa, arayüzü aktif et
             aktiveEtArayuzu();
-            // --- GÜNCELLEME SONU ---
 
         } catch (error) {
             console.error("Veri yükleme hatası:", error);
@@ -53,24 +52,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
     
-    // --- YENİ FONKSİYON: Arayüzü Aktif Et ---
+    // Arayüzü Aktif Etme Fonksiyonu
     function aktiveEtArayuzu() {
-        // Devre dışı bırakılmış (disabled) tüm elemanları aktif et
         aramaCubugu.disabled = false;
         adetInput.disabled = false;
         ekleButton.disabled = false;
         hesaplaButton.disabled = false;
         
-        // Yükleniyor mesajını gizle
         yuklemeDurumu.style.display = "none";
-        
-        // Arama çubuğu metnini güncelle
         aramaCubugu.placeholder = "Model ara (örn: iPhone 15, Galaxy S24...)";
     }
 
     // --- 3. ARAMA VE LİSTE YÖNETİMİ ---
 
-    // Arama çubuğuna her harf girildiğinde...
     aramaCubugu.addEventListener("input", () => {
         const arananMetin = aramaCubugu.value.toLowerCase().trim();
         aramaSonuclari.innerHTML = "";
@@ -81,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        // Arama yaparken eldeki (yüklenmiş) veritabanını kullan
         const sonuclar = cihazVeritabani.filter(cihaz => 
             cihaz.tamAd.toLowerCase().includes(arananMetin)
         );
@@ -94,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 div.addEventListener("click", () => {
                     aramaCubugu.value = cihaz.tamAd;
-                    secilenCihaz = cihaz;
+                    secilenCihaz = cihaz; // Cihazı seç
                     aramaSonuclari.style.display = "none";
                     aramaSonuclari.innerHTML = "";
                     adetInput.focus();
@@ -114,7 +109,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 200);
     });
 
-    // "+" (Ekle) butonuna tıklandığında...
     ekleButton.addEventListener("click", () => {
         const adet = parseInt(adetInput.value, 10);
 
@@ -148,7 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
         aramaCubugu.focus();
     });
 
-
     // --- 4. ANA HESAPLAMA FONKSİYONU ---
     function hesapla() {
         console.log("Hesaplama başlatıldı...");
@@ -179,7 +172,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!modelTamAdi || isNaN(adet) || adet <= 0) return;
 
             toplamCihazSayisi += adet;
-
             const bulunanCihaz = cihazVeritabani.find(cihaz => cihaz.tamAd === modelTamAdi);
 
             if (!bulunanCihaz) {
@@ -273,12 +265,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const gerekliPaketAdedi = Math.ceil(toplamGerekliAdet / paketIciAdet);
             toplamPaketSayisi += gerekliPaketAdedi;
 
+            // --- YAZIM HATASI DÜZELTMESİ ---
+            // 'toplamGihazAdedi' (hatalı) -> 'toplamGerekliAdet' (doğru) olarak düzeltildi.
             const satirHTML = `
                 <tr>
                     <td>${stokKodu}</td>
                     <td>${malzeme.urun_adi}</td>
                     <td><b>${gerekliPaketAdedi} Paket</b></td>
-                    <td>${toplamGihazAdedi} Adet</td>
+                    <td>${toplamGerekliAdet} Adet</td>
                     <td>${malzeme.kullanim_amaci}</td>
                 </tr>
             `;
@@ -305,6 +299,5 @@ document.addEventListener("DOMContentLoaded", () => {
     hesaplaButton.addEventListener("click", hesapla);
     
     // Sayfa açıldığında ilk olarak verileri yükle
-    // (Arayüzü 'aktiveEtArayuzu' fonksiyonu ile o açacak)
     verileriYukle();
 });
