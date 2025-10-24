@@ -21,17 +21,19 @@
                 <div class="arama-formu">
                     <div class="form-grup arama-grup">
                         <label for="aramaCubugu">Ürün Ara:</label>
-                        <input type="text" id="aramaCubugu" placeholder="Model ara (örn: iPhone 15, Galaxy S24...)" autocomplete="off">
+                        <input type="text" id="aramaCubugu" placeholder="Veri tabanı yükleniyor..." autocomplete="off" disabled>
                         <div id="aramaSonuclari"></div>
                     </div>
                     
                     <div class="form-grup adet-grup">
                         <label for="adetInput">Adet:</label>
-                        <input type="number" id="adetInput" min="1" value="1">
+                        <input type="number" id="adetInput" min="1" value="1" disabled>
                     </div>
                     
-                    <button id="ekleButton" aria-label="Listeye Ekle" title="Listeye Ekle">+</button>
+                    <button id="ekleButton" aria-label="Listeye Ekle" title="Listeye Ekle" disabled>+</button>
                 </div>
+
+                <div id="yuklemeDurumu" class="durum-mesaji">Veri tabanı yükleniyor...</div>
                 
                 <hr>
                 
@@ -39,7 +41,7 @@
                 <ul id="secilenUrunListesi">
                     </ul>
                 
-                <button id="hesaplaButton">Gerekli Malzemeleri Hesapla</button>
+                <button id="hesaplaButton" disabled>Gerekli Malzemeleri Hesapla</button>
             </div>
 
             <div class="output-section">
