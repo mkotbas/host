@@ -15,10 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- 1. VERİLERİ YÜKLEME ---
     async function verileriYukle() {
         try {
-            // fetch komutuyla dosyaları okuyoruz
             const cihazResponse = await fetch('cihazlar.json');
             if (!cihazResponse.ok) {
-                // Hata durumunda hangi dosyanın yüklenemediğini net olarak belirt
                 throw new Error(`'cihazlar.json' dosyası yüklenemedi (Hata Kodu: ${cihazResponse.status})`);
             }
             const cihazData = await cihazResponse.json();
@@ -26,7 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const malzemeResponse = await fetch('malzemeler.json');
             if (!malzemeResponse.ok) {
-                // Hata durumunda hangi dosyanın yüklenemediğini net olarak belirt
                 throw new Error(`'malzemeler.json' dosyası yüklenemedi (Hata Kodu: ${malzemeResponse.status})`);
             }
             malzemeVeritabani = await malzemeResponse.json();
@@ -35,11 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (error) {
             console.error("Veri yükleme hatası:", error);
-            // Güncellenmiş, net hata mesajı
             let hataMesaji = `HATA: ${error.message}.`;
             
-            // Eğer hata "Failed to fetch" ise, bu genellikle bir sunucu olmadan
-            // doğrudan dosyayı açmaktan (CORS hatası) kaynaklanır.
             if (error.message.includes("Failed to fetch")) {
                 hataMesaji += "<br><b>Muhtemel Neden:</b> Dosyalar bir web sunucusu (hosting) üzerinden çalıştırılmıyor. Güvenlik nedeniyle tarayıcılar yerel dosyaların okunmasına izin vermez.";
             } else {
@@ -55,11 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function hesapla() {
         console.log("Hesaplama başlatıldı...");
         
-        // Önceki hata mesajlarını temizle
         ozetBilgi.innerHTML = "";
         ozetBilgi.style.color = '#333';
 
-        // Girdiyi al ve satırlara ayır
         const inputText = urunListesiInput.value.trim();
         const satirlar = inputText.split('\n').filter(satir => satir.trim() !== "");
 
@@ -128,7 +120,6 @@ document.addEventListener("DOMContentLoaded", () => {
         let telefonVePcAdedi = 0;
         let tabletAdedi = 0;
 
-        // Sipariş listesindeki stand ve kabloları gezerek adetleri topla
         for (const stokKodu in siparisListesi) {
             const malzeme = malzemeVeritabani.find(m => m.stok_kodu === stokKodu);
             if (!malzeme) continue;
@@ -136,32 +127,24 @@ document.addEventListener("DOMContentLoaded", () => {
             const toplamAdet = siparisListesi[stokKodu];
 
             if (malzeme.kategori === "Stand" && malzeme.stok_kodu === "8906991600") {
-                // Bu stand hem telefon hem tablet için kullanılıyor.
-                // Tabletlere özel panel (8906981600) eklenmiş mi diye bak
                 if (siparisListesi["8906981600"]) {
-                     // Stand adedinden tablet panel adedini çıkarırsak telefon adedini buluruz
-                     const tabletStandAdedi = siparisListesi["8906981600"]; // Tablet adedi
+                     const tabletStandAdedi = siparisListesi["8906981600"];
                      tabletAdedi = tabletStandAdedi;
                      telefonVePcAdedi += (toplamAdet - tabletStandAdedi);
                 } else {
-                    // Listede hiç tablet yoksa, bu standların hepsi telefon/PC'dir.
                     telefonVePcAdedi += toplamAdet;
                 }
             }
-            // Macbook kablosu da PC adedine eklenmeli
             if (malzeme.stok_kodu === "8907061600") {
                 telefonVePcAdedi += toplamAdet;
             }
         }
         
-        // Telefon ve Bilgisayarlar için 5'li panel
         if (telefonVePcAdedi > 0) {
             const gerekliPanelAdedi = Math.ceil(telefonVePcAdedi / 5);
             stokKoduEkle("8906971600", gerekliPanelAdedi);
         }
         
-        // Genel Malzemeler (Konnektör, Yapışkan)
-        // Telefon, Tablet ve PC'ler için (Akıllı Saatler Hariç)
         const genelCihazAdedi = telefonVePcAdedi + tabletAdedi;
         if (genelCihazAdedi > 0) {
              stokKoduEkle("8907081600", genelCihazAdedi); // MGM KONNEKTÖR 10 LÜ
@@ -212,7 +195,10 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
             if (malzeme.kategori === "Genel" || malzeme.kategori === "Aksesuar") {
-                 sabitMalzemelerHTML += `<li><b>${gerekliPaketAdedi} Paket</b> - ${malzeme.urun_adi} (${stokKodu})</li>`;
+                 // --- DÜZELTME BURADA YAPILDI ---
+                 // Ürün adı (malzeme.urun_adi) zaten stok kodunu içerdiği için
+                 // sona ekstra '(${stokKodu})' eklemesi kaldırıldı.
+                 sabitMalzemelerHTML += `<li><b>${gerekliPaketAdedi} Paket</b> - ${malzeme.urun_adi}</li>`;
             } else {
                 sonucTablosuBody.innerHTML += satirHTML;
             }
