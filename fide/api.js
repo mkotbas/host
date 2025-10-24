@@ -60,10 +60,10 @@ export function initApi(pbInstance) {
     pb = pbInstance;
 }
 
-// --- (DÜZELTİLDİ v3) ANLIK ABONELİK FONKSİYONU ---
+// --- (SÜRE GÜNCELLENDİ) ANLIK ABONELİK FONKSİYONU ---
 
 /**
- * (DÜZELTİLDİ v3)
+ * (SÜRE GÜNCELLENDİ)
  * Kullanıcının kilit (ban) ve cihaz kilidi (lock) durumlarını anlık dinler.
  * ÖNCE cihazın mevcut durumunu kontrol eder, SONRA değişiklikleri dinler.
  */
@@ -75,18 +75,16 @@ export async function subscribeToRealtimeChanges() {
     const userId = pb.authStore.model.id;
     const browserDeviceKey = localStorage.getItem('myAppDeviceKey');
 
-    // 1. Hesap Kilidi (Ban) Dinlemesi (Bu kısım doğruydu, değişiklik yok)
+    // 1. Hesap Kilidi (Ban) Dinlemesi
     try {
         // --- ANINDA KONTROL (Hesap Banı) ---
-        // (Not: 'pb.authStore.model' oturum açılırken çekilir,
-        // bu yüzden 'is_banned' verisi güncel olmayabilir.
-        // En güvenli yol, 'users' kaydını tekrar çekmektir.)
         const currentUserRecord = await pb.collection('users').getOne(userId);
         if (currentUserRecord.is_banned === true) {
              console.warn('Hesap zaten kilitli. Oturum sonlandırılıyor.');
              showLockoutOverlay("Hesabınız bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
              logoutUser();
-             setTimeout(() => window.location.reload(), 2000);
+             // --- SÜRE GÜNCELLENDİ ---
+             setTimeout(() => window.location.reload(), 3000); // 2 saniyeden 3 saniyeye
              return; // Fonksiyondan çık
         }
         
@@ -96,7 +94,8 @@ export async function subscribeToRealtimeChanges() {
                 console.warn('Kullanıcı kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
                 showLockoutOverlay("Hesabınız bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
                 logoutUser();
-                setTimeout(() => window.location.reload(), 2000);
+                // --- SÜRE GÜNCELLENDİ ---
+                setTimeout(() => window.location.reload(), 3000); // 2 saniyeden 3 saniyeye
             }
         });
     } catch (error) {
@@ -104,7 +103,6 @@ export async function subscribeToRealtimeChanges() {
     }
 
     // 2. Cihaz Kilidi Dinlemesi (Sadece 'client' rolü ve kayıtlı anahtar varsa)
-    // --- BURASI TAMAMEN YENİDEN YAZILDI (v3) ---
     if (pb.authStore.model.role === 'client' && browserDeviceKey) {
         try {
             // 1. Cihazın mevcut kaydını bul
@@ -113,12 +111,12 @@ export async function subscribeToRealtimeChanges() {
             );
 
             // 2. (YENİ) ANINDA KONTROL: Cihaz zaten kilitli mi?
-            // Kullanıcı sayfayı yenilediğinde bu kontrol çalışır.
             if (deviceRecord.is_locked === true) {
                 console.warn('Cihaz zaten kilitli. Oturum sonlandırılıyor.');
                 showLockoutOverlay("Bu cihaz bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
                 logoutUser();
-                setTimeout(() => window.location.reload(), 2000);
+                // --- SÜRE GÜNCELLENDİ ---
+                setTimeout(() => window.location.reload(), 3000); // 2 saniyeden 3 saniyeye
                 return; // Fonksiyondan çık, abonelik kurma
             }
 
@@ -128,7 +126,8 @@ export async function subscribeToRealtimeChanges() {
                     console.warn('Cihaz kilitlendi (is_locked=true). Oturum sonlandırılıyor.');
                     showLockoutOverlay("Bu cihaz bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
                     logoutUser();
-                    setTimeout(() => window.location.reload(), 2000);
+                    // --- SÜRE GÜNCELLENDİ ---
+                    setTimeout(() => window.location.reload(), 3000); // 2 saniyeden 3 saniyeye
                 }
             });
 
@@ -136,12 +135,11 @@ export async function subscribeToRealtimeChanges() {
             // Hata (örn: 404 Not Found), cihaz kaydının silindiği anlamına gelir.
             console.error('Cihaz (lock) dinlemesi başlatılamadı veya cihaz kaydı bulunamadı:', error);
             
-            // (YENİ) Güvenlik önlemi: Cihaz kaydı bulunamazsa (silinmişse)
-            // bozuk anahtarı temizle ve kullanıcıyı at.
             showLockoutOverlay("Cihaz kaydınız bulunamadı veya geçersiz. Güvenlik nedeniyle çıkış yapılıyor...");
             logoutUser();
             localStorage.removeItem('myAppDeviceKey'); // Bozuk anahtarı temizle
-            setTimeout(() => window.location.reload(), 2000);
+            // --- SÜRE GÜNCELLENDİ ---
+            setTimeout(() => window.location.reload(), 3000); // 2 saniyeden 3 saniyeye
         }
     }
 }
