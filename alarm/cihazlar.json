@@ -44,13 +44,16 @@
     { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Air M3", "port": "USB-C/MagSafe 3", "yil": 2024, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Pro M3", "port": "USB-C/Thunderbolt 4", "yil": 2023, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Air M2", "port": "USB-C/MagSafe 3", "yil": 2022, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
-    { "kategori": "Bilgisayar", "marka": "Samsung", "model": "Galaxy Book 5 Pro", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
-    { "kategori": "Bilgisayar", "marka": "Samsung", "model": "Galaxy Book 4", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
-    { "kategori": "Bilgisayar", "marka": "Samsung", "model": "Galaxy Book 3", "port": "USB-C/Thunderbolt 4", "yil": 2023, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
-    { "kategori": "Bilgisayar", "marka": "Samsung", "model": "Galaxy Book 2 Pro", "port": "USB-C/Thunderbolt 4", "yil": 2022, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
-    { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "ThinkPad X1 Carbon (Gen 12)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
-    { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "Yoga Pro 9i (Gen 9)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
-    { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "Legion 7 (Gen 8)", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
+    
+    { "kategori": "Bilgisayar", "marka": "Samsung", "model": "Galaxy Book 5 Pro", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": null, "stand_stok_kodu": null },
+    { "kategori": "Bilgisayar", "marka": "Samsung", "model": "Galaxy Book 4", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": null, "stand_stok_kodu": null },
+    { "kategori": "Bilgisayar", "marka": "Samsung", "model": "Galaxy Book 3", "port": "USB-C/Thunderbolt 4", "yil": 2023, "kablo_stok_kodu": null, "stand_stok_kodu": null },
+    { "kategori": "Bilgisayar", "marka": "Samsung", "model": "Galaxy Book 2 Pro", "port": "USB-C/Thunderbolt 4", "yil": 2022, "kablo_stok_kodu": null, "stand_stok_kodu": null },
+    
+    { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "ThinkPad X1 Carbon (Gen 12)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": null, "stand_stok_kodu": null },
+    { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "Yoga Pro 9i (Gen 9)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": null, "stand_stok_kodu": null },
+    { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "Legion 7 (Gen 8)", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": null, "stand_stok_kodu": null },
+    
     { "kategori": "Akıllı Saat", "marka": "Apple", "model": "Watch Series 10", "port": "Manyetik Kablosuz", "yil": 2024, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Apple", "model": "Watch Ultra 2", "port": "Manyetik Kablosuz", "yil": 2023, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Apple", "model": "Watch Series 9", "port": "Manyetik Kablosuz", "yil": 2023, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
