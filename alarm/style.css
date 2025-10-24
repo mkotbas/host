@@ -15,8 +15,8 @@ body {
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    display: flex; /* Ana bölümleri yan yana getirmek için */
-    gap: 30px; /* Bölümler arası boşluk */
+    display: flex;
+    gap: 30px;
 }
 
 header, footer {
@@ -44,7 +44,7 @@ footer {
 
 /* Ana İçerik Alanları (Giriş ve Sonuç) */
 .input-section, .output-section {
-    flex-basis: 50%; /* Her iki bölüm de eşit genişlikte */
+    flex-basis: 50%;
     display: flex;
     flex-direction: column;
 }
@@ -60,33 +60,148 @@ h2 {
     padding-bottom: 10px;
 }
 
-/* Giriş Alanı Stilleri */
-textarea#urunListesiInput {
-    width: 100%;
-    min-height: 300px;
-    padding: 15px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 1em;
-    line-height: 1.5;
-    margin-top: 10px;
-    box-sizing: border-box; /* Padding'in genişliği etkilememesi için */
+/* --- YENİ EKLENEN STİLLER (ARAMA FORMU) --- */
+
+.arama-formu {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end; /* Etiket ve input'ları hizalamak için */
+    margin-bottom: 15px;
+    position: relative; /* Arama sonuçları listesi için */
 }
 
-.input-section p {
-    font-size: 0.95em;
+.form-grup {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-grup label {
+    font-size: 0.9em;
+    font-weight: 500;
+    margin-bottom: 5px;
     color: #555;
 }
 
-.input-section p strong {
-    color: #d9534f; /* Vurgu rengi */
+.form-grup.arama-grup {
+    flex-grow: 1; /* Arama çubuğunun tüm boşluğu kaplamasını sağlar */
 }
 
+input[type="text"], input[type="number"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+input#aramaCubugu {
+    width: 100%;
+}
+
+input#adetInput {
+    width: 80px; /* Adet girişi daha dar olabilir */
+}
+
+button#ekleButton {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.8em;
+    font-weight: bold;
+    cursor: pointer;
+    width: 50px;
+    height: 42px; /* Input ile aynı yükseklikte */
+    line-height: 42px;
+    padding: 0;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+button#ekleButton:hover {
+    background-color: #0056b3;
+}
+
+/* Arama Sonuçları Listesi */
+#aramaSonuclari {
+    display: none; /* Varsayılan olarak gizli */
+    position: absolute;
+    top: 100%; /* Arama çubuğunun hemen altında */
+    left: 0;
+    width: calc(100% - 140px); /* Arama çubuğu genişliği (yaklaşık) */
+    background: #fff;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 5px 5px;
+    z-index: 1000;
+    max-height: 250px;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#aramaSonuclari div {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#aramaSonuclari div:last-child {
+    border-bottom: none;
+}
+
+#aramaSonuclari div:hover,
+#aramaSonuclari div.active {
+    background-color: #f0f4f8;
+}
+
+#aramaSonuclari div strong {
+    color: #004a98;
+}
+
+/* Seçilen Ürünler Listesi */
+#secilenUrunListesi {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+}
+
+#secilenUrunListesi li {
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+    background-color: #fcfcfc;
+}
+
+#secilenUrunListesi li:last-child {
+    border-bottom: none;
+}
+
+.silButton {
+    background-color: #d9534f;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9em;
+    padding: 3px 8px;
+}
+
+.silButton:hover {
+    background-color: #c9302c;
+}
+
+/* Ana Hesapla Butonu */
 button#hesaplaButton {
     display: block;
     width: 100%;
     padding: 15px;
-    background-color: #28a745; /* Başarı Rengi (Yeşil) */
+    background-color: #28a745;
     color: white;
     border: none;
     border-radius: 5px;
@@ -100,6 +215,9 @@ button#hesaplaButton {
 button#hesaplaButton:hover {
     background-color: #218838;
 }
+
+/* --- /YENİ EKLENEN STİLLER --- */
+
 
 /* Sonuç Tablosu Stilleri */
 table#sonucTablosu {
@@ -128,7 +246,6 @@ table#sonucTablosu tbody tr:nth-child(even) {
     background-color: #f9f9f9;
 }
 
-/* Sonuçlardaki Stok Kodunu Vurgulama */
 table#sonucTablosu td:first-child {
     font-weight: bold;
     color: #d9534f;
@@ -154,6 +271,6 @@ table#sonucTablosu td:first-child {
 }
 
 .genel-malzemeler li {
-    font-size: 1.1em;
+    font-size: 1em; /* Bir önceki versiyonda 1.1em idi, küçültüldü */
     margin-bottom: 8px;
 }

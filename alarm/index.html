@@ -10,22 +10,35 @@
 
     <header>
         <h1>Arçelik Bayi Alarm Sipariş Otomasyonu</h1>
-        <p>Gelen ürün listesini aşağıdaki alana yapıştırın ve gerekli malzemeleri hesaplayın.</p>
+        <p>Gerekli malzemeleri hesaplamak için listeden ürün aratın, adet girin ve "Listeye Ekle" butonuna basın.</p>
     </header>
 
     <main>
         <div class="container">
             <div class="input-section">
                 <h2>1. Ürün Listesi Girişi</h2>
-                <p>Lütfen ürünleri <strong>"Model - Adet"</strong> formatında, her satıra bir ürün gelecek şekilde girin.</p>
-                <p>Örnek:<br>
-                    iPhone 15 Pro - 10<br>
-                    Galaxy S24 - 5<br>
-                    Apple Watch 9 - 4<br>
-                    MacBook Air M3 - 2<br>
-                    Galaxy Tab S9 - 3
-                </p>
-                <textarea id="urunListesiInput" rows="15" placeholder="iPhone 15 Pro - 10&#10;Galaxy S24 - 5&#10;..."></textarea>
+                
+                <div class="arama-formu">
+                    <div class="form-grup arama-grup">
+                        <label for="aramaCubugu">Ürün Ara:</label>
+                        <input type="text" id="aramaCubugu" placeholder="Model ara (örn: iPhone 15, Galaxy S24...)" autocomplete="off">
+                        <div id="aramaSonuclari"></div>
+                    </div>
+                    
+                    <div class="form-grup adet-grup">
+                        <label for="adetInput">Adet:</label>
+                        <input type="number" id="adetInput" min="1" value="1">
+                    </div>
+                    
+                    <button id="ekleButton" aria-label="Listeye Ekle" title="Listeye Ekle">+</button>
+                </div>
+                
+                <hr>
+                
+                <h3>Hesaplanacak Ürün Listesi</h3>
+                <ul id="secilenUrunListesi">
+                    </ul>
+                
                 <button id="hesaplaButton">Gerekli Malzemeleri Hesapla</button>
             </div>
 
