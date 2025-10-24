@@ -53,16 +53,16 @@ let currentModuleId = null;
 window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
-    // --- GÜVENLİK KONTROLÜ ---
-    // Kullanıcının oturumu geçerli mi VE rolü 'admin' mi diye kontrol et
-    const isAdmin = pb.authStore.isValid && pb.authStore.model.role === 'admin';
+    // --- GÜVENLİK KONTROLÜ (GÜNCELLENDİ) ---
+    const isLoggedIn = pb.authStore.isValid;
+    const userRole = isLoggedIn ? pb.authStore.model.role : null;
 
-    updateAuthUI(pb.authStore.isValid);
-    updateConnectionIndicator(pb.authStore.isValid);
+    updateAuthUI(isLoggedIn);
+    updateConnectionIndicator(isLoggedIn);
 
-    if (isAdmin) {
+    if (userRole === 'admin') {
         // Kullanıcı admin ise, paneli normal şekilde yükle
-        renderModuleMenu();
+        renderModuleMenu('admin'); // 'admin' parametresi gönderildi
         
         // Varsayılan olarak 'denetim-takip' modülünü yükle
         if (!currentModuleId) {
@@ -72,8 +72,19 @@ async function initializeAdminPanel() {
         // YENİ EKLENDİ: Anlık ban (kilitleme) sistemini dinlemeyi başlat
         subscribeToAdminChanges();
 
+    } else if (userRole === 'client') {
+        // YENİ: Kullanıcı 'client' ise, panele kısıtlı erişim ver
+        renderModuleMenu('client'); // 'client' parametresi gönderildi
+
+        // Varsayılan olarak (ve tek izin verilen) 'denetim-takip' modülünü yükle
+        loadModule('denetim-takip');
+        
+        // Anlık ban (kilitleme) sistemini dinlemeyi başlat
+        // (Fonksiyon adı 'Admin' olsa da, giriş yapan mevcut kullanıcıyı dinler)
+        subscribeToAdminChanges();
+
     } else {
-        // Kullanıcı admin değilse veya giriş yapmamışsa, erişimi engelle
+        // Kullanıcı admin/client değilse veya giriş yapmamışsa, erişimi engelle
         document.getElementById('module-menu').innerHTML = ''; // Menüyü temizle
         const container = document.getElementById('module-container');
         container.innerHTML = `
@@ -88,12 +99,22 @@ async function initializeAdminPanel() {
     setupEventListeners();
 }
 
-// --- ALT MENÜ DESTEKLİ MENÜ OLUŞTURUCU (DEĞİİŞKLİK YOK) ---
-function renderModuleMenu() {
+// --- ALT MENÜ DESTEKLİ MENÜ OLUŞTURUCU (GÜNCELLENDİ) ---
+function renderModuleMenu(userRole) { // userRole parametresi eklendi
     const menu = document.getElementById('module-menu');
     menu.innerHTML = ''; 
 
-    modules.forEach(module => {
+    // Rol'e göre modülleri filtrele
+    let accessibleModules = [];
+    if (userRole === 'admin') {
+        accessibleModules = modules; // Admin tüm modülleri görür
+    } else if (userRole === 'client') {
+        // Client SADECE 'denetim-takip' modülünü görür
+        accessibleModules = modules.filter(m => m.id === 'denetim-takip');
+    }
+
+    // Erişilebilir modüller üzerinden menüyü oluştur
+    accessibleModules.forEach(module => {
         const li = document.createElement('li');
         
         if (module.submenu) {
