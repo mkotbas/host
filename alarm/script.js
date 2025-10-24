@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Veri Yükleme
     let cihazVeritabani = [];
     let malzemeVeritabani = [];
-    let secilenCihaz = null; // Arama sonuçlarından seçilen cihazı saklamak için
+    let secilenCihaz = null;
 
     // Arama ve Ekleme Formu
     const aramaCubugu = document.getElementById("aramaCubugu");
@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const adetInput = document.getElementById("adetInput");
     const ekleButton = document.getElementById("ekleButton");
     const secilenUrunListesi = document.getElementById("secilenUrunListesi");
+    const yuklemeDurumu = document.getElementById("yuklemeDurumu"); // Yükleme mesajı alanı
 
     // Hesaplama ve Sonuç Alanı
     const hesaplaButton = document.getElementById("hesaplaButton");
@@ -21,13 +22,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const ozetBilgi = document.getElementById("ozetBilgi");
     const genelMalzemeListesi = document.getElementById("genelMalzemeListesi");
 
-    // --- 2. VERİLERİ YÜKLEME ---
+    // --- 2. VERİLERİ YÜKLEME (GÜNCELLENDİ) ---
     async function verileriYukle() {
         try {
             const cihazResponse = await fetch('cihazlar.json');
             if (!cihazResponse.ok) throw new Error(`'cihazlar.json' yüklenemedi`);
             const cihazData = await cihazResponse.json();
-            // Veritabanını 'Marka + Model' olarak birleştirip saklayalım
             cihazVeritabani = cihazData.cihazlar.map(cihaz => ({
                 ...cihaz,
                 tamAd: `${cihaz.marka} ${cihaz.model}`
@@ -37,24 +37,47 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!malzemeResponse.ok) throw new Error(`'malzemeler.json' yüklenemedi`);
             malzemeVeritabani = await malzemeResponse.json();
 
-            console.log("Veri tabanları yüklendi.");
+            console.log("Veri tabanları başarıyla yüklendi.");
+            
+            // --- GÜNCELLEME BAŞLANGICI ---
+            // Yükleme başarılıysa, arayüzü aktif et
+            aktiveEtArayuzu();
+            // --- GÜNCELLEME SONU ---
+
         } catch (error) {
             console.error("Veri yükleme hatası:", error);
-            ozetBilgi.innerHTML = `HATA: ${error.message}. Dosyaların yerel sunucuda çalıştığından emin olun.`;
-            ozetBilgi.style.color = 'red';
+            // Hata olursa, hata mesajını göster ve arayüzü kapalı tut
+            yuklemeDurumu.textContent = `HATA: ${error.message}. Dosyalar yüklenemedi.`;
+            yuklemeDurumu.style.color = "red";
+            yuklemeDurumu.style.fontWeight = "bold";
         }
     }
+    
+    // --- YENİ FONKSİYON: Arayüzü Aktif Et ---
+    function aktiveEtArayuzu() {
+        // Devre dışı bırakılmış (disabled) tüm elemanları aktif et
+        aramaCubugu.disabled = false;
+        adetInput.disabled = false;
+        ekleButton.disabled = false;
+        hesaplaButton.disabled = false;
+        
+        // Yükleniyor mesajını gizle
+        yuklemeDurumu.style.display = "none";
+        
+        // Arama çubuğu metnini güncelle
+        aramaCubugu.placeholder = "Model ara (örn: iPhone 15, Galaxy S24...)";
+    }
 
-    // --- 3. YENİ ARAMA VE LİSTE YÖNETİMİ ---
+    // --- 3. ARAMA VE LİSTE YÖNETİMİ ---
 
     // Arama çubuğuna her harf girildiğinde...
     aramaCubugu.addEventListener("input", () => {
         const arananMetin = aramaCubugu.value.toLowerCase().trim();
         aramaSonuclari.innerHTML = "";
         
-        if (arananMetin.length < 2) { // En az 2 harf girilince ara
+        if (arananMetin.length < 2) {
             aramaSonuclari.style.display = "none";
-            secilenCihaz = null; // Seçimi temizle
+            secilenCihaz = null;
             return;
         }
 
@@ -63,20 +86,18 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
         if (sonuclar.length > 0) {
-            sonuclar.slice(0, 10).forEach(cihaz => { // İlk 10 sonucu göster
+            sonuclar.slice(0, 10).forEach(cihaz => {
                 const div = document.createElement("div");
-                // Aranan metni sonuçlarda vurgula (bold yap)
                 const regex = new RegExp(`(${arananMetin})`, 'gi');
                 div.innerHTML = cihaz.tamAd.replace(regex, '<strong>$1</strong>');
-                div.dataset.tamAd = cihaz.tamAd; // Tıklama için tam adı sakla
+                div.dataset.tamAd = cihaz.tamAd;
                 
-                // Sonuca tıklandığında...
                 div.addEventListener("click", () => {
-                    aramaCubugu.value = cihaz.tamAd; // Arama çubuğunu doldur
-                    secilenCihaz = cihaz; // Cihazı seç
-                    aramaSonuclari.style.display = "none"; // Listeyi gizle
+                    aramaCubugu.value = cihaz.tamAd;
+                    secilenCihaz = cihaz;
+                    aramaSonuclari.style.display = "none";
                     aramaSonuclari.innerHTML = "";
-                    adetInput.focus(); // İmleci adet kutusuna götür
+                    adetInput.focus();
                 });
                 aramaSonuclari.appendChild(div);
             });
@@ -87,32 +108,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Arama çubuğundan çıkılırsa listeyi gizle (küçük bir gecikmeyle)
     aramaCubugu.addEventListener("blur", () => {
         setTimeout(() => {
             aramaSonuclari.style.display = "none";
-        }, 200); // 200ms gecikme, tıklamayı algılamak için
+        }, 200);
     });
 
     // "+" (Ekle) butonuna tıklandığında...
     ekleButton.addEventListener("click", () => {
         const adet = parseInt(adetInput.value, 10);
 
-        // Bir cihaz seçilmiş mi ve adet geçerli mi?
         if (!secilenCihaz || !aramaCubugu.value || adet <= 0) {
             alert("Lütfen listeden geçerli bir ürün seçin ve adet girin.");
             return;
         }
         
-        // Cihazın tam adının listedeki ile eşleştiğinden emin ol
         if (aramaCubugu.value !== secilenCihaz.tamAd) {
              alert("Lütfen listeden bir ürün seçin (manuel girişi değiştirmeyin).");
              return;
         }
 
-        // Listeye Ekle
         const li = document.createElement("li");
-        // Veriyi saklarken 'tamAd' kullanalım (örn: "Apple iPhone 15 Pro")
         li.dataset.model = secilenCihaz.tamAd; 
         li.dataset.adet = adet;
         li.innerHTML = `
@@ -120,14 +136,12 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="silButton">Sil</button>
         `;
         
-        // Sil butonuna basıldığında...
         li.querySelector(".silButton").addEventListener("click", () => {
-            li.remove(); // Listeden kaldır
+            li.remove();
         });
 
         secilenUrunListesi.appendChild(li);
 
-        // Formu temizle
         aramaCubugu.value = "";
         adetInput.value = "1";
         secilenCihaz = null;
@@ -135,19 +149,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    // --- 4. ANA HESAPLAMA FONKSİYONU (YENİLENDİ) ---
+    // --- 4. ANA HESAPLAMA FONKSİYONU ---
     function hesapla() {
         console.log("Hesaplama başlatıldı...");
         
-        // Önceki sonuçları temizle
         sonucTablosuBody.innerHTML = "";
         genelMalzemeListesi.innerHTML = "";
         ozetBilgi.innerHTML = "";
         ozetBilgi.style.color = '#333';
 
-        // GİRDİ OKUMA YÖNTEMİ DEĞİŞTİ
-        // Eski: urunListesiInput.value...
-        // Yeni: secilenUrunListesi'ndeki 'li' elemanlarını oku
         const listeElemanlari = secilenUrunListesi.querySelectorAll("li");
 
         if (listeElemanlari.length === 0) {
@@ -157,13 +167,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const siparisListesi = {};
         let toplamCihazSayisi = 0;
-        let bulunamayanModelSayisi = 0; // Bu artık olmamalı ama kontrol kalsın
+        let bulunamayanModelSayisi = 0;
         let bulunamayanModeller = [];
         let akilliSaatSipaisiVar = false;
 
         // --- 4a. GİRDİYİ AYRIŞTIRMA (LİSTEDEN) ---
         listeElemanlari.forEach(li => {
-            // "Apple iPhone 15 Pro"
             const modelTamAdi = li.dataset.model; 
             const adet = parseInt(li.dataset.adet, 10);
 
@@ -171,7 +180,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             toplamCihazSayisi += adet;
 
-            // Cihazı veritabanında ara (artık tam ad ile arıyoruz)
             const bulunanCihaz = cihazVeritabani.find(cihaz => cihaz.tamAd === modelTamAdi);
 
             if (!bulunanCihaz) {
@@ -181,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // --- 4b. MALZEMELERİ SİPARİŞ LİSTESİNE EKLEME (Değişiklik yok) ---
+            // --- 4b. MALZEMELERİ SİPARİŞ LİSTESİNE EKLEME ---
             if (bulunanCihaz.kablo_stok_kodu && bulunanCihaz.kablo_stok_kodu !== "SALUS_SET") {
                 stokKoduEkle(bulunanCihaz.kablo_stok_kodu, adet);
             }
@@ -200,7 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // --- 4c. GENEL MALZEMELERİ EKLEME (Değişiklik yok) ---
+        // --- 4c. GENEL MALZEMELERİ EKLEME ---
         if (toplamCihazSayisi > 0) {
             stokKoduEkle("8907071600", 1); // MGM KUMANDA
         }
@@ -232,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
             stokKoduEkle("8907091600", pcAdedi);
         }
 
-        // --- 4d. YARDIMCI FONKSİYON (Değişiklik yok) ---
+        // --- 4d. YARDIMCI FONKSİYON ---
         function stokKoduEkle(stokKodu, adet) {
             if (!siparisListesi[stokKodu]) {
                 siparisListesi[stokKodu] = 0;
@@ -240,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
             siparisListesi[stokKodu] += adet;
         }
 
-        // --- 5. SONUÇLARI TABLOYA YAZDIRMA (Değişiklik yok) ---
+        // --- 5. SONUÇLARI TABLOYA YAZDIRMA ---
         sonucTablosuBody.innerHTML = "";
         genelMalzemeListesi.innerHTML = "";
         
@@ -270,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td>${stokKodu}</td>
                     <td>${malzeme.urun_adi}</td>
                     <td><b>${gerekliPaketAdedi} Paket</b></td>
-                    <td>${toplamGerekliAdet} Adet</td>
+                    <td>${toplamGihazAdedi} Adet</td>
                     <td>${malzeme.kullanim_amaci}</td>
                 </tr>
             `;
@@ -284,7 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         genelMalzemeListesi.innerHTML = sabitMalzemelerHTML || "<li>(Genel malzeme eklenmedi)</li>";
 
-        // --- 6. ÖZET BİLGİ (Değişiklik yok) ---
+        // --- 6. ÖZET BİLGİ ---
         let ozetMesaji = `<b>Hesaplama Tamamlandı.</b> Toplam ${toplamCihazSayisi} cihaz için ${toplamPaketSayisi} kalem paket malzeme gerekiyor.`;
         
         if (bulunamayanModelSayisi > 0) {
@@ -295,5 +303,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- 7. OLAYLARI BAĞLAMA ---
     hesaplaButton.addEventListener("click", hesapla);
+    
+    // Sayfa açıldığında ilk olarak verileri yükle
+    // (Arayüzü 'aktiveEtArayuzu' fonksiyonu ile o açacak)
     verileriYukle();
 });
