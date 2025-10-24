@@ -118,44 +118,19 @@ document.addEventListener("DOMContentLoaded", () => {
             stokKoduEkle("8907071600", 1); // MGM KUMANDA (1 adet)
         }
 
-        let telefonVePcAdedi = 0;
+        // --- Panel Hesabı Düzeltmesi (Telefon + Bilgisayar) ---
+        let telefonAdedi = 0;
         let tabletAdedi = 0;
 
-        for (const stokKodu in siparisListesi) {
-            const malzeme = malzemeVeritabani.find(m => m.stok_kodu === stokKodu);
-            if (!malzeme) continue;
-
-            const toplamAdet = siparisListesi[stokKodu];
-
-            if (malzeme.kategori === "Stand" && malzeme.stok_kodu === "8906991600") {
-                if (siparisListesi["8906981600"]) {
-                     const tabletStandAdedi = siparisListesi["8906981600"];
-                     tabletAdedi = tabletStandAdedi;
-                     telefonVePcAdedi += (toplamAdet - tabletStandAdedi);
-                } else {
-                    telefonVePcAdedi += toplamAdet;
-                }
-            }
-            if (malzeme.stok_kodu === "8907061600") {
-                // "Damla Kablo" (Macbook) adedini telefon/pc'den ayrı tut
-                // telefonVePcAdedi += toplamAdet; // Bu satır mantık hatasına neden olabilir, 
-                // ancak panel hesabında (digerCihazAdedi) zaten stand'ı baz alıyoruz.
-                // MacBook'lara stand eklemediğimiz için, 
-                // panel hesabı için MacBook adedini de eklemeliyiz.
-                // **DÜZELTME:** MacBook'lar stand kullanmıyor (kodu null),
-                // bu yüzden 'digerCihazAdedi'ni hesaplamak için stand'lara ek olarak 
-                // "Damla Kablo" (8907061600) adetini de saymalıyız.
-                
-                // Önceki hesaptan (stand adetinden) gelen telefon adedi:
-                // telefonVePcAdedi = telefonAdedi
-                
-                // Ayrı bir 'digerCihazAdedi' hesaplaması yapalım:
-                // digerCihazAdedi = (Tüm Stand Adedi - Tablet Adedi) + (Macbook Kablo Adedi)
-            }
+        // Telefon ve Tablet adetlerini stand'dan (8906991600) hesapla
+        if (siparisListesi["8906991600"]) {
+            const toplamStandAdedi = siparisListesi["8906991600"];
+            const tabletPaneliAdedi = siparisListesi["8906981600"] || 0; // Tablet paneli varsa = tablet adedi
+            
+            tabletAdedi = tabletPaneliAdedi;
+            telefonAdedi = toplamStandAdedi - tabletAdedi;
         }
 
-        // Panel Hesabı Düzeltmesi (Telefon + Bilgisayar)
-        const telefonAdedi = telefonVePcAdedi; // Stand'dan gelen
         const pcAdedi = siparisListesi["8907061600"] || 0; // Damla Kablo'dan (Macbook) gelen
         const panelGerekenCihazAdedi = telefonAdedi + pcAdedi;
         
@@ -164,24 +139,18 @@ document.addEventListener("DOMContentLoaded", () => {
             stokKoduEkle("8906971600", gerekliPanelAdedi);
         }
         
-        // Cihaz Başına Eklenen Genel Malzemeler
-        // (Akıllı Saatler ve PC'ler Hariç - Onların kendi kabloları/yapışkanları var)
+        // Cihaz Başına Eklenen Genel Malzemeler (Telefon + Tablet)
+        // (Akıllı Saatler ve PC'ler Hariç)
         const genelCihazAdedi = telefonAdedi + tabletAdedi;
         if (genelCihazAdedi > 0) {
              stokKoduEkle("8907081600", genelCihazAdedi); // MGM KONNEKTÖR 10 LÜ
              stokKoduEkle("9220951600", genelCihazAdedi); // MGM AKRİLİK TBNT YPŞKAN
              stokKoduEkle("9224911600", genelCihazAdedi); // MGM AKRİLİK YPŞ. EK
-             
-             // --- HATA DÜZELTİLDİ ---
-             // 8907091600 (Damla Yapışkan) bu genel bloktan kaldırıldı.
         }
         
-        // --- YENİ KURAL EKLENDİ ---
-        // Eğer sipariş listesinde "Damla Kablo" (Macbook/Kulaklık) varsa,
-        // o kablonun kendi yapışkanı olan "Damla Yapışkan"ı ekle.
-        if (siparisListesi["8907061600"] && siparisListesi["8907061600"] > 0) {
-            const damlaKabloAdedi = siparisListesi["8907061600"];
-            stokKoduEkle("8907091600", damlaKabloAdedi); // MGM DMLA YPŞKAN
+        // Sadece PC (MacBook) için eklenen özel yapışkan
+        if (pcAdedi > 0) {
+            stokKoduEkle("8907091600", pcAdedi); // MGM DMLA YPŞKAN
         }
 
 
@@ -207,7 +176,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         for (const stokKodu in siparisListesi) {
             const toplamGerekliAdet = siparisListesi[stokKodu];
-            const malzeme = malzemeVeritabani.find(m => m.stokKodu === stokKodu);
+            
+            // --- HATA DÜZELTMESİ BURADA ---
+            // 'm.stokKodu' (hatalı) yerine 'm.stok_kodu' (doğru) yazıldı.
+            const malzeme = malzemeVeritabani.find(m => m.stok_kodu === stokKodu);
             
             if (!malzeme) {
                 console.error(`Stok Kodu "${stokKodu}" malzeme veritabanında bulunamadı!`);
