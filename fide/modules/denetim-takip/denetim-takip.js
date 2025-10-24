@@ -34,7 +34,9 @@ export async function initializeDenetimTakipModule(pb) {
         currentUserId = pbInstance.authStore.model.id;
 
         setupModuleEventListeners(currentUserRole);
-        await loadSettings(); // Global hedefi globalAylikHedef'e yükler
+        // ÖNEMLİ: Global hedefi 'loadSettings' ile yüklemeliyiz Kİ
+        // 'client' kullanıcıları da 'applyDataFilterAndRunDashboard' içinde bu hedefi kullanabilsin.
+        await loadSettings(); 
 
         // 1. Tüm ana verileri yükle (API rolü neye izin veriyorsa)
         await loadMasterData();
@@ -57,18 +59,10 @@ export async function initializeDenetimTakipModule(pb) {
 }
 
 /**
- * Sadece admin rolü için 'aylikHedef' ayarını 'ayarlar' tablosundan okur.
+ * (GÜNCELLENDİ) Artık 'admin' veya 'client' fark etmeksizin global hedefi okur.
+ * Sadece 'admin' ise ayar yapma arayüzünü (input) doldurur/aktif eder.
  */
 async function loadSettings() {
-    if (!pbInstance.authStore.isValid || currentUserRole !== 'admin') {
-        globalAylikHedef = 0; // Client ise global hedefi kullanmayız
-        const targetInput = document.getElementById('monthly-target-input');
-        targetInput.value = '';
-        targetInput.disabled = true;
-        return;
-    }
-
-    // Sadece Admin ise global hedefi yükle
     try {
         const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
         globalAylikHedef = record.deger || 0;
@@ -78,7 +72,17 @@ async function loadSettings() {
             console.error("Aylık hedef ayarı yüklenemedi:", error);
         }
     }
-    document.getElementById('monthly-target-input').value = globalAylikHedef > 0 ? globalAylikHedef : '';
+
+    // Arayüz ayarları (sadece admin için)
+    if (currentUserRole === 'admin') {
+        document.getElementById('monthly-target-input').value = globalAylikHedef > 0 ? globalAylikHedef : '';
+    } else {
+        const targetInput = document.getElementById('monthly-target-input');
+        if (targetInput) {
+            targetInput.value = '';
+            targetInput.disabled = true;
+        }
+    }
 }
 
 /**
@@ -240,13 +244,13 @@ function applyDataFilterAndRunDashboard(viewId) {
         .filter(code => !geriAlinanBayiKodlariYil.has(code));
 
     // --- 5. Aylık Hedefi Ayarla (aylikHedef) ---
-    if (currentUserRole !== 'admin') {
-        aylikHedef = allStores.length; // Client hedefi = atanan bayi sayısı
-    } else {
-        // GÜNCELLEME: Admin ise, hangi görünümde (Benim Verilerim veya Global)
-        // olursa olsun, hesaplama için her zaman 'globalAylikHedef'i kullan.
-        aylikHedef = globalAylikHedef; 
+    
+    // GÜNCELLEME: Hem 'admin' hem de 'client' artık her zaman 'globalAylikHedef'i kullanacak.
+    // (globalAylikHedef, loadSettings() fonksiyonunda zaten dolduruldu.)
+    aylikHedef = globalAylikHedef; 
 
+    // Sadece admin'e özel buton görünürlüklerini ayarla
+    if (currentUserRole === 'admin') {
         // Yıllık sıfırlama butonunun durumunu görünüm seçimine göre ayarla
         if (viewId === 'global') {
             document.getElementById('reset-data-btn').disabled = false; // Yıllık sıfırlama sadece globalde aktif
@@ -300,9 +304,10 @@ function setupModuleEventListeners(userRole) {
         
     } else {
         // Client ise ayar panelini (dişli ikonu) gizle
-        adminPanelBtn.style.display = 'none';
+        if (adminPanelBtn) adminPanelBtn.style.display = 'none';
         // Yıllık sıfırlama butonunu gizle (veya pasif bırak)
-        document.getElementById('reset-data-btn').style.display = 'none';
+        const resetBtn = document.getElementById('reset-data-btn');
+        if (resetBtn) resetBtn.style.display = 'none';
     }
 
     // Ortak Filtreler
@@ -420,27 +425,32 @@ async function revertAudit(bayiKodu) {
  */
 function calculateAndDisplayDashboard() {
     const today = new Date();
+    // GÜNCELLEME: 'auditedMonthlyCount' artık o anki görünümün (client'ın kendi verileri)
+    // denetim sayısını gösterir.
     const auditedMonthlyCount = auditedStoreCodesCurrentMonth.length;
     
-    // 'aylikHedef' artık 'applyDataFilterAndRunDashboard' fonksiyonunda role/görünüme göre doğru ayarlandı.
-    // Admin için bu DEĞİŞKEN artık her zaman 'globalAylikHedef'i tutuyor.
+    // 'aylikHedef' artık 'applyDataFilterAndRunDashboard' fonksiyonunda hem admin hem de client için
+    // 'globalAylikHedef' olarak ayarlandı.
     const remainingToTarget = aylikHedef - auditedMonthlyCount;
     
     const remainingWorkDays = getRemainingWorkdays();
-    const totalStores = allStores.length; // 'allStores' artık o anki görünümün bayi listesi
-    const auditedYearlyCount = auditedStoreCodesCurrentYear.length; // Bu da filtrelenmiş
+    // 'allStores' artık o anki görünümün (client'ın kendi) bayi listesi
+    const totalStores = allStores.length; 
+    // 'auditedYearlyCount' de o anki görünümün (client'ın kendi) yıllık denetim sayısı
+    const auditedYearlyCount = auditedStoreCodesCurrentYear.length; 
     
     const annualProgress = totalStores > 0 ? (auditedYearlyCount / totalStores) * 100 : 0;
     
     document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-calendar-day"></i> ${today.getFullYear()} ${monthNames[today.getMonth()]} Ayı Performansı`;
     document.getElementById('work-days-count').textContent = remainingWorkDays;
     
-    // "Aylık Denetim Hedefi" sayacı (Admin için artık hep global, Client için kendi hedefi)
+    // "Aylık Denetim Hedefi" sayacı (Artık herkes için global hedef)
     document.getElementById('total-stores-count').textContent = aylikHedef; 
     
     document.getElementById('audited-stores-count').textContent = auditedMonthlyCount;
     document.getElementById('remaining-stores-count').textContent = Math.max(0, remainingToTarget);
     
+    // Yıllık Hedef (Bu, client'a atanan toplam bayi üzerinden hesaplanır - bu doğru)
     document.getElementById('annual-performance-indicator').innerHTML = `
         <div class="annual-header">
              <h4><i class="fas fa-calendar-alt"></i> ${today.getFullYear()} Yıllık Hedef</h4>
