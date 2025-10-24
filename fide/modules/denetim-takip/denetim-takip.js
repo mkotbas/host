@@ -243,11 +243,14 @@ function applyDataFilterAndRunDashboard(viewId) {
     if (currentUserRole !== 'admin') {
         aylikHedef = allStores.length; // Client hedefi = atanan bayi sayısı
     } else {
+        // GÜNCELLEME: Admin ise, hangi görünümde (Benim Verilerim veya Global)
+        // olursa olsun, hesaplama için her zaman 'globalAylikHedef'i kullan.
+        aylikHedef = globalAylikHedef; 
+
+        // Yıllık sıfırlama butonunun durumunu görünüm seçimine göre ayarla
         if (viewId === 'global') {
-            aylikHedef = globalAylikHedef; // Admin "Global" = ayarlardaki hedef
             document.getElementById('reset-data-btn').disabled = false; // Yıllık sıfırlama sadece globalde aktif
         } else {
-            aylikHedef = allStores.length; // Admin "Benim Verilerim" veya "Client X" = o görünümdeki bayi sayısı
             document.getElementById('reset-data-btn').disabled = true; // Yıllık sıfırlama diğer görünümlerde pasif
         }
     }
@@ -379,11 +382,9 @@ async function saveSettings() {
     alert("Ayarlar kaydedildi.");
     document.getElementById('admin-panel-overlay').style.display = 'none';
     
-    // Eğer o an "Global" görünümdeysek, dashboard'u yeni hedefle güncelle
-    const currentView = document.getElementById('admin-user-filter').value;
-    if(currentView === 'global') {
-        applyDataFilterAndRunDashboard('global');
-    }
+    // Değişiklik yaptığımız için, o anki görünümü yeni hedefle güncelle
+    const currentView = document.getElementById('admin-user-filter').value || 'my_data';
+    applyDataFilterAndRunDashboard(currentView);
 }
 
 // GÜNCELLENDİ: 'window.revertAudit' tanımı kaldırıldı, normal modül içi fonksiyona dönüştürüldü.
@@ -422,6 +423,7 @@ function calculateAndDisplayDashboard() {
     const auditedMonthlyCount = auditedStoreCodesCurrentMonth.length;
     
     // 'aylikHedef' artık 'applyDataFilterAndRunDashboard' fonksiyonunda role/görünüme göre doğru ayarlandı.
+    // Admin için bu DEĞİŞKEN artık her zaman 'globalAylikHedef'i tutuyor.
     const remainingToTarget = aylikHedef - auditedMonthlyCount;
     
     const remainingWorkDays = getRemainingWorkdays();
@@ -433,7 +435,7 @@ function calculateAndDisplayDashboard() {
     document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-calendar-day"></i> ${today.getFullYear()} ${monthNames[today.getMonth()]} Ayı Performansı`;
     document.getElementById('work-days-count').textContent = remainingWorkDays;
     
-    // "Aylık Denetim Hedefi" sayacı artık görünüme göre dinamik
+    // "Aylık Denetim Hedefi" sayacı (Admin için artık hep global, Client için kendi hedefi)
     document.getElementById('total-stores-count').textContent = aylikHedef; 
     
     document.getElementById('audited-stores-count').textContent = auditedMonthlyCount;
@@ -572,7 +574,7 @@ function getRemainingWorkdays() {
     const today = new Date(); const year = today.getFullYear(); const month = today.getMonth();
     // Ayın son gününü al (bir sonraki ayın 0. günü)
     const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-    let remainingWorkdays = 0;
+    let remainingWorkDays = 0;
     
     // Eğer ayın son gününü geçtiysek (örn. 31'i olan ayda 32. gün hesaplaması gibi bir durumda) 0 dön
     if (today.getDate() > lastDayOfMonth) return 0;
