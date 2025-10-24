@@ -107,7 +107,7 @@
     justify-content: center; /* Yatayda ortala */
     
     /* OKUNABİLİRLİK İÇİN EN ÖNEMLİ KISIM */
-    min-width: 45px; /* Çubuğun genişliği ne olursa olsun, yazının sığması için minimum 45px'lik bir alan ayır */
+    min-width: 45px; /* Çubuğun genişliği ne olursa olursa olsun, yazının sığması için minimum 45px'lik bir alan ayır */
     
     /* İç boşluklar */
     padding: 0 8px;
@@ -208,9 +208,8 @@
 .store-list-item:last-child { border-bottom: none; }
 .completed-item { display: flex; justify-content: space-between; align-items: center; }
 
-/* * YENİ EKLENDİ (24.10.2025): 
- * Uzun bayi isimlerinin '...' ile kısaltılması ve 'Geri Al' butonunun hizasını bozmaması için.
- * Bu kural, '.completed-item' içindeki 'span' (metin) elementini hedefler.
+/*
+ * Uzun bayi isimlerinin '...' ile kısaltılması için GÜNCELLENMİŞ kurallar
 */
 .completed-item span {
     white-space: nowrap;      /* Metnin alt satıra kaymasını engelle */
@@ -218,6 +217,13 @@
     text-overflow: ellipsis;  /* Gizlenen metnin yerine "..." koy */
     min-width: 0;             /* Flexbox'ın metni küçültmesine izin ver (en kritik olan budur) */
     margin-right: 10px;       /* Metin ile buton arasına boşluk koy */
+}
+
+/* * YENİ EKLENDİ (24.10.2025):
+ * Butonun kendisinin küçülmesini ve bozulmasını engeller.
+*/
+.completed-item .btn-revert-audit {
+    flex-shrink: 0;
 }
 
 
@@ -249,4 +255,3 @@
 #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; color: white; }
 .spinner { border: 8px solid #4b5563; border-top: 8px solid var(--primary-accent, #3b82f6); border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; margin-bottom: 20px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-/* DÜZELTME: Dosyanın sonundaki fazladan '}' parantezi kaldırıldı. */
