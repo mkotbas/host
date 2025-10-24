@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arçelik Bayi Alarm Otomasyon Sistemi</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>Arçelik Bayi Alarm Sipariş Otomasyonu</h1>
+        <p>Gelen ürün listesini aşağıdaki alana yapıştırın ve gerekli malzemeleri hesaplayın.</p>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="input-section">
+                <h2>1. Ürün Listesi Girişi</h2>
+                <p>Lütfen ürünleri <strong>"Model - Adet"</strong> formatında, her satıra bir ürün gelecek şekilde girin.</p>
+                <p>Örnek:<br>
+                    iPhone 15 Pro - 10<br>
+                    Galaxy S24 - 5<br>
+                    Apple Watch 9 - 4<br>
+                    MacBook Air M3 - 2<br>
+                    Galaxy Tab S9 - 3
+                </p>
+                <textarea id="urunListesiInput" rows="15" placeholder="iPhone 15 Pro - 10&#10;Galaxy S24 - 5&#10;..."></textarea>
+                <button id="hesaplaButton">Gerekli Malzemeleri Hesapla</button>
+            </div>
+
+            <div class="output-section">
+                <h2>2. Gerekli Malzeme Sipariş Listesi</h2>
+                <table id="sonucTablosu">
+                    <thead>
+                        <tr>
+                            <th>Stok Kodu</th>
+                            <th>Ürün Adı (ABS Kayıt İsmi)</th>
+                            <th>Gerekli Paket Adedi</th>
+                            <th>Toplam Ürün Adedi</th>
+                            <th>Kullanım Amacı / Not</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+                <div id="ozetBilgi"></div>
+                
+                <div class="genel-malzemeler">
+                    <h3>Genel Teşhir Malzemeleri (Otomatik Eklenir)</h3>
+                    <ul id="genelMalzemeListesi">
+                        </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Arçelik Mağaza Denetim Uzmanı Otomasyon Sistemi - 2025</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
