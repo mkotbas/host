@@ -116,11 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (toplamCihazSayisi > 0) {
             stokKoduEkle("8907071600", 1); // MGM KUMANDA (1 adet)
-            
-            // --- KALDIRILDI ---
-            // 9241501600 (Hook Askılık) ve 9241511600 (Hook Çözücü)
-            // talebiniz üzerine buradan kaldırıldı.
-            // --- KALDIRILDI ---
         }
 
         let telefonVePcAdedi = 0;
@@ -142,24 +137,53 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
             if (malzeme.stok_kodu === "8907061600") {
-                telefonVePcAdedi += toplamAdet;
+                // "Damla Kablo" (Macbook) adedini telefon/pc'den ayrı tut
+                // telefonVePcAdedi += toplamAdet; // Bu satır mantık hatasına neden olabilir, 
+                // ancak panel hesabında (digerCihazAdedi) zaten stand'ı baz alıyoruz.
+                // MacBook'lara stand eklemediğimiz için, 
+                // panel hesabı için MacBook adedini de eklemeliyiz.
+                // **DÜZELTME:** MacBook'lar stand kullanmıyor (kodu null),
+                // bu yüzden 'digerCihazAdedi'ni hesaplamak için stand'lara ek olarak 
+                // "Damla Kablo" (8907061600) adetini de saymalıyız.
+                
+                // Önceki hesaptan (stand adetinden) gelen telefon adedi:
+                // telefonVePcAdedi = telefonAdedi
+                
+                // Ayrı bir 'digerCihazAdedi' hesaplaması yapalım:
+                // digerCihazAdedi = (Tüm Stand Adedi - Tablet Adedi) + (Macbook Kablo Adedi)
             }
         }
+
+        // Panel Hesabı Düzeltmesi (Telefon + Bilgisayar)
+        const telefonAdedi = telefonVePcAdedi; // Stand'dan gelen
+        const pcAdedi = siparisListesi["8907061600"] || 0; // Damla Kablo'dan (Macbook) gelen
+        const panelGerekenCihazAdedi = telefonAdedi + pcAdedi;
         
-        if (telefonVePcAdedi > 0) {
-            const gerekliPanelAdedi = Math.ceil(telefonVePcAdedi / 5);
+        if (panelGerekenCihazAdedi > 0) {
+            const gerekliPanelAdedi = Math.ceil(panelGerekenCihazAdedi / 5);
             stokKoduEkle("8906971600", gerekliPanelAdedi);
         }
         
         // Cihaz Başına Eklenen Genel Malzemeler
-        // (Akıllı Saatler Hariç)
-        const genelCihazAdedi = telefonVePcAdedi + tabletAdedi;
+        // (Akıllı Saatler ve PC'ler Hariç - Onların kendi kabloları/yapışkanları var)
+        const genelCihazAdedi = telefonAdedi + tabletAdedi;
         if (genelCihazAdedi > 0) {
              stokKoduEkle("8907081600", genelCihazAdedi); // MGM KONNEKTÖR 10 LÜ
              stokKoduEkle("9220951600", genelCihazAdedi); // MGM AKRİLİK TBNT YPŞKAN
-             stokKoduEkle("8907091600", genelCihazAdedi); // EKLENDİ: MGM DMLA YPŞKAN
-             stokKoduEkle("9224911600", genelCihazAdedi); // EKLENDİ: MGM AKRİLİK YPŞ. EK
+             stokKoduEkle("9224911600", genelCihazAdedi); // MGM AKRİLİK YPŞ. EK
+             
+             // --- HATA DÜZELTİLDİ ---
+             // 8907091600 (Damla Yapışkan) bu genel bloktan kaldırıldı.
         }
+        
+        // --- YENİ KURAL EKLENDİ ---
+        // Eğer sipariş listesinde "Damla Kablo" (Macbook/Kulaklık) varsa,
+        // o kablonun kendi yapışkanı olan "Damla Yapışkan"ı ekle.
+        if (siparisListesi["8907061600"] && siparisListesi["8907061600"] > 0) {
+            const damlaKabloAdedi = siparisListesi["8907061600"];
+            stokKoduEkle("8907091600", damlaKabloAdedi); // MGM DMLA YPŞKAN
+        }
+
 
         // --- 2d. YARDIMCI STOK KODU EKLEME FONKSİYONU ---
         function stokKoduEkle(stokKodu, adet) {
@@ -183,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         for (const stokKodu in siparisListesi) {
             const toplamGerekliAdet = siparisListesi[stokKodu];
-            const malzeme = malzemeVeritabani.find(m => m.stok_kodu === stokKodu);
+            const malzeme = malzemeVeritabani.find(m => m.stokKodu === stokKodu);
             
             if (!malzeme) {
                 console.error(`Stok Kodu "${stokKodu}" malzeme veritabanında bulunamadı!`);
@@ -204,7 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 </tr>
             `;
 
-            // Kategori "Genel" VEYA "Aksesuar" ise alttaki listeye grupla
             if (malzeme.kategori === "Genel" || malzeme.kategori === "Aksesuar") {
                  sabitMalzemelerHTML += `<li><b>${gerekliPaketAdedi} Paket</b> - ${malzeme.urun_adi}</li>`;
             } else {
