@@ -17,19 +17,17 @@
         <div class="container">
             <div class="input-section">
                 <h2>1. Ürün Listesi Girişi</h2>
-
                 <div class="arama-formu">
-                    <div class="form-grup arama-grup">
+                    {/* ... Arama çubuğu, adet, stand checkbox, ekle butonu ... */}
+                     <div class="form-grup arama-grup">
                         <label for="aramaCubugu">Ürün Ara:</label>
                         <input type="text" id="aramaCubugu" placeholder="Veri tabanı yükleniyor..." autocomplete="off" disabled>
                         <div id="aramaSonuclari"></div>
                     </div>
-
                     <div class="form-grup adet-grup">
                         <label for="adetInput">Adet:</label>
                         <input type="number" id="adetInput" min="1" value="1" disabled>
                     </div>
-
                     <div class="form-grup stand-secenegi">
                          <label for="akrilikStandVar">Stand Kullanımı:</label>
                          <div class="checkbox-wrapper">
@@ -39,8 +37,8 @@
                     </div>
                     <button id="ekleButton" aria-label="Listeye Ekle" title="Listeye Ekle" disabled>+</button>
                 </div>
-
                 <div class="kategori-filtreleri">
+                    {/* ... Kategori filtre butonları ... */}
                     <label>Kategoriye Göre Filtrele:</label>
                     <span class="filtre-buton active" data-kategori="Tümü">Tümü</span>
                     <span class="filtre-buton" data-kategori="Telefon">Telefon</span>
@@ -49,18 +47,58 @@
                     <span class="filtre-buton" data-kategori="Akıllı Saat">Akıllı Saat</span>
                 </div>
                 <div id="yuklemeDurumu" class="durum-mesaji">Veri tabanı yükleniyor...</div>
-
                 <hr>
-
                 <h3>Hesaplanacak Ürün Listesi</h3>
-                <ul id="secilenUrunListesi">
-                </ul>
-
+                <ul id="secilenUrunListesi"></ul>
                 <button id="hesaplaButton" disabled>Gerekli Malzemeleri Hesapla</button>
-            </div>
+
+                <div class="cihaz-ekleme-section">
+                    <hr style="margin-top: 30px;">
+                    <h2>Yeni Cihaz Ekle</h2>
+                    <p>Veritabanında bulunmayan yeni bir cihazı ekleyin. Kaydettikten sonra güncel `cihazlar.json` dosyasını indirip eskisiyle değiştirmeniz gerekmektedir.</p>
+                    <div class="cihaz-ekleme-formu">
+                        <div class="form-grup">
+                            <label for="yeniKategori">Kategori:</label>
+                            <select id="yeniKategori" disabled>
+                                <option value="Telefon">Telefon</option>
+                                <option value="Tablet">Tablet</option>
+                                <option value="Bilgisayar">Bilgisayar</option>
+                                <option value="Akıllı Saat">Akıllı Saat</option>
+                            </select>
+                        </div>
+                        <div class="form-grup">
+                            <label for="yeniMarka">Marka:</label>
+                            <input type="text" id="yeniMarka" placeholder="örn: Samsung" disabled>
+                        </div>
+                        <div class="form-grup">
+                            <label for="yeniModel">Model:</label>
+                            <input type="text" id="yeniModel" placeholder="örn: Galaxy S26" disabled>
+                        </div>
+                        <div class="form-grup">
+                            <label for="yeniPort">Port Tipi:</label>
+                            <select id="yeniPort" disabled>
+                                <option value="USB-C">USB-C</option>
+                                <option value="Lightning">Lightning</option>
+                                <option value="Micro USB">Micro USB</option>
+                                <option value="Manyetik Kablosuz">Manyetik Kablosuz (Akıllı Saat)</option>
+                                <option value="USB-A">USB-A (PC Alarm Ucu)</option>
+                                <option value="Diger">Diğer (Elle Gir)</option>
+                            </select>
+                             <input type="text" id="yeniPortDiger" placeholder="Port tipini yazın" style="display: none; margin-top: 5px;" disabled>
+                        </div>
+                        <div class="form-grup">
+                            <label for="yeniYil">Yıl:</label>
+                            <input type="number" id="yeniYil" placeholder="örn: 2026" min="2020" max="2030" disabled>
+                        </div>
+                        <button id="yeniCihazKaydetButton" disabled>Kaydet ve İndirme Linki Oluştur</button>
+                    </div>
+                    <div id="cihazEklemeSonuc" class="durum-mesaji" style="display: none;"></div>
+                </div>
+                </div>
 
             <div class="output-section">
-                <h2>2. Gerekli Malzeme Sipariş Listesi</h2>
+                {/* ... Sonuç tablosu ve genel malzemeler bölümü ... */}
+                 <h2>2. Gerekli Malzeme Sipariş Listesi</h2>
                 <table id="sonucTablosu">
                     <thead>
                         <tr>
@@ -71,15 +109,12 @@
                             <th>Kullanım Amacı / Not</th>
                         </tr>
                     </thead>
-                    <tbody>
-                    </tbody>
+                    <tbody></tbody>
                 </table>
                 <div id="ozetBilgi"></div>
-
                 <div class="genel-malzemeler">
                     <h3>Genel Teşhir Malzemeleri (Otomatik Eklenir)</h3>
-                    <ul id="genelMalzemeListesi">
-                    </ul>
+                    <ul id="genelMalzemeListesi"></ul>
                 </div>
             </div>
         </div>
