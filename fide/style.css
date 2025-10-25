@@ -1,3 +1,5 @@
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
 :root {
     --primary: #008CBA;
     --primary-dark: #007B9A;
