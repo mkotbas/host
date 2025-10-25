@@ -1,3 +1,7 @@
+// --- Kütüphane ve Config İçeri Aktarma (Vite için Güncellendi) ---
+import PocketBase from 'pocketbase';
+import { POCKETBASE_URL } from './db-config.js';
+
 // --- Modül İçeri Aktarma (Import) ---
 import * as state from './state.js';
 import * as api from './api.js';
@@ -8,14 +12,15 @@ import * as ui from './ui.js';
 // --- Global Değişkenler ---
 let pb; // PocketBase instance
 
-// --- Uygulama Başlangıç Noktası ---
-window.onload = initializeApp;
+// --- Uygulama Başlangıç Noktası (Vite için Güncellendi) ---
+window.addEventListener('load', initializeApp);
 
 /**
  * Uygulamayı başlatan ana fonksiyon.
  */
 async function initializeApp() {
     // PocketBase'i db-config.js'den gelen bilgiyle başlat
+    // (Bu satır artık çalışıyor çünkü 'PocketBase' ve 'POCKETBASE_URL' yukarıda import edildi)
     pb = new PocketBase(POCKETBASE_URL);
 
     // Modülleri PocketBase instance ile ilklendir
@@ -171,17 +176,6 @@ function setupEventListeners() {
         window.open('admin/admin.html', '_blank');
     });
 }
-
-
-/**
- * --- KALDIRILDI ---
- * YENİ FONKSİYON: Anlık ban sistemini dinler.
- * (Bu fonksiyon 'api.js' içindeki 'subscribeToRealtimeChanges' 
- * fonksiyonuna taşındı ve genişletildi. 
- * [2025-10-02] kuralı gereği kaldırıldı.)
- */
-// function subscribeToUserChanges() { ... }
-
 
 /**
  * Oturum durumuna göre giriş/çıkış butonlarını günceller.
