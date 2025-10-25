@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx';
 import { showLoadingOverlay, hideLoadingOverlay } from './utils.js';
 import * as state from './state.js';
 
