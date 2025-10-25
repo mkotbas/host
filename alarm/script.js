@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- 1. HTML ELEMANLARINI SEÇME ---
     let cihazVeritabani = [];
     let malzemeVeritabani = [];
-    let secilenCihaz = null; // Seçilen cihaz nesnesini tutar (kit bilgisi dahil)
+    let secilenCihaz = null; 
     let seciliKategori = "Tümü";
 
     const aramaCubugu = document.getElementById("aramaCubugu");
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
         aramaCubugu.placeholder = "Model ara (örn: iPhone 15, Galaxy S24...)";
     }
 
-    // --- 3. ARAMA VE LİSTE YÖNETİMİ (Akıllı Saat Mantığı Güncellendi) ---
+    // --- 3. ARAMA VE LİSTE YÖNETİMİ ---
 
     function aramaYap() {
         const arananMetin = aramaCubugu.value.toLowerCase().trim();
@@ -71,33 +71,23 @@ document.addEventListener("DOMContentLoaded", () => {
             sonuclar.slice(0, 10).forEach(cihaz => {
                 const regex = new RegExp(`(${arananMetin})`, 'gi');
                 const vurguluAd = cihaz.tamAd.replace(regex, '<strong>$1</strong>');
-
-                // --- GÜNCELLEME: Akıllı Saat için çift sonuç üret ---
                 if (cihaz.kategori === "Akıllı Saat") {
-                    // MGM Kiti Seçeneği
                     const divMGM = document.createElement("div");
                     divMGM.innerHTML = `${vurguluAd} <span style="color: grey; font-size: 0.9em;">[MGM Kiti]</span>`;
-                    divMGM.dataset.tamAd = cihaz.tamAd;
-                    divMGM.dataset.kitTuru = "MGM"; // Kit bilgisini sakla
+                    divMGM.dataset.tamAd = cihaz.tamAd; divMGM.dataset.kitTuru = "MGM";
                     divMGM.addEventListener("click", () => handleAramaSonucClick(cihaz, "MGM"));
                     aramaSonuclari.appendChild(divMGM);
-
-                    // SALUS Kiti Seçeneği
                     const divSALUS = document.createElement("div");
                     divSALUS.innerHTML = `${vurguluAd} <span style="color: grey; font-size: 0.9em;">[SALUS Kiti]</span>`;
-                    divSALUS.dataset.tamAd = cihaz.tamAd;
-                    divSALUS.dataset.kitTuru = "SALUS"; // Kit bilgisini sakla
+                    divSALUS.dataset.tamAd = cihaz.tamAd; divSALUS.dataset.kitTuru = "SALUS";
                     divSALUS.addEventListener("click", () => handleAramaSonucClick(cihaz, "SALUS"));
                     aramaSonuclari.appendChild(divSALUS);
                 } else {
-                    // Diğer cihazlar için tek sonuç
                     const div = document.createElement("div");
-                    div.innerHTML = vurguluAd;
-                    div.dataset.tamAd = cihaz.tamAd;
-                    div.addEventListener("click", () => handleAramaSonucClick(cihaz, null)); // Kit türü null
+                    div.innerHTML = vurguluAd; div.dataset.tamAd = cihaz.tamAd;
+                    div.addEventListener("click", () => handleAramaSonucClick(cihaz, null));
                     aramaSonuclari.appendChild(div);
                 }
-                // --- GÜNCELLEME SONU ---
             });
             aramaSonuclari.style.display = "block";
         } else {
@@ -105,19 +95,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // YENİ: Arama sonucuna tıklama işlemini yöneten fonksiyon
     function handleAramaSonucClick(cihaz, kitTuru) {
-        // Seçilen cihazı ve kit türünü sakla
         secilenCihaz = { ...cihaz, kitTuru: kitTuru }; 
-        
-        // Arama çubuğunu doldur (Kit bilgisini göstermeden)
         aramaCubugu.value = cihaz.tamAd; 
-        
-        // Arama sonuçlarını gizle ve temizle
-        aramaSonuclari.style.display = "none";
-        aramaSonuclari.innerHTML = "";
-        
-        // Adet input'una odaklan
+        aramaSonuclari.style.display = "none"; aramaSonuclari.innerHTML = "";
         adetInput.focus();
     }
 
@@ -133,37 +114,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // "+" (Ekle) butonu (data-kit eklendi)
     ekleButton.addEventListener("click", () => {
         const adet = parseInt(adetInput.value, 10);
         if (!secilenCihaz || !aramaCubugu.value || adet <= 0 || aramaCubugu.value !== secilenCihaz.tamAd) {
-            alert("Lütfen listeden geçerli bir ürün (ve akıllı saat ise kitini) seçin ve adet girin.");
-            return;
+            alert("Lütfen listeden geçerli bir ürün (ve akıllı saat ise kitini) seçin ve adet girin."); return;
         }
-        
         const li = document.createElement("li");
-        li.dataset.model = secilenCihaz.tamAd; 
-        li.dataset.adet = adet;
-        // GÜNCELLEME: Kit bilgisini data attribute olarak ekle
-        li.dataset.kit = secilenCihaz.kitTuru || ""; // Akıllı saat değilse boş string
-        
-        // Görünen metne kit bilgisini ekle (varsa)
+        li.dataset.model = secilenCihaz.tamAd; li.dataset.adet = adet;
+        li.dataset.kit = secilenCihaz.kitTuru || ""; 
         let gorunenAd = `<strong>${secilenCihaz.tamAd}</strong>`;
-        if (secilenCihaz.kitTuru) {
-            gorunenAd += ` [${secilenCihaz.kitTuru} Kiti]`;
-        }
-        
+        if (secilenCihaz.kitTuru) gorunenAd += ` [${secilenCihaz.kitTuru} Kiti]`;
         li.innerHTML = `<span>${gorunenAd} - ${adet} Adet</span><button class="silButton">Sil</button>`;
         li.querySelector(".silButton").addEventListener("click", () => li.remove());
         secilenUrunListesi.appendChild(li);
-
         aramaCubugu.value = ""; adetInput.value = "1"; secilenCihaz = null; aramaCubugu.focus();
     });
 
-    // --- 4. ANA HESAPLAMA FONKSİYONU (Akıllı Saat Mantığı Güncellendi) ---
+    // --- 4. ANA HESAPLAMA FONKSİYONU ---
     function hesapla() {
         console.log("Hesaplama başlatıldı...");
-        
         sonucTablosuBody.innerHTML = ""; genelMalzemeListesi.innerHTML = "";
         ozetBilgi.innerHTML = ""; ozetBilgi.style.color = '#333';
 
@@ -178,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
         listeElemanlari.forEach(li => {
             const modelTamAdi = li.dataset.model; 
             const adet = parseInt(li.dataset.adet, 10);
-            const kitTuru = li.dataset.kit; // YENİ: Seçilen kit bilgisini oku
+            const kitTuru = li.dataset.kit; 
             if (!modelTamAdi || isNaN(adet) || adet <= 0) return;
             toplamCihazSayisi += adet;
             const bulunanCihaz = cihazVeritabani.find(cihaz => cihaz.tamAd === modelTamAdi);
@@ -186,31 +155,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 bulunamayanModelSayisi++; bulunamayanModeller.push(`"${modelTamAdi}"`); return;
             }
 
-            // --- GÜNCELLEME: Akıllı Saat Kiti Seçimine Göre Malzeme Ekleme ---
             if (bulunanCihaz.kategori === "Akıllı Saat") {
                 if (kitTuru === "MGM") {
-                    stokKoduEkle("8909011600", adet); // MGM Stand
-                    stokKoduEkle("8909021600", adet); // MGM Kablo
+                    stokKoduEkle("8909011600", adet); stokKoduEkle("8909021600", adet);
                 } else if (kitTuru === "SALUS") {
                     const salusParcalari = malzemeVeritabani.filter(m => m.kategori === "Salus");
                     salusParcalari.forEach(parca => stokKoduEkle(parca.stok_kodu, adet));
-                } else {
-                    // Kit seçilmemişse (bu durum olmamalı ama önlem)
-                    console.warn(`Akıllı saat "${modelTamAdi}" için kit türü belirtilmemiş.`);
-                }
+                } else { console.warn(`Kit türü belirtilmemiş: ${modelTamAdi}`); }
             } else {
-                // Diğer cihazlar için normal ekleme
                 if (bulunanCihaz.kablo_stok_kodu) stokKoduEkle(bulunanCihaz.kablo_stok_kodu, adet);
                 if (bulunanCihaz.stand_stok_kodu) stokKoduEkle(bulunanCihaz.stand_stok_kodu, adet);
                 if (bulunanCihaz.panel_stok_kodu) stokKoduEkle(bulunanCihaz.panel_stok_kodu, adet);
             }
-            // --- GÜNCELLEME SONU ---
         });
 
-        // Genel Malzemeler (Değişiklik yok)
+        // Genel Malzemeler
         if (toplamCihazSayisi > 0) stokKoduEkle("8907071600", 1); 
         let telefonAdedi = 0; let tabletAdedi = 0;
-        if (siparisListesi["8906991600"]) { // Standart Akrilik Stand
+        if (siparisListesi["8906991600"]) { 
             const toplamStandAdedi = siparisListesi["8906991600"];
             const tabletPaneliAdedi = siparisListesi["8906981600"] || 0;
             tabletAdedi = tabletPaneliAdedi;
@@ -224,12 +186,23 @@ document.addEventListener("DOMContentLoaded", () => {
             const gerekliPanelAdedi = Math.ceil(panelGerekenCihazAdedi / 5);
             stokKoduEkle("8906971600", gerekliPanelAdedi);
         }
-        const genelCihazAdedi = telefonAdedi + tabletAdedi;
-        if (genelCihazAdedi > 0) {
-             stokKoduEkle("8907081600", genelCihazAdedi);
-             stokKoduEkle("9220951600", genelCihazAdedi);
-             stokKoduEkle("9224911600", genelCihazAdedi);
+        
+        // --- GÜNCELLEME BAŞLANGICI: Konnektör Hesabı ---
+        // Konnektör, panele bağlanan her cihaz için gerekir (Tel + Tab + PC)
+        const konnektorGerekenAdet = telefonAdedi + tabletAdedi + pcAdedi;
+        if (konnektorGerekenAdet > 0) {
+             stokKoduEkle("8907081600", konnektorGerekenAdet); // MGM KONNEKTÖR 10 LÜ
         }
+        // --- GÜNCELLEME SONU ---
+        
+        // Akrilik Stand Yapışkanları (Sadece Tel + Tab)
+        const akrilikStandKullananAdet = telefonAdedi + tabletAdedi; 
+        if (akrilikStandKullananAdet > 0) {
+             stokKoduEkle("9220951600", akrilikStandKullananAdet); // Taban Yapışkanı
+             stokKoduEkle("9224911600", akrilikStandKullananAdet); // Ek Yapışkan
+        }
+        
+        // Damla Yapışkan (Sadece Macbook)
         if (pcAdediMac > 0) stokKoduEkle("8907091600", pcAdediMac); 
 
         function stokKoduEkle(stokKodu, adet) {
@@ -238,7 +211,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // --- 5. SONUÇLARI TABLOYA YAZDIRMA ---
-        // (Bu kısımda değişiklik yok, sadece değişken adı düzeltmesi var)
         sonucTablosuBody.innerHTML = ""; genelMalzemeListesi.innerHTML = "";
         if (Object.keys(siparisListesi).length === 0 && bulunamayanModelSayisi === 0) {
             ozetBilgi.textContent = "Hesaplama yapmak için lütfen en az bir ürün ekleyin."; return;
