@@ -17,19 +17,26 @@
         <div class="container">
             <div class="input-section">
                 <h2>1. Ürün Listesi Girişi</h2>
-                
+
                 <div class="arama-formu">
                     <div class="form-grup arama-grup">
                         <label for="aramaCubugu">Ürün Ara:</label>
                         <input type="text" id="aramaCubugu" placeholder="Veri tabanı yükleniyor..." autocomplete="off" disabled>
                         <div id="aramaSonuclari"></div>
                     </div>
-                    
+
                     <div class="form-grup adet-grup">
                         <label for="adetInput">Adet:</label>
                         <input type="number" id="adetInput" min="1" value="1" disabled>
                     </div>
-                    
+
+                    <div class="form-grup stand-secenegi">
+                         <label for="akrilikStandVar">Stand Kullanımı:</label>
+                         <div class="checkbox-wrapper">
+                            <input type="checkbox" id="akrilikStandVar" checked disabled>
+                            <label for="akrilikStandVar">Akrilik Stand Üzerinde</label>
+                         </div>
+                    </div>
                     <button id="ekleButton" aria-label="Listeye Ekle" title="Listeye Ekle" disabled>+</button>
                 </div>
 
@@ -42,13 +49,13 @@
                     <span class="filtre-buton" data-kategori="Akıllı Saat">Akıllı Saat</span>
                 </div>
                 <div id="yuklemeDurumu" class="durum-mesaji">Veri tabanı yükleniyor...</div>
-                
+
                 <hr>
-                
+
                 <h3>Hesaplanacak Ürün Listesi</h3>
                 <ul id="secilenUrunListesi">
-                    </ul>
-                
+                </ul>
+
                 <button id="hesaplaButton" disabled>Gerekli Malzemeleri Hesapla</button>
             </div>
 
@@ -65,14 +72,14 @@
                         </tr>
                     </thead>
                     <tbody>
-                        </tbody>
+                    </tbody>
                 </table>
                 <div id="ozetBilgi"></div>
-                
+
                 <div class="genel-malzemeler">
                     <h3>Genel Teşhir Malzemeleri (Otomatik Eklenir)</h3>
                     <ul id="genelMalzemeListesi">
-                        </ul>
+                    </ul>
                 </div>
             </div>
         </div>
