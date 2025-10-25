@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const aramaCubugu = document.getElementById("aramaCubugu");
     const aramaSonuclari = document.getElementById("aramaSonuclari");
     const adetInput = document.getElementById("adetInput");
-    const akrilikStandVarCheckbox = document.getElementById("akrilikStandVar"); // YENİ: Checkbox
+    const akrilikStandVarCheckbox = document.getElementById("akrilikStandVar"); 
     const ekleButton = document.getElementById("ekleButton");
     const secilenUrunListesi = document.getElementById("secilenUrunListesi");
     const yuklemeDurumu = document.getElementById("yuklemeDurumu");
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     function aktiveEtArayuzu() {
         aramaCubugu.disabled = false; adetInput.disabled = false;
-        akrilikStandVarCheckbox.disabled = false; // Checkbox'ı da aktif et
+        akrilikStandVarCheckbox.disabled = true; // Başlangıçta disable, ürün seçilince aktifleşecek
         ekleButton.disabled = false; hesaplaButton.disabled = false;
         yuklemeDurumu.style.display = "none";
         aramaCubugu.placeholder = "Model ara (örn: iPhone 15, Galaxy S24...)";
@@ -85,13 +85,12 @@ document.addEventListener("DOMContentLoaded", () => {
         aramaCubugu.value = cihaz.tamAd; 
         aramaSonuclari.style.display = "none"; aramaSonuclari.innerHTML = "";
         
-        // Akıllı saat veya Bilgisayar seçildiyse stand checkbox'ını disable et ve işareti kaldır
         if (cihaz.kategori === "Akıllı Saat" || cihaz.kategori === "Bilgisayar") {
              akrilikStandVarCheckbox.checked = false;
              akrilikStandVarCheckbox.disabled = true;
         } else {
-            akrilikStandVarCheckbox.disabled = false; // Telefon/Tablet için aktif et
-            akrilikStandVarCheckbox.checked = true; // Varsayılan olarak işaretli olsun
+            akrilikStandVarCheckbox.disabled = false; 
+            akrilikStandVarCheckbox.checked = true; // Telefon/Tablet seçildiğinde varsayılan işaretli olsun
         }
         adetInput.focus();
     }
@@ -106,10 +105,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // "+" (Ekle) butonu (data-onstand eklendi)
+    // "+" (Ekle) butonu 
     ekleButton.addEventListener("click", () => {
         const adet = parseInt(adetInput.value, 10);
-        const akrilikStandKullan = akrilikStandVarCheckbox.checked; // YENİ: Checkbox durumu
+        const akrilikStandKullan = akrilikStandVarCheckbox.checked; 
         
         if (!secilenCihaz || !aramaCubugu.value || adet <= 0 || aramaCubugu.value !== secilenCihaz.tamAd) {
             alert("Lütfen listeden geçerli bir ürün (ve akıllı saat ise kitini) seçin ve adet girin."); return;
@@ -119,25 +118,35 @@ document.addEventListener("DOMContentLoaded", () => {
         li.dataset.model = secilenCihaz.tamAd; 
         li.dataset.adet = adet;
         li.dataset.kit = secilenCihaz.kitTuru || ""; 
-        li.dataset.onstand = akrilikStandKullan; // YENİ: Stand bilgisini sakla
+        li.dataset.onstand = akrilikStandKullan; 
         
         let gorunenAd = `<strong>${secilenCihaz.tamAd}</strong>`;
         if (secilenCihaz.kitTuru) gorunenAd += ` [${secilenCihaz.kitTuru} Kiti]`;
         if (!akrilikStandKullan && secilenCihaz.kategori !== "Akıllı Saat" && secilenCihaz.kategori !== "Bilgisayar") {
-             gorunenAd += ` <span style="color: grey; font-size: 0.9em;">(Stand Yok)</span>`; // Görsel onay
+             gorunenAd += ` <span style="color: grey; font-size: 0.9em;">(Stand Yok)</span>`; 
         }
         
         li.innerHTML = `<span>${gorunenAd} - ${adet} Adet</span><button class="silButton">Sil</button>`;
         li.querySelector(".silButton").addEventListener("click", () => li.remove());
         secilenUrunListesi.appendChild(li);
 
-        aramaCubugu.value = ""; adetInput.value = "1"; secilenCihaz = null; 
-        akrilikStandVarCheckbox.checked = true; // Checkbox'ı sıfırla
-        akrilikStandVarCheckbox.disabled = true; // Yeni arama yapılana kadar disable
+        // Formu sıfırla
+        aramaCubugu.value = ""; 
+        adetInput.value = "1"; 
+        secilenCihaz = null; 
+        akrilikStandVarCheckbox.checked = true; // Checkbox'ı varsayılana döndür
+        
+        // --- DÜZELTME BURADA ---
+        // Checkbox'ı tekrar disable ETME satırı kaldırıldı. 
+        // Sadece yeni ürün seçildiğinde (handleAramaSonucClick içinde) disable edilecek.
+        // akrilikStandVarCheckbox.disabled = true; // <-- BU SATIR KALDIRILDI
+        // --- DÜZELTME SONU ---
+        
         aramaCubugu.focus();
     });
 
-    // --- 4. ANA HESAPLAMA FONKSİYONU (Stand Mantığı Eklendi) ---
+    // --- 4. ANA HESAPLAMA FONKSİYONU ---
+    // (Bu fonksiyonda değişiklik yok)
     function hesapla() {
         console.log("Hesaplama başlatıldı...");
         sonucTablosuBody.innerHTML = ""; genelMalzemeListesi.innerHTML = "";
@@ -148,19 +157,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const siparisListesi = {};
         let toplamCihazSayisi = 0; let bulunamayanModelSayisi = 0; let bulunamayanModeller = [];
-        let akrilikStandKullananAdetHesapla = 0; // YENİ: Sadece stand kullananların adedi
+        let akrilikStandKullananAdetHesapla = 0; 
         
         listeElemanlari.forEach(li => {
             const modelTamAdi = li.dataset.model; 
             const adet = parseInt(li.dataset.adet, 10);
             const kitTuru = li.dataset.kit; 
-            const akrilikStandKullan = li.dataset.onstand === 'true'; // YENİ: Stand bilgisini oku
+            const akrilikStandKullan = li.dataset.onstand === 'true'; 
             if (!modelTamAdi || isNaN(adet) || adet <= 0) return;
             toplamCihazSayisi += adet;
             const bulunanCihaz = cihazVeritabani.find(cihaz => cihaz.tamAd === modelTamAdi);
             if (!bulunanCihaz) { bulunamayanModelSayisi++; bulunamayanModeller.push(`"${modelTamAdi}"`); return; }
 
-            // --- Malzeme Ekleme Mantığı Güncellendi ---
             if (bulunanCihaz.kategori === "Akıllı Saat") {
                 if (kitTuru === "MGM") { stokKoduEkle("8909011600", adet); stokKoduEkle("8909021600", adet); } 
                 else if (kitTuru === "SALUS") {
@@ -168,35 +176,27 @@ document.addEventListener("DOMContentLoaded", () => {
                     salusParcalari.forEach(parca => stokKoduEkle(parca.stok_kodu, adet));
                 } else { console.warn(`Kit türü belirtilmemiş: ${modelTamAdi}`); }
             } else if (bulunanCihaz.kategori === "Bilgisayar") {
-                 // Bilgisayarlar stand kullanmaz, kabloyu doğrudan ekle
                  if (bulunanCihaz.kablo_stok_kodu) stokKoduEkle(bulunanCihaz.kablo_stok_kodu, adet);
-            } else { // Telefon veya Tablet
+            } else { 
                 if (akrilikStandKullan) {
-                     akrilikStandKullananAdetHesapla += adet; // Stand kullananları say
-                     // Stand ve Stand Kablosunu ekle
+                     akrilikStandKullananAdetHesapla += adet; 
                      if (bulunanCihaz.stand_stok_kodu) stokKoduEkle(bulunanCihaz.stand_stok_kodu, adet);
-                     if (bulunanCihaz.kablo_stok_kodu) stokKoduEkle(bulunanCihaz.kablo_stok_kodu, adet); // Stand kablosu
-                     if (bulunanCihaz.panel_stok_kodu) stokKoduEkle(bulunanCihaz.panel_stok_kodu, adet); // Tablet paneli
+                     if (bulunanCihaz.kablo_stok_kodu) stokKoduEkle(bulunanCihaz.kablo_stok_kodu, adet); 
+                     if (bulunanCihaz.panel_stok_kodu) stokKoduEkle(bulunanCihaz.panel_stok_kodu, adet); 
                 } else {
-                    // Stand KULLANILMIYORSA, uygun "stand üzerinde olmayan" kabloyu seç
                     let nonStandCable = null;
                     if (bulunanCihaz.port === "Lightning") nonStandCable = "8907041600";
                     else if (bulunanCihaz.port === "USB-C") nonStandCable = "8907011600";
-                    else if (bulunanCihaz.port === "Micro USB") nonStandCable = "8907051600"; // Genel USB kablo
-                    // Ters Micro USB için özel non-stand kablo yok, belki genel USB? Şimdilik eklemiyoruz.
-                    
+                    else if (bulunanCihaz.port === "Micro USB") nonStandCable = "8907051600";                     
                     if (nonStandCable) stokKoduEkle(nonStandCable, adet);
-                    if (bulunanCihaz.panel_stok_kodu) stokKoduEkle(bulunanCihaz.panel_stok_kodu, adet); // Tablet paneli yine eklenir
+                    if (bulunanCihaz.panel_stok_kodu) stokKoduEkle(bulunanCihaz.panel_stok_kodu, adet); 
                 }
             }
-            // --- Malzeme Ekleme Mantığı Sonu ---
         });
 
         // Genel Malzemeler
         if (toplamCihazSayisi > 0) stokKoduEkle("8907071600", 1); 
-        
-        // Panel Hesabı (Değişmedi, stand kullanan Tel + tüm PC'ler)
-        const telefonAdediStandli = akrilikStandKullananAdetHesapla - (siparisListesi["8906981600"] || 0); // Stand kullanan Tel
+        const telefonAdediStandli = akrilikStandKullananAdetHesapla - (siparisListesi["8906981600"] || 0); 
         const pcAdediMac = siparisListesi["8907061600"] || 0; 
         const pcAdediDiger = siparisListesi["8907051600"] || 0;
         const pcAdedi = pcAdediMac + pcAdediDiger; 
@@ -206,19 +206,26 @@ document.addEventListener("DOMContentLoaded", () => {
             stokKoduEkle("8906971600", gerekliPanelAdedi);
         }
         
-        // Konnektör Hesabı (Standlı Tel+Tab + Stand Kullanmayan Tel+Tab + Tüm PC'ler)
-        const telefonAdediStandsiz = (listeElemanlari.length - akrilikStandKullananAdetHesapla - (siparisListesi["8909011600"] || 0) - pcAdedi); // Saatleri ve PC'leri çıkar
-        const tabletAdedi = siparisListesi["8906981600"] || 0;
-        const konnektorGerekenAdet = akrilikStandKullananAdetHesapla + telefonAdediStandsiz + pcAdedi; // Stand kullananlar + kullanmayan Tel/Tab + PC'ler
-        
+        // Konnektör Hesabı
+        // Stand kullananlar (Tel+Tab) + Stand kullanmayan Tel/Tab + Tüm PC'ler
+        let toplamStandKullanmayanAdet = 0;
+        listeElemanlari.forEach(li => {
+            const akrilikStandKullan = li.dataset.onstand === 'true';
+            const modelTamAdi = li.dataset.model;
+            const bulunanCihaz = cihazVeritabani.find(cihaz => cihaz.tamAd === modelTamAdi);
+            if (bulunanCihaz && !akrilikStandKullan && bulunanCihaz.kategori !== 'Akıllı Saat' && bulunanCihaz.kategori !== 'Bilgisayar') {
+                toplamStandKullanmayanAdet += parseInt(li.dataset.adet, 10);
+            }
+        });
+        const konnektorGerekenAdet = akrilikStandKullananAdetHesapla + toplamStandKullanmayanAdet + pcAdedi;        
         if (konnektorGerekenAdet > 0) {
              stokKoduEkle("8907081600", konnektorGerekenAdet);
         }
         
         // Akrilik Stand Yapışkanları (Sadece stand kullanan Tel + Tab)
         if (akrilikStandKullananAdetHesapla > 0) {
-             stokKoduEkle("9220951600", akrilikStandKullananAdetHesapla); // Taban Yapışkanı
-             stokKoduEkle("9224911600", akrilikStandKullananAdetHesapla); // Ek Yapışkan
+             stokKoduEkle("9220951600", akrilikStandKullananAdetHesapla); 
+             stokKoduEkle("9224911600", akrilikStandKullananAdetHesapla); 
         }
         
         // Damla Yapışkan (Sadece Macbook)
