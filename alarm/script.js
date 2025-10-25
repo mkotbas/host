@@ -271,7 +271,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     let nonStandCable = null;
                     if (bulunanCihaz.port === "Lightning") nonStandCable = "8907041600";
                     else if (bulunanCihaz.port === "USB-C") nonStandCable = "8907011600";
-                    else if (bulunanCihaz.port === "Micro USB") nonStandCable = "8907051600";
+                    // *** DÜZELTME BAŞLANGICI ***
+                    // HATA: Önceden burada '8907051600' (PC USB kablosu) yazıyordu.
+                    // DOĞRUSU: Standart Micro USB kablosu ('8907021600') olmalı.
+                    else if (bulunanCihaz.port === "Micro USB") nonStandCable = "8907021600";
+                    // *** DÜZELTME SONU ***
                     if (nonStandCable) stokKoduEkle(nonStandCable, adet);
                     if (bulunanCihaz.panel_stok_kodu) stokKoduEkle(bulunanCihaz.panel_stok_kodu, adet);
                 }
