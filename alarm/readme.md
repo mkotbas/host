@@ -1,231 +1,92 @@
-document.addEventListener("DOMContentLoaded", () => {
+# Arçelik Bayi Alarm Sipariş Otomasyon Sistemi - Teknik Dokümantasyon (v2.10 - Yeni Cihaz Ekleme Özelliği Eklendi)
 
-    // --- 1. HTML ELEMANLARINI SEÇME ---
-    let cihazVeritabani = []; let malzemeVeritabani = []; let secilenCihaz = null; let seciliKategori = "Tümü";
+## 1. Sistemin Amacı
 
-    // Arama ve Ekleme
-    const aramaCubugu = document.getElementById("aramaCubugu");
-    const aramaSonuclari = document.getElementById("aramaSonuclari");
-    const adetInput = document.getElementById("adetInput");
-    const akrilikStandVarCheckbox = document.getElementById("akrilikStandVar"); 
-    const ekleButton = document.getElementById("ekleButton");
-    const secilenUrunListesi = document.getElementById("secilenUrunListesi");
-    const yuklemeDurumu = document.getElementById("yuklemeDurumu");
-    const filtreButonlari = document.querySelectorAll(".filtre-buton");
+Bu sistem, Arçelik Mağaza Denetim Uzmanları için geliştirilmiş web tabanlı bir otomasyon aracıdır. Temel amacı, yeni açılan veya konsept değiştiren bayilere gönderilecek elektronik cihaz (telefon, tablet, akıllı saat, bilgisayar) listesine göre, **gerekli alarm ünitesi ve montaj malzemelerinin sipariş listesini otomatik olarak ve hatasız bir şekilde oluşturmaktır.**
 
-    // Hesaplama ve Sonuç
-    const hesaplaButton = document.getElementById("hesaplaButton");
-    const sonucTablosuBody = document.querySelector("#sonucTablosu tbody");
-    const ozetBilgi = document.getElementById("ozetBilgi");
-    const genelMalzemeListesi = document.getElementById("genelMalzemeListesi");
+Sistem, cihazların şarj portu yapılarını analiz ederek doğru alarm kablosunu, standı, paneli ve tamamlayıcı parçaları seçer. Kullanıcıya, telefon veya tabletlerin akrilik stand üzerinde sergilenip sergilenmeyeceğini seçme imkanı sunar. Akıllı saatler için kullanıcıya MGM veya SALUS marka alarm kiti seçeneği sunar. **(YENİ)** Ayrıca, kullanıcıların veritabanında bulunmayan **yeni cihazları doğrudan arayüz üzerinden eklemesine** ve güncellenmiş cihaz listesini indirmesine olanak tanır. Malzemelerin paket içi adetlerine göre sipariş edilmesi gereken **paket sayısını** otomatik olarak hesaplar.
 
-    // YENİ: Cihaz Ekleme Form Elemanları
-    const yeniKategoriSelect = document.getElementById("yeniKategori");
-    const yeniMarkaInput = document.getElementById("yeniMarka");
-    const yeniModelInput = document.getElementById("yeniModel");
-    const yeniPortSelect = document.getElementById("yeniPort");
-    const yeniPortDigerInput = document.getElementById("yeniPortDiger");
-    const yeniYilInput = document.getElementById("yeniYil");
-    const yeniCihazKaydetButton = document.getElementById("yeniCihazKaydetButton");
-    const cihazEklemeSonucDiv = document.getElementById("cihazEklemeSonuc");
+Bu sayede manuel yapılan işlemlerdeki "yanlış malzeme gönderme" veya "eksik parça hesaplama" gibi hatalar tamamen ortadan kaldırılır ve cihaz veritabanı kolayca güncel tutulabilir.
 
-    // --- 2. VERİLERİ YÜKLEME ---
-    async function verileriYukle() {
-        try {
-            // Paralel yükleme
-            const [cihazResponse, malzemeResponse] = await Promise.all([
-                fetch('cihazlar.json'),
-                fetch('malzemeler.json')
-            ]);
-            // Hata kontrolü
-            if (!cihazResponse.ok) throw new Error(`'cihazlar.json' yüklenemedi (HTTP ${cihazResponse.status})`);
-            if (!malzemeResponse.ok) throw new Error(`'malzemeler.json' yüklenemedi (HTTP ${malzemeResponse.status})`);
-            
-            const cihazData = await cihazResponse.json();
-            // Veritabanını 'tamAd' ile zenginleştir (Hata kontrolü eklendi)
-            if (!cihazData || !Array.isArray(cihazData.cihazlar)) throw new Error("'cihazlar.json' formatı hatalı.");
-            cihazVeritabani = cihazData.cihazlar.map(cihaz => ({...cihaz, tamAd: `${cihaz.marka} ${cihaz.model}` }));
-            
-            malzemeVeritabani = await malzemeResponse.json();
-            if (!Array.isArray(malzemeVeritabani)) throw new Error("'malzemeler.json' formatı hatalı.");
+## 2. Kullanılan Teknolojiler
+* **Arayüz (UI):** `index.html`
+* **Stil (CSS):** `style.css`
+* **Ana Mantık (Logic):** `script.js` (ES6+)
+* **Veri Tabanı (Data):** `cihazlar.json`, `malzemeler.json`
 
+## 3. Dosya Yapısı ve Görevleri
+* **`index.html`:** Kullanıcının etkileşime girdiği ana HTML dosyası. Kategori filtreleri, arama çubuğu, adet girişi, akrilik stand kullanım onay kutusu, eklenecek ürün listesi, sonuç tablosu ve **(YENİ)** yeni cihaz ekleme formunun iskeletini içerir.
+* **`style.css`:** Arayüzün (UI) tüm görsel stillerini, renklerini, filtrelerin/onay kutusunun/yeni cihaz formunun görünümünü ve "devre dışı" (disabled) durumlarını yönetir.
+* **`cihazlar.json`:** Cihaz Veri Tabanı. Hangi modelin hangi kategoriye ve markaya ait olduğunu, port tipini ve yılını belirtir. Akıllı saatler dışındaki cihazlar için hangi kablo/stand/panel stok kodlarını tetiklediğini de içerir.
+* **`malzemeler.json`:** Malzeme Veri Tabanı. Stok kodu, ürün adı, kullanım amacı, **paket içi adet** ve **kategori** gibi kritik bilgileri içeren envanter listesidir.
+* **`script.js`:** Sistemin "Beyni". Tüm hesaplama mantığı, veri yükleme, arama filtrelemesi, akıllı saat kiti seçimi, stand kullanım tercihinin işlenmesi, **(YENİ)** yeni cihaz ekleme ve indirme linki oluşturma işlemleri ve kuralların uygulanması bu dosyada gerçekleşir.
 
-            console.log("Veri tabanları yüklendi.");
-            aktiveEtArayuzu();
-        } catch (error) {
-            console.error("Veri yükleme hatası:", error);
-            yuklemeDurumu.textContent = `HATA: ${error.message}. Dosyalar yüklenemedi veya formatı bozuk.`;
-            yuklemeDurumu.style.color = "red"; yuklemeDurumu.style.fontWeight = "bold";
-            // Hata durumunda diğer formları da disable bırak
-        }
-    }
-    
-    function aktiveEtArayuzu() {
-        // Arama/Ekleme formunu aktif et
-        aramaCubugu.disabled = false; adetInput.disabled = false;
-        akrilikStandVarCheckbox.disabled = true; // Ürün seçilene kadar disable
-        ekleButton.disabled = false; hesaplaButton.disabled = false;
-        
-        // YENİ: Cihaz Ekleme formunu aktif et
-        yeniKategoriSelect.disabled = false; yeniMarkaInput.disabled = false;
-        yeniModelInput.disabled = false; yeniPortSelect.disabled = false;
-        yeniYilInput.disabled = false; yeniCihazKaydetButton.disabled = false;
-        // Diğer port input'u başlangıçta gizli ve disable kalmalı
-        yeniPortDigerInput.disabled = true;
+## 4. Veri Yapısı (JSON Dosyaları)
+*(Bu bölümde değişiklik yok)*
 
-        yuklemeDurumu.style.display = "none";
-        aramaCubugu.placeholder = "Model ara (örn: iPhone 15, Galaxy S24...)";
-    }
+### `malzemeler.json`
+* `stok_kodu`, `urun_adi`, `kullanim_amaci`, `paket_ici_adet`, `kategori` (`Kablo`, `Stand`, `Panel`, `Salus`, `Genel`, `Aksesuar`).
 
-    // --- 3. ARAMA VE LİSTE YÖNETİMİ ---
-    // (AramaYap, handleAramaSonucClick, filtreButonlari olayları aynı)
-    function aramaYap() { /* ... önceki kod ... */ }
-    function handleAramaSonucClick(cihaz, kitTuru) { /* ... önceki kod ... */ }
-    aramaCubugu.addEventListener("input", aramaYap);
-    aramaCubugu.addEventListener("blur", () => { setTimeout(() => { aramaSonuclari.style.display = "none"; }, 200); });
-    filtreButonlari.forEach(buton => { /* ... önceki kod ... */ });
+### `cihazlar.json`
+* `kategori`, `marka`, `model`, `port`, `yil`, `kablo_stok_kodu` (Akıllı Saat hariç), `stand_stok_kodu` (Akıllı Saat ve Bilgisayar hariç), `panel_stok_kodu` (Sadece Tablet).
 
-    // "+" (Ekle) butonu 
-    ekleButton.addEventListener("click", () => { /* ... önceki kod ... */ });
+## 5. Çalışma Mantığı ve Fonksiyonlar (`script.js`)
 
-    // --- YENİ: CİHAZ EKLEME ÖZELLİĞİ ---
+Sistem, `DOMContentLoaded` olayı ile başlar ve aşağıdaki adımları izler:
 
-    // Port tipi "Diğer" seçildiğinde metin kutusunu göster/gizle
-    yeniPortSelect.addEventListener("change", () => {
-        if (yeniPortSelect.value === "Diger") {
-            yeniPortDigerInput.style.display = "block";
-            yeniPortDigerInput.disabled = false;
-            yeniPortDigerInput.focus();
-        } else {
-            yeniPortDigerInput.style.display = "none";
-            yeniPortDigerInput.disabled = true;
-            yeniPortDigerInput.value = ""; // İçeriği temizle
-        }
-    });
+1.  **`verileriYukle()`:** `.json` dosyalarını `fetch` ile çeker. Arayüz elemanları (arama, ekleme ve **(YENİ)** yeni cihaz formu dahil) `disabled` durumdadır. Başarılı olursa `aktiveEtArayuzu()`'nü çağırır.
+2.  **`aktiveEtArayuzu()`:** Tüm `input`, `button`, `checkbox` ve `select` elemanlarını aktif hale getirir. "Yükleniyor..." mesajını gizler.
+3.  **Kategori Filtreleme:** Tıklanan butona göre `seciliKategori` güncellenir ve `aramaYap()` tetiklenir.
+4.  **Arama Olayları:** Kullanıcı yazdıkça filtreleme yapılır. Akıllı saat ise `[MGM Kiti]` / `[SALUS Kiti]` seçenekleri sunulur.
+5.  **`handleAramaSonucClick()`:** Tıklanan sonuç `secilenCihaz`'a atanır. Akıllı Saat/Bilgisayar ise stand onay kutusu disable edilir, Telefon/Tablet ise enable edilir.
+6.  **`ekleButton` Olayı:** Seçilen cihazı, adedi, `data-kit` ve `data-onstand` bilgisiyle `#secilenUrunListesi`'ne `<li>` olarak ekler.
+7.  **`(YENİ) Yeni Cihaz Ekleme Olayları:`**
+    * `yeniPortSelect`'in `"change"` olayı: "Diğer" seçilirse metin kutusunu gösterir.
+    * `yeniCihazKaydetButton`'un `"click"` olayı:
+        * Form verilerini okur ve doğrular.
+        * Cihazın zaten var olup olmadığını kontrol eder.
+        * Kategori ve porta göre stok kodlarını (kablo, stand, panel) belirler.
+        * Yeni cihaz nesnesini oluşturur.
+        * Hafızadaki `cihazVeritabani`'na yeni cihazı ekleyerek `guncelCihazVeritabani`'nı oluşturur.
+        * `guncelCihazVeritabani`'nı JSON string'e çevirir.
+        * `Blob` ve `URL.createObjectURL` kullanarak indirilebilir bir veri oluşturur.
+        * `<a>` etiketi ile `download="cihazlar.json"` özelliğini ayarlayarak indirme linkini oluşturur ve `#cihazEklemeSonuc` div'inde gösterir. Kullanıcıya dosyayı indirip eskisinin üzerine yazması gerektiğini belirtir.
+        * Formu temizler.
+8.  **`hesaplaButton` Olayı (Ana Hesaplama):** `#secilenUrunListesi`'ndeki `<li>`'leri okur.
+9.  **İş Kuralları ve Malzeme Ekleme (`hesapla()` içinde):**
+    * `data-kit` ve `data-onstand` bilgilerine göre doğru malzemeler (`kablo`, `stand`, `panel`, `yapışkanlar`, `konnektör`, `kumanda`) `siparisListesi`'ne eklenir.
+10. **Sonuçları Yazdırma (Render):** `siparisListesi` döngüye alınır, paket hesabı yapılır ve sonuçlar ilgili tablolara yazdırılır.
 
-    // "Kaydet ve İndir" butonuna tıklanınca
-    yeniCihazKaydetButton.addEventListener("click", () => {
-        // Form verilerini al
-        const kategori = yeniKategoriSelect.value;
-        const marka = yeniMarkaInput.value.trim();
-        const model = yeniModelInput.value.trim();
-        let port = yeniPortSelect.value;
-        if (port === "Diger") {
-            port = yeniPortDigerInput.value.trim();
-        }
-        const yil = parseInt(yeniYilInput.value, 10);
+## 6. Güncelleme ve Hata Ayıklama (AI için Notlar)
 
-        // Doğrulama
-        if (!kategori || !marka || !model || !port || !yil || isNaN(yil)) {
-            alert("Lütfen tüm alanları doğru bir şekilde doldurun.");
-            return;
-        }
+### Yeni Bir Cihaz Manuel Olarak Nasıl Eklenir?
+*(Bu bölüm, yeni özellik nedeniyle daha az önemli hale geldi ama referans olarak kalabilir)*
 
-        const tamAdYeni = `${marka} ${model}`;
+1.  **Sadece `cihazlar.json` dosyasını açın**.
+2.  Cihazın kategorisini, markasını, modelini, port tipini ve yılını belirleyin.
+3.  Akıllı Saat ise, stok kodu belirtmeden ekleyin.
+4.  Diğer cihaz ise, porta/kategoriye göre doğru `kablo_stok_kodu`, `stand_stok_kodu` ve `panel_stok_kodu` atayın.
+5.  Dosyanın JSON formatını bozmadan yeni nesneyi ekleyin.
 
-        // Cihaz zaten var mı kontrol et (hafızadaki kopyada)
-        const mevcutCihaz = cihazVeritabani.find(c => c.tamAd.toLowerCase() === tamAdYeni.toLowerCase());
-        if (mevcutCihaz) {
-            alert(`"${tamAdYeni}" modeli zaten veritabanında mevcut.`);
-            return;
-        }
+### "Hesapla" Butonu / Arayüz Çalışmıyor veya Hata Veriyorsa?
 
-        // Kurallara göre stok kodlarını belirle
-        let kablo_stok_kodu = null;
-        let stand_stok_kodu = null;
-        let panel_stok_kodu = null;
+1.  **CORS Hatası / "HATA: ... yüklenemedi":** Sistemi bir web sunucusu üzerinden çalıştırın.
+2.  **Arama / Ekleme / Hesaplama Çalışmıyor:** Tarayıcının geliştirici konsolunu (F12) açıp hataları kontrol edin.
+    * `verileriYukle()` hatası varsa JSON dosyalarının formatını ve erişilebilirliğini kontrol edin.
+    * JavaScript hataları varsa (`TypeError`, `ReferenceError` vb.), `script.js` kodunu ilgili bölümler için inceleyin.
+3.  **(YENİ) Yeni Cihaz Ekleme Çalışmıyor:**
+    * Formun doğru okunup okunmadığını kontrol edin (`yeniCihazKaydetButton` olay dinleyicisi).
+    * Stok kodu atama mantığının (kategori/porta göre) doğru çalıştığını kontrol edin.
+    * İndirme linki oluşturma kısmında (`Blob`, `URL.createObjectURL`) hata olup olmadığını konsoldan kontrol edin.
+4.  **Yanlış Malzeme/Adet Hesaplanıyor:** `script.js`'deki İş Kuralları (Bölüm 5, Adım 9) bölümünü inceleyin.
+5.  **"Toplam Ürün Adedi" Sütunu "undefined" Görünüyor:** `script.js`'deki son döngüde (Adım 10), `<td>` içine yazdırılan değişkenin `toplamGerekliAdet` olduğundan emin olun.
 
-        if (kategori === "Telefon" || kategori === "Tablet") {
-            stand_stok_kodu = "8906991600"; // Standart akrilik stand
-            if (kategori === "Tablet") {
-                panel_stok_kodu = "8906981600"; // Tablet paneli
-            }
-            // Kablo seçimi porta göre
-            if (port === "USB-C") {
-                 // Yeni nesil kuralı burada basitçe kontrol edilebilir veya genel kablo atanabilir.
-                 // Şimdilik genel Type-C atayalım, gerekirse manuel düzenlenebilir.
-                 kablo_stok_kodu = "8907011600"; 
-                 // Not: Yeni eklenen cihazın S20+ veya iPhone 15+ olup olmadığını bilemeyiz,
-                 // bu yüzden güvenli tarafta kalıp 8907011600 atıyoruz.
-            } else if (port === "Lightning") {
-                kablo_stok_kodu = "8907031600"; // Stand kablosu varsayalım
-            } else if (port === "Micro USB") {
-                kablo_stok_kodu = "8907021600"; // Stand kablosu varsayalım
-            } 
-            // Ters Micro USB veya özel portlar için manuel JSON düzenlemesi gerekebilir.
-            // Şimdilik bilinenler bunlar.
-            
-        } else if (kategori === "Bilgisayar") {
-            stand_stok_kodu = null;
-            if (marka.toLowerCase() === "apple") {
-                kablo_stok_kodu = "8907061600"; // Macbook kablosu
-            } else if (port === "USB-A" || port === "USB-C") { 
-                 // Diğer PC'ler için USB-A veya USB-C portu varsa genel USB kablosu
-                 kablo_stok_kodu = "8907051600"; 
-            }
-        } else if (kategori === "Akıllı Saat") {
-            // Akıllı saatler için stok kodu atanmaz, script karar verir.
-            kablo_stok_kodu = null;
-            stand_stok_kodu = null;
-        }
+## 7. Yapay Zeka İçin Uyulması Gereken Kurallar
 
-        // Yeni cihaz nesnesini oluştur
-        const yeniCihazNesnesi = {
-            kategori: kategori,
-            marka: marka,
-            model: model,
-            port: port,
-            yil: yil,
-            kablo_stok_kodu: kablo_stok_kodu,
-            stand_stok_kodu: stand_stok_kodu,
-            panel_stok_kodu: panel_stok_kodu
-        };
+Bu dokümanla etkileşime geçen herhangi bir yapay zeka aşağıdaki kurallara uymalıdır:
 
-        // Hafızadaki veritabanına ekle (şimdilik sadece indirme için)
-        const guncelCihazVeritabani = [...cihazVeritabani, yeniCihazNesnesi];
-        // İleride alfabetik sıralama eklenebilir:
-        // guncelCihazVeritabani.sort((a, b) => a.tamAd.localeCompare(b.tamAd)); 
-
-        // İndirme linki oluştur
-        try {
-            // JSON verisini string'e çevir (düzgün formatlı)
-            const jsonData = JSON.stringify({ cihazlar: guncelCihazVeritabani, panel_kurallari: { tablet_panel: "8906981600" } }, null, 2); // null, 2 -> güzel formatlama
-            const blob = new Blob([jsonData], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'cihazlar.json';
-            a.textContent = 'Güncel cihazlar.json Dosyasını İndir';
-
-            // Sonuç mesajını ve linki göster
-            cihazEklemeSonucDiv.innerHTML = `"${tamAdYeni}" başarıyla listeye eklendi.<br>Değişikliğin kalıcı olması için lütfen aşağıdaki dosyayı indirin ve mevcut <code>cihazlar.json</code> dosyasının üzerine yazın.<br>`;
-            cihazEklemeSonucDiv.appendChild(a);
-            cihazEklemeSonucDiv.style.display = 'block';
-            cihazEklemeSonucDiv.style.color = 'green';
-
-            // Formu temizle
-            yeniMarkaInput.value = ""; yeniModelInput.value = ""; yeniPortSelect.value = "USB-C"; 
-            yeniPortDigerInput.style.display = "none"; yeniPortDigerInput.value = ""; yeniYilInput.value = "";
-
-        } catch (err) {
-            console.error("İndirme linki oluşturma hatası:", err);
-            cihazEklemeSonucDiv.textContent = 'HATA: İndirme linki oluşturulamadı.';
-            cihazEklemeSonucDiv.style.display = 'block';
-            cihazEklemeSonucDiv.style.color = 'red';
-        }
-    });
-
-    // --- 4. ANA HESAPLAMA FONKSİYONU ---
-    function hesapla() { /* ... önceki kod ... */ }
-
-    // --- 5. SONUÇLARI TABLOYA YAZDIRMA ---
-    // (Bu fonksiyonda değişiklik yok)
-
-    // --- 6. ÖZET BİLGİ ---
-    // (Bu fonksiyonda değişiklik yok)
-
-    // --- 7. OLAYLARI BAĞLAMA ---
-    hesaplaButton.addEventListener("click", hesapla);
-    verileriYukle(); // Sayfa yüklendiğinde verileri yükle
-});
+* **Analiz:** Bu doküman yüklendiğinde, sistemin çalışma mantığını, işleyişini ve tüm kodlarını (HTML, CSS, JS, JSON) tam olarak analiz et.
+* **Eş Zamanlı Güncelleme:** Sisteme (kodlara veya JSON verilerine) bir güncelleme istendiğinde, kod değişikliği yapıldıktan sonra **bu teknik dokümanı (`README.md`) da değişikliği yansıtacak şekilde güncelle**.
+* **Onay ve Versiyonlama:** Kod ve doküman güncellemesi bittiğinde, kullanıcıya **"Başka bir isteğiniz var mı?"** diye sor. Eğer kullanıcı "yok" derse, bu dokümanın başlığındaki versiyon numarasını bir sonraki adıma yükselt (örn: v2.10 -> v2.11) ve güncellenmiş dokümanı sun.
+* **Anlama:** Bu doküman her yüklendiğinde veya her güncellendiğinde, sistemin güncel çalışma mantığını kavradığından emin ol.
+* **Doküman Bütünlüğü:** Bu dokümanı güncellerken, **tüm bölümlerin** eksiksiz olarak yazıldığından emin ol. Sadece değişen kısımları değil, değişmeyen kısımları da içeren **tam dokümanı** sun. Güncelleme yapılan bölümleri veya önemli değişiklikleri **(Güncellendi)** veya **(YENİ)** gibi etiketlerle belirt.
