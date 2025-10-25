@@ -1,3 +1,9 @@
+/* Vite için eklendi: FontAwesome ve Quill kütüphanelerinin stillerini
+  node_modules klasöründen içeri aktarır.
+*/
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+@import 'quill/dist/quill.snow.css';
+
 :root {
     --bg-dark: #1e293b;
     --bg-dark-accent: #2c3a4f;

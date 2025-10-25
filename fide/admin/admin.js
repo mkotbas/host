@@ -1,3 +1,7 @@
+// --- VITE GÜNCELLEMESİ: Kütüphaneler içeri aktarılıyor ---
+import PocketBase from 'pocketbase';
+import { POCKETBASE_URL } from '../db-config.js';
+
 // --- Modül Tanımlamaları (Alt Menü Destekli Yapı) ---
 const modules = [
     {
@@ -47,13 +51,18 @@ const modules = [
 
 // --- Global Değişkenler ---
 let currentModuleId = null;
-// 'pb' değişkeni 'db-config.js' dosyasından global olarak geliyor.
+let pb; // 'pb' değişkeni artık global değil, bu modül tarafından başlatılacak.
 
-// --- Uygulama Başlatma ---
-window.onload = initializeAdminPanel;
+// --- Uygulama Başlatma (VITE GÜNCELLEMESİ) ---
+window.addEventListener('load', initializeAdminPanel);
 
 async function initializeAdminPanel() {
+    
+    // VITE GÜNCELLEMESİ: pb instance'ını burada başlat
+    pb = new PocketBase(POCKETBASE_URL);
+
     // --- GÜVENLİK KONTROLÜ (GÜNCELLENDİ) ---
+    // (pb artık tanımlı olduğu için bu kod bloğu sorunsuz çalışacaktır)
     const isLoggedIn = pb.authStore.isValid;
     const userRole = isLoggedIn ? pb.authStore.model.role : null;
 
@@ -225,6 +234,7 @@ async function loadModule(moduleId) {
         const moduleExports = await import(moduleUrl);
         
         if (typeof moduleExports[initFunctionName] === 'function') {
+            // VITE GÜNCELLEMESİ: 'pb' değişkenini modüle buradan iletiyoruz.
             moduleExports[initFunctionName](pb);
         } else {
             console.error(`Modern modül (import) başlatma fonksiyonu bulunamadı: ${initFunctionName}. Modülün .js dosyasının bu fonksiyonu 'export' ettiğinden emin olun.`);
