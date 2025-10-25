@@ -1,10 +1,10 @@
-# Arçelik Bayi Alarm Sipariş Otomasyon Sistemi - Teknik Dokümantasyon (v2.3 - Yapay Zeka Kuralları & Son Güncellemeler)
+# Arçelik Bayi Alarm Sipariş Otomasyon Sistemi - Teknik Dokümantasyon (v2.5 - Realme C Serisi Eklendi & Doküman Detaylandırıldı)
 
 ## 1. Sistemin Amacı
 
 Bu sistem, Arçelik Mağaza Denetim Uzmanları için geliştirilmiş web tabanlı bir otomasyon aracıdır. Temel amacı, yeni açılan veya konsept değiştiren bayilere gönderilecek elektronik cihaz (telefon, tablet, akıllı saat, bilgisayar) listesine göre, **gerekli alarm ünitesi ve montaj malzemelerinin sipariş listesini otomatik olarak ve hatasız bir şekilde oluşturmaktır.**
 
-Sistem, cihazların şarj portu yapılarını (USB-C, Lightning vb.) analiz ederek doğru alarm kablosunu, standı, paneli ve tamamlayıcı parçaları (yapışkan, konnektör) seçer. **Akıllı saatler için kullanıcıya MGM veya SALUS marka alarm kiti seçeneği sunar.** Ayrıca, malzemelerin paket içi adetlerine göre sipariş edilmesi gereken **paket sayısını** otomatik olarak hesaplar.
+Sistem, cihazların şarj portu yapılarını (USB-C, Lightning, Mikro USB vb.) analiz ederek doğru alarm kablosunu, standı, paneli ve tamamlayıcı parçaları (yapışkan, konnektör) seçer. Akıllı saatler için kullanıcıya **MGM veya SALUS marka alarm kiti seçeneği sunar.** Ayrıca, malzemelerin paket içi adetlerine göre sipariş edilmesi gereken **paket sayısını** otomatik olarak hesaplar.
 
 Bu sayede manuel yapılan işlemlerdeki "yanlış malzeme gönderme" veya "eksik parça hesaplama" gibi hatalar tamamen ortadan kaldırılır.
 
@@ -21,9 +21,9 @@ Sistem 5 ana dosyadan oluşur:
 
 * **`index.html`:** Kullanıcının etkileşime girdiği ana HTML dosyası. Kategori filtreleri, arama çubuğu, adet girişi, eklenecek ürün listesi ve sonuç tablosunun iskeletini içerir.
 * **`style.css`:** Arayüzün (UI) tüm görsel stillerini, renklerini, kategori filtrelerinin görünümünü ve "devre dışı" (disabled) durumlarını yönetir.
-* **`cihazlar.json`:** Cihaz Veri Tabanı. Hangi modelin hangi kategoriye ve markaya ait olduğunu, port tipini ve yılını belirtir. **(Güncellendi)** **Akıllı saatler dışındaki** cihazlar için hangi kablo/stand/panel stok kodlarını tetiklediğini de içerir. Akıllı saatler için stok kodu bilgisi **içermez**, bu `script.js` tarafından yönetilir.
+* **`cihazlar.json`:** Cihaz Veri Tabanı. Hangi modelin hangi kategoriye ve markaya ait olduğunu, port tipini ve yılını belirtir. Akıllı saatler dışındaki cihazlar için hangi kablo/stand/panel stok kodlarını tetiklediğini de içerir. Akıllı saatler için stok kodu bilgisi içermez.
 * **`malzemeler.json`:** Malzeme Veri Tabanı. Stok kodu, ürün adı, kullanım amacı, **paket içi adet** ve **kategori** gibi kritik bilgileri içeren envanter listesidir.
-* **`script.js`:** Sistemin "Beyni". Tüm hesaplama mantığı, veri yükleme, arama filtrelemesi, **akıllı saat kiti seçimi** ve kuralların işlenmesi bu dosyada gerçekleşir.
+* **`script.js`:** Sistemin "Beyni". Tüm hesaplama mantığı, veri yükleme, arama filtrelemesi, akıllı saat kiti seçimi ve kuralların işlenmesi bu dosyada gerçekleşir.
 
 ## 4. Veri Yapısı (JSON Dosyaları)
 
@@ -44,72 +44,33 @@ Her bir alarm malzemesinin envanter kaydını tutar.
 
 Hangi cihazın hangi parçaları kullanacağını belirleyen ana eşleştirme kuralı dosyasıdır.
 
-* `kategori`: (String) Cihazın ana türü ("Telefon", "Tablet", "Bilgisayar", "Akıllı Saat"). Hesaplama mantığını doğrudan etkiler.
-* `marka`, `model`: (String) Cihazın adı. `script.js` bunları birleştirip "tamAd" oluşturur.
-* `port`: (String) Cihazın şarj/bağlantı portu tipi (örn: "USB-C", "Lightning", "Manyetik Kablosuz"). Kablo seçimini etkiler.
+* `kategori`: (String) Cihazın ana türü ("Telefon", "Tablet", "Bilgisayar", "Akıllı Saat").
+* `marka`, `model`: (String) Cihazın adı.
+* `port`: (String) Cihazın şarj/bağlantı portu tipi (örn: "USB-C", "Lightning", "Micro USB", "Manyetik Kablosuz"). Kablo seçimini etkiler.
 * `yil`: (Number) Cihazın piyasaya sürülme yılı.
-* `kablo_stok_kodu`: (String veya `null`) **(Güncellendi)** **Akıllı Saatler HARİÇ**, bu cihaz için gereken alarm kablosunun stok kodu. Akıllı saatlerde bu alan **bulunmaz veya `null`'dır**.
-* `stand_stok_kodu`: (String veya `null`) **(Güncellendi)** **Akıllı Saatler ve Bilgisayarlar HARİÇ**, bu cihaz için gereken standın stok kodu. Akıllı saatler ve Bilgisayarlarda bu alan **bulunmaz veya `null`'dır**.
+* `kablo_stok_kodu`: (String veya `null`) **Akıllı Saatler HARİÇ**, bu cihaz için gereken alarm kablosunun stok kodu.
+* `stand_stok_kodu`: (String veya `null`) **Akıllı Saatler ve Bilgisayarlar HARİÇ**, bu cihaz için gereken standın stok kodu.
 * `panel_stok_kodu`: (String veya `null`) **Sadece Tabletler için** doldurulur (`8906981600`). Diğerlerinde `null` veya yoktur.
 
 ## 5. Çalışma Mantığı ve Fonksiyonlar (`script.js`)
 
 Sistem, `DOMContentLoaded` olayı ile başlar ve aşağıdaki adımları izler:
 
-1.  **`verileriYukle()` (Veri Yükleme):**
-    * Sayfa ilk açıldığında çalışır. `.json` dosyalarını `fetch` ile çeker.
-    * Arayüz elemanları bu sırada `disabled` durumdadır.
-    * `cihazlar.json`'dan `tamAd` oluşturur.
-    * Başarılı olursa `aktiveEtArayuzu()`'nü çağırır.
-    * Hata olursa hatayı `#yuklemeDurumu` alanına yazar.
-
-2.  **`aktiveEtArayuzu()` (Arayüzü Aktif Etme):**
-    * Tüm `input` ve `button` elemanlarını aktif hale getirir.
-    * "Yükleniyor..." mesajını gizler.
-
-3.  **Kategori Filtreleme (`filtreButonlari` Olayı):**
-    * Kullanıcı bir kategori butonuna tıkladığında, `seciliKategori` değişkeni güncellenir.
-    * Arama çubuğu boş değilse, `aramaYap()` fonksiyonu tetiklenir.
-
-4.  **Arama Olayları (`aramaYap()` ve İlgili Olaylar):**
-    * Kullanıcı arama çubuğuna yazdıkça (`"input"` olayı) tetiklenir.
-    * `cihazVeritabani`'nı önce `seciliKategori`'ye, sonra yazılan metne göre filtreler.
-    * **Akıllı Saat Mantığı:** Eğer bulunan cihazın kategorisi "Akıllı Saat" ise, `#aramaSonuçlari` div'ine **iki ayrı seçenek** eklenir: biri `[MGM Kiti]` diğeri `[SALUS Kiti]` etiketiyle. Her seçeneğe `data-kit-turu` ("MGM" veya "SALUS") bilgisi eklenir.
-    * **`handleAramaSonucClick()`:** Arama sonucuna tıklandığında çağrılır. Tıklanan cihaz nesnesini ve seçilen `kitTuru`'nü (`null`, "MGM" veya "SALUS") `secilenCihaz` değişkenine atar. Arama çubuğunu doldurur (kit adı olmadan).
-
-5.  **`ekleButton` Olayı (Listeye Ekleme):**
-    * `secilenCihaz` ve `adetInput`'u kontrol eder.
-    * `#secilenUrunListesi`'ne `<li>` eklerken, `data-model` (tamAd), `data-adet` ve `data-kit` (seçilen kit türü) niteliklerini ekler. Görünür metne de kit bilgisini ekler.
-
-6.  **`hesaplaButton` Olayı (Ana Hesaplama):**
-    * `#secilenUrunListesi` içindeki tüm `<li>` elemanlarını okur.
-    * Her `<li>` için `data-model`, `data-adet` ve `data-kit` bilgilerini alır.
-    * `cihazlar.json`'da eşleşen kaydı bulur.
-
+1.  **`verileriYukle()`:** `.json` dosyalarını `fetch` ile çeker. Arayüz elemanları `disabled` durumdadır. Başarılı olursa `aktiveEtArayuzu()`'nü çağırır.
+2.  **`aktiveEtArayuzu()`:** Tüm `input` ve `button` elemanlarını aktif hale getirir. "Yükleniyor..." mesajını gizler.
+3.  **Kategori Filtreleme (`filtreButonlari` Olayı):** Tıklanan butona göre `seciliKategori` güncellenir ve gerekirse `aramaYap()` tetiklenir.
+4.  **Arama Olayları (`aramaYap()` vb.):** Kullanıcı yazdıkça `cihazVeritabani`'nı `seciliKategori` ve metne göre filtreler. Akıllı saat ise `[MGM Kiti]` / `[SALUS Kiti]` seçenekleri sunulur. Tıklanan sonuç `secilenCihaz` değişkenine (kit bilgisiyle) atanır.
+5.  **`ekleButton` Olayı:** Seçilen cihazı ve adedi, `data-kit` bilgisiyle birlikte `#secilenUrunListesi`'ne `<li>` olarak ekler.
+6.  **`hesaplaButton` Olayı:** `#secilenUrunListesi`'ndeki `<li>`'leri okur.
 7.  **İş Kuralları ve Malzeme Ekleme (`hesapla()` içinde):**
-    * Cihazdan gelen bilgiler ve `data-kit` kullanılarak `stokKoduEkle()` ile `siparisListesi` oluşturulur.
-    * **Kural (Akıllı Saat Kiti):**
-        * Eğer cihaz "Akıllı Saat" ise:
-            * `data-kit` == "MGM" ise: `8909011600` (MGM Stand) ve `8909021600` (MGM Kablo) eklenir.
-            * `data-kit` == "SALUS" ise: `malzemeler.json`'daki `kategori: "Salus"` olan tüm parçalar eklenir.
-    * **Kural (Diğer Cihazlar):**
-        * Cihaz "Akıllı Saat" değilse, `cihazlar.json`'daki `kablo_stok_kodu`, `stand_stok_kodu` (varsa) ve `panel_stok_kodu` (tablet ise) eklenir.
-    * **Kural (Kumanda):** `toplamCihazSayisi > 0` ise `8907071600` (Kumanda) 1 adet eklenir.
-    * **Kural (Panel Hesabı):**
-        * `telefonAdedi` (Akrilik stand kullanan ama tablet olmayan) hesaplanır.
-        * `pcAdediMac` (`8907061600` kablosu adedi) ve `pcAdediDiger` (`8907051600` kablosu adedi) hesaplanır. Toplam `pcAdedi` bulunur.
-        * `gerekliPanelAdedi = Math.ceil((telefonAdedi + pcAdedi) / 5)` ile `8906971600` (5'li Panel) eklenir.
-    * **Kural (Genel Yapışkanlar/Konnektör):**
-        * `genelCihazAdedi = (telefonAdedi + tabletAdedi)` (Akrilik stand kullananlar) hesaplanır.
-        * Bu adet kadar 3 parça eklenir: `8907081600` (Konnektör), `9220951600` (Taban Yapışkanı), `9224911600` (Ek Yapışkan).
-    * **Kural (PC/MacBook Yapışkanı):**
-        * `pcAdediMac > 0` (Yani **sadece** `8907061600` kablosu varsa) ise, o adet kadar `8907091600` (Damla Yapışkan) eklenir.
-
-8.  **Sonuçları Yazdırma (Render):**
-    * `siparisListesi` döngüye alınır.
-    * `malzemeler.json`'dan bilgi bulunur.
-    * **Paket Hesabı:** `gerekliPaketAdedi = Math.ceil(toplamGerekliAdet / paketIciAdet)` kullanılır.
-    * Malzemenin `kategori`'sine göre `#genelMalzemeListesi`'ne veya `#sonucTablosuBody`'ye yazdırılır.
+    * **Kural (Akıllı Saat Kiti):** `data-kit`'e göre MGM veya SALUS parçaları eklenir.
+    * **Kural (Diğer Cihazlar):** `cihazlar.json`'daki ilgili stok kodları eklenir.
+    * **Kural (Kumanda):** Toplam cihaz varsa 1 adet `8907071600` eklenir.
+    * **Kural (Panel Hesabı):** `telefonAdedi` ve `pcAdedi` (Mac+Diğer) hesaplanıp 5'e bölünerek `8906971600` (5'li Panel) eklenir.
+    * **Kural (Konnektör):** `konnektorGerekenAdet = (telefonAdedi + tabletAdedi + pcAdedi)` hesaplanır. Bu adet kadar `8907081600` (Konnektör) eklenir.
+    * **Kural (Akrilik Stand Yapışkanları):** `akrilikStandKullananAdet = (telefonAdedi + tabletAdedi)` hesaplanır. Bu adet kadar `9220951600` (Taban Yapışkanı) ve `9224911600` (Ek Yapışkan) eklenir.
+    * **Kural (PC/MacBook Yapışkanı):** `pcAdediMac > 0` (Yani **sadece** `8907061600` kablosu varsa) ise, o adet kadar `8907091600` (Damla Yapışkan) eklenir.
+8.  **Sonuçları Yazdırma (Render):** `siparisListesi` döngüye alınır, paket hesabı yapılır ve sonuçlar ilgili tablolara yazdırılır.
 
 ## 6. Güncelleme ve Hata Ayıklama (AI için Notlar)
 
@@ -122,7 +83,14 @@ Sistem, `DOMContentLoaded` olayı ile başlar ve aşağıdaki adımları izler:
     { "kategori": "Akıllı Saat", "marka": "YeniMarka", "model": "Watch X", "port": "Manyetik Kablosuz", "yil": 2026 }
     ```
 4.  **Diğer Cihaz İse:**
-    * Port tipine göre doğru `kablo_stok_kodu`'nu atayın (Bkz: Bölüm 7, İş Kuralları veya `malzemeler.json`).
+    * Port tipine göre doğru `kablo_stok_kodu`'nu atayın. Örnekler:
+        * USB-C (Yeni Nesil Tel): `"9226801600"`
+        * Lightning: `"8907031600"`
+        * USB-C (Standart): `"8907011600"`
+        * Micro USB: `"8907021600"`
+        * **(YENİ)** Ters Micro USB (örn: Realme C11): `"9223791600"`
+        * MacBook Kablosu: `"8907061600"`
+        * Diğer PC (USB-A): `"8907051600"`
     * Eğer **Tablet** ise `panel_stok_kodu` = `"8906981600"` yapın. Değilse `null` bırakın.
     * Eğer **Telefon veya Tablet** ise `stand_stok_kodu` = `"8906991600"` yapın. Bilgisayar ise `null` bırakın.
     * Aşağıdaki gibi yeni bir nesne ekleyin:
@@ -145,8 +113,8 @@ Sistem, `DOMContentLoaded` olayı ile başlar ve aşağıdaki adımları izler:
 1.  **CORS Hatası / "HATA: ... yüklenemedi":** Sistemi bir web sunucusu (örn: `http://localhost`) üzerinden çalıştırın.
 2.  **Arama Sonuçları Görünmüyor / Hata Veriyor:** `verileriYukle()` fonksiyonunun başarılı olup olmadığını kontrol edin. JSON dosyalarında format hatası (`Unexpected token '/'` gibi) olmadığından emin olun.
 3.  **Akıllı Saat İçin Malzeme Eklenmiyor:** `script.js`'deki `hesapla()` fonksiyonunda, `data-kit` kontrolünün (`if (kitTuru === "MGM")` ve `else if (kitTuru === "SALUS")`) doğru yapıldığından emin olun. `malzemeler.json`'daki "Salus" kategorili ürünlerin stok kodlarının ve `8909011600`, `8909021600` kodlarının doğruluğunu kontrol edin.
-4.  **Yanlış Malzeme/Adet Hesaplanıyor:** `script.js`'deki İş Kuralları (Bölüm 7) bölümünü inceleyin. Özellikle panel hesabı, yapışkan/konnektör ekleme koşulları ve `stokKoduEkle` fonksiyonunun mantığını kontrol edin. `malzemeler.json`'daki `paket_ici_adet` değerlerinin doğruluğunu teyit edin.
-5.  **"Toplam Ürün Adedi" Sütunu "undefined" Görünüyor:** `script.js`'deki son döngüde (Adım 8), `<td>` içine yazdırılan değişkenin `toplamGerekliAdet` olduğundan emin olun (Bu hata önceki versiyonlarda düzeltildi).
+4.  **Yanlış Malzeme/Adet Hesaplanıyor:** `script.js`'deki İş Kuralları (Bölüm 7) bölümünü inceleyin. Özellikle panel hesabı, konnektör, yapışkan ekleme koşulları ve `stokKoduEkle` fonksiyonunun mantığını kontrol edin. `malzemeler.json`'daki `paket_ici_adet` değerlerinin doğruluğunu teyit edin.
+5.  **"Toplam Ürün Adedi" Sütunu "undefined" Görünüyor:** `script.js`'deki son döngüde (Adım 8), `<td>` içine yazdırılan değişkenin `toplamGerekliAdet` olduğundan emin olun.
 
 ## 7. Yapay Zeka İçin Uyulması Gereken Kurallar
 
@@ -154,5 +122,5 @@ Bu dokümanla etkileşime geçen herhangi bir yapay zeka aşağıdaki kurallara 
 
 * **Analiz:** Bu doküman yüklendiğinde, sistemin çalışma mantığını, işleyişini ve tüm kodlarını (HTML, CSS, JS, JSON) tam olarak analiz et.
 * **Eş Zamanlı Güncelleme:** Sisteme (kodlara veya JSON verilerine) bir güncelleme istendiğinde, kod değişikliği yapıldıktan sonra **bu teknik dokümanı (`README.md`) da değişikliği yansıtacak şekilde güncelle**.
-* **Onay ve Versiyonlama:** Kod ve doküman güncellemesi bittiğinde, kullanıcıya **"Başka bir isteğiniz var mı?"** diye sor. Eğer kullanıcı "yok" derse, bu dokümanın başlığındaki versiyon numarasını bir sonraki adıma yükselt (örn: v2.3 -> v2.4) ve güncellenmiş dokümanı sun.
+* **Onay ve Versiyonlama:** Kod ve doküman güncellemesi bittiğinde, kullanıcıya **"Başka bir isteğiniz var mı?"** diye sor. Eğer kullanıcı "yok" derse, bu dokümanın başlığındaki versiyon numarasını bir sonraki adıma yükselt (örn: v2.5 -> v2.6) ve güncellenmiş dokümanı sun.
 * **Anlama:** Bu doküman her yüklendiğinde veya her güncellendiğinde, sistemin güncel çalışma mantığını kavradığından emin ol.
