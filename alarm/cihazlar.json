@@ -1,8 +1,5 @@
 {
   "cihazlar": [
-    // === TELEFONLAR ===
-    
-    // Apple (iPhone)
     { "kategori": "Telefon", "marka": "Apple", "model": "iPhone 17 Pro", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Apple", "model": "iPhone 17", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Apple", "model": "iPhone 16 Pro", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
@@ -17,8 +14,6 @@
     { "kategori": "Telefon", "marka": "Apple", "model": "iPhone 14 Plus", "port": "Lightning", "yil": 2022, "kablo_stok_kodu": "8907031600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Apple", "model": "iPhone 14", "port": "Lightning", "yil": 2022, "kablo_stok_kodu": "8907031600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Apple", "model": "iPhone SE (3. nesil)", "port": "Lightning", "yil": 2022, "kablo_stok_kodu": "8907031600", "stand_stok_kodu": "8906991600" },
-
-    // Samsung
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy S25 Ultra", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy S25+", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy S25", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
@@ -32,7 +27,7 @@
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy S22 Ultra", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy S22+", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy S22", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
-    { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy S21 FE", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" }, // 2022'de çıktı
+    { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy S21 FE", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" }, 
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy Z Fold 6", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy Z Flip 6", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy Z Fold 5", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "9226801600", "stand_stok_kodu": "8906991600" },
@@ -57,8 +52,6 @@
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy M34", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy M53", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Samsung", "model": "Galaxy M13", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
-    
-    // Xiaomi (Mi, Redmi, Poco)
     { "kategori": "Telefon", "marka": "Xiaomi", "model": "15 Pro", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Xiaomi", "model": "14 Ultra", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Xiaomi", "model": "14", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
@@ -95,8 +88,6 @@
     { "kategori": "Telefon", "marka": "Xiaomi", "model": "Poco M5s", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Xiaomi", "model": "Poco F4 GT", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Xiaomi", "model": "Poco X4 GT", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
-
-    // OnePlus
     { "kategori": "Telefon", "marka": "OnePlus", "model": "12", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "OnePlus", "model": "12R", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "OnePlus", "model": "Open", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
@@ -109,8 +100,6 @@
     { "kategori": "Telefon", "marka": "OnePlus", "model": "Nord N30", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "OnePlus", "model": "Nord 2T", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "OnePlus", "model": "Nord CE 2 Lite", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
-
-    // TECNO
     { "kategori": "Telefon", "marka": "TECNO", "model": "Phantom V Flip", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "TECNO", "model": "Phantom V Fold", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "TECNO", "model": "Phantom X2 Pro", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
@@ -125,15 +114,11 @@
     { "kategori": "Telefon", "marka": "TECNO", "model": "Pova 5 Pro", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "TECNO", "model": "Pova 5", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "TECNO", "model": "Pova 4 Pro", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
-
-    // Casper
     { "kategori": "Telefon", "marka": "Casper", "model": "VIA X40", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Casper", "model": "VIA M35", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Casper", "model": "VIA F30 Plus", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Casper", "model": "VIA F30", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "Casper", "model": "VIA M30 Plus", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
-
-    // TCL
     { "kategori": "Telefon", "marka": "TCL", "model": "50 XL NxtPaper 5G", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "TCL", "model": "50 5G", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "TCL", "model": "40 NxtPaper 5G", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
@@ -142,8 +127,6 @@
     { "kategori": "Telefon", "marka": "TCL", "model": "40R", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "TCL", "model": "30 Pro", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "TCL", "model": "30 5G", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
-    
-    // REALME
     { "kategori": "Telefon", "marka": "REALME", "model": "GT 6", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "REALME", "model": "GT Neo 6", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "REALME", "model": "12 Pro+", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
@@ -159,11 +142,7 @@
     { "kategori": "Telefon", "marka": "REALME", "model": "9 Pro+", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "REALME", "model": "C67", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Telefon", "marka": "REALME", "model": "C55", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600" },
-    { "kategori": "Telefon", "marka": "REALME", "model": "C33", "port": "Micro USB", "yil": 2022, "kablo_stok_kodu": "8907021600", "stand_stok_kodu": "8906991600" }, // Mikro USB dikkat!
-
-    // === TABLETLER ===
-    
-    // Apple (iPad)
+    { "kategori": "Telefon", "marka": "REALME", "model": "C33", "port": "Micro USB", "yil": 2022, "kablo_stok_kodu": "8907021600", "stand_stok_kodu": "8906991600" },
     { "kategori": "Tablet", "marka": "Apple", "model": "iPad Pro M4 (13-inch)", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Apple", "model": "iPad Pro M4 (11-inch)", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Apple", "model": "iPad Air M2 (13-inch)", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
@@ -172,9 +151,7 @@
     { "kategori": "Tablet", "marka": "Apple", "model": "iPad Pro M2 (12.9-inch)", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Apple", "model": "iPad Pro M2 (11-inch)", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Apple", "model": "iPad Air (5. nesil)", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
-    { "kategori": "Tablet", "marka": "Apple", "model": "iPad Mini (6. nesil)", "port": "USB-C", "yil": 2021, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" }, // 2021 sonu ama hala güncel
-
-    // Samsung
+    { "kategori": "Tablet", "marka": "Apple", "model": "iPad Mini (6. nesil)", "port": "USB-C", "yil": 2021, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" }, 
     { "kategori": "Tablet", "marka": "Samsung", "model": "Galaxy Tab S11 Ultra", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Samsung", "model": "Galaxy Tab S10 FE", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Samsung", "model": "Galaxy Tab S9 Ultra", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
@@ -187,11 +164,9 @@
     { "kategori": "Tablet", "marka": "Samsung", "model": "Galaxy Tab S8", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Samsung", "model": "Galaxy Tab A9+", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Samsung", "model": "Galaxy Tab A9", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
-    { "kategori": "Tablet", "marka": "Samsung", "model": "Galaxy Tab A8", "port": "USB-C", "yil": 2021, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" }, // 2021 sonu ama 2022'de yaygındı
+    { "kategori": "Tablet", "marka": "Samsung", "model": "Galaxy Tab A8", "port": "USB-C", "yil": 2021, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" }, 
     { "kategori": "Tablet", "marka": "Samsung", "model": "Galaxy Tab Active 4 Pro", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
-    
-    // Lenovo
-    { "kategori": "Tablet", "marka": "Lenovo", "model": "Tab P12 Pro", "port": "USB-C", "yil": 2021, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" }, // 2021 sonu ama 2022'de yaygındı
+    { "kategori": "Tablet", "marka": "Lenovo", "model": "Tab P12 Pro", "port": "USB-C", "yil": 2021, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" }, 
     { "kategori": "Tablet", "marka": "Lenovo", "model": "Tab P12", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Lenovo", "model": "Tab P11 (Gen 2)", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Lenovo", "model": "Tab P11 Pro (Gen 2)", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
@@ -199,9 +174,7 @@
     { "kategori": "Tablet", "marka": "Lenovo", "model": "Tab M10 Plus (Gen 3)", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Lenovo", "model": "Tab M10 (Gen 3)", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Lenovo", "model": "Tab M9", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
-    { "kategori": "Tablet", "marka": "Lenovo", "model": "Yoga Tab 11", "port": "USB-C", "yil": 2021, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" }, // 2021 sonu ama 2022'de yaygındı
-
-    // Xiaomi
+    { "kategori": "Tablet", "marka": "Lenovo", "model": "Yoga Tab 11", "port": "USB-C", "yil": 2021, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" }, 
     { "kategori": "Tablet", "marka": "Xiaomi", "model": "Pad 7 Pro", "port": "USB-C", "yil": 2025, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Xiaomi", "model": "Pad 6S Pro", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Xiaomi", "model": "Pad 6 Pro", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
@@ -210,17 +183,11 @@
     { "kategori": "Tablet", "marka": "Xiaomi", "model": "Redmi Pad Pro", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Xiaomi", "model": "Redmi Pad SE", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Xiaomi", "model": "Redmi Pad", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
-    
-    // Honor
     { "kategori": "Tablet", "marka": "Honor", "model": "Pad 9 Pro", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Honor", "model": "Pad 9", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Honor", "model": "Pad X9", "port": "USB-C", "yil": 2023, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Honor", "model": "Pad 8", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
     { "kategori": "Tablet", "marka": "Honor", "model": "Pad V8 Pro", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907011600", "stand_stok_kodu": "8906991600", "panel_stok_kodu": "8906981600" },
-
-    // === BİLGİSAYARLAR ===
-    
-    // Apple (MacBook)
     { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Pro M4 (16-inch)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Pro M4 (14-inch)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Air M3 (15-inch)", "port": "USB-C/MagSafe 3", "yil": 2024, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
@@ -231,9 +198,7 @@
     { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Air M2 (15-inch)", "port": "USB-C/MagSafe 3", "yil": 2023, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Air M2 (13-inch)", "port": "USB-C/MagSafe 3", "yil": 2022, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Pro M2 (13-inch)", "port": "USB-C/Thunderbolt", "yil": 2022, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null },
-    { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Pro M2 Pro/Max (14/16-inch)", "port": "USB-C/Thunderbolt 4", "yil": 2023, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null }, // Erken 2023
-
-    // Lenovo
+    { "kategori": "Bilgisayar", "marka": "Apple", "model": "MacBook Pro M2 Pro/Max (14/16-inch)", "port": "USB-C/Thunderbolt 4", "yil": 2023, "kablo_stok_kodu": "8907061600", "stand_stok_kodu": null }, 
     { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "ThinkPad X1 Carbon (Gen 12)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "ThinkPad X1 2-in-1 (Gen 9)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "Yoga Pro 9i (Gen 9)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
@@ -254,8 +219,6 @@
     { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "Yoga Slim 7 Pro X", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "Legion 5 Pro (Gen 7)", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Lenovo", "model": "IdeaPad Slim 5 (Gen 7)", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
-    
-    // Asus
     { "kategori": "Bilgisayar", "marka": "Asus", "model": "ROG Zephyrus G16 (2024)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Asus", "model": "ROG Zephyrus G14 (2024)", "port": "USB-C", "yil": 2024, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Asus", "model": "Zenbook 14 OLED (UX3405)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
@@ -272,8 +235,6 @@
     { "kategori": "Bilgisayar", "marka": "Asus", "model": "Zenbook Pro 14 Duo OLED (UX8402)", "port": "USB-C/Thunderbolt 4", "yil": 2022, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Asus", "model": "Vivobook S 14 Flip (TP3402)", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "Asus", "model": "ExpertBook B5 Flip (B5402F)", "port": "USB-C/Thunderbolt 4", "yil": 2022, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
-
-    // HP
     { "kategori": "Bilgisayar", "marka": "HP", "model": "Spectre x360 16 (2024)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "HP", "model": "Spectre x360 14 (2024)", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "HP", "model": "Omen Transcend 14", "port": "USB-C/Thunderbolt 4", "yil": 2024, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
@@ -290,27 +251,19 @@
     { "kategori": "Bilgisayar", "marka": "HP", "model": "Envy 16 (2022)", "port": "USB-C/Thunderbolt 4", "yil": 2022, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "HP", "model": "Pavilion x360 14 (2022)", "port": "USB-C", "yil": 2022, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
     { "kategori": "Bilgisayar", "marka": "HP", "model": "Omen 17 (2022)", "port": "USB-C/Thunderbolt 4", "yil": 2022, "kablo_stok_kodu": "8907051600", "stand_stok_kodu": null },
-    
-    // === AKILLI SAATLER ===
-    
-    // Apple
     { "kategori": "Akıllı Saat", "marka": "Apple", "model": "Watch Series 10", "port": "Manyetik Kablosuz", "yil": 2024, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Apple", "model": "Watch Ultra 2", "port": "Manyetik Kablosuz", "yil": 2023, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Apple", "model": "Watch Series 9", "port": "Manyetik Kablosuz", "yil": 2023, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Apple", "model": "Watch SE (2022)", "port": "Manyetik Kablosuz", "yil": 2022, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Apple", "model": "Watch Ultra", "port": "Manyetik Kablosuz", "yil": 2022, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Apple", "model": "Watch Series 8", "port": "Manyetik Kablosuz", "yil": 2022, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
-
-    // Samsung
     { "kategori": "Akıllı Saat", "marka": "Samsung", "model": "Galaxy Watch 7", "port": "Manyetik Kablosuz", "yil": 2024, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Samsung", "model": "Galaxy Watch Ultra", "port": "Manyetik Kablosuz", "yil": 2024, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Samsung", "model": "Galaxy Watch 6 Classic", "port": "Manyetik Kablosuz", "yil": 2023, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Samsung", "model": "Galaxy Watch 6", "port": "Manyetik Kablosuz", "yil": 2023, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Samsung", "model": "Galaxy Watch 5 Pro", "port": "Manyetik Kablosuz", "yil": 2022, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Samsung", "model": "Galaxy Watch 5", "port": "Manyetik Kablosuz", "yil": 2022, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
-    { "kategori": "Akıllı Saat", "marka": "Samsung", "model": "Galaxy Fit 3", "port": "Manyetik Pogo pin", "yil": 2024, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" }, // Farklı şarj tipi ama yine de SALUS seti kullanılabilir
-
-    // Xiaomi
+    { "kategori": "Akıllı Saat", "marka": "Samsung", "model": "Galaxy Fit 3", "port": "Manyetik Pogo pin", "yil": 2024, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" }, 
     { "kategori": "Akıllı Saat", "marka": "Xiaomi", "model": "Watch S3", "port": "Manyetik Kablosuz", "yil": 2024, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Xiaomi", "model": "Watch 2 Pro", "port": "Manyetik Kablosuz", "yil": 2023, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Xiaomi", "model": "Watch 2", "port": "Manyetik Kablosuz", "yil": 2024, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
@@ -321,12 +274,9 @@
     { "kategori": "Akıllı Saat", "marka": "Xiaomi", "model": "Watch S1 Pro", "port": "Manyetik Kablosuz", "yil": 2022, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Xiaomi", "model": "Watch S1 Active", "port": "Manyetik Kablosuz", "yil": 2022, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "Xiaomi", "model": "Smart Band 7 Pro", "port": "Manyetik Kablosuz", "yil": 2022, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
-    
-    // Alcatel / TCL
-    { "kategori": "Akıllı Saat", "marka": "TCL", "model": "NxtWear S+", "port": "Manyetik Pogo pin", "yil": 2024, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" }, // Akıllı gözlük ama saat gibi sergilenebilir
+    { "kategori": "Akıllı Saat", "marka": "TCL", "model": "NxtWear S+", "port": "Manyetik Pogo pin", "yil": 2024, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" }, 
     { "kategori": "Akıllı Saat", "marka": "TCL", "model": "MoveTime Family Watch MT46", "port": "Manyetik Kablosuz", "yil": 2023, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" },
     { "kategori": "Akıllı Saat", "marka": "TCL", "model": "MoveTime Family Watch 2", "port": "Manyetik Kablosuz", "yil": 2022, "kablo_stok_kodu": "SALUS_SET", "stand_stok_kodu": "SALUS_SET" } 
-    
   ],
   "panel_kurallari": {
     "tablet_panel": "8906981600"
