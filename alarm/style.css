@@ -66,7 +66,7 @@ h2 {
     display: flex;
     gap: 10px;
     align-items: flex-end;
-    margin-bottom: 15px;
+    /* margin-bottom: 15px; */ /* Kategori filtresi eklendiği için kaldırıldı */
     position: relative;
 }
 
@@ -122,22 +122,61 @@ button#ekleButton:hover {
     background-color: #0056b3;
 }
 
-/* --- YENİ EKLENEN STİLLER (DISABLED DURUMU) --- */
+/* --- YENİ: Kategori Filtreleri Stilleri --- */
+.kategori-filtreleri {
+    margin-top: 10px; /* Arama formundan sonra boşluk */
+    margin-bottom: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
 
-/* Butonlar veya input'lar devre dışı bırakıldığında */
+.kategori-filtreleri label {
+    font-size: 0.9em;
+    font-weight: 500;
+    margin-right: 10px;
+    color: #555;
+}
+
+.filtre-buton {
+    display: inline-block;
+    padding: 5px 12px;
+    margin-right: 5px;
+    border: 1px solid #ccc;
+    border-radius: 15px; /* Yuvarlak köşeler */
+    font-size: 0.85em;
+    cursor: pointer;
+    background-color: #f8f9fa;
+    color: #333;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.filtre-buton:hover {
+    background-color: #e2e6ea;
+}
+
+/* Aktif olan filtre butonu */
+.filtre-buton.active {
+    background-color: #004a98; /* Arçelik Mavisi */
+    color: #ffffff;
+    border-color: #004a98;
+    font-weight: 500;
+}
+/* --- /YENİ: Kategori Filtreleri Stilleri --- */
+
+/* Disabled Durumu */
 input:disabled,
 button:disabled {
-    background-color: #e9ecef; /* Soluk gri arka plan */
-    opacity: 0.7; /* Hafif şeffaf */
-    cursor: not-allowed; /* "İzin verilmiyor" imleci */
+    background-color: #e9ecef;
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 button:disabled:hover {
-    background-color: #e9ecef; /* Hover efektini kaldır */
+    background-color: #e9ecef;
 }
 
 button#ekleButton:disabled:hover {
-    background-color: #007bff; /* Ekle butonu için hover'ı ayrıca iptal et */
+    background-color: #007bff;
     opacity: 0.7;
 }
 
@@ -152,16 +191,14 @@ button#ekleButton:disabled:hover {
     margin-bottom: 10px;
 }
 
-/* --- /YENİ EKLENEN STİLLER --- */
-
-
 /* Arama Sonuçları Listesi */
 #aramaSonuclari {
     display: none;
     position: absolute;
     top: 100%;
     left: 0;
-    width: calc(100% - 140px);
+    /* width: calc(100% - 140px); */ /* Genişlik hesaplaması kaldırıldı, arama-grup genişliğini alacak */
+    width: 100%; /* Parent'ı kadar genişle */
     background: #fff;
     border: 1px solid #ddd;
     border-top: none;
@@ -171,6 +208,11 @@ button#ekleButton:disabled:hover {
     overflow-y: auto;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
+/* Arama sonuçlarının doğru konumlanması için arama-grup'a position relative ekleyelim */
+.form-grup.arama-grup {
+    position: relative; /* Bu satır eklendi */
+}
+
 
 #aramaSonuclari div {
     padding: 10px 15px;
@@ -303,4 +345,10 @@ table#sonucTablosu td:first-child {
 .genel-malzemeler li {
     font-size: 1em;
     margin-bottom: 8px;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 15px 0;
 }
