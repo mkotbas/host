@@ -274,7 +274,7 @@ export async function loadInitialData() {
 
 /**
  * Formun mevcut durumunu veritabanına kaydeder veya günceller.
- * (Bu fonksiyonda değişiklik yok)
+ * --- GÜNCELLENDİ ---
  */
 export async function saveFormState(reportData, isFinalizing = false) {
     if (!state.selectedStore || !pb || !pb.authStore.isValid) return;
@@ -308,7 +308,13 @@ export async function saveFormState(reportData, isFinalizing = false) {
         dataToSave.denetimTamamlanmaTarihi = new Date().toISOString();
     }
 
-    showLoadingOverlay("Rapor kaydediliyor...");
+    // --- GÜNCELLEME ---
+    // Yükleme ekranını SADECE "isFinalizing" (E-posta taslağı oluşturma) 
+    // durumunda göster. Diğer tüm (arka plan) kaydetmeler sessizce yapılsın.
+    if (isFinalizing) {
+        showLoadingOverlay("Rapor kaydediliyor...");
+    }
+
     try {
         if (state.currentReportId) {
             await pb.collection('denetim_raporlari').update(state.currentReportId, dataToSave);
@@ -318,9 +324,15 @@ export async function saveFormState(reportData, isFinalizing = false) {
         }
     } catch (error) {
         console.error("PocketBase'e yazma hatası:", error);
-        alert("Rapor kaydedilirken bir hata oluştu!");
+        // Sadece sonlandırma sırasında hata uyarısı göster
+        if (isFinalizing) {
+            alert("Rapor kaydedilirken bir hata oluştu!");
+        }
     } finally {
-        hideLoadingOverlay();
+        // Yükleme ekranını sadece gösterildiyse gizle
+        if (isFinalizing) {
+            hideLoadingOverlay();
+        }
     }
 }
 
