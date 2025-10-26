@@ -3,6 +3,23 @@ import { saveFormState } from './api.js';
 
 let pb; // PocketBase instance
 
+// --- DEBOUNCE MEKANİZMASI (YENİ) ---
+// Hızlı form değişikliklerinin sunucuya sürekli istek atmasını ('autocancelled' hatası) engeller.
+let saveDebounceTimer;
+function debouncedSaveFormState() {
+    clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = setTimeout(() => {
+        // Sadece giriş yapılmışsa ve bir bayi seçiliyse kaydet
+        if (state.isPocketBaseConnected && state.selectedStore) {
+            // Bu arka plan kaydı, api.js'te varsayılan olarak 
+            // yükleme ekranı göstermemelidir.
+            saveFormState(getFormDataForSaving()); 
+        }
+    }, 800); // Kullanıcı eylemi durduktan sonra 0.8 saniye bekle
+}
+// --- DEBOUNCE MEKANİZMASI BİTTİ ---
+
+
 /**
  * UI modülünü PocketBase instance ile başlatır.
  * @param {object} pbInstance 
@@ -166,6 +183,8 @@ export async function generateEmail() {
     }
 
     const reportData = getFormDataForSaving();
+    // E-posta oluşturmadan önce formun GÜNCEL halini 'true' (yükleme ekranı göstererek) kaydet.
+    // Bu, debouncer'ı atlar ve anında kaydeder.
     await saveFormState(reportData, true);
 
     const storeInfo = state.dideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu));
@@ -313,7 +332,9 @@ function initializePopSystem(container) {
         checkbox.className = 'pop-checkbox';
         checkbox.addEventListener('change', () => {
             checkExpiredPopCodes();
-            saveFormState(getFormDataForSaving());
+            // --- GÜNCELLENDİ ---
+            // Anlık kaydetme yerine debouncer'ı çağır
+            debouncedSaveFormState();
         });
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(code));
@@ -335,10 +356,16 @@ function initiateDeleteItem(buttonEl) {
         buttonEl.querySelector('i').className = 'fas fa-undo';
         buttonEl.classList.remove('btn-danger');
         buttonEl.classList.add('btn-warning');
-        const timerId = setTimeout(() => { itemEl.remove(); saveFormState(getFormDataForSaving()); }, 4000);
+        const timerId = setTimeout(() => { 
+            itemEl.remove(); 
+            // --- GÜNCELLENDİ ---
+            debouncedSaveFormState(); 
+        }, 4000);
         itemEl.dataset.deleteTimer = timerId;
     }
-    saveFormState(getFormDataForSaving());
+    // --- GÜNCELLENDİ ---
+    // Geri alma/silme işlemini anlık kaydetmek için debouncer'ı çağır
+    debouncedSaveFormState();
 }
 
 function addProductToList(productCode, quantity, shouldSave = true) {
@@ -359,11 +386,24 @@ function addProductToList(productCode, quantity, shouldSave = true) {
     newItem.className = 'selected-product-item';
     newItem.dataset.code = product.code;
     newItem.dataset.qty = selectedQty;
-    newItem.innerHTML = `<span>${product.code} ${product.name} - <span class="product-quantity"><b>${selectedQty} ${unit}</b></span></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler." onclick="this.parentElement.remove(); saveFormState(getFormDataForSaving());"><i class="fas fa-trash"></i></button>`;
+    
+    // --- GÜNCELLENDİ ---
+    // 'onclick' kaldırıldı ve 'addEventListener' eklendi.
+    newItem.innerHTML = `<span>${product.code} ${product.name} - <span class="product-quantity"><b>${selectedQty} ${unit}</b></span></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler."><i class="fas fa-trash"></i></button>`;
+    
+    // Olay dinleyici programatik olarak eklendi
+    newItem.querySelector('.delete-item-btn').addEventListener('click', function() {
+        this.parentElement.remove(); // 'this' butonu işaret eder, parent'ı 'newItem' div'idir.
+        debouncedSaveFormState(); // Debounced fonksiyonu çağır
+    });
+    // --- GÜNCELLEME BİTTİ ---
+    
     listContainer.appendChild(newItem);
     
     if (!productCode) { select.value = ''; qtyInput.value = '1'; }
-    if (shouldSave) saveFormState(getFormDataForSaving());
+    
+    // --- GÜNCELLENDİ ---
+    if (shouldSave) debouncedSaveFormState();
 }
 
 function toggleCompleted(button) {
@@ -372,7 +412,8 @@ function toggleCompleted(button) {
     input.readOnly = isCompleted;
     button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
     button.classList.toggle('undo', isCompleted);
-    saveFormState(getFormDataForSaving());
+    // --- GÜNCELLENDİ ---
+    debouncedSaveFormState();
 }
 
 function toggleQuestionCompleted(button, id, shouldSave = true) {
@@ -383,7 +424,8 @@ function toggleQuestionCompleted(button, id, shouldSave = true) {
     button.classList.toggle('undo', isQuestionCompleted);
     const inputArea = itemDiv.querySelector('.input-area');
     if (inputArea) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
-    if (shouldSave) saveFormState(getFormDataForSaving());
+    // --- GÜNCELLENDİ ---
+    if (shouldSave) debouncedSaveFormState();
 }
 
 function toggleQuestionRemoved(button, id, shouldSave = true) {
@@ -396,7 +438,8 @@ function toggleQuestionRemoved(button, id, shouldSave = true) {
     button.classList.toggle('btn-danger', !isRemoved);
     button.classList.toggle('btn-primary', isRemoved);
     if(actionsContainer) actionsContainer.querySelectorAll('.add-item-btn, .status-btn').forEach(btn => btn.disabled = isRemoved);
-    if (shouldSave) saveFormState(getFormDataForSaving());
+    // --- GÜNCELLENDİ ---
+    if (shouldSave) debouncedSaveFormState();
 }
 
 function addDynamicInput(id, value = '', isCompleted = false, shouldSave = true) {
@@ -412,14 +455,21 @@ function addDynamicInput(id, value = '', isCompleted = false, shouldSave = true)
     const deleteButton = newItem.querySelector('.delete-bar');
     
     input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); addDynamicInput(id); } });
-    input.addEventListener('blur', () => saveFormState(getFormDataForSaving()));
+    
+    // --- GÜNCELLENDİ ---
+    // 'blur' olayında anlık kaydetme yerine debouncer'ı çağır
+    // Bu, "Yeni Eksik Ekle" butonuna basıldığında tıklamanın engellenmesi sorununu çözer.
+    input.addEventListener('blur', () => debouncedSaveFormState());
+    
     completeButton.onclick = () => toggleCompleted(completeButton);
     deleteButton.onclick = () => initiateDeleteItem(deleteButton);
     
     if(isCompleted) toggleCompleted(completeButton);
     container.prepend(newItem);
     if (value === '') input.focus();
-    if (shouldSave) saveFormState(getFormDataForSaving());
+    
+    // --- GÜNCELLENDİ ---
+    if (shouldSave) debouncedSaveFormState();
 }
 
 function checkExpiredPopCodes() {
@@ -438,13 +488,15 @@ function copySelectedCodes() {
 function clearSelectedCodes() {
     document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
     checkExpiredPopCodes();
-    saveFormState(getFormDataForSaving());
+    // --- GÜNCELLENDİ ---
+    debouncedSaveFormState();
 }
 
 function selectExpiredCodes() {
     document.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = state.expiredCodes.includes(cb.value); });
     checkExpiredPopCodes();
-    saveFormState(getFormDataForSaving());
+    // --- GÜNCELLENDİ ---
+    debouncedSaveFormState();
 }
 
 function openEmailDraft() {
