@@ -82,7 +82,10 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
         if (sonuclar.length > 0) {
-            sonuclar.slice(0, 10).forEach(cihaz => { // İlk 10 sonucu al
+            // *** GÜNCELLEME BAŞLANGICI ***
+            // sonuclar.slice(0, 10).forEach(cihaz => { // ESKİ SATIR (10 sonuçla limitliydi)
+            sonuclar.forEach(cihaz => { // YENİ SATIR (Tüm sonuçları göstermesi için limit kaldırıldı)
+            // *** GÜNCELLEME SONU ***
                 const regex = new RegExp(`(${arananMetin})`, 'gi');
                 const vurguluAd = cihaz.tamAd.replace(regex, '<strong>$1</strong>');
                 const elementTag = 'div'; // Sonuçlar için div kullanalım
