@@ -1,410 +1,248 @@
-/* --- Genel Kart Stilleri (Aydınlık Tema) --- */
-.card {
-    background-color: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.card h2 {
-    margin-top: 0;
-    color: #1f2937 !important;
-    padding-bottom: 15px;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #3b82f6;
-    font-size: 20px;
-}
-
-.card h2 i {
-    color: #3b82f6;
-}
-
-.section {
-    margin-top: 20px;
-}
-
-.card > .section:first-child {
-    border-top: none;
-    margin-top: 0;
-    padding-top: 0;
-}
-
-.section h4 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #374151 !important;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 16px;
-}
-
-.section h4 i {
-    color: #3b82f6;
-}
-
-/* --- Buton Stilleri --- */
-.button-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.btn-primary, .btn-secondary, .btn-success, .btn-warning, .btn-danger {
-    padding: 10px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: white !important;
-    transition: all 0.3s ease;
-    font-weight: 500;
-}
-
-.btn-primary:hover, .btn-secondary:hover, .btn-success:hover, .btn-warning:hover, .btn-danger:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.btn-primary { 
-    background-color: #3b82f6; 
-}
-.btn-primary:hover { 
-    background-color: #2563eb; 
-}
-
-.btn-secondary { 
-    background-color: #6b7280; 
-    color: white !important;
-}
-.btn-secondary:hover { 
-    background-color: #4b5563; 
-}
-
-.btn-success { 
-    background-color: #16a34a; 
-}
-.btn-success:hover { 
-    background-color: #15803d; 
-}
-
-.btn-warning { 
-    background-color: #f59e0b; 
-    color: #1f2937 !important;
-}
-.btn-warning:hover { 
-    background-color: #d97706; 
-}
-
-.btn-danger { 
-    background-color: #ef4444; 
-}
-.btn-danger:hover { 
-    background-color: #dc2626; 
-}
-
-button:disabled { 
-    cursor: not-allowed; 
-    opacity: 0.6; 
-    transform: none; 
-    box-shadow: none; 
-}
-
-.full-width { 
-    width: 100%; 
-    justify-content: center; 
-}
-
-/* --- Kompleks Aksiyon Bölümü --- */
-.complex-action { 
-    margin-top: 20px; 
-}
-
-.complex-action label { 
-    display: block; 
-    margin-bottom: 8px; 
-    font-weight: 600; 
-    color: #374151 !important;
-}
-
-.complex-action input[type="text"] {
-    width: 100%; 
-    padding: 10px 12px; 
-    border-radius: 6px; 
-    border: 1px solid #d1d5db;
-    background-color: #ffffff; 
-    color: #374151 !important; 
-    box-sizing: border-box;
-    font-size: 14px;
-}
-
-.complex-action input[type="text"]:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.complex-action input[type="text"]::placeholder {
-    color: #9ca3af !important;
-}
-
-#bayi-arama-sonuc-listesi {
-    max-height: 150px; 
-    overflow-y: auto; 
-    border: 1px solid #e5e7eb;
-    background-color: #ffffff; 
-    border-radius: 6px; 
-    margin-top: 8px;
-}
-
-#bayi-arama-sonuc-listesi:empty {
-    border: none;
-    display: none;
-}
-
-#sil-bayi-raporlari-btn {
-    margin-top: 12px;
-}
-
-.bayi-item { 
-    padding: 10px 12px; 
-    cursor: pointer; 
-    border-bottom: 1px solid #f3f4f6;
-    transition: background-color 0.2s ease;
-    color: #374151 !important;
-}
-
-.bayi-item:hover { 
-    background-color: #f8fafc; 
-}
-
-.bayi-item:last-child {
-    border-bottom: none;
-}
-
-/* --- Uyarı Kutusu --- */
-.info-box.danger {
-    padding: 15px; 
-    border-radius: 6px; 
-    margin-bottom: 20px; 
-    display: flex;
-    align-items: center; 
-    gap: 10px; 
-    background-color: #fef2f2;
-    color: #991b1b !important; 
-    border: 1px solid #fecaca;
-}
-
-.info-box.danger i {
-    color: #dc2626;
-}
-
-.info-box.danger p {
-    color: #991b1b !important;
-    margin: 0;
-}
-
-.info-box.danger strong {
-    color: #991b1b !important;
-}
-
-/* Modal için uyarı kutusu */
-.info-box.warning {
-    padding: 15px; 
-    border-radius: 6px; 
-    margin-bottom: 20px; 
-    display: flex;
-    align-items: center; 
-    gap: 10px; 
-    background-color: #fffbeb;
-    color: #92400e !important; 
-    border: 1px solid #fde68a;
-}
-.info-box.warning i { color: #d97706; }
-.info-box.warning p { color: #92400e !important; margin: 0; }
-.info-box.warning strong { color: #92400e !important; }
-
-/* Modal içindeki select */
-.complex-action select.form-control {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 6px;
-    border: 1px solid #d1d5db;
-    background-color: #ffffff;
-    color: #374151 !important;
-    box-sizing: border-box;
-    font-size: 14px;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M10 12.586l-4.293-4.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0l5-5a1 1 0 00-1.414-1.414L10 12.586z' clip-rule='evenodd' /%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 1.25em 1.25em;
-}
-
-/* Modal içindeki checkbox */
-.complex-action .custom-checkbox { 
-    display: block; 
-    position: relative; 
-    padding-left: 30px; 
-    cursor: pointer; 
-    user-select: none; 
-}
-.complex-action .custom-checkbox input { 
-    position: absolute; 
-    opacity: 0; 
-    cursor: pointer; 
-    height: 0; 
-    width: 0; 
-}
-.complex-action .custom-checkbox label { 
-    color: #4b5563 !important; 
-    font-weight: 500;
-}
-.complex-action .custom-checkbox label::before {
-    content: '';
-    position: absolute;
-    left: 0; 
-    top: 1px;
-    width: 18px; 
-    height: 18px;
-    background-color: #ffffff;
-    border: 2px solid #d1d5db;
-    border-radius: 4px;
-    transition: all 0.2s;
-}
-.complex-action .custom-checkbox:hover input ~ label::before { 
-    border-color: #3b82f6; 
-}
-.complex-action .custom-checkbox input:checked ~ label::before {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
-}
-.complex-action .custom-checkbox label::after {
-    content: '';
-    position: absolute;
-    display: none;
-    left: 6px; 
-    top: 3px;
-    width: 5px; 
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
-.complex-action .custom-checkbox input:checked ~ label::after { 
-    display: block; 
-}
-
-/* Modal içindeki sonuç alanı */
-.complex-action .results-area {
-    margin-top: 15px; 
-    background-color: #f8fafc;
-    padding: 15px; 
-    border: 1px solid #e5e7eb;
-    border-radius: 6px; 
-    max-height: 200px; 
-    overflow-y: auto;
-    color: #374151 !important;
-}
-.complex-action .results-area strong { color: #1f2937 !important; }
-
-/* --- Tablo Stilleri --- */
-#tablo-yonetim-tablosu {
-    width: 100%; 
-    border-collapse: collapse; 
-    margin-top: 15px; 
-    font-size: 14px;
-    background-color: #ffffff;
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-#tablo-yonetim-tablosu th, #tablo-yonetim-tablosu td {
-    border: 1px solid #e5e7eb; 
-    padding: 12px;
-    text-align: left; 
-    vertical-align: top;
-    color: #374151 !important;
-}
-
-#tablo-yonetim-tablosu th { 
-    background-color: #f8fafc; 
-    color: #374151 !important;
-    font-weight: 600;
-}
-
-#tablo-yonetim-tablosu td:last-child { 
-    width: 120px; 
-    text-align: center; 
-}
-
-.table-actions { 
-    display: flex; 
-    gap: 8px; 
-    justify-content: center; 
-}
-
-.table-actions button { 
-    padding: 6px 12px; 
-    font-size: 12px;
-}
-
-/* --- Modal Stilleri --- */
+/* --- Genel Modal Stilleri --- */
 #modal-container {
+    display: none; /* Varsayılan olarak gizli */
     position: fixed;
-    top: 0;
+    z-index: 1000;
     left: 0;
+    top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    backdrop-filter: blur(5px);
 }
 
-#modal-content {
-    background-color: #ffffff;
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    max-width: 500px;
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 25px 30px; /* Padding artırıldı */
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    position: relative;
+    max-width: 550px; /* Maksimum genişlik biraz artırılabilir */
     width: 90%;
+    animation: fadeIn 0.3s ease-out;
 }
 
-#modal-title {
-    margin-top: 0;
-    color: #1f2937 !important;
-    border-bottom: 1px solid #e5e7eb;
-    padding-bottom: 10px;
+.modal-header {
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-#modal-body {
-    margin: 15px 0;
-    color: #4b5563 !important;
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.6em;
+    color: #333;
 }
 
-#modal-footer {
+.modal-close-btn {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close-btn:hover,
+.modal-close-btn:focus {
+    color: #333;
+    text-decoration: none;
+}
+
+.modal-body {
+    padding: 10px 0; /* Üst ve alt padding biraz ayarlandı */
+    max-height: 400px; /* Gerekirse scrollable olması için */
+    overflow-y: auto; /* İçerik taşarsa kaydırma çubuğu */
+    margin-bottom: 20px;
+}
+
+.modal-footer {
+    border-top: 1px solid #eee;
+    padding-top: 20px;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
 }
 
-/* --- Genel Metin Renkleri --- */
-.card, .complex-action {
-    color: #374151 !important;
+/* --- İyileştirilmiş info-box stilleri --- */
+.info-box {
+    padding: 18px 22px; /* İç boşluk (padding) artırıldı */
+    margin-bottom: 25px; /* Alt boşluk (margin-bottom) artırıldı */
+    border-radius: 8px;
+    font-size: 0.98em; /* Font boyutu biraz artırıldı */
+    line-height: 1.6; /* Satır yüksekliği artırılarak metinler arası boşluk sağlandı */
+    position: relative; /* İkonun doğru konumlanması için */
+    display: flex; /* İçeriklerin hizalanması için */
+    align-items: flex-start; /* Metnin üste hizalanması */
 }
 
-.card p, .complex-action p {
-    color: #4b5563 !important;
+.info-box i.fas {
+    font-size: 1.8em; /* İkon boyutu */
+    margin-right: 15px; /* İkon ile metin arasına boşluk */
+    flex-shrink: 0; /* İkonun küçülmesini engelle */
 }
 
-.card label, .complex-action label {
-    color: #374151 !important;
+.info-box p {
+    margin: 0; /* Paragrafın varsayılan marginlerini sıfırla */
+    flex-grow: 1; /* Metnin kalan alanı doldurmasını sağla */
+}
+
+.info-box p strong {
+    font-weight: 700; /* Kalın yazıları daha belirgin yap */
+    display: block; /* Strong elementinin yeni satıra geçmesini sağlar */
+    margin-bottom: 5px; /* Başlık ile alt metin arasına boşluk */
+    font-size: 1.1em; /* Başlık boyutunu biraz büyüt */
+}
+
+/* danger özel stilleri */
+.info-box.danger {
+    background-color: #fde8e8; /* Açık kırmızı arka plan */
+    border: 1px solid #f5c6cb; /* Kırmızı kenarlık */
+    color: #721c24; /* Koyu kırmızı metin rengi */
+}
+
+.info-box.danger i.fas {
+    color: #dc3545; /* Kırmızı ikon rengi */
+}
+
+/* warning özel stilleri */
+.info-box.warning {
+    background-color: #fff3cd; /* Açık sarı arka plan */
+    border: 1px solid #ffeeba; /* Sarı kenarlık */
+    color: #856404; /* Koyu sarı metin rengi */
+}
+
+.info-box.warning i.fas {
+    color: #ffc107; /* Sarı ikon rengi */
+}
+
+/* info özel stilleri */
+.info-box.info {
+    background-color: #d1ecf1; /* Açık mavi arka plan */
+    border: 1px solid #bee5eb; /* Mavi kenarlık */
+    color: #0c5460; /* Koyu mavi metin rengi */
+}
+
+.info-box.info i.fas {
+    color: #17a2b8; /* Mavi ikon rengi */
+}
+
+/* Sonuç alanının (results-area) stilini de biraz geliştirelim */
+.results-area {
+    background-color: #f8f9fa;
+    border: 1px solid #e2e6ea;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: 'Consolas', 'Monaco', monospace; /* Monospace font */
+    font-size: 0.9em;
+    color: #343a40;
+    white-space: pre-wrap; /* Metnin yeni satırlara geçmesini sağlar */
+    word-break: break-word; /* Uzun kelimelerin taşmasını önler */
+}
+
+/* Animasyonlar */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-20px); }
+}
+
+/* Diğer elementler için küçük dokunuşlar */
+.complex-action label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+    color: #555;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+}
+
+.custom-checkbox {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
+    margin-bottom: 15px; /* Alt boşluk eklendi */
+}
+
+.custom-checkbox input[type="checkbox"] {
+    margin-right: 10px;
+    min-width: 18px; /* Checkbox'ın boyutunu sabitler */
+    min-height: 18px; /* Checkbox'ın boyutunu sabitler */
+    cursor: pointer;
+}
+
+.custom-checkbox label {
+    margin: 0;
+    font-weight: normal;
+    font-size: 0.95em;
+    color: #444;
+    cursor: pointer;
+}
+
+/* Butonların genel görünümü */
+.btn-danger, .btn-warning {
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+.btn-danger:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+.btn-warning:hover:not(:disabled) {
+    background-color: #e0a800;
+}
+
+/* Kapat butonu stili */
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border: none;
+}
+.btn-secondary:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+/* Buton disabled durumları */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
