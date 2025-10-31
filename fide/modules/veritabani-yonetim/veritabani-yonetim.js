@@ -294,23 +294,90 @@ async function handleDeleteUserReports_Modal() {
 
 
 /**
- * (Yıkıcı Senaryo 2)
- * "Atanmamış Bayileri Temizle" eylemini çalıştırır.
- * (GÜNCELLENDİ: 400 Bad Request hatasını önlemek için toplu sorgu yerine döngü kullanır)
+ * (Yıkıcı Senaryo 2) - YENİ FONKSİYON
+ * "Atanmamış Bayileri Temizle" eylemi için modalı (açılır pencere) açar.
  */
-async function handleDeleteUnassignedBayis() {
+function openDeleteUnassignedBayisModal() {
     const unassignedBayiler = allStores.filter(s => !s.sorumlu_kullanici);
-    if (unassignedBayiler.length === 0) {
+    const unassignedCount = unassignedBayiler.length;
+
+    if (unassignedCount === 0) {
         alert("Sistemde 'Atanmamış' bayi bulunamadı. İşlem yapılmasına gerek yok.");
         return;
     }
-    if (!confirm(`ÇOK YÜKSEK RİSK!\n\nSistemde 'Atanmamış' olarak görünen ${unassignedBayiler.length} adet bayi bulundu.\n\nBu işlem, bu bayileri VE bu bayilere ait (başka kullanıcılara ait olsalar bile) TÜM denetim raporlarını kalıcı olarak silecektir.\n\Bu işlem GERİ ALINAMAZ.\n\nEmin misiniz?`)) { return; }
 
+    // Modal içeriğini oluştur
+    let modalBodyHtml = `
+        <div class="info-box danger">
+            <p><i class="fas fa-skull-crossbones"></i> <strong>YÜKSEK RİSKLİ İŞLEM!</strong></p>
+            <p>Sistemde 'Atanmamış' olarak görünen <strong>${unassignedCount} adet bayi</strong> bulundu.</p>
+            <p>Bu işlem, bu bayileri VE bu bayilere ait TÜM denetim raporlarını (diğer kullanıcılara ait olsalar bile) kalıcı olarak silecektir. Bu işlem geri alınamaz.</p>
+        </div>
+        <div class="complex-action">
+            <div class="custom-checkbox" style="margin-top: 15px;">
+                <input type="checkbox" id="modal-atanmamis-silme-onay">
+                <label for="modal-atanmamis-silme-onay">${unassignedCount} bayinin ve tüm raporlarının silineceğini anladım ve onaylıyorum.</label>
+            </div>
+            <div id="modal-atanmamis-silme-sonuc" class="results-area" style="display: none; margin-top: 10px;"></div>
+        </div>
+    `;
+
+    // Modal için onay butonu oluştur
+    const actionButton = document.createElement('button');
+    actionButton.id = 'modal-action-btn';
+    actionButton.className = 'btn-danger'; 
+    actionButton.innerHTML = `<i class="fas fa-store-slash"></i> ${unassignedCount} Bayiyi ve Raporlarını Sil`;
+    actionButton.disabled = true; // Başlangıçta devre dışı
+
+    // Modalı göster
+    showModal(true, 'Atanmamış Bayileri Temizle (Yıkıcı)', modalBodyHtml, actionButton);
+
+    // Modal içindeki elementlere olay dinleyicileri ata
+    const check = document.getElementById('modal-atanmamis-silme-onay');
+    const checkButtonState = () => {
+        actionButton.disabled = !check.checked;
+    };
+    
+    check.addEventListener('change', checkButtonState);
+    // Onay butonuna tıklandığında, bayi listesini parametre olarak silme fonksiyonuna gönder
+    actionButton.addEventListener('click', () => handleDeleteUnassignedBayis_Modal(unassignedBayiler)); 
+}
+
+
+/**
+ * (Yıkıcı Senaryo 2) - GÜNCELLENMİŞ FONKSİYON
+ * "Atanmamış Bayileri Temizle" eylemini modal onayı ile çalıştırır.
+ * Artık 'confirm' yerine modal kullanır ve ilerlemeyi modal içine yazar.
+ */
+async function handleDeleteUnassignedBayis_Modal(unassignedBayiler) {
+    
+    // Modal elementlerini al
+    const deleteBtn = document.getElementById('modal-action-btn');
+    const resultsDiv = document.getElementById('modal-atanmamis-silme-sonuc');
+    const onayCheck = document.getElementById('modal-atanmamis-silme-onay');
+
+    if (!onayCheck || !onayCheck.checked) {
+        alert("Lütfen onayı işaretleyin.");
+        return;
+    }
+
+    // confirm() çağrısı kaldırıldı.
+
+    // Global yükleme ekranını yine de gösteriyoruz, ancak ilerleme modal'a yazılacak.
     showLoading(true, `Yıkıcı temizlik başlatıldı... ${unassignedBayiler.length} atanmamış bayi işleniyor...`);
     
+    // Modal kontrollerini kilitle
+    if(deleteBtn) deleteBtn.disabled = true;
+    if(onayCheck) onayCheck.disabled = true;
+    if(resultsDiv) {
+        resultsDiv.style.display = 'block'; // Sonuç alanını görünür yap
+        resultsDiv.innerHTML = 'İşlem başlatıldı...';
+    }
+
     let totalReportsDeleted = 0;
     let totalBayisDeleted = 0;
     const totalBayiCount = unassignedBayiler.length;
+    let hasError = false;
 
     try {
         // HATA ÖNLEME: Toplu filtre (reportFilter) yerine her bayiyi döngüde tek tek işle.
@@ -318,9 +385,13 @@ async function handleDeleteUnassignedBayis() {
             const bayi = unassignedBayiler[i];
             const bayiName = bayi.bayiAdi || bayi.bayiKodu;
             const currentCount = i + 1;
+            const progressPrefix = `(${currentCount}/${totalBayiCount})`;
 
             // Adım 1: Bu bayiye ait raporları bul
-            showLoading(true, `(${currentCount}/${totalBayiCount}) '${bayiName}' için raporlar aranıyor...`);
+            const progressMsg1 = `${progressPrefix} '${bayiName}' için raporlar aranıyor...`;
+            showLoading(true, progressMsg1); // Global overlay'ı güncelle
+            if(resultsDiv) resultsDiv.innerHTML = progressMsg1; // Modal'ı güncelle (İsteğiniz)
+
             const reports = await pbInstance.collection('denetim_raporlari').getFullList({ 
                 filter: `bayi = "${bayi.id}"`, 
                 fields: 'id' 
@@ -328,7 +399,10 @@ async function handleDeleteUnassignedBayis() {
 
             // Adım 2: Raporları sil (varsa)
             if (reports.length > 0) {
-                showLoading(true, `(${currentCount}/${totalBayiCount}) ${reports.length} adet rapor siliniyor...`);
+                const progressMsg2 = `${progressPrefix} ${reports.length} adet rapor siliniyor...`;
+                showLoading(true, progressMsg2);
+                if(resultsDiv) resultsDiv.innerHTML = progressMsg2; // Modal'ı güncelle (İsteğiniz)
+
                 // Bu bayiye ait raporları toplu sil (Promise.all)
                 const deleteReportPromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
                 await Promise.all(deleteReportPromises);
@@ -336,19 +410,59 @@ async function handleDeleteUnassignedBayis() {
             }
 
             // Adım 3: Bayinin kendisini sil
-            showLoading(true, `(${currentCount}/${totalBayiCount}) '${bayiName}' bayisi siliniyor...`);
+            const progressMsg3 = `${progressPrefix} '${bayiName}' bayisi siliniyor...`;
+            showLoading(true, progressMsg3);
+            if(resultsDiv) resultsDiv.innerHTML = progressMsg3; // Modal'ı güncelle (İsteğiniz)
+
             await pbInstance.collection('bayiler').delete(bayi.id);
             totalBayisDeleted++;
         }
 
-        alert(`YIKICI TEMİZLİK TAMAMLANDI:\n\n- ${totalReportsDeleted} adet ilişkili denetim raporu silindi.\n- ${totalBayisDeleted} adet atanmamış bayi silindi.`);
+        // Başarı mesajını alert() yerine modal'a yaz
+        if(resultsDiv) {
+            resultsDiv.innerHTML = `<br><strong style="color: green;">YIKICI TEMİZLİK TAMAMLANDI:</strong><br>
+                                    - ${totalReportsDeleted} adet ilişkili denetim raporu silindi.<br>
+                                    - ${totalBayisDeleted} adet atanmamış bayi silindi.`;
+        } else {
+            // Fallback (Modal bulunamazsa)
+            alert(`YIKICI TEMİZLİK TAMAMLANDI:\n\n- ${totalReportsDeleted} adet ilişkili denetim raporu silindi.\n- ${totalBayisDeleted} adet atanmamış bayi silindi.`);
+        }
+        
         await loadInitialData(); // Verileri yenile
         
     } catch (error) {
-        // Hata durumunda ilerlemeyi bildir
-        handleError(error, `Atanmamış bayiler temizlenirken kritik bir hata oluştu.\n\nİşlem durduruldu.\nToplam ${totalBayisDeleted} bayi ve ${totalReportsDeleted} rapor şimdiye kadar silindi.\n\Hata Mesajı: ${error.message}\n\nİşlemi tekrar başlatarak kalanları temizleyebilirsiniz.`);
+        hasError = true;
+        // Hata durumunda ilerlemeyi handleError() yerine modal'a yaz
+        console.error("handleDeleteUnassignedBayis_Modal Hata:", error);
+        
+        if(resultsDiv) {
+            resultsDiv.innerHTML += `<br><br><strong style="color: red;">KRİTİK HATA:</strong><br>
+                                     İşlem durduruldu.<br>
+                                     Toplam <strong>${totalBayisDeleted} bayi</strong> ve <strong>${totalReportsDeleted} rapor</strong> şimdiye kadar silindi.<br>
+                                     Hata: ${error.message}<br>
+                                     <span style="font-size: 0.9em;">İşlemi tekrar başlatarak kalanları temizleyebilirsiniz.</span>`;
+        } else {
+            // Fallback (Modal bulunamazsa)
+            handleError(error, `Atanmamış bayiler temizlenirken kritik bir hata oluştu.\n\nİşlem durduruldu.\nToplam ${totalBayisDeleted} bayi ve ${totalReportsDeleted} rapor şimdiye kadar silindi.\n\nHata Mesajı: ${error.message}\n\nİşlemi tekrar başlatarak kalanları temizleyebilirsiniz.`);
+        }
     } finally {
-        showLoading(false);
+        showLoading(false); // Global overlay'ı gizle
+        
+        if (hasError) {
+            // Hata varsa, kullanıcının tekrar denemesi için kontrolleri aç
+            if(deleteBtn) deleteBtn.disabled = false;
+            if(onayCheck) {
+                onayCheck.disabled = false;
+                onayCheck.checked = false; // Onayı sıfırla
+            }
+            if(deleteBtn) deleteBtn.disabled = true; // Onay sıfırlandığı için butonu tekrar kilitle
+        } else {
+            // Başarılıysa, butonu "Tamamlandı" olarak kilitle
+            if(deleteBtn) {
+                deleteBtn.innerHTML = '<i class="fas fa-check"></i> Tamamlandı';
+                deleteBtn.disabled = true;
+            }
+        }
     }
 }
 
@@ -497,7 +611,7 @@ function populateTableManagement() {
             desc: "'Atanmamış' durumdaki TÜM bayileri VE bu bayilere ait TÜM raporları (diğer kullanıcılara ait olanlar dahil) kalıcı olarak siler.", 
             impact: '<strong>YÜKSEK RİSK.</strong> Bayi listesi ve raporlar kalıcı olarak silinir.',
             isAction: true,
-            action: handleDeleteUnassignedBayis,
+            action: openDeleteUnassignedBayisModal, // <-- DÜZELTME: Doğrudan silme yerine modal açma fonksiyonuyla değiştirildi.
             btnClass: 'btn-danger', 
             btnIcon: 'fa-store-slash',
             btnTitle: 'Atanmamış Bayileri Temizle'
