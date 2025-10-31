@@ -67,9 +67,16 @@ function setupModuleEventListeners() {
  * "Kullanıcıyı ve Raporlarını Sil" eylemi için modalı (açılır pencere) açar.
  */
 function openUserDeletionModal() {
+    // GÜNCELLENDİ: Yapı, ikon ve içerik olarak ayrıldı
     let modalBodyHtml = `
         <div class="info-box warning">
-            <p><i class="fas fa-exclamation-triangle"></i> <strong>ÖNEMLİ:</strong> Bu işlem, seçilen kullanıcıyı ve o kullanıcının <strong>denetim raporlarını</strong> siler. Kullanıcıya atanmış bayiler <strong>SİLİNMEZ</strong>, "Atanmamış" olarak güncellenir.</p>
+            <div class="info-box-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>ÖNEMLİ</strong>
+            </div>
+            <div class="info-box-content">
+                <p>Bu işlem, seçilen kullanıcıyı ve o kullanıcının <strong>denetim raporlarını</strong> siler. Kullanıcıya atanmış bayiler <strong>SİLİNMEZ</strong>, "Atanmamış" olarak güncellenir.</p>
+            </div>
         </div>
         <div class="complex-action">
             <label for="modal-kullanici-silme-select">Silinecek Kullanıcıyı Seçin:</label>
@@ -189,9 +196,16 @@ async function handleDeleteUserAndData_Modal() {
  * "Sadece Kullanıcı Raporlarını Sil" eylemi için modalı (açılır pencere) açar.
  */
 function openDeleteUserReportsModal() {
+    // GÜNCELLENDİ: Yapı, ikon ve içerik olarak ayrıldı
     let modalBodyHtml = `
         <div class="info-box info">
-            <p><i class="fas fa-info-circle"></i> <strong>BİLGİ:</strong> Bu işlem, sadece seçilen kullanıcının <strong>denetim raporlarını</strong> siler. Kullanıcının hesabı veya bayi atamaları <strong>SİLİNMEZ</strong>.</p>
+            <div class="info-box-icon">
+                <i class="fas fa-info-circle"></i>
+                <strong>BİLGİ</strong>
+            </div>
+            <div class="info-box-content">
+                 <p>Bu işlem, sadece seçilen kullanıcının <strong>denetim raporlarını</strong> siler. Kullanıcının hesabı veya bayi atamaları <strong>SİLİNMEZ</strong>.</p>
+            </div>
         </div>
         <div class="complex-action">
             <label for="modal-kullanici-rapor-silme-select">Raporları Silinecek Kullanıcıyı Seçin:</label>
@@ -307,11 +321,17 @@ function openDeleteUnassignedBayisModal() {
     }
 
     // Modal içeriğini oluştur
+    // GÜNCELLENDİ: HTML yapısı iki sütuna (ikon ve içerik) ayrıldı.
     let modalBodyHtml = `
         <div class="info-box danger">
-            <p><i class="fas fa-skull-crossbones"></i> <strong>YÜKSEK RİSKLİ İŞLEM!</strong></p>
-            <p>Sistemde 'Atanmamış' olarak görünen <strong>${unassignedCount} adet bayi</strong> bulundu.</p>
-            <p>Bu işlem, bu bayileri VE bu bayilere ait TÜM denetim raporlarını (diğer kullanıcılara ait olsalar bile) kalıcı olarak silecektir. Bu işlem geri alınamaz.</p>
+            <div class="info-box-icon">
+                <i class="fas fa-skull-crossbones"></i>
+                <strong>YÜKSEK RİSKLİ İŞLEM!</strong>
+            </div>
+            <div class="info-box-content">
+                <p>Sistemde 'Atanmamış' olarak görünen <strong>${unassignedCount} adet bayi</strong> bulundu.</p>
+                <p>Bu işlem, bu bayileri VE bu bayilere ait TÜM denetim raporlarını (diğer kullanıcılara ait olsalar bile) kalıcı olarak silecektir. Bu işlem geri alınamaz.</p>
+            </div>
         </div>
         <div class="complex-action">
             <div class="custom-checkbox" style="margin-top: 15px;">
@@ -517,7 +537,7 @@ async function resetTamamlanmaDurumu() {
         if (reports.length === 0) { alert("Durumu sıfırlanacak rapor bulunamadı."); return; }
         const updatePromises = reports.map(report => pbInstance.collection('denetim_raporlari').update(report.id, { 'denetimTamamlanmaTarihi': null }));
         await Promise.all(updatePromises);
-        alert(`${reports.length} adet raporun tamamlanma durumu başarıyla sıfırlandı.`);
+        alert(`${reports.length} adet raporun tamamlanma durumu sıfırlandı.`);
     } catch (error) {
         handleError(error, "Tamamlanma durumu sıfırlanırken hata oluştu.");
     } finally {
