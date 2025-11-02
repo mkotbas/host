@@ -8,6 +8,11 @@ export default defineConfig({
   base: './',
   root: __dirname,
   build: {
+    // --- GÜNCELLEME BURADA ---
+    // Kodları gizlemeyi (değişken adlarını karıştırma dahil) zorunlu kıl.
+    minify: 'esbuild', 
+    // --- GÜNCELLEME BİTTİ ---
+    
     outDir: 'dist',
     rollupOptions: {
       input: {
