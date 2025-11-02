@@ -23,8 +23,9 @@ async function initializeApp() {
     excel.initExcel(pb);
     ui.initUi(pb);
 
+    // === GÜNCELLENDİ: 'attachUiFunctionsToWindow' çağrısı SİLİNDİ ===
     // HTML'deki onclick="" özelliklerinin çalışması için UI fonksiyonlarını window'a ata
-    ui.attachUiFunctionsToWindow();
+    // ui.attachUiFunctionsToWindow(); // BU SATIR SİLİNDİ
 
     // Oturum durumuna göre arayüzü güncelle
     updateAuthUI();
@@ -48,7 +49,6 @@ async function initializeApp() {
             }
         }
         
-        // --- GÜNCELLENDİ ---
         // Anlık hesap kilidi (ban) ve cihaz kilidi (lock) dinlemesini başlat
         api.subscribeToRealtimeChanges();
 
@@ -91,32 +91,26 @@ function setupEventListeners() {
         window.location.reload();
     });
 
-    // === GİRİŞ BUTONU MANTIĞI (Bu kısımda değişiklik yok) ===
     loginSubmitBtn.addEventListener('click', async () => {
         const email = document.getElementById('email-input').value;
         const password = document.getElementById('password-input').value;
         const errorDiv = document.getElementById('login-error');
-        errorDiv.textContent = ''; // Önceki hataları temizle
+        errorDiv.textContent = ''; 
 
         if (!email || !password) {
             errorDiv.textContent = 'Lütfen tüm alanları doldurun.';
             return;
         }
 
-        // api.js'teki güncellenmiş loginUser fonksiyonunu çağır
         const result = await api.loginUser(email, password);
 
         if (result.success) {
-            // Giriş başarılıysa sayfayı yenile
             window.location.reload();
         } else {
-            // Başarısızsa, api.js'ten gelen detaylı hata mesajını göster
             errorDiv.textContent = result.message;
         }
     });
-    // === GÜNCELLEME BİTTİ ===
     
-    // Dışarı tıklayınca popup'ı kapat
     window.addEventListener('click', (event) => {
         if (!loginPopup.contains(event.target) && event.target !== loginToggleBtn) {
             loginPopup.style.display = 'none';
@@ -152,7 +146,7 @@ function setupEventListeners() {
     document.getElementById('store-search-input').addEventListener('keyup', (e) => {
         state.setSelectedStore(null); 
         state.setCurrentReportId(null);
-        ui.updateFormInteractivity(false); // Arama yaparken formu kilitle
+        ui.updateFormInteractivity(false); 
         const filter = e.target.value.toLowerCase().trim();
         const storeListDiv = document.getElementById('store-list');
         storeListDiv.style.display = 'block';
@@ -170,18 +164,28 @@ function setupEventListeners() {
     document.getElementById('toggle-backup-manager-btn').addEventListener('click', () => {
         window.open('admin/admin.html', '_blank');
     });
+
+    // === YENİ EKLENDİ: Programatik Olay Dinleyicileri ===
+    
+    // 'E-POSTA TASLAĞI OLUŞTUR' butonunu 'id' ile bağla
+    const emailBtn = document.getElementById('generate-email-btn');
+    if (emailBtn) {
+        emailBtn.addEventListener('click', ui.generateEmail);
+    }
+    
+    // Formun tamamındaki (dinamik oluşanlar dahil) tüm tıklamaları yakala
+    const formContent = document.getElementById('form-content');
+    if (formContent) {
+        formContent.addEventListener('click', ui.handleFormClick);
+    }
+
+    // E-posta taslağındaki 'Geri Dön' butonu için (dinamik oluşur)
+    const container = document.querySelector('.container');
+    if (container) {
+        container.addEventListener('click', ui.handleFormClick);
+    }
+    // === GÜNCELLEME BİTTİ ===
 }
-
-
-/**
- * --- KALDIRILDI ---
- * YENİ FONKSİYON: Anlık ban sistemini dinler.
- * (Bu fonksiyon 'api.js' içindeki 'subscribeToRealtimeChanges' 
- * fonksiyonuna taşındı ve genişletildi. 
- * [2025-10-02] kuralı gereği kaldırıldı.)
- */
-// function subscribeToUserChanges() { ... }
-
 
 /**
  * Oturum durumuna göre giriş/çıkış butonlarını günceller.

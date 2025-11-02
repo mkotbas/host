@@ -3,19 +3,15 @@ import { saveFormState } from './api.js';
 
 let pb; // PocketBase instance
 
-// --- DEBOUNCE MEKANİZMASI (YENİ) ---
-// Hızlı form değişikliklerinin sunucuya sürekli istek atmasını ('autocancelled' hatası) engeller.
+// --- DEBOUNCE MEKANİZMASI (Değişiklik yok) ---
 let saveDebounceTimer;
 function debouncedSaveFormState() {
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = setTimeout(() => {
-        // Sadece giriş yapılmışsa ve bir bayi seçiliyse kaydet
         if (state.isPocketBaseConnected && state.selectedStore) {
-            // Bu arka plan kaydı, api.js'te varsayılan olarak 
-            // yükleme ekranı göstermemelidir.
             saveFormState(getFormDataForSaving()); 
         }
-    }, 800); // Kullanıcı eylemi durduktan sonra 0.8 saniye bekle
+    }, 800);
 }
 // --- DEBOUNCE MEKANİZMASI BİTTİ ---
 
@@ -36,17 +32,27 @@ function getUnitForProduct(productName) {
     return 'Paket';
 }
 
+// === GÜNCELLENDİ: 'onclick' yerine 'data-action' eklendi ===
 function generateQuestionHtml(q) {
     let questionActionsHTML = '';
     let questionContentHTML = '';
     let isArchivedClass = q.isArchived ? 'archived-item' : ''; 
 
     if (q.type === 'standard') {
-        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-        let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`).join('');
+        questionActionsHTML = `<div class="fide-actions">
+            <button class="add-item-btn btn-sm" data-action="add-input" data-container-id="fide${q.id}" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button>
+            <button class="status-btn btn-sm" data-action="toggle-complete" data-question-id="${q.id}" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button>
+            <button class="remove-btn btn-danger btn-sm" data-action="toggle-remove" data-question-id="${q.id}" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button>
+            </div>`;
+        let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" data-action="delete-item" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`).join('');
         questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
+    
     } else if (q.type === 'product_list') {
-        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')" title="Pleksi kullanımıyla ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        questionActionsHTML = `<div class="fide-actions">
+            <button class="add-item-btn btn-sm" data-action="add-input" data-container-id="fide${q.id}_pleksi" title="Pleksi kullanımıyla ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Ekle</button>
+            <button class="status-btn btn-sm" data-action="toggle-complete" data-question-id="${q.id}" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button>
+            <button class="remove-btn btn-danger btn-sm" data-action="toggle-remove" data-question-id="${q.id}" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button>
+            </div>`;
         let productOptions = '';
         let currentOptgroup = false;
         state.productList.forEach(p => {
@@ -59,13 +65,31 @@ function generateQuestionHtml(q) {
             }
         });
         if (currentOptgroup) productOptions += `</optgroup>`;
-        questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b class="plexi-header"><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
+        questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b>
+            <div class="product-adder">
+                <select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select>
+                <input type="number" id="product-qty" placeholder="Adet" min="1" value="1">
+                <button class="btn-success btn-sm" data-action="add-product" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button>
+            </div>
+            <div id="selected-products-list"></div><hr><b class="plexi-header"><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b>
+            <div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
+    
     } else if (q.type === 'pop_system') {
-        questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-        questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
+        questionActionsHTML = `<div class="fide-actions">
+            <button class="status-btn btn-sm" data-action="toggle-complete" data-question-id="${q.id}" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button>
+            <button class="remove-btn btn-danger btn-sm" data-action="toggle-remove" data-question-id="${q.id}" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button>
+            </div>`;
+        questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div>
+            <div class="pop-button-container">
+                <button class="btn-success btn-sm" data-action="pop-copy" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button>
+                <button class="btn-danger btn-sm" data-action="pop-clear" title="Tüm POP kodu seçimlerini temizler.">Temizle</button>
+                <button class="btn-primary btn-sm" data-action="pop-expired" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button>
+                <button class="btn-primary btn-sm" data-action="pop-email" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button>
+            </div></div>`;
     }
     return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
 }
+// === GÜNCELLEME BİTTİ ===
 
 function getFormDataForSaving() {
     let reportData = { questions_status: {} };
@@ -130,7 +154,9 @@ export function returnToMainPage() {
     if (emailDraft) emailDraft.remove();
     document.getElementById('dide-upload-card').style.display = 'block';
     document.getElementById('form-content').style.display = 'block';
-    document.querySelector('.action-button').style.display = 'block';
+    // 'generate-email-btn' id'li butonu bul
+    const emailBtn = document.getElementById('generate-email-btn');
+    if(emailBtn) emailBtn.style.display = 'block';
 }
 
 export function resetForm() { 
@@ -183,8 +209,6 @@ export async function generateEmail() {
     }
 
     const reportData = getFormDataForSaving();
-    // E-posta oluşturmadan önce formun GÜNCEL halini 'true' (yükleme ekranı göstererek) kaydet.
-    // Bu, debouncer'ı atlar ve anında kaydeder.
     await saveFormState(reportData, true);
 
     const storeInfo = state.dideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu));
@@ -275,12 +299,22 @@ export async function generateEmail() {
 
     document.getElementById('dide-upload-card').style.display = 'none';
     document.getElementById('form-content').style.display = 'none';
-    document.querySelector('.action-button').style.display = 'none';
+    // 'generate-email-btn' id'li butonu bul ve gizle
+    const emailBtn = document.getElementById('generate-email-btn');
+    if(emailBtn) emailBtn.style.display = 'none';
 
     const draftContainer = document.createElement('div');
     draftContainer.id = 'email-draft-container';
     draftContainer.className = 'card';
-    draftContainer.innerHTML = `<h2><a href="#" onclick="event.preventDefault(); returnToMainPage();" style="text-decoration: none; color: inherit;" title="Ana Sayfaya Dön"><i class="fas fa-arrow-left" style="margin-right: 10px;"></i></a><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><div id="email-draft-area" contenteditable="true" style="min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
+    
+    // === GÜNCELLENDİ: 'onclick' kaldırıldı, 'data-action' eklendi ===
+    draftContainer.innerHTML = `<h2><a href="#" data-action="return-to-main" style="text-decoration: none; color: inherit;" title="Ana Sayfaya Dön"><i class="fas fa-arrow-left" style="margin-right: 10px;"></i></a><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><div id="email-draft-area" contenteditable="true" style="min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
+    
+    // === GÜNCELLENDİ: Olay dinleyici programatik olarak eklendi ===
+    // Not: Bu dinleyici 'handleFormClick' içinde yakalanamaz çünkü 'draftContainer'
+    // 'form-content' içinde değil, 'container' içindedir.
+    // Bu yüzden 'main.js' içinde '.container'a bir dinleyici ekleyeceğiz.
+    
     document.querySelector('.container').appendChild(draftContainer);
 }
 
@@ -293,8 +327,8 @@ export function loadReportUI(reportData) {
             if (!questionItem) continue;
 
             const data = reportData[qId];
-            if (data.removed) toggleQuestionRemoved(questionItem.querySelector('.remove-btn'), qId, false);
-            else if (data.completed) toggleQuestionCompleted(questionItem.querySelector('.status-btn'), qId, false);
+            if (data.removed) toggleQuestionRemoved(questionItem.querySelector('[data-action="toggle-remove"]'), qId, false);
+            else if (data.completed) toggleQuestionCompleted(questionItem.querySelector('[data-action="toggle-complete"]'), qId, false);
             
             if (data.dynamicInputs) {
                 const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
@@ -317,9 +351,65 @@ export function updateFormInteractivity(enable) {
     const formContent = document.getElementById('form-content');
     if (!formContent) return;
     formContent.querySelectorAll('button, input, select').forEach(el => { el.disabled = !enable; });
+    // Ana e-posta butonunu da etkinleştir/devre dışı bırak
+    const emailBtn = document.getElementById('generate-email-btn');
+    if(emailBtn) emailBtn.disabled = !enable;
 }
 
-// --- HTML Onclick için Window'a Atanacak Fonksiyonlar ---
+// --- === YENİ FONKSİYON: Tüm dinamik tıklamaları yönetir === ---
+/**
+ * form-content içindeki tüm data-action tıklamalarını yakalar.
+ * @param {Event} event 
+ */
+export function handleFormClick(event) {
+    const target = event.target;
+    // Tıklanan öğeyi veya en yakın 'data-action'a sahip ebeveyni bul
+    const actionTarget = target.closest('[data-action]');
+    if (!actionTarget) return; // Tıklanan yer eyleme bağlı değil
+
+    const action = actionTarget.dataset.action;
+    const qId = actionTarget.closest('.fide-item')?.id.split('-')[2];
+
+    switch (action) {
+        case 'add-input':
+            addDynamicInput(actionTarget.dataset.containerId);
+            break;
+        case 'toggle-complete':
+            toggleQuestionCompleted(actionTarget, qId);
+            break;
+        case 'toggle-remove':
+            toggleQuestionRemoved(actionTarget, qId);
+            break;
+        case 'delete-item':
+            initiateDeleteItem(actionTarget);
+            break;
+        case 'toggle-input-complete':
+            toggleCompleted(actionTarget);
+            break;
+        case 'add-product':
+            addProductToList();
+            break;
+        case 'pop-copy':
+            copySelectedCodes();
+            break;
+        case 'pop-clear':
+            clearSelectedCodes();
+            break;
+        case 'pop-expired':
+            selectExpiredCodes();
+            break;
+        case 'pop-email':
+            openEmailDraft();
+            break;
+        case 'return-to-main':
+            event.preventDefault();
+            returnToMainPage();
+            break;
+    }
+}
+
+
+// --- Dahili Fonksiyonlar ('window'a atanmayacaklar) ---
 
 function initializePopSystem(container) {
     container.innerHTML = '';
@@ -332,8 +422,6 @@ function initializePopSystem(container) {
         checkbox.className = 'pop-checkbox';
         checkbox.addEventListener('change', () => {
             checkExpiredPopCodes();
-            // --- GÜNCELLENDİ ---
-            // Anlık kaydetme yerine debouncer'ı çağır
             debouncedSaveFormState();
         });
         label.appendChild(checkbox);
@@ -358,13 +446,10 @@ function initiateDeleteItem(buttonEl) {
         buttonEl.classList.add('btn-warning');
         const timerId = setTimeout(() => { 
             itemEl.remove(); 
-            // --- GÜNCELLENDİ ---
             debouncedSaveFormState(); 
         }, 4000);
         itemEl.dataset.deleteTimer = timerId;
     }
-    // --- GÜNCELLENDİ ---
-    // Geri alma/silme işlemini anlık kaydetmek için debouncer'ı çağır
     debouncedSaveFormState();
 }
 
@@ -387,22 +472,19 @@ function addProductToList(productCode, quantity, shouldSave = true) {
     newItem.dataset.code = product.code;
     newItem.dataset.qty = selectedQty;
     
-    // --- GÜNCELLENDİ ---
-    // 'onclick' kaldırıldı ve 'addEventListener' eklendi.
     newItem.innerHTML = `<span>${product.code} ${product.name} - <span class="product-quantity"><b>${selectedQty} ${unit}</b></span></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler."><i class="fas fa-trash"></i></button>`;
     
-    // Olay dinleyici programatik olarak eklendi
+    // 'onclick' yerine 'data-action' kullanmak için bu butona da eklenebilir,
+    // ancak bu buton 'form-content' içinde olmadığı için 'handleFormClick'
+    // tarafından yakalanamaz. 'addEventListener' burada en temiz yöntemdir.
     newItem.querySelector('.delete-item-btn').addEventListener('click', function() {
-        this.parentElement.remove(); // 'this' butonu işaret eder, parent'ı 'newItem' div'idir.
-        debouncedSaveFormState(); // Debounced fonksiyonu çağır
+        this.parentElement.remove();
+        debouncedSaveFormState();
     });
-    // --- GÜNCELLEME BİTTİ ---
     
     listContainer.appendChild(newItem);
     
     if (!productCode) { select.value = ''; qtyInput.value = '1'; }
-    
-    // --- GÜNCELLENDİ ---
     if (shouldSave) debouncedSaveFormState();
 }
 
@@ -412,7 +494,6 @@ function toggleCompleted(button) {
     input.readOnly = isCompleted;
     button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
     button.classList.toggle('undo', isCompleted);
-    // --- GÜNCELLENDİ ---
     debouncedSaveFormState();
 }
 
@@ -424,7 +505,6 @@ function toggleQuestionCompleted(button, id, shouldSave = true) {
     button.classList.toggle('undo', isQuestionCompleted);
     const inputArea = itemDiv.querySelector('.input-area');
     if (inputArea) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
-    // --- GÜNCELLENDİ ---
     if (shouldSave) debouncedSaveFormState();
 }
 
@@ -437,8 +517,7 @@ function toggleQuestionRemoved(button, id, shouldSave = true) {
     button.innerHTML = isRemoved ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar';
     button.classList.toggle('btn-danger', !isRemoved);
     button.classList.toggle('btn-primary', isRemoved);
-    if(actionsContainer) actionsContainer.querySelectorAll('.add-item-btn, .status-btn').forEach(btn => btn.disabled = isRemoved);
-    // --- GÜNCELLENDİ ---
+    if(actionsContainer) actionsContainer.querySelectorAll('[data-action="add-input"], [data-action="toggle-complete"]').forEach(btn => btn.disabled = isRemoved);
     if (shouldSave) debouncedSaveFormState();
 }
 
@@ -448,27 +527,23 @@ function addDynamicInput(id, value = '', isCompleted = false, shouldSave = true)
 
     const newItem = document.createElement('div');
     newItem.className = 'dynamic-input-item';
-    newItem.innerHTML = `<input type="text" placeholder="Eksikliği yazın..." value="${value}"><button class="status-btn btn-sm" title="Bu eksikliği 'Tamamlandı' olarak işaretler."><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger" title="Bu satırı silmek için tıklayın."><i class="fas fa-trash"></i></button>`;
+    // === GÜNCELLENDİ: 'onclick' yerine 'data-action' eklendi ===
+    newItem.innerHTML = `<input type="text" placeholder="Eksikliği yazın..." value="${value}">
+        <button class="status-btn btn-sm" data-action="toggle-input-complete" title="Bu eksikliği 'Tamamlandı' olarak işaretler."><i class="fas fa-check"></i> Tamamlandı</button>
+        <button class="delete-bar btn-danger" data-action="delete-item" title="Bu satırı silmek için tıklayın."><i class="fas fa-trash"></i></button>`;
     
     const input = newItem.querySelector('input');
-    const completeButton = newItem.querySelector('.status-btn');
-    const deleteButton = newItem.querySelector('.delete-bar');
+    const completeButton = newItem.querySelector('[data-action="toggle-input-complete"]');
     
     input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); addDynamicInput(id); } });
-    
-    // --- GÜNCELLENDİ ---
-    // 'blur' olayında anlık kaydetme yerine debouncer'ı çağır
-    // Bu, "Yeni Eksik Ekle" butonuna basıldığında tıklamanın engellenmesi sorununu çözer.
     input.addEventListener('blur', () => debouncedSaveFormState());
     
-    completeButton.onclick = () => toggleCompleted(completeButton);
-    deleteButton.onclick = () => initiateDeleteItem(deleteButton);
+    // 'onclick' atamaları kaldırıldı, artık 'handleFormClick' yönetecek
     
     if(isCompleted) toggleCompleted(completeButton);
     container.prepend(newItem);
     if (value === '') input.focus();
     
-    // --- GÜNCELLENDİ ---
     if (shouldSave) debouncedSaveFormState();
 }
 
@@ -488,14 +563,12 @@ function copySelectedCodes() {
 function clearSelectedCodes() {
     document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
     checkExpiredPopCodes();
-    // --- GÜNCELLENDİ ---
     debouncedSaveFormState();
 }
 
 function selectExpiredCodes() {
     document.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = state.expiredCodes.includes(cb.value); });
     checkExpiredPopCodes();
-    // --- GÜNCELLENDİ ---
     debouncedSaveFormState();
 }
 
@@ -513,19 +586,9 @@ function openEmailDraft() {
     emailWindow.document.close();
 }
 
-/**
- * HTML'deki onclick="" özelliklerinin çalışabilmesi için fonksiyonları window nesnesine atar.
- */
+// === GÜNCELLENDİ: Bu fonksiyon artık gereksiz ve SİLİNDİ ===
+/*
 export function attachUiFunctionsToWindow() {
-    window.generateEmail = generateEmail;
-    window.returnToMainPage = returnToMainPage;
-    window.initiateDeleteItem = initiateDeleteItem;
-    window.addProductToList = addProductToList;
-    window.toggleQuestionCompleted = toggleQuestionCompleted;
-    window.toggleQuestionRemoved = toggleQuestionRemoved;
-    window.addDynamicInput = addDynamicInput;
-    window.copySelectedCodes = copySelectedCodes;
-    window.clearSelectedCodes = clearSelectedCodes;
-    window.selectExpiredCodes = selectExpiredCodes;
-    window.openEmailDraft = openEmailDraft;
+    // ...tüm window.xxx atamaları...
 }
+*/

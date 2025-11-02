@@ -12,7 +12,7 @@
 </head>
 <body>
     <div id="loading-overlay" style="display: none;">
-        <div class="spinner"></div>
+        <i class="fas fa-spinner fa-spin"></i>
         <p>İşlem yapılıyor, lütfen bekleyin...</p>
     </div>
 
@@ -89,11 +89,10 @@
 
         <div id="form-content"></div>
 
-        <button class="action-button" onclick="generateEmail()" title="Formdaki tüm verileri kullanarak nihai e-posta taslağını oluşturur ve raporu kaydeder.">
+        <button id="generate-email-btn" class="action-button" title="Formdaki tüm verileri kullanarak nihai e-posta taslağını oluşturur ve raporu kaydeder.">
             <i class="fas fa-envelope"></i> E-POSTA TASLAĞI OLUŞTUR
         </button>
-
-    </div>
+        </div>
 
     <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
     
