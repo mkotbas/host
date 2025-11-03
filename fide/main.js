@@ -17,22 +17,27 @@ window.onload = initializeApp;
  */
 async function initializeApp() {
     // === GÜNCELLENDİ: 'pb' artık burada tanımlanıyor ===
-    // PocketBase'i db-config.js'den gelen bilgiyle başlat
-    pb = new PocketBase(POCKETBASE_URL);
+    try {
+        pb = new PocketBase(POCKETBASE_URL);
+    } catch (e) {
+        console.error("PocketBase başlatılamadı. Adresin doğru olduğundan emin olun.", e);
+        // Hata durumunda bile arayüzün bir kısmını yükle
+    }
+
 
     // Modülleri PocketBase instance ile ilklendir
     api.initApi(pb);
     excel.initExcel(pb);
     ui.initUi(pb);
 
-    // === GÜNCELLENDİ: 'onclick' yerine 'addEventListener' kullanılır ===
+    // === GÜNCELLENDİ: 'attachUiFunctionsToWindow' çağrısı SİLİNDİ ===
     // ui.attachUiFunctionsToWindow(); // Bu satır silindi
     
     // Oturum durumuna göre arayüzü güncelle
     updateAuthUI();
     
     // Giriş yapılmışsa verileri yükle
-    if (pb.authStore.isValid) {
+    if (pb && pb.authStore.isValid) {
         state.setIsPocketBaseConnected(true);
         ui.updateConnectionIndicator();
         
@@ -59,6 +64,7 @@ async function initializeApp() {
     }
 
     setupEventListeners();
+    // Bayi seçili değilse formu kilitle
     if(!state.selectedStore) {
         ui.updateFormInteractivity(false);
     }
@@ -111,7 +117,7 @@ function setupEventListeners() {
     
     // Dışarı tıklayınca popup'ı kapat
     window.addEventListener('click', (event) => {
-        if (!loginPopup.contains(event.target) && event.target !== loginToggleBtn) {
+        if (loginPopup && !loginPopup.contains(event.target) && event.target !== loginToggleBtn) {
             loginPopup.style.display = 'none';
         }
     });
@@ -164,7 +170,7 @@ function setupEventListeners() {
         window.open('admin/admin.html', '_blank');
     });
 
-    // === GÜNCELLENDİ: Programatik Olay Dinleyicileri ===
+    // === YENİ EKLENDİ: Programatik Olay Dinleyicileri ===
     
     // 'E-POSTA TASLAĞI OLUŞTUR' butonunu 'id' ile bağla
     const emailBtn = document.getElementById('generate-email-btn');
@@ -194,7 +200,7 @@ function updateAuthUI() {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
     
-    if (pb.authStore.isValid) {
+    if (pb && pb.authStore.isValid) {
         loginToggleBtn.style.display = 'none';
         logoutBtn.style.display = 'inline-flex';
     } else {
