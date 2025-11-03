@@ -8,12 +8,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
 
-  <script type="module" crossorigin src="./assets/main-B4HSCTK1.js"></script>
+  <script type="module" crossorigin src="./assets/main-o1ZsbmOu.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/db-config-DOJnS-mV.js">
   <link rel="stylesheet" crossorigin href="./assets/main-Dlz_7nvI.css">
 </head>
 <body>
     <div id="loading-overlay" style="display: none;">
-        <div class="spinner"></div>
+        <i class="fas fa-spinner fa-spin"></i>
         <p>İşlem yapılıyor, lütfen bekleyin...</p>
     </div>
 
@@ -90,15 +91,14 @@
 
         <div id="form-content"></div>
 
-        <button class="action-button" onclick="generateEmail()" title="Formdaki tüm verileri kullanarak nihai e-posta taslağını oluşturur ve raporu kaydeder.">
+        <button id="generate-email-btn" class="action-button" title="Formdaki tüm verileri kullanarak nihai e-posta taslağını oluşturur ve raporu kaydeder.">
             <i class="fas fa-envelope"></i> E-POSTA TASLAĞI OLUŞTUR
         </button>
 
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
-    
-    <script src="db-config.js"></script>
+    
 
 </body>
 </html>

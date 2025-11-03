@@ -1,18 +1,23 @@
+// === YENİ EKLENDİ: 'db-config.js' artık import ediliyor ===
+// 'admin.js' dosyası 'admin' klasöründe olduğu için, 
+// ana dizindeki 'db-config.js' dosyasına ../ ile çıkıyoruz.
+import { POCKETBASE_URL } from '../db-config.js';
+
 // --- Modül Tanımlamaları (Alt Menü Destekli Yapı) ---
 const modules = [
     {
         id: 'denetim-takip',
         name: 'Denetim Takip',
         icon: 'fas fa-calendar-check',
-        path: '../modules/denetim-takip/'
+        path: '../modules/denetim-takip/' // (YENİ) Bu yol 'public/modules'a göre değil, 'dist/modules'a göre ayarlandı
     },
     {
-        id: 'fide-main-parent', // Ana menü ID'si
+        id: 'fide-main-parent', 
         name: 'FiDe Ana Sayfası',
         icon: 'fas fa-home',
         submenu: [
             {
-                id: 'eposta-taslagi', // Bu ID, modül klasör adıyla aynı olmalı
+                id: 'eposta-taslagi', 
                 name: 'E-posta Taslağı',
                 icon: 'fas fa-envelope-open-text',
                 path: '../modules/eposta-taslagi/'
@@ -20,7 +25,7 @@ const modules = [
         ]
     },
     {
-        id: 'bayi-yoneticisi', // ID, modül klasör adıyla aynı olmalı
+        id: 'bayi-yoneticisi', 
         name: 'Bayi Yöneticisi',
         icon: 'fas fa-store', 
         path: '../modules/bayi-yoneticisi/'
@@ -47,12 +52,15 @@ const modules = [
 
 // --- Global Değişkenler ---
 let currentModuleId = null;
-// 'pb' değişkeni 'db-config.js' dosyasından global olarak geliyor.
+let pb; // === GÜNCELLENDİ: 'pb' artık global değil, bu modül içinde tanımlanıyor ===
 
 // --- Uygulama Başlatma ---
 window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
+    // === GÜNCELLENDİ: 'pb' artık burada başlatılıyor ===
+    pb = new PocketBase(POCKETBASE_URL);
+    
     // --- GÜVENLİK KONTROLÜ (GÜNCELLENDİ) ---
     const isLoggedIn = pb.authStore.isValid;
     const userRole = isLoggedIn ? pb.authStore.model.role : null;
@@ -61,26 +69,15 @@ async function initializeAdminPanel() {
     updateConnectionIndicator(isLoggedIn);
 
     if (userRole === 'admin') {
-        // Kullanıcı admin ise, paneli normal şekilde yükle
-        renderModuleMenu('admin'); // 'admin' parametresi gönderildi
-        
-        // Varsayılan olarak 'denetim-takip' modülünü yükle
+        renderModuleMenu('admin'); 
         if (!currentModuleId) {
             loadModule('denetim-takip');
         }
-
-        // YENİ EKLENDİ: Anlık ban (kilitleme) sistemini dinlemeyi başlat
         subscribeToAdminChanges();
 
     } else if (userRole === 'client') {
-        // YENİ: Kullanıcı 'client' ise, panele kısıtlı erişim ver
-        renderModuleMenu('client'); // 'client' parametresi gönderildi
-
-        // Varsayılan olarak (ve tek izin verilen) 'denetim-takip' modülünü yükle
+        renderModuleMenu('client'); 
         loadModule('denetim-takip');
-        
-        // Anlık ban (kilitleme) sistemini dinlemeyi başlat
-        // (Fonksiyon adı 'Admin' olsa da, giriş yapan mevcut kullanıcıyı dinler)
         subscribeToAdminChanges();
 
     } else {
@@ -99,21 +96,18 @@ async function initializeAdminPanel() {
     setupEventListeners();
 }
 
-// --- ALT MENÜ DESTEKLİ MENÜ OLUŞTURUCU (GÜNCELLENDİ) ---
-function renderModuleMenu(userRole) { // userRole parametresi eklendi
+// --- ALT MENÜ DESTEKLİ MENÜ OLUŞTURUCU (Değişiklik yok) ---
+function renderModuleMenu(userRole) { 
     const menu = document.getElementById('module-menu');
     menu.innerHTML = ''; 
 
-    // Rol'e göre modülleri filtrele
     let accessibleModules = [];
     if (userRole === 'admin') {
-        accessibleModules = modules; // Admin tüm modülleri görür
+        accessibleModules = modules; 
     } else if (userRole === 'client') {
-        // Client SADECE 'denetim-takip' modülünü görür
         accessibleModules = modules.filter(m => m.id === 'denetim-takip');
     }
 
-    // Erişilebilir modüller üzerinden menüyü oluştur
     accessibleModules.forEach(module => {
         const li = document.createElement('li');
         
@@ -211,21 +205,19 @@ async function loadModule(moduleId) {
             document.head.appendChild(link);
         }
 
-        // JAVASCRIPT YÜKLEYİCİ (Modern 'import' yöntemi)
+        // JAVASCRIPT YÜKLEYİCİ
         const oldScript = document.getElementById('module-script');
         if (oldScript) oldScript.remove();
 
         const formattedId = module.id.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
         const initFunctionName = `initialize${formattedId}Module`;
 
-        // Önbelleğe takılmamak için URL'ye zaman damgası ekle
         const moduleUrl = `${module.path}${module.id}.js?v=${new Date().getTime()}`;
         
-        // 'import()' komutu, 'export' içeren modern JS dosyalarını yükler
         const moduleExports = await import(moduleUrl);
         
         if (typeof moduleExports[initFunctionName] === 'function') {
-            moduleExports[initFunctionName](pb);
+            moduleExports[initFunctionName](pb); // 'pb' instance'ı modüle aktar
         } else {
             console.error(`Modern modül (import) başlatma fonksiyonu bulunamadı: ${initFunctionName}. Modülün .js dosyasının bu fonksiyonu 'export' ettiğinden emin olun.`);
         }
@@ -238,29 +230,20 @@ async function loadModule(moduleId) {
 
 /**
  * YENİ FONKSİYON: Anlık ban sistemini dinler (Admin paneli için).
- * Adminin kendi kaydını dinler. 'is_banned' true olursa, paneli kapatır.
  */
 function subscribeToAdminChanges() {
     if (!pb || !pb.authStore.isValid) {
-        return; // Giriş yapılmamış veya yetkisiz
+        return; 
     }
 
     const adminId = pb.authStore.model.id;
     
     try {
-        // Adminin kendi 'users' kaydını dinle
         pb.collection('users').subscribe(adminId, function(e) {
-            // console.log('Admin kullanıcı kaydı güncellendi:', e.record);
-            
             if (e.record && e.record.is_banned === true) {
                 console.warn('Admin kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
-                
                 alert("Hesabınız başka bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor.");
-                
-                // Oturumu kapat (Bu dosyada 'api.js' import edilmediği için direkt metot kullanıyoruz)
                 pb.authStore.clear();
-                
-                // Sayfayı yenileyerek giriş ekranına at
                 window.location.reload();
             }
         });
