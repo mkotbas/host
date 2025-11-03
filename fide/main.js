@@ -1,5 +1,5 @@
 // --- Modül İçeri Aktarma (Import) ---
-import { POCKETBASE_URL } from './db-config.js'; // === YENİ EKLENDİ ===
+import { POCKETBASE_URL } from './db-config.js'; // db-config.js'den URL'i al
 import * as state from './state.js';
 import * as api from './api.js';
 import * as excel from './excel.js';
@@ -16,22 +16,17 @@ window.onload = initializeApp;
  * Uygulamayı başlatan ana fonksiyon.
  */
 async function initializeApp() {
-    // === GÜNCELLENDİ: 'pb' artık burada tanımlanıyor ===
+    // 'pb' artık 'db-config.js'den gelen URL ile burada tanımlanıyor
     try {
         pb = new PocketBase(POCKETBASE_URL);
     } catch (e) {
         console.error("PocketBase başlatılamadı. Adresin doğru olduğundan emin olun.", e);
-        // Hata durumunda bile arayüzün bir kısmını yükle
     }
-
 
     // Modülleri PocketBase instance ile ilklendir
     api.initApi(pb);
     excel.initExcel(pb);
     ui.initUi(pb);
-
-    // === GÜNCELLENDİ: 'attachUiFunctionsToWindow' çağrısı SİLİNDİ ===
-    // ui.attachUiFunctionsToWindow(); // Bu satır silindi
     
     // Oturum durumuna göre arayüzü güncelle
     updateAuthUI();
@@ -105,7 +100,6 @@ function setupEventListeners() {
             return;
         }
 
-        // api.js'teki loginUser fonksiyonunu çağır
         const result = await api.loginUser(email, password);
 
         if (result.success) {
@@ -170,7 +164,7 @@ function setupEventListeners() {
         window.open('admin/admin.html', '_blank');
     });
 
-    // === YENİ EKLENDİ: Programatik Olay Dinleyicileri ===
+    // === GÜNCELLENDİ: Programatik Olay Dinleyicileri ===
     
     // 'E-POSTA TASLAĞI OLUŞTUR' butonunu 'id' ile bağla
     const emailBtn = document.getElementById('generate-email-btn');
@@ -178,15 +172,20 @@ function setupEventListeners() {
         emailBtn.addEventListener('click', ui.generateEmail);
     }
     
-    // Formun tamamındaki (dinamik oluşanlar dahil) tüm tıklamaları yakala
+    // === GÜNCELLENDİ: 'form-content' dinleyicisi SİLİNDİ ===
+    // 'container' dinleyicisi hem 'form-content' hem de 'email-draft-container' 
+    // içindeki tıklamaları yakalamak için yeterlidir.
+    /*
     const formContent = document.getElementById('form-content');
     if (formContent) {
         formContent.addEventListener('click', ui.handleFormClick);
     }
+    */
 
     // E-posta taslağındaki 'Geri Dön' butonu için (dinamik oluşur)
     const container = document.querySelector('.container');
     if (container) {
+        // SADECE BU TEK DİNLEYİCİ KALDI
         container.addEventListener('click', ui.handleFormClick);
     }
     // === GÜNCELLEME BİTTİ ===
