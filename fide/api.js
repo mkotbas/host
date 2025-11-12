@@ -221,11 +221,13 @@ export async function loadExcelDataFromCloud() {
 
 /**
  * Uygulama için gerekli tüm başlangıç verilerini yükler.
- * (Bu fonksiyonda değişiklik yok)
+ * --- GÜNCELLENDİ (Styling verisi eklendi) ---
  */
 export async function loadInitialData() {
     if (!pb || !pb.authStore.isValid) {
         state.setFideQuestions(state.fallbackFideQuestions);
+        // (YENİ) Styling verisi için de (giriş yapılmamışsa) boş bir obje ayarla
+        state.setStylingData({}); 
         return false;
     }
 
@@ -238,9 +240,21 @@ export async function loadInitialData() {
 
         if (fideQuestionsDataRecord) {
             const cloudData = fideQuestionsDataRecord.deger;
+            
+            // Mevcut Soru ve Ürün Listesi yüklemesi (Değişiklik yok)
             state.setFideQuestions(cloudData.questions || []);
             state.setProductList(cloudData.productList || []);
+
+            // --- YENİ GELİŞTİRME ---
+            // FiDe 16 (Styling) için 'stylingData' anahtarını aynı kayıttan oku
+            // ve state modülüne yükle.
+            // Bulunamazsa boş bir obje ('{}') yükler, bu sayede uygulama çöKMEZ.
+            state.setStylingData(cloudData.stylingData || {});
+            // --- YENİ GELİŞTİRME BİTTİ ---
+
         } else {
+            // fideQuestionsData kaydı hiç bulunamazsa
+            state.setStylingData({}); // Styling verisini yine de boş başlat
             throw new Error("fideQuestionsData bulunamadı");
         }
 
@@ -264,7 +278,11 @@ export async function loadInitialData() {
 
     } catch (error) {
         console.error("Başlangıç verileri okunurken hata oluştu:", error);
+        
+        // Hata durumunda da state'leri (hafızayı) boşalt
         state.setFideQuestions(state.fallbackFideQuestions);
+        state.setStylingData({}); // Hata durumunda styling verisini boşalt
+        
         document.getElementById('initialization-error').style.display = 'block';
         return false;
     } finally {
