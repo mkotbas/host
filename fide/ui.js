@@ -45,6 +45,7 @@ function generateQuestionHtml(q) {
         questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`).join('');
         questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
+    
     } else if (q.type === 'product_list') {
         questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')" title="Pleksi kullanımıyla ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         let productOptions = '';
@@ -60,6 +61,34 @@ function generateQuestionHtml(q) {
         });
         if (currentOptgroup) productOptions += `</optgroup>`;
         questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b class="plexi-header"><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
+    
+    // --- YENİ GELİŞTİRME (STYLING LİSTESİ) ---
+    } else if (q.type === 'styling_list') { 
+        questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        
+        let anaKategoriOptions = '<option value="">-- Ana Kategori Seçin --</option>';
+        if (state.stylingData) {
+            Object.keys(state.stylingData).forEach(anaKategori => {
+                anaKategoriOptions += `<option value="${anaKategori}">${anaKategori}</option>`;
+            });
+        }
+
+        questionContentHTML = `<div class="input-area">
+            <div class="styling-selector-container">
+                <select id="styling-ana-kategori-${q.id}" onchange="updateStylingAltKategori(${q.id})">
+                    ${anaKategoriOptions}
+                </select>
+                <select id="styling-alt-kategori-${q.id}" onchange="populateStylingList(${q.id})" disabled>
+                    <option value="">-- Önce Ana Kategori Seçin --</option>
+                </select>
+            </div>
+            <hr>
+            <b><i>Eksik olan (sipariş verilmesi gereken) malzemeler:</i></b>
+            <div id="styling-checklist-container-${q.id}" class="styling-checklist-container">
+                </div>
+        </div>`;
+    // --- YENİ GELİŞTİRME BİTTİ ---
+
     } else if (q.type === 'pop_system') {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
@@ -77,7 +106,19 @@ function getFormDataForSaving() {
         const titleContainer = itemDiv.querySelector('.fide-title-container');
         const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
         
-        const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
+        // --- GÜNCELLENDİ (Styling verisi için alanlar eklendi) ---
+        const questionData = { 
+            removed: isRemoved, 
+            completed: isCompleted, 
+            dynamicInputs: [], 
+            selectedProducts: [], 
+            selectedPops: [],
+            // YENİ (Styling)
+            selectedAnaKategori: null,
+            selectedAltKategori: null,
+            missingItems: []
+        };
+        // --- GÜNCELLEME BİTTİ ---
 
         if (q.type === 'standard') {
             const container = document.getElementById(`sub-items-container-fide${q.id}`);
@@ -104,6 +145,24 @@ function getFormDataForSaving() {
                     }
                 });
             }
+        
+        // --- YENİ GELİŞTİRME (STYLING LİSTESİ) ---
+        // Kaydetme mantığı eklendi
+        } else if (q.type === 'styling_list') {
+            const anaKategoriSelect = document.getElementById(`styling-ana-kategori-${q.id}`);
+            const altKategoriSelect = document.getElementById(`styling-alt-kategori-${q.id}`);
+            if (anaKategoriSelect) questionData.selectedAnaKategori = anaKategoriSelect.value;
+            if (altKategoriSelect) questionData.selectedAltKategori = altKategoriSelect.value;
+
+            document.querySelectorAll(`#styling-checklist-container-${q.id} .selected-product-item`).forEach(itemEl => {
+                questionData.missingItems.push({ 
+                    stok: itemEl.dataset.stok, 
+                    isim: itemEl.dataset.isim, 
+                    adet: itemEl.dataset.adet 
+                });
+            });
+        // --- YENİ GELİŞTİRME BİTTİ ---
+
         } else if (q.type === 'pop_system') {
             questionData.selectedPops = Array.from(document.querySelectorAll(`#fide-item-${q.id} .pop-checkbox:checked`)).map(cb => cb.value);
         }
@@ -206,6 +265,7 @@ export async function generateEmail() {
         
         const isQuestionCompleted = itemDiv.querySelector('.fide-title-container')?.classList.contains('question-completed');
         let contentHtml = '';
+        const qData = reportData.questions_status[q.id]; // Kaydedilmiş veriyi al
 
         if (q.type === 'standard') {
             const container = document.getElementById(`sub-items-container-fide${q.id}`);
@@ -241,6 +301,19 @@ export async function generateEmail() {
             const pleksiItemsHtml = pleksiContainer ? Array.from(pleksiContainer.querySelectorAll('input[type="text"]')).filter(i => !i.classList.contains('completed')).map(i => `<li>${i.value}</li>`) : [];
             if (productItemsHtml.length > 0) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
             if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
+        
+        // --- YENİ GELİŞTİRME (STYLING LİSTESİ) ---
+        // E-posta taslağı için HTML oluşturma
+        } else if (q.type === 'styling_list') {
+            if (qData && qData.missingItems && qData.missingItems.length > 0) {
+                contentHtml = `<b><i>Sipariş verilmesi gerekenler (${qData.selectedAltKategori}):</i></b><ul>`;
+                qData.missingItems.forEach(item => {
+                    contentHtml += `<li>${item.stok} ${item.isim} - <b>(Std: ${item.adet})</b></li>`;
+                });
+                contentHtml += `</ul>`;
+            }
+        // --- YENİ GELİŞTİRME BİTTİ ---
+
         } else if (q.type === 'pop_system') {
             const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !state.expiredCodes.includes(code));
             if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
@@ -253,7 +326,10 @@ export async function generateEmail() {
                 emailTag = ` <a href="mailto:${q.popEmailTo.join(',')}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${q.popEmailTo.join(', ')}</a>`;
             }
             fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
-            if (!isQuestionCompleted || q.type === 'product_list' || (isQuestionCompleted && q.type === 'standard' && contentHtml !== '')) fideReportHtml += contentHtml;
+            // --- GÜNCELLENDİ (Styling listesi 'tamamlandı' olsa bile gösterilsin) ---
+            if (!isQuestionCompleted || q.type === 'product_list' || q.type === 'styling_list' || (isQuestionCompleted && q.type === 'standard' && contentHtml !== '')) {
+                fideReportHtml += contentHtml;
+            }
         }
     });
 
@@ -293,17 +369,52 @@ export function loadReportUI(reportData) {
             if (!questionItem) continue;
 
             const data = reportData[qId];
+            const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
+
             if (data.removed) toggleQuestionRemoved(questionItem.querySelector('.remove-btn'), qId, false);
             else if (data.completed) toggleQuestionCompleted(questionItem.querySelector('.status-btn'), qId, false);
             
             if (data.dynamicInputs) {
-                const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
                 data.dynamicInputs.forEach(input => {
                     const containerId = (qInfo && qInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
                     addDynamicInput(containerId, input.text, input.completed, false);
                 });
             }
             if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty, false)); 
+            
+            // --- YENİ GELİŞTİRME (STYLING LİSTESİ) ---
+            // Kayıtlı raporu yükleme mantığı
+            if (qInfo && qInfo.type === 'styling_list' && data.selectedAnaKategori) {
+                const anaKategoriSelect = document.getElementById(`styling-ana-kategori-${qId}`);
+                const altKategoriSelect = document.getElementById(`styling-alt-kategori-${qId}`);
+                
+                // 1. Ana kategoriyi seç
+                anaKategoriSelect.value = data.selectedAnaKategori;
+                
+                // 2. Alt kategori listesini (onchange'i tetiklemeden) doldur
+                updateStylingAltKategori(qId, false); // 'false' -> kaydetme
+                
+                // 3. Alt kategoriyi seç
+                altKategoriSelect.value = data.selectedAltKategori;
+
+                // 4. Standart listeyi (onchange'i tetiklemeden) doldur
+                // Bu fonksiyon, 'selected-product-item' (tekrar kullanılan class) divlerini oluşturur
+                populateStylingList(qId, false); // 'false' -> kaydetme
+
+                // 5. Kayıtlı "missingItems" (eksik) listesine göre
+                // standart listeden "mevcut" olanları (kayıtta olmayanları) SİL.
+                const missingStoks = data.missingItems.map(item => item.stok);
+                const container = document.getElementById(`styling-checklist-container-${qId}`);
+                const allItemsInList = container.querySelectorAll('.selected-product-item');
+                
+                allItemsInList.forEach(itemEl => {
+                    if (!missingStoks.includes(itemEl.dataset.stok)) {
+                        itemEl.remove(); // Bu listede vardı ama kayıtta yok, demek ki silinmiş.
+                    }
+                });
+            }
+            // --- YENİ GELİŞTİRME BİTTİ ---
+
             if (data.selectedPops) {
                 data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
                 checkExpiredPopCodes();
@@ -513,6 +624,81 @@ function openEmailDraft() {
     emailWindow.document.close();
 }
 
+// --- YENİ GELİŞTİRME (STYLING İÇİN YARDIMCI FONKSİYONLAR) ---
+
+/**
+ * Ana Kategori (HUBLAR, VİTRİNLER vb.) değiştiğinde Alt Kategori listesini doldurur.
+ * @param {number} qId - Soru ID'si
+ * @param {boolean} shouldSave - Bu değişikliğin debouncer'ı tetikleyip tetiklemeyeceği
+ */
+function updateStylingAltKategori(qId, shouldSave = true) {
+    const anaKategoriSelect = document.getElementById(`styling-ana-kategori-${qId}`);
+    const altKategoriSelect = document.getElementById(`styling-alt-kategori-${qId}`);
+    const checklistContainer = document.getElementById(`styling-checklist-container-${qId}`);
+    
+    const anaKategoriVal = anaKategoriSelect.value;
+    
+    // Alt kategori listesini ve malzeme listesini temizle
+    altKategoriSelect.innerHTML = '<option value="">-- Alt Kategori Seçin --</option>';
+    checklistContainer.innerHTML = '';
+    
+    if (anaKategoriVal && state.stylingData[anaKategoriVal]) {
+        // Alt kategorileri doldur
+        const altKategoriler = state.stylingData[anaKategoriVal];
+        Object.keys(altKategoriler).forEach(altKategori => {
+            altKategoriSelect.innerHTML += `<option value="${altKategori}">${altKategori}</option>`;
+        });
+        altKategoriSelect.disabled = false;
+    } else {
+        altKategoriSelect.disabled = true;
+    }
+
+    // Değişiklik oldu (liste temizlendi), formu kaydet
+    if (shouldSave) debouncedSaveFormState();
+}
+
+/**
+ * Alt Kategori değiştiğinde, standart malzeme listesini ekrana basar.
+ * Kullanıcı bu listeden "mevcut" olanları siler, "eksik" olanlar kalır.
+ * @param {number} qId - Soru ID'si
+ * @param {boolean} shouldSave - Bu değişikliğin debouncer'ı tetikleyip tetiklemeyeceği
+ */
+function populateStylingList(qId, shouldSave = true) {
+    const anaKategoriVal = document.getElementById(`styling-ana-kategori-${qId}`).value;
+    const altKategoriVal = document.getElementById(`styling-alt-kategori-${qId}`).value;
+    const container = document.getElementById(`styling-checklist-container-${qId}`);
+    
+    container.innerHTML = ''; // Listeyi temizle
+
+    if (anaKategoriVal && altKategoriVal && state.stylingData[anaKategoriVal][altKategoriVal]) {
+        const items = state.stylingData[anaKategoriVal][altKategoriVal];
+        
+        items.forEach(item => {
+            const newItem = document.createElement('div');
+            // FiDe 13 (product_list) ile aynı class'ı kullanarak stillerin tutarlı olmasını sağlıyoruz
+            newItem.className = 'selected-product-item'; 
+            newItem.dataset.stok = item.stok;
+            newItem.dataset.isim = item.isim;
+            newItem.dataset.adet = item.adet;
+            
+            newItem.innerHTML = `<span>${item.stok} ${item.isim} - <span class="product-quantity"><b>(Std: ${item.adet})</b></span></span><button class="delete-item-btn btn-sm" title="Bu malzeme EKSİK DEĞİLSE (mevcutsa) listeden sil. Kalanlar 'eksik' olarak raporlanacak."><i class="fas fa-trash"></i></button>`;
+            
+            // Silme butonu (FiDe 13'teki gibi 'addEventListener' kullanıyoruz)
+            newItem.querySelector('.delete-item-btn').addEventListener('click', function() {
+                this.parentElement.remove(); // Malzemeyi listeden sil
+                debouncedSaveFormState(); // Değişikliği kaydet
+            });
+            
+            container.appendChild(newItem);
+        });
+    }
+
+    // Liste doldu (veya boşaldı), bu yeni durumu kaydet
+    if (shouldSave) debouncedSaveFormState();
+}
+// --- YENİ GELİŞTİRME BİTTİ ---
+
+
 /**
  * HTML'deki onclick="" özelliklerinin çalışabilmesi için fonksiyonları window nesnesine atar.
  */
@@ -528,4 +714,9 @@ export function attachUiFunctionsToWindow() {
     window.clearSelectedCodes = clearSelectedCodes;
     window.selectExpiredCodes = selectExpiredCodes;
     window.openEmailDraft = openEmailDraft;
+
+    // --- YENİ EKLENEN STYLING FONKSİYONLARI ---
+    window.updateStylingAltKategori = updateStylingAltKategori;
+    window.populateStylingList = populateStylingList;
+    // --- YENİ EKLEME BİTTİ ---
 }
