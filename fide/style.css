@@ -58,13 +58,6 @@ button i, .btn-like-label i, a.btn-primary i, a.btn-warning i, a.btn-success i, 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    appearance: none;
-    background-color: #fff;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' class='w-5 h-5'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 16px;
-    padding-right: 36px;
 }
 .product-adder input[type="number"] { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
 .selected-product-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--light); border-radius: 8px; margin-bottom: 8px; }
@@ -307,12 +300,6 @@ input:checked + .slider.green {
     border: 1px solid var(--border);
     border-radius: 6px;
     background-color: #fff;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' class='w-5 h-5'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 16px;
-    padding-right: 36px;
 }
 .audit-lists-container {
     display: grid;
@@ -492,13 +479,7 @@ input:checked + .slider.green {
     }
 }
 
-/* --- STYLING (FİDE 16) ÖZEL TASARIM (GÜNCELLENDİ) --- */
-.styling-wrapper {
-    background-color: #fff;
-    padding: 10px 0;
-    margin-top: 10px;
-}
-
+/* --- FİDE 16 STYLING ÖZEL TASARIM (GÜNCEL) --- */
 .styling-row {
     display: flex;
     align-items: center;
@@ -506,20 +487,21 @@ input:checked + .slider.green {
     gap: 15px;
 }
 
-/* Ekran görüntüsüne uygun: Etiket genişliği sabit */
+/* Sol taraftaki etiketler (Ana Kategori, Alt Kategori, Eksik Ekle) */
 .styling-label {
-    width: 110px; 
+    width: 120px; /* Sabit genişlik */
     font-weight: 600;
     color: var(--secondary);
     font-size: 14px;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Daralmasını engelle */
 }
 
+/* Sağ taraftaki içerik alanı */
 .styling-content {
     flex-grow: 1;
     display: flex;
-    gap: 10px;
     align-items: center;
+    gap: 10px;
 }
 
 /* Styling Select ve Inputlar */
@@ -531,8 +513,9 @@ input:checked + .slider.green {
     border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 14px;
-    appearance: none;
     background-color: #fff;
+    /* Özel ok ikonu */
+    appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' class='w-5 h-5'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
@@ -540,17 +523,17 @@ input:checked + .slider.green {
     padding-right: 36px;
 }
 
-/* Adet Kutusu */
+/* Adet Kutusu (Dar) */
 .styling-content .qty-input {
-    width: 80px !important;
+    width: 70px !important;
     text-align: center;
-    padding-right: 12px; /* Ok işareti olmadığı için */
+    padding-right: 12px; /* Ok ikonu olmasın */
     background-image: none;
 }
 
-/* Yeşil Ekle Butonu (Ekran Görüntüsü) */
+/* Yeşil Ekle Butonu (Görseldeki gibi) */
 .btn-add-styling {
-    background-color: var(--success); /* Mevcut yeşil rengi kullan */
+    background-color: var(--success);
     color: white;
     border: none;
     padding: 10px 20px;
@@ -575,78 +558,21 @@ input:checked + .slider.green {
     opacity: 0.7;
 }
 
-/* Eklenenler Listesi */
-.added-items-list {
-    width: 100%;
-    background-color: var(--light);
-    border-radius: 8px;
-    padding: 10px;
-    min-height: 40px;
-}
-
-.added-item-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #fff;
-    padding: 10px 15px;
-    margin-bottom: 8px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.added-item-row:last-child {
-    margin-bottom: 0;
-}
-
-.item-info {
-    font-size: 14px;
-    color: var(--dark);
-    font-weight: 500;
-}
-
-.item-qty-badge {
-    background-color: var(--primary);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-.btn-remove-item {
-    color: var(--danger);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-}
-
-.btn-remove-item:hover {
-    color: #b91c1c;
-}
-
+/* Mobil Uyumluluk */
 @media (max-width: 768px) {
     .styling-row {
         flex-direction: column;
         align-items: flex-start;
         gap: 5px;
     }
-    
     .styling-label {
         width: 100%;
         margin-bottom: 2px;
     }
-    
     .styling-content {
         width: 100%;
         flex-wrap: wrap;
     }
-    
     .btn-add-styling {
         width: 100%;
         justify-content: center;
