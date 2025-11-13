@@ -334,8 +334,8 @@ export async function generateEmail() {
                     // const selections = questionStatus.stylingCategorySelections; // Artık kullanılmıyor
                     
                     // --- GÜNCELLEME (Başlık eklendi) ---
-                    // Başlık "sipariş listesi:" olarak ve ekteki stilde (koyu/italik) eklendi.
-                    contentHtml = `<b><i>sipariş listesi:</i></b>`;
+                    // Başlık "Sipariş verilmesi gerekenler:" olarak ve ekteki stilde (koyu/italik) eklendi.
+                    contentHtml = `<b><i>Sipariş verilmesi gerekenler:</i></b>`;
                     
                     // Ürün listesi
                     contentHtml += `<ul>${productItemsHtml.join('')}</ul>`;
