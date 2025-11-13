@@ -173,9 +173,9 @@ input:checked + .slider:before { transform: translateX(22px); }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 
-/* --- YENİ EKLENDİ: Styling Listesi Yöneticisi Hiyerarşi Stilleri --- */
+/* --- GÜNCELLENDİ: Styling Listesi Yöneticisi Modern Tasarım Stilleri --- */
 
-/* Ana 'Styling List' kutusu (Mavi çerçeveli) */
+/* Ana 'Styling List' kutusu (Mavi çerçeveli, product_list ile aynı) */
 .styling-list-manager-container {
     margin-top: 20px;
     padding: 15px;
@@ -187,122 +187,95 @@ input:checked + .slider:before { transform: translateX(22px); }
     color: #3730a3; /* Başlık rengi */
     margin: 0 0 10px 0;
 }
-/* 'Ana Kategori Ekle' butonu için boşluk */
-.btn-add-main-category {
-    margin-top: 15px;
+/* Ana Kategori Ekle butonu için boşluk */
+.styling-list-manager-container .product-manager-actions {
+    margin-bottom: 15px;
 }
-
-/* Ana Kategori Satırı (örn: Vitrinler) */
-.main-category-row {
-    background-color: var(--light-bg); /* Beyaz */
-    border: 1px solid var(--light-border);
-    border-radius: 8px;
-    margin-bottom: 10px;
-    overflow: hidden; /* Köşelerin düzgün görünmesi için */
-}
-
-/* Kategori Başlığı (Tüm seviyeler için ortak) */
-.category-header {
+/* Ana editör alanı için boşluk */
+.styling-list-editor-container {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
+    flex-direction: column;
+    gap: 10px; /* Ana Kategoriler arası boşluk */
 }
-/* Ana kategori başlığını hafifçe ayır */
+
+/* Ana Kategori (Mor Başlık) */
 .main-category-row > .category-header {
-    background-color: var(--light-container-bg); /* Hafif Gri */
-    border-bottom: 1px solid var(--light-border);
+    /* JS'den gelen .category-manager-row sınıfı mor arka planı (#4338ca) zaten uygulayacak */
+    /* Sadece ikon rengini ve input'u özelleştirelim */
+    display: grid;
+    /* [icon-drag] [icon-layer] [input] [button-add-sub] [button-remove] */
+    grid-template-columns: 20px 20px 1fr auto auto;
+    color: white; /* İkonların beyaz olması için */
 }
-
-/* Ana Kategori İkonu */
-.main-cat-icon {
-    color: #4338ca; /* Koyu Mavi */
-    font-size: 16px;
-    flex-shrink: 0;
-}
-/* Alt Kategori İkonu */
-.sub-cat-icon {
-    color: #3b82f6; /* Açık Mavi */
-    font-size: 14px;
-    flex-shrink: 0;
-}
-
-/* Kategori İsim Giriş Alanları */
-.main-category-input,
-.sub-category-input {
-    flex-grow: 1; /* Esneyen alan */
-    font-size: 16px;
-    font-weight: 600;
+.main-category-row .main-category-input {
+    background: transparent;
     border: none;
-    background-color: transparent; /* Arka planı temizle */
-    padding: 4px;
-    color: var(--light-text-primary);
+    color: white; /* Koyu Mor arka planda beyaz yazı */
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0;
 }
-.main-category-input { color: #4338ca; } /* Koyu Mavi Yazı */
-.sub-category-input { font-size: 14px; color: #3b82f6; } /* Açık Mavi Yazı */
-
-/* Kategori butonları (Sil, Alt Kategori Ekle) */
-.category-header .btn-sm {
-    flex-shrink: 0; /* Butonlar küçülmesin */
+.main-category-row .main-category-input::placeholder {
+    color: #c7d2fe;
 }
 
 /* --- HİYERARŞİ (GİRİNTİLEME) --- */
 
 /* Alt Kategori Konteyneri (Girintili alan) */
 .sub-category-container {
-    margin-left: 20px; /* Soldan girinti */
-    padding: 10px;
-    border-left: 2px solid var(--light-border); /* Girintiyi belirten çizgi */
+    margin-left: 25px; /* Soldan girinti */
+    padding: 10px 0 10px 10px;
+    border-left: 2px solid #c7d2fe; /* Girintiyi belirten mor/mavi çizgi */
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Alt kategoriler arası boşluk */
 }
-.sub-category-row {
-    background-color: var(--light-bg);
-    border: 1px solid var(--light-border);
-    border-radius: 8px;
-    margin-bottom: 10px;
-    overflow: hidden;
-}
+
+/* Alt Kategori (Açık Mor Başlık) */
 .sub-category-row > .category-header {
-     background-color: #fdfdff; /* Çok hafif mavi tonu */
-     border-bottom: 1px solid #e0f2fe; /* Maviş çizgi */
+    /* JS'den gelen .category-manager-row sınıfını eziyoruz */
+    background-color: #a5b4fc; /* Açık Mor/Mavi */
+    display: grid;
+     /* [icon-drag] [icon-folder] [input] [button-add-prod] [button-remove] */
+    grid-template-columns: 20px 20px 1fr auto auto;
+    color: #3730a3; /* İkonların koyu renk olması için */
+}
+.sub-category-row .sub-category-input {
+    background: transparent;
+    border: none;
+    color: #3730a3; /* Açık Mor arka planda koyu yazı */
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0;
+}
+.sub-category-row .sub-category-input::placeholder {
+    color: #4338ca;
 }
 
 /* Ürün Konteyneri (Daha da girintili alan) */
 .product-container-styling {
     margin-left: 25px; /* Alt kategoriden daha fazla girinti */
-    padding: 10px;
-    border-left: 2px solid #e0f2fe; /* Daha açık mavi çizgi */
+    padding: 10px 0 10px 10px;
+    border-left: 2px solid #e5e7eb; /* Girintiyi belirten gri çizgi */
     display: flex;
     flex-direction: column;
     gap: 8px; /* Ürünler arası boşluk */
 }
 
-/* Ürün Satırı (örn: 234565677 - çiçek) */
-.product-row-styling {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
-    background-color: var(--light-bg);
-    border: 1px solid var(--light-border);
-    border-radius: 6px;
+/* Ürün Satırı (Beyaz) */
+.product-row-styling.product-manager-row {
+    /* JS'den gelen .product-manager-row sınıfı beyaz arka planı zaten uygulayacak */
+    /* Sadece grid yapısını eziyoruz */
+     /* [icon-drag] [input-code] [input-name] [button-remove] */
+    grid-template-columns: 20px 1fr 2fr auto;
 }
-.product-icon {
-    color: var(--light-text-secondary);
-    margin-right: 5px;
-}
-/* Ürün Kod ve İsim Alanları */
-.product-code-styling,
-.product-name-styling {
+/* Input'ları product_list'teki gibi yap */
+.product-row-styling .product-code-styling,
+.product-row-styling .product-name-styling {
     border: 1px solid var(--light-border);
     border-radius: 4px;
     padding: 6px 8px;
     font-size: 13px;
     background-color: var(--light-bg);
-}
-.product-code-styling {
-    flex-basis: 150px; /* Kod alanı için sabit genişlik */
-    flex-shrink: 0;
-}
-.product-name-styling {
-    flex-grow: 1; /* İsim alanı esnesin */
+    width: 100%; /* Grid içinde tam genişlik */
 }
