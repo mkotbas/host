@@ -511,11 +511,6 @@ input:checked + .slider.green {
     /* GÜNCELLENDİ: Hizalama sorunu için 'right' -> 'left' yapıldı */
     text-align: left;
 }
-/* GÜNCELLENDİ: Dikey hizalamayı üste al (özellikle liste için) */
-.styling-dropdown-group.align-top {
-    align-items: start;
-    padding-top: 5px; /* Etiketin üstten boşluklu başlaması için */
-}
 
 /* FiDe 16 Kategori ve Ürün Açılır Menüleri */
 .styling-main-category-select,
@@ -535,71 +530,42 @@ input:checked + .slider.green {
     font-size: 14px;
 }
 
-/* FiDe 16'nın "Ekle" bölümü KALDIRILDI 
-  (Artık .styling-list-row stilleri kullanılacak)
-*/
-.styling-dropdown-group .styling-adder {
-    display: none; /* Artık kullanılmıyor */
-}
-
-
-/* FiDe 16'nın eklenen ürünler listesi */
-/* GÜNCELLENDİ: Dış margin'i sıfırla */
-.styling-selected-products-list {
-    margin-top: 0;
+/* FiDe 16'nın "Ekle" bölümü (FiDe 13'teki product-adder'a benzemesi için) */
+.styling-adder {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-}
-/* --- YENİ EKLENDİ: Otomatik Liste Satırı (FiDe 13'e benzetme) --- */
-/* FiDe 13'ün .selected-product-item'ını (satır 100) temel alır */
-.selected-product-item.styling-list-row {
-    display: grid;
-    /* Ürün Adı (esnek) | Adet Kutusu (sabit) | "Adet" (sabit) | Sil (sabit) */
-    grid-template-columns: 1fr auto auto auto;
     gap: 10px;
     align-items: center;
-    padding: 8px 12px; /* FiDe 13'ten biraz daha az dikey dolgu */
-    margin-bottom: 8px; /* Liste öğeleri arası boşluk */
+    margin: 15px 0;
+    padding-top: 15px;
+    border-top: 1px dashed var(--border);
 }
-
-/* Ürün adı (esneyen alan) */
-.styling-list-row .styling-product-name {
-    font-size: 13px;
-    color: var(--dark);
-    font-weight: 500;
+.styling-adder .styling-product-select {
+    flex-grow: 1;
 }
-
-/* Adet kutusu ve "Adet" etiketini saran kutu */
-.styling-list-row .product-qty-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px; /* Kutu ve etiket arası boşluk */
-}
-
-/* "Adet" etiketi (örn: Paket, Adet) */
-.styling-list-row .unit-label {
-    font-size: 12px;
-    color: var(--secondary);
-    font-weight: 600;
-}
-
-/* Düzenlenebilir adet kutusu */
-.styling-list-row .styling-product-qty-editable {
-    width: 70px; /* Sabit genişlik */
-    padding: 8px;
+.styling-adder .styling-product-qty {
+    width: 80px;
+    padding: 10px;
     border: 1px solid var(--border);
     border-radius: 6px;
     text-align: center;
-    font-size: 14px;
+}
+/* Adet alanı kilitliyken görünümü iyileştir */
+.styling-adder .styling-product-qty:disabled {
+    background-color: var(--light);
     font-weight: bold;
-    background-color: white;
-    /* Tarayıcının varsayılan sayı oklarını gizle */
-    -moz-appearance: textfield;
+    color: var(--dark);
+    opacity: 1; /* Soluk görünmesin */
 }
-.styling-list-row .styling-product-qty-editable::-webkit-outer-spin-button,
-.styling-list-row .styling-product-qty-editable::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+
+/* FiDe 16'nın eklenen ürünler listesi */
+.styling-selected-products-list {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
+/* NOT: Bu liste içindeki .selected-product-item'lar
+   FiDe 13'ün kullandığı mevcut stilleri (satır 100)
+   otomatik olarak alacaktır. [2025-10-02] kuralı gereği
+   kod tekrarı yapılmamıştır.
+*/
