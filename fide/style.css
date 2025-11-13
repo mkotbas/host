@@ -600,24 +600,24 @@ input:checked + .slider.green {
     font-weight: normal; /* Input olduğu için kalına gerek yok */
 }
 
-/* Adet input kutusu */
+/* Adet input kutusu (Görseldeki gibi oklar görünecek) */
 .styling-selected-products-list .selected-product-item .qty-edit-input {
-    width: 65px;
+    width: 75px; /* Oklar için biraz daha genişlik */
     padding: 5px 8px;
     border: 1px solid var(--border);
-    border-radius: 6px;
-    text-align: center;
+    border-radius: 8px; /* Köşeleri daha yuvarlak yaptık */
+    text-align: left; /* Metni sola hizala (varsayılan) */
     font-size: 14px;
     
-    /* Chrome/Safari/Edge/Opera'da artırma/azaltma oklarını gizle */
-    -webkit-appearance: textfield;
-    -moz-appearance: textfield;
-    appearance: textfield;
+    /* Okları gizleyen appearance: textfield kodları kaldırıldı.
+       Tarayıcının varsayılan number input okları (spinner) görünecek. */
 }
 
-/* Firefox'ta artırma/azaltma oklarını gizle */
+/* Firefox'ta artırma/azaltma oklarını gizle (BU BLOK SİLİNDİ / YORUMLANDI) */
+/*
 .styling-selected-products-list .selected-product-item .qty-edit-input::-webkit-outer-spin-button,
 .styling-selected-products-list .selected-product-item .qty-edit-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
+*/
