@@ -134,7 +134,7 @@ function getFormDataForSaving() {
         } else if (q.type === 'pop_system') {
             questionData.selectedPops = Array.from(document.querySelectorAll(`#fide-item-${q.id} .pop-checkbox:checked`)).map(cb => cb.value);
         
-        // --- YENİ: Styling Listesi Veri Toplama ---
+        // --- GÜNCELLENDİ: Styling Listesi Veri Toplama (Sabit Adet ile) ---
         } else if (q.type === 'styling_list') {
             const container = itemDiv.querySelector('.styling-list-container');
             const mainCategorySelect = container.querySelector('.styling-main-category-select');
@@ -145,11 +145,11 @@ function getFormDataForSaving() {
             container.querySelectorAll('.styling-product-item').forEach(prodItem => {
                 const checkbox = prodItem.querySelector('.styling-product-checkbox');
                 if (checkbox.checked) {
-                    const qtyInput = prodItem.querySelector('.styling-product-qty');
+                    // --- GÜNCELLENDİ: Adet input'u yerine, dataset'ten SABİT adeti oku ---
                     selectedProducts.push({
                         code: prodItem.dataset.code,
                         name: prodItem.dataset.name,
-                        qty: qtyInput.value || '1' // Adet girilmemişse 1 varsay
+                        qty: prodItem.dataset.fixedQty || '1' // Sabit adeti al
                     });
                 }
             });
@@ -163,7 +163,7 @@ function getFormDataForSaving() {
                 };
             }
         }
-        // --- YENİ SONU ---
+        // --- GÜNCELLEME SONU ---
 
         reportData.questions_status[q.id] = questionData;
     });
@@ -313,7 +313,7 @@ export async function generateEmail() {
             const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !state.expiredCodes.includes(code));
             if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
         
-        // --- YENİ: Styling Listesi Rapor Formatı ---
+        // --- GÜNCELLENDİ: Styling Listesi Rapor Formatı (Sabit Adet ile) ---
         } else if (q.type === 'styling_list') {
             const selections = questionStatus.stylingSelections;
             if (selections && selections.products && selections.products.length > 0) {
@@ -321,6 +321,7 @@ export async function generateEmail() {
                 contentHtml = `<p><b>${selections.mainCategory} - ${selections.subCategory} Alanı Eksikleri:</b></p>`;
                 
                 // Ürün listesini oluştur
+                // 'prod.qty' artık getFormDataForSaving'den gelen SABİT adettir.
                 const productItemsHtml = selections.products.map(prod => {
                     return `<li>${prod.name} (${prod.qty} Adet)</li>`;
                 }).join('');
@@ -328,7 +329,7 @@ export async function generateEmail() {
                 contentHtml += `<ul>${productItemsHtml}</ul>`;
             }
         }
-        // --- YENİ SONU ---
+        // --- GÜNCELLEME SONU ---
 
         if (contentHtml !== '' || isQuestionCompleted) {
             const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
@@ -354,7 +355,7 @@ export async function generateEmail() {
     const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #dddddd;"><thead><tr><th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${currentYear}</th>${monthHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold;">DiDe</td>${dideScores}</tr><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold;">FiDe</td>${fideScores}</tr></tbody></table></div>`;
 
     let finalEmailBody = emailTemplate
-        .replace(/{YONETMEN_ADI}/g, yonetmenFirstName || 'Yetkili')
+        .replace(/{YONETMEN_ADI}/g, yonetFirstName || 'Yetkili')
         .replace(/{BAYI_BILGISI}/g, `${state.selectedStore.bayiKodu} ${shortBayiAdi}`)
         .replace(/{DENETIM_ICERIGI}/g, fideReportHtml)
         .replace(/{PUAN_TABLOSU}/g, tableHtml);
@@ -395,7 +396,7 @@ export function loadReportUI(reportData) {
                 checkExpiredPopCodes();
             }
             
-            // --- YENİ: Styling Listesi Rapor Yükleme ---
+            // --- GÜNCELLENDİ: Styling Listesi Rapor Yükleme (Sabit Adet ile) ---
             if (data.stylingSelections) {
                 const selections = data.stylingSelections;
                 const mainSelect = questionItem.querySelector('.styling-main-category-select');
@@ -411,23 +412,21 @@ export function loadReportUI(reportData) {
                         // Ürün listesini doldurmak için change event'ini manuel tetikle
                         subSelect.dispatchEvent(new Event('change'));
 
-                        // Ürünleri ve adetleri yükle
+                        // Kayıtlı ürünleri yükle (Sadece checkbox'ı işaretle)
                         if (selections.products && selections.products.length > 0) {
                             selections.products.forEach(prod => {
                                 const prodItem = questionItem.querySelector(`.styling-product-item[data-code="${prod.code}"]`);
                                 if (prodItem) {
                                     const checkbox = prodItem.querySelector('.styling-product-checkbox');
-                                    const qtyInput = prodItem.querySelector('.styling-product-qty');
                                     checkbox.checked = true;
-                                    qtyInput.value = prod.qty;
-                                    qtyInput.disabled = false; // Checkbox işaretlenince adet alanı açılmalı
+                                    // --- GÜNCELLENDİ: Adet input'u artık yok, doldurulmasına gerek yok ---
                                 }
                             });
                         }
                     }
                 }
             }
-            // --- YENİ SONU ---
+            // --- GÜNCELLEME SONU ---
         }
         updateFormInteractivity(true);
     } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
@@ -695,25 +694,25 @@ function handleStylingSubCatChange(event) {
                 productEl.className = 'styling-product-item';
                 productEl.dataset.code = product.code;
                 productEl.dataset.name = product.name;
+                // --- YENİ: Sabit adeti dataset'e ekle ---
+                const fixedQty = product.qty || '1';
+                productEl.dataset.fixedQty = fixedQty;
                 
+                // --- GÜNCELLENDİ: HTML, adet girişini kaldırır, sabit adeti gösterir ---
                 productEl.innerHTML = `
                     <label class="styling-product-label">
                         <input type="checkbox" class="styling-product-checkbox">
-                        ${product.name} (${product.code})
+                        ${product.name} (${product.code}) - <strong>(${fixedQty} Adet)</strong>
                     </label>
-                    <input type="number" class="styling-product-qty" placeholder="Adet" min="1" value="1" disabled>
-                `;
+                    `;
                 
                 const checkbox = productEl.querySelector('.styling-product-checkbox');
-                const qtyInput = productEl.querySelector('.styling-product-qty');
                 
-                // Checkbox değiştiğinde adet alanını aç/kapa ve kaydet
+                // --- GÜNCELLENDİ: Olay dinleyicisi sadece checkbox'a eklendi ---
+                // Checkbox değiştiğinde kaydet
                 checkbox.addEventListener('change', () => {
-                    qtyInput.disabled = !checkbox.checked;
                     debouncedSaveFormState();
                 });
-                // Adet değiştiğinde kaydet
-                qtyInput.addEventListener('input', debouncedSaveFormState);
 
                 productContainer.appendChild(productEl);
             });
