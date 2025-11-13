@@ -266,16 +266,28 @@ input:checked + .slider:before { transform: translateX(22px); }
 .product-row-styling.product-manager-row {
     /* JS'den gelen .product-manager-row sınıfı beyaz arka planı zaten uygulayacak */
     /* Sadece grid yapısını eziyoruz */
-     /* [icon-drag] [input-code] [input-name] [button-remove] */
-    grid-template-columns: 20px 1fr 2fr auto;
+    /* --- YENİ: 5. sütun (Adet) eklendi --- */
+    /* [icon-drag] [input-code] [input-name] [input-qty] [button-remove] */
+    grid-template-columns: 20px 1fr 2fr 80px auto;
 }
 /* Input'ları product_list'teki gibi yap */
+/* --- YENİ: .product-qty-styling eklendi --- */
 .product-row-styling .product-code-styling,
-.product-row-styling .product-name-styling {
+.product-row-styling .product-name-styling,
+.product-row-styling .product-qty-styling {
     border: 1px solid var(--light-border);
     border-radius: 4px;
     padding: 6px 8px;
     font-size: 13px;
     background-color: var(--light-bg);
     width: 100%; /* Grid içinde tam genişlik */
+}
+/* --- YENİ: Adet alanı için sayısal görünümü ayarla --- */
+.product-row-styling .product-qty-styling {
+    -moz-appearance: textfield; /* Firefox'ta okları gizle */
+}
+.product-row-styling .product-qty-styling::-webkit-outer-spin-button,
+.product-row-styling .product-qty-styling::-webkit-inner-spin-button {
+    -webkit-appearance: none; /* Chrome/Safari'de okları gizle */
+    margin: 0;
 }
