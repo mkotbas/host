@@ -61,7 +61,7 @@ button i, .btn-like-label i, a.btn-primary i, a.btn-warning i, a.btn-success i, 
 }
 .product-adder input[type="number"] { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
 .selected-product-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--light); border-radius: 8px; margin-bottom: 8px; }
-.selected-product-item .product-quantity { font-weight: bold; display: flex; align-items: center; gap: 5px; }
+.selected-product-item .product-quantity { font-weight: bold; }
 .delete-item-btn { background-color: var(--danger); color: white; margin-left:10px;}
 .delete-item-btn i { margin-right: 0; }
 textarea { width: 100%; min-height: 120px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; margin-bottom: 16px; resize: vertical;}
@@ -487,13 +487,13 @@ input:checked + .slider.green {
     gap: 15px;
 }
 
-/* Sol taraftaki etiketler */
+/* Sol taraftaki etiketler (Ana Kategori, Alt Kategori, Eksik Ekle) */
 .styling-label {
-    width: 120px;
+    width: 120px; /* Sabit genişlik */
     font-weight: 600;
     color: var(--secondary);
     font-size: 14px;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Daralmasını engelle */
 }
 
 /* Sağ taraftaki içerik alanı */
@@ -514,6 +514,7 @@ input:checked + .slider.green {
     border-radius: 6px;
     font-size: 14px;
     background-color: #fff;
+    /* Özel ok ikonu */
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' class='w-5 h-5'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -526,40 +527,11 @@ input:checked + .slider.green {
 .styling-content .qty-input {
     width: 70px !important;
     text-align: center;
-    padding-right: 12px;
+    padding-right: 12px; /* Ok ikonu olmasın */
     background-image: none;
 }
 
-/* Listelenen ürünlerin içindeki düzenlenebilir adet kutusu (YENİ) */
-.qty-edit-input {
-    width: 60px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    text-align: center;
-    font-weight: bold;
-    color: var(--primary);
-}
-
-/* YENİ: Ürün Listesi Satır İçi Hizalama */
-.product-inline-info {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 5px;
-    flex-grow: 1;
-    font-size: 14px;
-}
-
-.product-inline-info strong {
-    color: var(--dark);
-}
-
-.product-inline-info span {
-    color: var(--secondary);
-}
-
-/* Yeşil Ekle Butonu */
+/* Yeşil Ekle Butonu (Görseldeki gibi) */
 .btn-add-styling {
     background-color: var(--success);
     color: white;
@@ -573,7 +545,7 @@ input:checked + .slider.green {
     align-items: center;
     gap: 5px;
     transition: var(--transition);
-    height: 42px;
+    height: 42px; /* Inputlarla aynı yükseklik */
 }
 
 .btn-add-styling:hover {
@@ -586,6 +558,7 @@ input:checked + .slider.green {
     opacity: 0.7;
 }
 
+/* Mobil Uyumluluk */
 @media (max-width: 768px) {
     .styling-row {
         flex-direction: column;

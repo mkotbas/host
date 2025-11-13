@@ -691,7 +691,7 @@ function handleStylingSubCatChange(event) {
         }
     }
     
-    debouncedSaveFormState(); // Tüm liste oluşunca tek sefer kaydet
+    debouncedSaveFormFState(); // Tüm liste oluşunca tek sefer kaydet
 }
 
 /**
@@ -733,9 +733,9 @@ function addStylingProductToList(qId, productCode, quantity, productName, should
     newItem.dataset.qty = quantity; // Varsayılan değer (data attribute)
     newItem.dataset.name = productName;
     
-    // GÜNCELLENDİ: Adet kısmını input yaptık
+    // GÜNCELLENDİ: Adet kısmı input yaptık ve `-` işaretini kaldırdık
     newItem.innerHTML = `
-        <span>${productCode} ${productName} - 
+        <span>${productCode} ${productName} 
             <span class="product-quantity">
                 <input type="number" class="qty-edit-input" value="${quantity}" min="0"> 
                 ${unit}
