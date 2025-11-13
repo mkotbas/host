@@ -511,6 +511,11 @@ input:checked + .slider.green {
     /* GÜNCELLENDİ: Hizalama sorunu için 'right' -> 'left' yapıldı */
     text-align: left;
 }
+/* GÜNCELLENDİ: Dikey hizalamayı üste al (özellikle liste için) */
+.styling-dropdown-group.align-top {
+    align-items: start;
+    padding-top: 5px; /* Etiketin üstten boşluklu başlaması için */
+}
 
 /* FiDe 16 Kategori ve Ürün Açılır Menüleri */
 .styling-main-category-select,
@@ -531,13 +536,16 @@ input:checked + .slider.green {
 }
 
 /* FiDe 16'nın "Ekle" bölümü (FiDe 13'teki product-adder'a benzemesi için) */
-.styling-adder {
+/* GÜNCELLENDİ: Dış margin/padding'i sıfırla */
+.styling-dropdown-group .styling-adder {
+    margin: 0;
+    padding-top: 0;
+    border-top: none;
+    /* İç stiller kalmalı */
     display: flex;
     gap: 10px;
     align-items: center;
-    margin: 15px 0;
-    padding-top: 15px;
-    border-top: 1px dashed var(--border);
+    width: 100%;
 }
 .styling-adder .styling-product-select {
     flex-grow: 1;
@@ -558,11 +566,13 @@ input:checked + .slider.green {
 }
 
 /* FiDe 16'nın eklenen ürünler listesi */
+/* GÜNCELLENDİ: Dış margin'i sıfırla */
 .styling-selected-products-list {
-    margin-top: 15px;
+    margin-top: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    width: 100%;
 }
 /* NOT: Bu liste içindeki .selected-product-item'lar
    FiDe 13'ün kullandığı mevcut stilleri (satır 100)
