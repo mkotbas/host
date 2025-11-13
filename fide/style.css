@@ -31,7 +31,7 @@ button i, .btn-like-label i, a.btn-primary i, a.btn-warning i, a.btn-success i, 
 .fide-item.question-removed { opacity: 0.6; background-color: #fafafa; }
 .fide-item.archived-item { border: 2px dashed var(--warning); background-color: #fffbeb; }
 .fide-item.archived-item .fide-title-container p { color: var(--warning); }
-.fide-item.archived-item .fide-title-container p::after { content: '(ArÅŸivlenmiÅŸ Soru)'; font-weight: bold; font-size: 10px; color: white; background-color: var(--warning); padding: 2px 6px; border-radius: 10px; margin-left: 10px; }
+.fide-item.archived-item .fide-title-container p::after { content: '(Arşivlenmiş Soru)'; font-weight: bold; font-size: 10px; color: white; background-color: var(--warning); padding: 2px 6px; border-radius: 10px; margin-left: 10px; }
 .fide-title-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px;}
 .fide-title-container p { font-weight: 600; margin: 0; flex-grow: 1; font-size: 16px; color: var(--dark); }
 .fide-title-container.question-completed p { color: var(--success); text-decoration: line-through; }
@@ -58,7 +58,6 @@ button i, .btn-like-label i, a.btn-primary i, a.btn-warning i, a.btn-success i, 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* GÜNCELLENDİ: Modern görünüm için eklendi */
     appearance: none;
     background-color: #fff;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' class='w-5 h-5'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
@@ -308,7 +307,6 @@ input:checked + .slider.green {
     border: 1px solid var(--border);
     border-radius: 6px;
     background-color: #fff;
-    /* GÜNCELLENDİ: Modern görünüm için eklendi */
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' class='w-5 h-5'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -494,78 +492,163 @@ input:checked + .slider.green {
     }
 }
 
-/* --- YENİ EKLENDİ: Styling Listesi Modern Stilleri --- */
+/* --- STYLING (FİDE 16) ÖZEL TASARIM (GÜNCELLENDİ) --- */
+.styling-wrapper {
+    background-color: #fff;
+    padding: 10px 0;
+    margin-top: 10px;
+}
 
-/* Kategori seçme grupları (Etiket + Menü) */
-.styling-dropdown-group {
-    display: grid;
-    grid-template-columns: 100px 1fr; /* Etiket 100px, kalan alan menü */
+.styling-row {
+    display: flex;
     align-items: center;
-    gap: 10px;
     margin-bottom: 15px;
-}
-.styling-dropdown-group label {
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--secondary);
-    /* GÜNCELLENDİ: Hizalama sorunu için 'right' -> 'left' yapıldı */
-    text-align: left;
+    gap: 15px;
 }
 
-/* FiDe 16 Kategori ve Ürün Açılır Menüleri */
-.styling-main-category-select,
-.styling-sub-category-select,
-.styling-product-select {
+/* Ekran görüntüsüne uygun: Etiket genişliği sabit */
+.styling-label {
+    width: 110px; 
+    font-weight: 600;
+    color: var(--secondary);
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.styling-content {
+    flex-grow: 1;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Styling Select ve Inputlar */
+.styling-content select, 
+.styling-content input[type="text"],
+.styling-content input[type="number"] {
     width: 100%;
-    padding: 10px;
+    padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 6px;
-    background-color: #fff;
+    font-size: 14px;
     appearance: none;
+    background-color: #fff;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' class='w-5 h-5'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 16px;
     padding-right: 36px;
-    font-size: 14px;
 }
 
-/* FiDe 16'nın "Ekle" bölümü (FiDe 13'teki product-adder'a benzemesi için) */
-.styling-adder {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin: 15px 0;
-    padding-top: 15px;
-    border-top: 1px dashed var(--border);
-}
-.styling-adder .styling-product-select {
-    flex-grow: 1;
-}
-.styling-adder .styling-product-qty {
-    width: 80px;
-    padding: 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
+/* Adet Kutusu */
+.styling-content .qty-input {
+    width: 80px !important;
     text-align: center;
-}
-/* Adet alanı kilitliyken görünümü iyileştir */
-.styling-adder .styling-product-qty:disabled {
-    background-color: var(--light);
-    font-weight: bold;
-    color: var(--dark);
-    opacity: 1; /* Soluk görünmesin */
+    padding-right: 12px; /* Ok işareti olmadığı için */
+    background-image: none;
 }
 
-/* FiDe 16'nın eklenen ürünler listesi */
-.styling-selected-products-list {
-    margin-top: 15px;
+/* Yeşil Ekle Butonu (Ekran Görüntüsü) */
+.btn-add-styling {
+    background-color: var(--success); /* Mevcut yeşil rengi kullan */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    align-items: center;
+    gap: 5px;
+    transition: var(--transition);
+    height: 42px; /* Inputlarla aynı yükseklik */
 }
-/* NOT: Bu liste içindeki .selected-product-item'lar
-   FiDe 13'ün kullandığı mevcut stilleri (satır 100)
-   otomatik olarak alacaktır. [2025-10-02] kuralı gereği
-   kod tekrarı yapılmamıştır.
-*/
+
+.btn-add-styling:hover {
+    background-color: #15803d;
+}
+
+.btn-add-styling:disabled {
+    background-color: var(--gray);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Eklenenler Listesi */
+.added-items-list {
+    width: 100%;
+    background-color: var(--light);
+    border-radius: 8px;
+    padding: 10px;
+    min-height: 40px;
+}
+
+.added-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.added-item-row:last-child {
+    margin-bottom: 0;
+}
+
+.item-info {
+    font-size: 14px;
+    color: var(--dark);
+    font-weight: 500;
+}
+
+.item-qty-badge {
+    background-color: var(--primary);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.btn-remove-item {
+    color: var(--danger);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+}
+
+.btn-remove-item:hover {
+    color: #b91c1c;
+}
+
+@media (max-width: 768px) {
+    .styling-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .styling-label {
+        width: 100%;
+        margin-bottom: 2px;
+    }
+    
+    .styling-content {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .btn-add-styling {
+        width: 100%;
+        justify-content: center;
+    }
+}
