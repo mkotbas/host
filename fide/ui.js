@@ -65,11 +65,10 @@ function generateQuestionHtml(q) {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
     
-    // --- GÜNCELLENDİ: Styling Listesi Soru Tipi (FiDe 13 Mantığı) ---
+    // --- GÜNCELLENDİ: Styling Listesi Soru Tipi (Hizalama Düzeltmesi) ---
     } else if (q.type === 'styling_list') {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         
-        // Ana Kategori seçeneklerini oluştur
         let mainCategoryOptions = '<option value="">-- Ana Kategori Seçin --</option>';
         if (q.stylingData && Array.isArray(q.stylingData)) {
             q.stylingData.forEach((mainCat) => {
@@ -77,7 +76,8 @@ function generateQuestionHtml(q) {
             });
         }
         
-        // GÜNCELLENDİ: HTML yapısı Fide 13'e benzetildi (product-adder)
+        // GÜNCELLENDİ: Tüm satırlar (Alt Kategori, Ekle, Liste) hizalama için
+        // .styling-dropdown-group ile sarmalandı.
         questionContentHTML = `
             <div class="input-area styling-list-container" data-question-id="${q.id}">
                 <div class="styling-dropdown-group">
@@ -89,16 +89,19 @@ function generateQuestionHtml(q) {
                     <select class="styling-sub-category-select"></select>
                 </div>
 
-                <div class="product-adder styling-adder" id="styling-adder-container-${q.id}" style="display: none;">
-                    <select class="styling-product-select">
-                        <option value="">-- Malzeme Seçin --</option>
-                    </select>
-                    <input type="number" class="styling-product-qty" placeholder="Adet" min="1" value="1" disabled>
-                    <button class="btn-success btn-sm" onclick="addStylingProductToList(${q.id})" title="Seçili malzemeyi aşağıdaki eksik listesine ekler."><i class="fas fa-plus"></i> Ekle</button>
+                <div class="styling-dropdown-group" id="styling-adder-container-${q.id}" style="display: none;">
+                    <label>Eksik Ekle</label> <div class="product-adder styling-adder"> <select class="styling-product-select">
+                            <option value="">-- Malzeme Seçin --</option>
+                        </select>
+                        <input type="number" class="styling-product-qty" placeholder="Adet" min="1" value="1" disabled>
+                        <button class="btn-success btn-sm" onclick="addStylingProductToList(${q.id})" title="Seçili malzemeyi aşağıdaki eksik listesine ekler."><i class="fas fa-plus"></i> Ekle</button>
+                    </div>
                 </div>
 
-                <div class_id="styling-selected-products-list-${q.id}" class="styling-selected-products-list">
-                    </div>
+                <div class="styling-dropdown-group align-top" id="styling-list-container-${q.id}" style="display: none;">
+                    <label>Eklenenler</label> <div class="styling-selected-products-list">
+                        </div>
+                </div>
             </div>`;
     }
     // --- GÜNCELLEME SONU ---
@@ -333,8 +336,11 @@ export async function generateEmail() {
             // Sadece Fide 16'ya ait olan Kategori başlığı
             } else if (q.type === 'styling_list') {
                 if (productItemsHtml.length > 0) {
-                    const selections = questionStatus.stylingCategorySelections;
-                    contentHtml = `<p><b>${selections.mainCategory} - ${selections.subCategory} Alanı Eksikleri:</b></p>`;
+                    // GÜNCELLENDİ: stylingCategorySelections'ı kullan
+                    const selections = questionStatus.stylingCategorySelections; 
+                    if (selections) {
+                         contentHtml = `<p><b>${selections.mainCategory} - ${selections.subCategory} Alanı Eksikleri:</b></p>`;
+                    }
                     contentHtml += `<ul>${productItemsHtml.join('')}</ul>`;
                 }
             }
@@ -421,7 +427,7 @@ export function loadReportUI(reportData) {
             }
             
             // --- GÜNCELLENDİ: Styling Listesi Rapor Yükleme (Kategori seçimi) ---
-            if (data.stylingCategorySelections) {
+            if (data.stylingCategorySelections) { // 'stylingSelections' -> 'stylingCategorySelections'
                 const selections = data.stylingCategorySelections;
                 const mainSelect = questionItem.querySelector('.styling-main-category-select');
                 if (mainSelect && selections.mainCategory) {
@@ -651,7 +657,7 @@ function openEmailDraft() {
     emailWindow.document.close();
 }
 
-// --- GÜNCELLENDİ: Styling Listesi Arayüz Fonksiyonları (FiDe 13 Mantığı) ---
+// --- GÜNCELLENDİ: Styling Listesi Arayüz Fonksiyonları (Hizalama Düzeltmesi) ---
 
 /**
  * Ana Kategori seçimi değiştiğinde tetiklenir.
@@ -665,11 +671,14 @@ function handleStylingMainCatChange(event) {
     
     const subContainer = document.getElementById(`styling-sub-container-${questionId}`);
     const adderContainer = document.getElementById(`styling-adder-container-${questionId}`);
+    const listContainer = document.getElementById(`styling-list-container-${questionId}`);
     const subSelect = subContainer.querySelector('.styling-sub-category-select');
 
     // Alt bileşenleri temizle ve gizle
     subSelect.innerHTML = '<option value="">-- Alt Kategori Seçin --</option>';
     adderContainer.style.display = 'none'; // Ekleme kutusunu gizle
+    listContainer.style.display = 'none'; // Liste kutusunu gizle
+    listContainer.querySelector('.styling-selected-products-list').innerHTML = ''; // Listeyi boşalt
 
     if (mainSelect.value && question && question.stylingData) {
         const selectedMainCat = question.stylingData.find(mc => mc.name === mainSelect.value);
@@ -678,7 +687,7 @@ function handleStylingMainCatChange(event) {
                 const option = new Option(subCat.name, subCat.name);
                 subSelect.add(option);
             });
-            subContainer.style.display = 'block'; // Alt kategoriyi göster
+            subContainer.style.display = 'grid'; // Alt kategoriyi göster (grid olarak)
             // Olay dinleyiciyi (yeniden) bağla
             subSelect.removeEventListener('change', handleStylingSubCatChange); // Öncekini temizle
             subSelect.addEventListener('change', handleStylingSubCatChange); 
@@ -702,6 +711,7 @@ function handleStylingSubCatChange(event) {
     const mainSelect = container.querySelector('.styling-main-category-select');
     
     const adderContainer = document.getElementById(`styling-adder-container-${questionId}`);
+    const listContainer = document.getElementById(`styling-list-container-${questionId}`);
     const productSelect = adderContainer.querySelector('.styling-product-select');
     const qtyInput = adderContainer.querySelector('.styling-product-qty');
 
@@ -725,11 +735,13 @@ function handleStylingSubCatChange(event) {
             productSelect.removeEventListener('change', handleStylingProductChange); // Temizle
             productSelect.addEventListener('change', handleStylingProductChange);
             
-            adderContainer.style.display = 'flex'; // Ekleme kutusunu göster
+            adderContainer.style.display = 'grid'; // Ekleme kutusunu göster (grid olarak)
+            listContainer.style.display = 'grid'; // Liste kutusunu göster (grid olarak)
             qtyInput.value = '1'; // Adet kutusunu sıfırla
         }
     } else {
          adderContainer.style.display = 'none'; // Alt kategori seçilmezse gizle
+         listContainer.style.display = 'none'; // Alt kategori seçilmezse gizle
     }
     
     debouncedSaveFormState(); // Seçimi kaydet
@@ -780,6 +792,7 @@ function addStylingProductToList(qId, productCode, quantity, productName, should
         selectedProductName = selectedOption.dataset.name;
     }
 
+    // GÜNCELLENDİ: Doğru listeyi seç
     const listContainer = itemDiv.querySelector(`.styling-selected-products-list`);
     if (listContainer.querySelector(`.selected-product-item[data-code="${selectedProductCode}"]`)) {
         return alert('Bu ürün zaten eksikler listesinde.');
@@ -803,6 +816,10 @@ function addStylingProductToList(qId, productCode, quantity, productName, should
     });
     
     listContainer.appendChild(newItem);
+    
+    // GÜNCELLENDİ: Ekleme sonrası listeyi göster (eğer gizliyse)
+    const listWrapper = document.getElementById(`styling-list-container-${qId}`);
+    if (listWrapper) listWrapper.style.display = 'grid';
     
     if (!productCode) { // Sadece "Ekle" butonuna basıldıysa
         productSelect.value = ''; 
