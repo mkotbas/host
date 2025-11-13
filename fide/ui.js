@@ -331,13 +331,13 @@ export async function generateEmail() {
             
             } else if (q.type === 'styling_list') {
                 if (productItemsHtml.length > 0) {
-                    // const selections = questionStatus.stylingCategorySelections; // Başlık için artık gerek yok
+                    // const selections = questionStatus.stylingCategorySelections; // Artık kullanılmıyor
                     
-                    // --- GÜNCELLEME ---
-                    // Başlık satırı kaldırıldı.
-                    // contentHtml = `<p><b>${selections.mainCategory} - ${selections.subCategory} Alanı Eksikleri:</b></p>`;
+                    // --- GÜNCELLEME (Başlık eklendi) ---
+                    // Başlık "sipariş listesi:" olarak ve ekteki stilde (koyu/italik) eklendi.
+                    contentHtml = `<b><i>sipariş listesi:</i></b>`;
                     
-                    // Sadece ürün listesi eklenecek
+                    // Ürün listesi
                     contentHtml += `<ul>${productItemsHtml.join('')}</ul>`;
                 }
             }
