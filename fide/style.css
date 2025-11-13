@@ -58,6 +58,14 @@ button i, .btn-like-label i, a.btn-primary i, a.btn-warning i, a.btn-success i, 
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    /* GÜNCELLENDİ: Modern görünüm için eklendi */
+    appearance: none;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' class='w-5 h-5'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    padding-right: 36px;
 }
 .product-adder input[type="number"] { width: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
 .selected-product-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background-color: var(--light); border-radius: 8px; margin-bottom: 8px; }
@@ -300,6 +308,13 @@ input:checked + .slider.green {
     border: 1px solid var(--border);
     border-radius: 6px;
     background-color: #fff;
+    /* GÜNCELLENDİ: Modern görünüm için eklendi */
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' class='w-5 h-5'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    padding-right: 36px;
 }
 .audit-lists-container {
     display: grid;
@@ -478,3 +493,78 @@ input:checked + .slider.green {
         max-width: none;
     }
 }
+
+/* --- YENİ EKLENDİ: Styling Listesi Modern Stilleri --- */
+
+/* Kategori seçme grupları (Etiket + Menü) */
+.styling-dropdown-group {
+    display: grid;
+    grid-template-columns: 100px 1fr; /* Etiket 100px, kalan alan menü */
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.styling-dropdown-group label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--secondary);
+    text-align: right;
+}
+
+/* FiDe 16 Kategori ve Ürün Açılır Menüleri */
+.styling-main-category-select,
+.styling-sub-category-select,
+.styling-product-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background-color: #fff;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor' class='w-5 h-5'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    padding-right: 36px;
+    font-size: 14px;
+}
+
+/* FiDe 16'nın "Ekle" bölümü (FiDe 13'teki product-adder'a benzemesi için) */
+.styling-adder {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 15px 0;
+    padding-top: 15px;
+    border-top: 1px dashed var(--border);
+}
+.styling-adder .styling-product-select {
+    flex-grow: 1;
+}
+.styling-adder .styling-product-qty {
+    width: 80px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-align: center;
+}
+/* Adet alanı kilitliyken görünümü iyileştir */
+.styling-adder .styling-product-qty:disabled {
+    background-color: var(--light);
+    font-weight: bold;
+    color: var(--dark);
+    opacity: 1; /* Soluk görünmesin */
+}
+
+/* FiDe 16'nın eklenen ürünler listesi */
+.styling-selected-products-list {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+/* NOT: Bu liste içindeki .selected-product-item'lar
+   FiDe 13'ün kullandığı mevcut stilleri (satır 100)
+   otomatik olarak alacaktır. [2025-10-02] kuralı gereği
+   kod tekrarı yapılmamıştır.
+*/
