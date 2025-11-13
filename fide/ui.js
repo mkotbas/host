@@ -364,7 +364,7 @@ export async function generateEmail() {
     const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #dddddd;"><thead><tr><th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${currentYear}</th>${monthHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold;">DiDe</td>${dideScores}</tr><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold;">FiDe</td>${fideScores}</tr></tbody></table></div>`;
 
     let finalEmailBody = emailTemplate
-        .replace(/{YONETMEN_ADI}/g, yonetmenFirstName || 'Yetkili')
+        .replace(/{YONETMEN_ADI}/g, yonetFirstName || 'Yetkili')
         .replace(/{BAYI_BILGISI}/g, `${state.selectedStore.bayiKodu} ${shortBayiAdi}`)
         .replace(/{DENETIM_ICERIGI}/g, fideReportHtml)
         .replace(/{PUAN_TABLOSU}/g, tableHtml);
@@ -380,15 +380,21 @@ export async function generateEmail() {
     document.querySelector('.container').appendChild(draftContainer);
 }
 
+// --- GÜNCELLENDİ: Hata Düzeltmesi (Butonların Pasif Kalması) ---
 export function loadReportUI(reportData) {
-    if (!reportData) { resetForm(); updateFormInteractivity(true); return; }
+    // Boş rapor (yeni bayi) seçildiğinde, formu sıfırla VE butonları aktif et.
+    if (!reportData) {
+        resetForm(); 
+        updateFormInteractivity(true); // DÜZELTME: resetForm'dan SONRA çağır.
+        return; 
+    }
     
-    // GÜNCELLENDİ: state.currentReportData'yı doldur.
-    // Bu, handleStylingSubCatChange'in raporu yüklemesi için K R İ T İ K T İ R.
+    // Raporu yüklerken state'i ayarla (bu, handleStylingSubCatChange için kritik)
     state.setCurrentReportData(reportData); 
 
     try {
         resetForm(); 
+        
         for (const qId in reportData) {
             let questionItem = document.getElementById(`fide-item-${qId}`);
             if (!questionItem) continue;
@@ -405,7 +411,6 @@ export function loadReportUI(reportData) {
                 });
             }
             
-            // GÜNCELLENDİ: Fide 13'ün yüklenmesi
             if (data.selectedProducts) {
                 const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
                 if (qInfo.type === 'product_list') {
@@ -413,8 +418,7 @@ export function loadReportUI(reportData) {
                         addProductToList(prod.code, prod.qty, false, prod.name);
                     });
                 }
-                // Fide 16 (styling_list) yüklemesi AŞAĞIDA,
-                // stylingCategorySelections içinde yapılacak.
+                // Fide 16 (styling_list) yüklemesi stylingCategorySelections içinde yapılacak.
             }
             
             if (data.selectedPops) {
@@ -422,34 +426,36 @@ export function loadReportUI(reportData) {
                 checkExpiredPopCodes();
             }
             
-            // GÜNCELLENDİ: Styling Listesi Kategori Yüklemesi
             if (data.stylingCategorySelections) {
                 const selections = data.stylingCategorySelections;
                 const mainSelect = questionItem.querySelector('.styling-main-category-select');
                 if (mainSelect && selections.mainCategory) {
                     mainSelect.value = selections.mainCategory;
-                    // change event'i handleStylingMainCatChange'i tetikleyecek
                     mainSelect.dispatchEvent(new Event('change')); 
                     
                     const subSelect = questionItem.querySelector('.styling-sub-category-select');
                     if (subSelect && selections.subCategory) {
                         subSelect.value = selections.subCategory;
-                        // change event'i handleStylingSubCatChange'i tetikleyecek.
+                        // Bu event, handleStylingSubCatChange'i tetikleyecek.
                         // O fonksiyon da state.currentReportData'yı (yukarıda set ettik)
-                        // okuyarak doğru listeyi (kayıtlı) çizecek.
+                        // okuyarak doğru listeyi (kayıtlı adetlerle) çizecek.
                         subSelect.dispatchEvent(new Event('change'));
                     }
                 }
             }
-            // --- GÜNCELLEME SONU ---
         }
-        updateFormInteractivity(true);
     } catch (error) { 
-        alert('Geçersiz rapor verisi!'); 
+        alert('Geçersiz rapor verisi! Form sıfırlanıyor.'); 
         console.error("Rapor yükleme hatası:", error); 
-        state.setCurrentReportData(null); // Hata varsa temizle
+        resetForm(); // Hata olursa formu temizle
+    } finally {
+        // DÜZELTME: Hata olsa da, olmasa da butonları HER ZAMAN aktif et.
+        updateFormInteractivity(true);
+        // Rapor yüklemesi bitti, state'i temizle (bir sonraki seçim için)
+        state.setCurrentReportData(null); 
     }
 }
+// --- GÜNCELLEME SONU ---
 
 export function updateFormInteractivity(enable) {
     const formContent = document.getElementById('form-content');
@@ -625,8 +631,7 @@ function selectExpiredCodes() {
 }
 
 function openEmailDraft() {
-    const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
-    const nonExpiredCodes = selectedCodes.filter(code => !state.expiredCodes.includes(code));
+    const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !state.expiredCodes.includes(code));
     if (nonExpiredCodes.length === 0) { alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin."); return; }
     
     const popQuestion = state.fideQuestions.find(q => q.type === 'pop_system') || {};
@@ -706,11 +711,29 @@ function handleStylingSubCatChange(event) {
                 ? state.currentReportData[questionId].selectedProducts
                 : null;
             
-            const productsToDisplay = savedData ? savedData : selectedSubCat.products;
+            // GÜNCELLENDİ: Rapor yüklerken, kayıtlı veriyi (savedData) varsayılan liste (selectedSubCat.products)
+            // ile birleştir. Bu, yönetici panelinden yeni ürün eklense bile, kayıtlı adetlerin
+            // korunmasını sağlar.
+            let productsToDisplay = [];
+            if (savedData) {
+                // Rapor yükleniyor. Önce tüm varsayılan ürünleri al.
+                productsToDisplay = selectedSubCat.products.map(defaultProd => {
+                    // Kayıtlı ürünler arasında bu ürünü bul
+                    const savedProd = savedData.find(p => p.code === defaultProd.code);
+                    // Kayıtlıysa kayıtlı adeti kullan, değilse varsayılan adeti kullan
+                    return {
+                        code: defaultProd.code,
+                        name: defaultProd.name,
+                        qty: savedProd ? savedProd.qty : defaultProd.qty // Kayıtlı adet veya varsayılan adet
+                    };
+                });
+            } else {
+                // Yeni rapor, sadece varsayılan ürünleri kullan
+                productsToDisplay = selectedSubCat.products;
+            }
 
             if (productsToDisplay.length > 0) {
                 productsToDisplay.forEach(product => {
-                    // GÜNCELLENDİ: Yeni fonksiyonu çağır
                     createStylingProductRow(listContainer, product);
                 });
                 listContainerWrapper.style.display = 'grid'; // Liste kutusunu göster (grid olarak)
@@ -724,7 +747,7 @@ function handleStylingSubCatChange(event) {
     
     // GÜNCELLENDİ: 'add' butonu olmadığı için kaydetme buradan tetiklenmeli
     // (Ancak bu, rapor yüklenirken gereksiz kayıt yapar)
-    // Rapor yüklenmiyorsa kaydet
+    // Rapor yüklenmiyorsa (yani state.currentReportData boşsa) kaydet
     if (!state.currentReportData) {
         debouncedSaveFormState(); 
     }
