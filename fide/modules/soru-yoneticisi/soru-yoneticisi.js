@@ -156,7 +156,7 @@ async function applyIdChangeScenario() {
 
     const targetQuestion = fideQuestions.find(q => String(q.id) === String(newId));
     if (!targetQuestion) {
-        if (!confirm(`Bu işlem, ${oldId} ID'li soruyu ${newId} olarak güncelleyecek ve TÜM cevapları kalıcı olarak yeni ID'ye taşıyacaktır. Devam etmek istiyor musunuz?`)) return;
+        if (!confirm(`Bu işlem, ${oldId} ID'li soruyu ${newId} olarak güncelleyecek ve TÜM cevapları kalıcı olarak yeni ID'ye taşıacaktır. Devam etmek istiyor musunuz?`)) return;
         const success = await updateAllReports(sd => { if (sd && sd[oldId]) { sd[newId] = sd[oldId]; delete sd[oldId]; } return sd; });
         if (success) {
             questionToMove.id = parseInt(newId, 10);
@@ -274,7 +274,8 @@ async function saveQuestions(reloadPage = true) {
         // 'styling_list' tipindeki sorunun verilerini oku
         else if (q.type === 'styling_list') {
             q.stylingData = [];
-            item.querySelectorAll('.styling-list-editor > .main-category-row').forEach(mainRow => {
+            // GÜNCELLENDİ: '.styling-list-editor' -> '.styling-list-editor-container' olarak değiştirildi (CSS ile uyum için)
+            item.querySelectorAll('.styling-list-editor-container > .main-category-row').forEach(mainRow => {
                 const mainCategoryName = mainRow.querySelector('.main-category-input').value.trim();
                 if (!mainCategoryName) return; // Boşsa atla
 
@@ -360,18 +361,22 @@ function renderPopManagerUI(c,d){ const p=(d.popCodes||[]).join(', '); const e=(
  * @param {object} questionData - Mevcut soru verisi (stylingData içerir).
  */
 function renderStylingListManagerUI(container, questionData) {
+    // GÜNCELLENDİ: product_list'e benzemesi için HTML yapısı güncellendi
     container.innerHTML = `
         <h4><i class="fas fa-sitemap"></i> Styling Listesi Yöneticisi</h4>
         <p class="product-manager-info">
             <i class="fas fa-info-circle"></i> 3 katmanlı hiyerarşik yapıyı (Ana Kategori > Alt Kategori > Ürün) yönetin.
         </p>
-        <div class="styling-list-editor"></div>
-        <button class="btn-primary btn-sm btn-add-main-category">
-            <i class="fas fa-plus"></i> Ana Kategori Ekle
-        </button>
+        <div class="product-manager-actions">
+             <button class="btn-primary btn-sm btn-add-main-category">
+                <i class="fas fa-plus"></i> Ana Kategori Ekle
+            </button>
+        </div>
+        <div class="styling-list-editor-container"></div>
     `;
 
-    const editor = container.querySelector('.styling-list-editor');
+    // GÜNCELLENDİ: Artık 'styling-list-editor-container' içine ekleniyor
+    const editor = container.querySelector('.styling-list-editor-container');
     
     // Kayıtlı veriyi yükle
     if (questionData.stylingData && Array.isArray(questionData.stylingData)) {
@@ -393,10 +398,13 @@ function renderStylingListManagerUI(container, questionData) {
  */
 function addMainCategoryRow(container, mainCatData) {
     const row = document.createElement('div');
-    row.className = 'main-category-row';
+    row.className = 'main-category-row'; // Bu, 'product_list_editor' içindeki 'category-manager-row' gibi davranacak
+
+    // GÜNCELLENDİ: HTML, 'category-manager-row' yapısına benzetildi
     row.innerHTML = `
-        <div class="category-header">
-            <i class="fas fa-layer-group main-cat-icon"></i>
+        <div class="category-header category-manager-row">
+            <i class="fas fa-grip-vertical drag-handle"></i>
+            <i class="fas fa-layer-group category-icon"></i>
             <input type="text" class="main-category-input" placeholder="Ana Kategori Adı (Örn: Vitrinler)" value="${mainCatData.name || ''}">
             <button class="btn-success btn-sm btn-add-sub-category" title="Alt Kategori Ekle"><i class="fas fa-plus"></i> Alt Kategori</button>
             <button class="btn-danger btn-sm btn-remove-row" title="Ana Kategoriyi Sil"><i class="fas fa-trash"></i></button>
@@ -432,10 +440,13 @@ function addMainCategoryRow(container, mainCatData) {
  */
 function addSubCategoryRow(container, subCatData) {
     const row = document.createElement('div');
-    row.className = 'sub-category-row';
+    row.className = 'sub-category-row'; // Bu da 'category-manager-row' gibi davranacak
+
+    // GÜNCELLENDİ: HTML, 'category-manager-row' yapısına benzetildi
     row.innerHTML = `
-        <div class="category-header">
-            <i class="fas fa-folder-open sub-cat-icon"></i>
+        <div class="category-header category-manager-row">
+            <i class="fas fa-grip-vertical drag-handle"></i>
+            <i class="fas fa-folder-open category-icon"></i>
             <input type="text" class="sub-category-input" placeholder="Alt Kategori Adı (Örn: Vitrin Sol)" value="${subCatData.name || ''}">
             <button class="btn-primary btn-sm btn-add-product-styling" title="Ürün Ekle"><i class="fas fa-plus"></i> Ürün</button>
             <button class="btn-danger btn-sm btn-remove-row" title="Alt Kategoriyi Sil"><i class="fas fa-trash"></i></button>
@@ -471,9 +482,12 @@ function addSubCategoryRow(container, subCatData) {
  */
 function addProductRowStyling(container, productData) {
     const row = document.createElement('div');
-    row.className = 'product-row-styling';
+    // GÜNCELLENDİ: 'product-manager-row' sınıfı eklendi
+    row.className = 'product-row-styling product-manager-row';
+    
+    // GÜNCELLENDİ: HTML, 'product-manager-row' yapısına benzetildi
     row.innerHTML = `
-        <i class="fas fa-box product-icon"></i>
+        <i class="fas fa-grip-vertical drag-handle"></i>
         <input type="text" class="product-code-styling" placeholder="Ürün Kodu" value="${productData.code || ''}">
         <input type="text" class="product-name-styling" placeholder="Ürün Adı" value="${productData.name || ''}">
         <button class="btn-danger btn-sm btn-remove-row" title="Ürünü Sil"><i class="fas fa-trash"></i></button>
