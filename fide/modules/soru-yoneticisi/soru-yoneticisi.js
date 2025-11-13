@@ -296,8 +296,12 @@ async function saveQuestions(reloadPage = true) {
                     subRow.querySelectorAll('.product-container-styling > .product-row-styling').forEach(productRow => {
                         const productCode = productRow.querySelector('.product-code-styling').value.trim();
                         const productName = productRow.querySelector('.product-name-styling').value.trim();
+                        // --- YENİ: Adet alanını oku ---
+                        const productQty = productRow.querySelector('.product-qty-styling').value.trim();
+                        
                         if (productCode && productName) { // Sadece dolu olanları ekle
-                            subCat.products.push({ code: productCode, name: productName });
+                            // --- YENİ: Adet verisini kaydet ---
+                            subCat.products.push({ code: productCode, name: productName, qty: productQty || '1' });
                         }
                     });
                     
@@ -486,10 +490,12 @@ function addProductRowStyling(container, productData) {
     row.className = 'product-row-styling product-manager-row';
     
     // GÜNCELLENDİ: HTML, 'product-manager-row' yapısına benzetildi
+    // --- YENİ: 'product-qty-styling' (Adet) alanı eklendi ---
     row.innerHTML = `
         <i class="fas fa-grip-vertical drag-handle"></i>
         <input type="text" class="product-code-styling" placeholder="Ürün Kodu" value="${productData.code || ''}">
         <input type="text" class="product-name-styling" placeholder="Ürün Adı" value="${productData.name || ''}">
+        <input type="number" class="product-qty-styling" placeholder="Adet" value="${productData.qty || '1'}">
         <button class="btn-danger btn-sm btn-remove-row" title="Ürünü Sil"><i class="fas fa-trash"></i></button>
     `;
     container.appendChild(row);
