@@ -578,3 +578,46 @@ input:checked + .slider.green {
         justify-content: center;
     }
 }
+
+/* --- YENİ EKLENEN STİLLER (FİDE 16 SİPARİŞ LİSTESİ) --- */
+
+/* Styling listesindeki (Fide 16) ürün satırının iç yapısı */
+.styling-selected-products-list .selected-product-item > span {
+    flex-grow: 1; /* Mevcut alanı kapla */
+    display: flex;
+    justify-content: space-between; /* Ürün adı ve adet arasını aç */
+    align-items: center;
+    gap: 10px;
+    padding-right: 15px; /* Silme butonundan biraz ayır */
+}
+
+/* Adet (input + 'Adet' yazısı) kapsayıcısı */
+.styling-selected-products-list .selected-product-item .product-quantity {
+    flex-shrink: 0; /* Daralmasın */
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: normal; /* Input olduğu için kalına gerek yok */
+}
+
+/* Adet input kutusu */
+.styling-selected-products-list .selected-product-item .qty-edit-input {
+    width: 65px;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 14px;
+    
+    /* Chrome/Safari/Edge/Opera'da artırma/azaltma oklarını gizle */
+    -webkit-appearance: textfield;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* Firefox'ta artırma/azaltma oklarını gizle */
+.styling-selected-products-list .selected-product-item .qty-edit-input::-webkit-outer-spin-button,
+.styling-selected-products-list .selected-product-item .qty-edit-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
