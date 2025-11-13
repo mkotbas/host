@@ -331,8 +331,13 @@ export async function generateEmail() {
             
             } else if (q.type === 'styling_list') {
                 if (productItemsHtml.length > 0) {
-                    const selections = questionStatus.stylingCategorySelections;
-                    contentHtml = `<p><b>${selections.mainCategory} - ${selections.subCategory} Alanı Eksikleri:</b></p>`;
+                    // const selections = questionStatus.stylingCategorySelections; // Başlık için artık gerek yok
+                    
+                    // --- GÜNCELLEME ---
+                    // Başlık satırı kaldırıldı.
+                    // contentHtml = `<p><b>${selections.mainCategory} - ${selections.subCategory} Alanı Eksikleri:</b></p>`;
+                    
+                    // Sadece ürün listesi eklenecek
                     contentHtml += `<ul>${productItemsHtml.join('')}</ul>`;
                 }
             }
