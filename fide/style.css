@@ -541,6 +541,24 @@ input:checked + .slider.green {
     color: var(--primary);
 }
 
+/* YENİ: Ürün Listesi Satır İçi Hizalama */
+.product-inline-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    flex-grow: 1;
+    font-size: 14px;
+}
+
+.product-inline-info strong {
+    color: var(--dark);
+}
+
+.product-inline-info span {
+    color: var(--secondary);
+}
+
 /* Yeşil Ekle Butonu */
 .btn-add-styling {
     background-color: var(--success);
