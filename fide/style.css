@@ -508,7 +508,8 @@ input:checked + .slider.green {
     font-weight: 600;
     font-size: 14px;
     color: var(--secondary);
-    text-align: right;
+    /* GÜNCELLENDİ: Hizalama sorunu için 'right' -> 'left' yapıldı */
+    text-align: left;
 }
 
 /* FiDe 16 Kategori ve Ürün Açılır Menüleri */
