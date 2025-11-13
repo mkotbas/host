@@ -58,6 +58,8 @@ async function loadInitialData() {
 
 function setupModuleEventListeners() {
     // GÜNCELLENDİ: Olay dinleyicileri artık 'true' yerine ID'ye özel bir anahtar kullanıyor
+    // Bu, modül yeniden yüklendiğinde (başka modüle geçip geri dönüldüğünde)
+    // olayların tekrar eklenmesini engeller.
     const listenerKey = 'soruYoneticisiListenersAttached';
     if (document.body.dataset[listenerKey]) return;
     document.body.dataset[listenerKey] = 'true';
@@ -205,6 +207,7 @@ async function addMigrationMapping(oldId, newId) {
     await saveMigrationMap();
 }
 
+// GÜNCELLENDİ: 'window.deleteMigrationMapping' kaldırıldı
 async function deleteMigrationMapping(oldId) {
     if (confirm(`'${oldId}' ID'li yönlendirmeyi silmek istediğinizden emin misiniz?`)) {
         delete migrationMap[oldId];
@@ -229,14 +232,8 @@ async function saveQuestions(reloadPage = true) {
     if (!pbInstance || !pbInstance.authStore.isValid) { alert("Kaydetmek için giriş yapın."); return; }
     
     const newProductList = [];
-    // GÜNCELLENDİ: Sayfada birden çok "product_list" sorusu açıksa,
-    // ilk bulunanı değil, varsa içeriği en güncel görüneni alması gerekir.
-    // Ancak bu modül yapısında, en güvenli yol, ilk görünür yöneticiyi almaktır.
-    // Kullanıcıya aynı anda birden fazla ürün yöneticisini açmamalarını tavsiye ederiz.
     const activeProductManager = document.querySelector('.product-list-manager');
-    
     if (activeProductManager && activeProductManager.offsetParent !== null) {
-        // Eğer ürün yöneticisi DOM'da varsa ve görünürse, veriyi oradan al.
         activeProductManager.querySelectorAll('.category-manager-row, .product-manager-row').forEach(row => {
             const type = row.dataset.type;
             const nameInput = row.querySelector('input');
@@ -247,10 +244,7 @@ async function saveQuestions(reloadPage = true) {
                 if (code && name) newProductList.push({ code, name });
             }
         });
-    } else { 
-        // Eğer ürün yöneticisi ekranda açık değilse, mevcut global listeyi koru.
-        Object.assign(newProductList, productList); 
-    }
+    } else { Object.assign(newProductList, productList); }
 
     const newQuestions = [];
     const ids = new Set();
@@ -309,30 +303,7 @@ function formatText(b,c){ const e=b.closest('.manager-item').querySelector('.edi
 function renderQuestionManager(){ const m=document.getElementById('manager-list'); if(!m)return; m.innerHTML=''; fideQuestions.sort((a,b)=>a.id-b.id).forEach(q=>{const d=document.createElement('div'); d.className='manager-item'; d.dataset.id=q.id; let s=(q.staticItems||[]).join('<br>'); const t=['standard','product_list','pop_system']; const o=t.map(t=>`<option value="${t}" ${q.type===t?'selected':''}>${t}</option>`).join(''); const a=q.answerType||'variable'; const an=`<option value="variable" ${a==='variable'?'selected':''}>Değişken</option><option value="fixed" ${a==='fixed'?'selected':''}>Sabit</option>`; const i=q.isArchived?'checked':''; const w=q.wantsStoreEmail?'checked':''; /* GÜNCELLENDİ: onclick ve onchange eventleri HTML'den kaldırıldı */ d.innerHTML=`<div class="manager-item-grid"><div><label>Soru ID</label><input type="number" class="manager-id-input" value="${q.id}" disabled></div><div><label>Soru Başlığı</label><input type="text" class="question-title-input" value="${q.title}"></div><div><label>Soru Tipi</label><select class="question-type-select">${o}</select></div><div><label>Cevap Tipi</label><select class="answer-type-select">${an}</select></div><div class="manager-grid-switch-group"><div class="archive-switch-container"><label>E-posta Ekle</label><label class="switch"><input type="checkbox" class="wants-email-checkbox" ${w}><span class="slider green"></span></label></div><div class="archive-switch-container"><label>Arşivle</label><label class="switch"><input type="checkbox" class="archive-checkbox" ${i}><span class="slider"></span></label></div></div></div><div><label>Statik Maddeler</label><div class="editor-toolbar"><button data-command="bold"><i class="fas fa-bold"></i></button><button data-command="italic"><i class="fas fa-italic"></i></button><button data-command="underline"><i class="fas fa-underline"></i></button><button data-command="link"><i class="fas fa-link"></i></button></div><div class="editable-textarea" contenteditable="true">${s}</div></div><div class="special-manager-container"></div><div class="manager-item-footer"><button class="btn-warning btn-sm btn-clear-answers" data-qid="${q.id}"><i class="fas fa-eraser"></i>Cevapları Temizle</button></div>`; m.appendChild(d); /* GÜNCELLENDİ: Event listener'lar burada ekleniyor */ d.querySelector('.question-type-select').addEventListener('change', (e) => toggleSpecialManagerUI(e.currentTarget)); d.querySelector('.archive-checkbox').addEventListener('change', filterManagerView); d.querySelector('.btn-clear-answers').addEventListener('click', (e) => deleteAllAnswersForQuestion(e.currentTarget.dataset.qid)); d.querySelectorAll('.editor-toolbar button').forEach(btn => { btn.addEventListener('click', (e) => formatText(e.currentTarget, e.currentTarget.dataset.command)); }); toggleSpecialManagerUI(d.querySelector('.question-type-select'));}); filterManagerView();}
 function toggleSpecialManagerUI(s){ const m=s.closest('.manager-item'); const c=m.querySelector('.special-manager-container'); const q=fideQuestions.find(q=>String(q.id)===m.dataset.id)||{}; c.innerHTML=''; if(s.value==='product_list'){c.classList.add('product-list-manager');renderProductManagerUI(c);}else if(s.value==='pop_system'){c.classList.add('pop-manager-container');renderPopManagerUI(c,q);}else{c.className='special-manager-container';}}
 function renderPopManagerUI(c,d){ const p=(d.popCodes||[]).join(', '); const e=(d.expiredCodes||[]).join(', '); const t=(d.popEmailTo||[]).join(', '); const cc=(d.popEmailCc||[]).join(', '); c.innerHTML=`<p class="pop-manager-info"><i class="fas fa-info-circle"></i> Kodları ve e-posta adreslerini aralarına virgül (,) koyarak girin.</p><div class="pop-manager-grid"><div class="pop-manager-group"><label>Geçerli POP Kodları</label><textarea class="pop-codes-input" rows="5">${p}</textarea></div><div class="pop-manager-group"><label>Süresi Dolmuş POP Kodları</label><textarea class="expired-pop-codes-input" rows="5">${e}</textarea></div><div class="pop-manager-group"><label>POP E-posta Alıcıları (Kime)</label><textarea class="pop-email-to-input" rows="5" placeholder="ornek1@mail.com...">${t}</textarea></div><div class="pop-manager-group"><label>POP E-posta Alıcıları (CC)</label><textarea class="pop-email-cc-input" rows="5" placeholder="ornek2@mail.com...">${cc}</textarea></div></div>`;}
-
-// GÜNCELLENDİ: Ürün yöneticisi arayüzü oluşturma fonksiyonu
-function renderProductManagerUI(c){ 
-    const cats=productList.filter(p=>p.type==='header'); 
-    let opts='<option value="__end">Ana Liste (Sona Ekle)</option>'; 
-    cats.forEach(cat=>{opts+=`<option value="${cat.name}">${cat.name}</option>`;}); 
-
-    // Styling (Soru 16) için bilgilendirme metnini güncelle
-    const infoText = `Bu liste tüm "product_list" tipi sorular (örn: 13. Perakende ve 16. Styling) için <b>ORTAKTIR</b>.<br>Styling ürünlerini ayırmak için aşağıdan yeni bir <b>"Kategori"</b> (Örn: <i>--- STYLING MALZEMELERİ ---</i>) oluşturup ürünleri altına ekleyiniz.`;
-
-    c.innerHTML=`<h4><i class="fas fa-boxes"></i> Ürün Listesi Yöneticisi</h4><p class="product-manager-info" style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 8px; border-radius: 4px;"><i class="fas fa-info-circle"></i> ${infoText}</p><div class="bulk-add-container"><h5><i class="fas fa-paste"></i> Toplu Ürün Ekle</h5><p class="bulk-add-info">Her satıra bir ürün gelecek şekilde yapıştırın. (Örn: 123456 Styling Malzemesi)</p><div class="bulk-add-controls"><select id="bulk-add-category-select">${opts}</select><textarea id="bulk-product-input"></textarea></div><button class="btn-success btn-sm" id="btn-parse-products"><i class="fas fa-plus-circle"></i> Yapıştırılanları Ekle</button></div><button id="toggle-detailed-editor-btn" class="btn-sm"><i class="fas fa-edit"></i> Detaylı Editörü Göster</button><div id="detailed-editor-panel"><div class="product-manager-actions"><button class="btn-primary btn-sm" id="btn-add-category-row"><i class="fas fa-tags"></i> Kategori Ekle</button><button class="btn-success btn-sm" id="btn-add-product-row"><i class="fas fa-box"></i> Ürün Ekle</button></div><div class="product-list-editor"></div></div>`; 
-    
-    const e=c.querySelector('.product-list-editor'); 
-    c.querySelector('#btn-parse-products').addEventListener('click', parseAndAddProducts); 
-    c.querySelector('#toggle-detailed-editor-btn').addEventListener('click', (e_btn) => toggleDetailedEditor(e_btn.currentTarget)); 
-    
-    const panel = c.querySelector('#detailed-editor-panel'); 
-    panel.querySelector('#btn-add-category-row').addEventListener('click', () => addCategoryRow(e)); 
-    panel.querySelector('#btn-add-product-row').addEventListener('click', () => addProductRow(e)); 
-    
-    productList.forEach(i=>{if(i.type==='header'){addCategoryRow(e,i);}else{addProductRow(e,i);}}); 
-    setupProductManagerDragDrop(e);
-}
-
+function renderProductManagerUI(c){ const cats=productList.filter(p=>p.type==='header'); let opts='<option value="__end">Ana Liste (Sona Ekle)</option>'; cats.forEach(cat=>{opts+=`<option value="${cat.name}">${cat.name}</option>`;}); /* GÜNCELLENDİ: onclick eventleri HTML'den kaldırıldı */ c.innerHTML=`<h4><i class="fas fa-boxes"></i> Ürün Listesi Yöneticisi</h4><p class="product-manager-info"><i class="fas fa-info-circle"></i> Bu liste tüm "product_list" tipi sorular için ortaktır.</p><div class="bulk-add-container"><h5><i class="fas fa-paste"></i> Toplu Ürün Ekle</h5><p class="bulk-add-info">Her satıra bir ürün gelecek şekilde yapıştırın. (Örn: 123456 Enerji Etiketi)</p><div class="bulk-add-controls"><select id="bulk-add-category-select">${opts}</select><textarea id="bulk-product-input"></textarea></div><button class="btn-success btn-sm" id="btn-parse-products"><i class="fas fa-plus-circle"></i> Yapıştırılanları Ekle</button></div><button id="toggle-detailed-editor-btn" class="btn-sm"><i class="fas fa-edit"></i> Detaylı Editörü Göster</button><div id="detailed-editor-panel"><div class="product-manager-actions"><button class="btn-primary btn-sm" id="btn-add-category-row"><i class="fas fa-tags"></i> Kategori Ekle</button><button class="btn-success btn-sm" id="btn-add-product-row"><i class="fas fa-box"></i> Ürün Ekle</button></div><div class="product-list-editor"></div></div>`; const e=c.querySelector('.product-list-editor'); /* GÜNCELLENDİ: Event listener'lar burada ekleniyor */ c.querySelector('#btn-parse-products').addEventListener('click', parseAndAddProducts); c.querySelector('#toggle-detailed-editor-btn').addEventListener('click', (e_btn) => toggleDetailedEditor(e_btn.currentTarget)); const panel = c.querySelector('#detailed-editor-panel'); panel.querySelector('#btn-add-category-row').addEventListener('click', () => addCategoryRow(e)); panel.querySelector('#btn-add-product-row').addEventListener('click', () => addProductRow(e)); productList.forEach(i=>{if(i.type==='header'){addCategoryRow(e,i);}else{addProductRow(e,i);}}); setupProductManagerDragDrop(e);}
 function toggleDetailedEditor(b){ const p=document.getElementById('detailed-editor-panel'); p.classList.toggle('open'); b.innerHTML=p.classList.contains('open')?'<i class="fas fa-eye-slash"></i> Detaylı Editörü Gizle':'<i class="fas fa-edit"></i> Detaylı Editörü Göster';}
 function parseAndAddProducts(){ const c=document.querySelector('.product-list-manager'); if(!c)return; const t=c.querySelector('#bulk-product-input'); const e=c.querySelector('.product-list-editor'); const s=c.querySelector('#bulk-add-category-select'); const catName=s.value; const txt=t.value.trim(); if(!txt)return; const lines=txt.split('\n'); let added=0; let target=null; if(catName!=='__end'){const all=Array.from(e.querySelectorAll('.category-manager-row, .product-manager-row')); const idx=all.findIndex(r=>r.dataset.type==='category'&&r.querySelector('input').value===catName); if(idx>-1){target=all[idx]; for(let i=idx+1;i<all.length;i++){if(all[i].dataset.type==='category')break; target=all[i];}}} lines.forEach(l=>{const tl=l.trim(); if(!tl)return; const si=tl.indexOf(' '); if(si>0){const p={code:tl.substring(0,si).trim(),name:tl.substring(si+1).trim()}; if(p.code&&p.name){const nr=addProductRow(e,p,target); target=nr; added++;}}}); if(added>0){alert(`${added} ürün eklendi!`); t.value=''; if(!document.getElementById('detailed-editor-panel').classList.contains('open')){document.getElementById('toggle-detailed-editor-btn').click();}}else{alert("Hiçbir ürün eklenemedi.");}}
 function addCategoryRow(c,cat={},t=null){const r=document.createElement('div');r.className='category-manager-row';r.dataset.type='category';r.draggable=true; /* GÜNCELLENDİ: onclick kaldırıldı */ r.innerHTML=`<i class="fas fa-grip-vertical drag-handle"></i><i class="fas fa-tag category-icon"></i><input type="text" value="${cat.name||''}"><button class="btn-danger btn-sm btn-remove-row"><i class="fas fa-trash"></i></button>`; if(t){c.insertBefore(r,t.nextSibling);}else{c.appendChild(r);} /* GÜNCELLENDİ: Event listener eklendi */ r.querySelector('.btn-remove-row').addEventListener('click', (e) => e.currentTarget.parentElement.remove()); return r;}

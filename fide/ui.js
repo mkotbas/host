@@ -41,31 +41,14 @@ function generateQuestionHtml(q) {
     let questionContentHTML = '';
     let isArchivedClass = q.isArchived ? 'archived-item' : ''; 
 
-    // GÜNCELLEME: Başlık ve Buton metinlerini soru ID'sine göre ayarla
-    let subHeaderTitle = 'Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:';
-    let subButtonTitle = 'Pleksi İle İlgili Not Ekle';
-    
-    // Eğer soru 16 ise (Styling) metinleri değiştir
-    if (q.id == 16) {
-        subHeaderTitle = 'Eksik Styling Malzemeleri veya Notlar:';
-        subButtonTitle = 'Styling Notu Ekle';
-    }
-
     if (q.type === 'standard') {
         questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`).join('');
         questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
-    
     } else if (q.type === 'product_list') {
-        // 13 ve 16. Sorular (veya diğer ürün listesi soruları) buraya düşer.
-        // Not: Teknik olarak ID yapısını '_pleksi' olarak koruyoruz ki eski raporlar bozulmasın, 
-        // ama ekranda görünen yazıları yukarıdaki değişkenlerle dinamik yaptık.
-        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')" title="${subButtonTitle}"><i class="fas fa-plus"></i> ${subButtonTitle}</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-        
+        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')" title="Pleksi kullanımıyla ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         let productOptions = '';
         let currentOptgroup = false;
-        
-        // Ürün listesini doldur (Sadece o soruya ait ürünleri filtreleme mantığı ileride eklenebilir, şimdilik genel liste)
         state.productList.forEach(p => {
             if (p.type === 'header') {
                 if (currentOptgroup) productOptions += `</optgroup>`;
@@ -76,9 +59,7 @@ function generateQuestionHtml(q) {
             }
         });
         if (currentOptgroup) productOptions += `</optgroup>`;
-        
-        questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector-${q.id}" class="product-selector-dynamic"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty-${q.id}" class="product-qty-dynamic" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList(${q.id})" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list-${q.id}" class="selected-products-list-dynamic"></div><hr><b class="plexi-header"><i>${subHeaderTitle}</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
-    
+        questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b class="plexi-header"><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
     } else if (q.type === 'pop_system') {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
@@ -110,15 +91,9 @@ function getFormDataForSaving() {
                 });
             }
         } else if (q.type === 'product_list') {
-            // Güncelleme: Artık ürün listesi her soru için kendi ID'siyle seçiliyor
-            const productListContainer = document.getElementById(`selected-products-list-${q.id}`);
-            if (productListContainer) {
-                 productListContainer.querySelectorAll('.selected-product-item').forEach(item => {
-                    questionData.selectedProducts.push({ code: item.dataset.code, qty: item.dataset.qty });
-                });
-            }
-
-            // Ek notlar alanı (Pleksi veya Styling notları)
+            document.querySelectorAll(`#fide-item-${q.id} #selected-products-list .selected-product-item`).forEach(item => {
+                questionData.selectedProducts.push({ code: item.dataset.code, qty: item.dataset.qty });
+            });
             const pleksiContainer = document.getElementById(`sub-items-container-fide${q.id}_pleksi`);
              if (pleksiContainer) {
                 Array.from(pleksiContainer.childNodes).reverse().forEach(node => {
@@ -257,23 +232,15 @@ export async function generateEmail() {
                  }
             }
         } else if (q.type === 'product_list') {
-            // GÜNCELLEME: Bu soruya özel ID'den veriyi çek
-            const productItemsHtml = Array.from(document.querySelectorAll(`#selected-products-list-${q.id} .selected-product-item`)).map(item => {
+            const productItemsHtml = Array.from(document.querySelectorAll('#selected-products-list .selected-product-item')).map(item => {
                 const product = state.productList.find(p => p.code === item.dataset.code);
                 if(product) { const unit = getUnitForProduct(product.name); return `<li>${product.code} ${product.name}: <b>${item.dataset.qty} ${unit}</b></li>`; }
                 return null;
             }).filter(Boolean);
-            
             const pleksiContainer = document.getElementById(`sub-items-container-fide${q.id}_pleksi`);
             const pleksiItemsHtml = pleksiContainer ? Array.from(pleksiContainer.querySelectorAll('input[type="text"]')).filter(i => !i.classList.contains('completed')).map(i => `<li>${i.value}</li>`) : [];
-            
-            // Metin başlıkları 16. Soru için dinamik
-            let subHeaderTitle = 'Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:';
-            if (q.id == 16) subHeaderTitle = 'Eksik Styling Malzemeleri veya Notlar:';
-
             if (productItemsHtml.length > 0) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
-            if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>${subHeaderTitle}</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
-        
+            if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
         } else if (q.type === 'pop_system') {
             const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !state.expiredCodes.includes(code));
             if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
@@ -332,12 +299,11 @@ export function loadReportUI(reportData) {
             if (data.dynamicInputs) {
                 const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
                 data.dynamicInputs.forEach(input => {
-                    // Bu kısım hem Q13 hem Q16 için çalışır çünkü ID yapısı korunmuştur.
                     const containerId = (qInfo && qInfo.type === 'product_list') ? `fide${qId}_pleksi` : `fide${qId}`;
                     addDynamicInput(containerId, input.text, input.completed, false);
                 });
             }
-            if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(qId, prod.code, prod.qty, false)); 
+            if (data.selectedProducts) data.selectedProducts.forEach(prod => addProductToList(prod.code, prod.qty, false)); 
             if (data.selectedPops) {
                 data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
                 checkExpiredPopCodes();
@@ -402,27 +368,18 @@ function initiateDeleteItem(buttonEl) {
     debouncedSaveFormState();
 }
 
-// GÜNCELLENDİ: Artık hangi soruya ürün ekleneceğini parametre olarak (questionId) alıyor.
-function addProductToList(questionId, productCode, quantity, shouldSave = true) {
-    // Eğer parametre gelmezse veya event objesi gelirse (eski onclick), varsayılan olarak 13'ü almamalıyız ama 
-    // yeni yapıda HTML içinde onclick="addProductToList(${q.id})" şeklinde çağırdık, sorun yok.
-    
-    const select = document.getElementById(`product-selector-${questionId}`);
-    const qtyInput = document.getElementById(`product-qty-${questionId}`);
-    
-    // Eğer elementler bulunamazsa (eski bir rapordan çağrılmış olabilir), manuel fallback
-    const selectedProductCode = productCode || (select ? select.value : null);
-    const selectedQty = quantity || (qtyInput ? qtyInput.value : null);
-
+function addProductToList(productCode, quantity, shouldSave = true) {
+    const select = document.getElementById('product-selector');
+    const qtyInput = document.getElementById('product-qty');
+    const selectedProductCode = productCode || select.value;
+    const selectedQty = quantity || qtyInput.value;
     if (!selectedProductCode || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.');
     
     const product = state.productList.find(p => p.code === selectedProductCode);
     if (!product) { console.error("Ürün bulunamadı: ", selectedProductCode); return; }
 
-    const listContainer = document.getElementById(`selected-products-list-${questionId}`);
-    if (!listContainer) return;
-
-    if (listContainer.querySelector(`.selected-product-item[data-code="${product.code}"]`)) return alert('Bu ürün zaten listede.');
+    const listContainer = document.getElementById('selected-products-list');
+    if (document.querySelector(`.selected-product-item[data-code="${product.code}"]`)) return alert('Bu ürün zaten listede.');
     
     const unit = getUnitForProduct(product.name);
     const newItem = document.createElement('div');
@@ -443,7 +400,7 @@ function addProductToList(questionId, productCode, quantity, shouldSave = true) 
     
     listContainer.appendChild(newItem);
     
-    if (!productCode && select && qtyInput) { select.value = ''; qtyInput.value = '1'; }
+    if (!productCode) { select.value = ''; qtyInput.value = '1'; }
     
     // --- GÜNCELLENDİ ---
     if (shouldSave) debouncedSaveFormState();
@@ -486,13 +443,12 @@ function toggleQuestionRemoved(button, id, shouldSave = true) {
 }
 
 function addDynamicInput(id, value = '', isCompleted = false, shouldSave = true) {
-    // ID'ye göre doğru container'ı bul (örn: fide13_pleksi veya fide16_pleksi)
     const container = document.getElementById(`sub-items-container-${id}`);
     if (!container) return;
 
     const newItem = document.createElement('div');
     newItem.className = 'dynamic-input-item';
-    newItem.innerHTML = `<input type="text" placeholder="Eksikliği veya notu yazın..." value="${value}"><button class="status-btn btn-sm" title="Bu maddeyi 'Tamamlandı' olarak işaretler."><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger" title="Bu satırı silmek için tıklayın."><i class="fas fa-trash"></i></button>`;
+    newItem.innerHTML = `<input type="text" placeholder="Eksikliği yazın..." value="${value}"><button class="status-btn btn-sm" title="Bu eksikliği 'Tamamlandı' olarak işaretler."><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger" title="Bu satırı silmek için tıklayın."><i class="fas fa-trash"></i></button>`;
     
     const input = newItem.querySelector('input');
     const completeButton = newItem.querySelector('.status-btn');
@@ -502,6 +458,7 @@ function addDynamicInput(id, value = '', isCompleted = false, shouldSave = true)
     
     // --- GÜNCELLENDİ ---
     // 'blur' olayında anlık kaydetme yerine debouncer'ı çağır
+    // Bu, "Yeni Eksik Ekle" butonuna basıldığında tıklamanın engellenmesi sorununu çözer.
     input.addEventListener('blur', () => debouncedSaveFormState());
     
     completeButton.onclick = () => toggleCompleted(completeButton);
