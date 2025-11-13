@@ -3,26 +3,21 @@ import { saveFormState } from './api.js';
 
 let pb; // PocketBase instance
 
-// --- DEBOUNCE MEKANİZMASI (YENİ) ---
-// Hızlı form değişikliklerinin sunucuya sürekli istek atmasını ('autocancelled' hatası) engeller.
+// --- DEBOUNCE MEKANİZMASI ---
 let saveDebounceTimer;
 function debouncedSaveFormState() {
     clearTimeout(saveDebounceTimer);
     saveDebounceTimer = setTimeout(() => {
-        // Sadece giriş yapılmışsa ve bir bayi seçiliyse kaydet
         if (state.isPocketBaseConnected && state.selectedStore) {
-            // Bu arka plan kaydı, api.js'te varsayılan olarak 
-            // yükleme ekranı göstermemelidir.
             saveFormState(getFormDataForSaving()); 
         }
-    }, 800); // Kullanıcı eylemi durduktan sonra 0.8 saniye bekle
+    }, 800); 
 }
 // --- DEBOUNCE MEKANİZMASI BİTTİ ---
 
 
 /**
  * UI modülünü PocketBase instance ile başlatır.
- * @param {object} pbInstance 
  */
 export function initUi(pbInstance) {
     pb = pbInstance;
@@ -33,7 +28,6 @@ export function initUi(pbInstance) {
 function getUnitForProduct(productName) {
     const upperCaseName = productName.toUpperCase();
     if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; }
-    // GÜNCELLENDİ: Styling listesi de "Adet" kullanacak
     return 'Adet';
 }
 
@@ -65,11 +59,10 @@ function generateQuestionHtml(q) {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
     
-    // --- GÜNCELLENDİ: Styling Listesi Soru Tipi (FİDE 16 TASARIM GÜNCELLEMESİ) ---
+    // --- GÜNCELLENDİ: Styling Listesi (OTOMATİK ÜRÜN LİSTELEME) ---
     } else if (q.type === 'styling_list') {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         
-        // Ana Kategori seçeneklerini oluştur
         let mainCategoryOptions = '<option value="">-- Ana Kategori Seçin --</option>';
         if (q.stylingData && Array.isArray(q.stylingData)) {
             q.stylingData.forEach((mainCat) => {
@@ -77,7 +70,7 @@ function generateQuestionHtml(q) {
             });
         }
         
-        // HTML yapısı 'styling-row' ve 'styling-content' kullanacak şekilde güncellendi
+        // 'Eksik Ekle' manuel kutusu artık GİZLİ (çünkü otomatik geliyor)
         questionContentHTML = `
             <div class="input-area styling-list-container" data-question-id="${q.id}">
                 
@@ -96,8 +89,8 @@ function generateQuestionHtml(q) {
                 </div>
 
                 <div class="styling-row" id="styling-adder-container-${q.id}" style="display: none;">
-                    <div class="styling-label">Eksik Ekle</div>
-                    <div class="styling-content product-adder">
+                     <div class="styling-label">Eksik Ekle</div>
+                     <div class="styling-content product-adder">
                         <select class="styling-product-select">
                             <option value="">-- Malzeme Seçin --</option>
                         </select>
@@ -109,7 +102,7 @@ function generateQuestionHtml(q) {
                 </div>
 
                 <div class="styling-row">
-                    <div class="styling-label">Eklenenler</div>
+                    <div class="styling-label">Sipariş Listesi</div>
                     <div class="styling-content" style="display: block;">
                         <div class="styling-selected-products-list"></div>
                     </div>
@@ -132,7 +125,6 @@ function getFormDataForSaving() {
         const titleContainer = itemDiv.querySelector('.fide-title-container');
         const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
         
-        // GÜNCELLENDİ: Fide 16'nın da 'selectedProducts' kullanması için ortak alan
         const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
 
         if (q.type === 'standard') {
@@ -147,11 +139,10 @@ function getFormDataForSaving() {
                 });
             }
         } else if (q.type === 'product_list') {
-            // Fide 13 verisi (Değişiklik yok)
             document.querySelectorAll(`#fide-item-${q.id} #selected-products-list .selected-product-item`).forEach(item => {
                 questionData.selectedProducts.push({ 
                     code: item.dataset.code, 
-                    name: item.dataset.name, // Kaydetme için 'name' eklendi
+                    name: item.dataset.name, 
                     qty: item.dataset.qty 
                 });
             });
@@ -168,22 +159,25 @@ function getFormDataForSaving() {
         } else if (q.type === 'pop_system') {
             questionData.selectedPops = Array.from(document.querySelectorAll(`#fide-item-${q.id} .pop-checkbox:checked`)).map(cb => cb.value);
         
-        // --- GÜNCELLENDİ: Styling Listesi Veri Toplama ---
+        // --- GÜNCELLENDİ: Styling Listesi Veri Okuma ---
         } else if (q.type === 'styling_list') {
             const container = itemDiv.querySelector('.styling-list-container');
             const mainCategorySelect = container.querySelector('.styling-main-category-select');
             const subCategorySelect = container.querySelector('.styling-sub-category-select');
 
-            // Checkbox'lar yerine ".selected-product-item" listesini oku
+            // Adet kutusu artık input içinde (class="qty-edit-input"). Değeri oradan al.
             document.querySelectorAll(`#fide-item-${q.id} .styling-selected-products-list .selected-product-item`).forEach(item => {
+                // GÜNCELLENDİ: Adet değerini input'tan oku
+                const qtyInput = item.querySelector('.qty-edit-input');
+                const currentQty = qtyInput ? qtyInput.value : item.dataset.qty;
+
                 questionData.selectedProducts.push({ 
                     code: item.dataset.code, 
                     name: item.dataset.name, 
-                    qty: item.dataset.qty 
+                    qty: currentQty 
                 });
             });
 
-            // Kategori seçimlerini de ayrıca kaydet (Raporu geri yüklemek için)
             if (mainCategorySelect.value || subCategorySelect.value) {
                  questionData.stylingCategorySelections = {
                     mainCategory: mainCategorySelect.value,
@@ -242,12 +236,9 @@ export function buildForm() {
         initializePopSystem(popContainer);
     }
     
-    // --- GÜNCELLENDİ: Styling Listesi olay dinleyicilerini bağla ---
     document.querySelectorAll('.styling-main-category-select').forEach(select => {
         select.addEventListener('change', handleStylingMainCatChange);
     });
-    // Alt kategori dinleyicisi, 'handleStylingMainCatChange' içinde dinamik olarak eklenecek.
-    // --- GÜNCELLEME SONU ---
 }
 
 export function startNewReport() {
@@ -276,9 +267,7 @@ export async function generateEmail() {
     }
 
     const reportData = getFormDataForSaving();
-    // E-posta oluşturmadan önce formun GÜNCEL halini 'true' (yükleme ekranı göstererek) kaydet.
-    // Bu, debouncer'ı atlar ve anında kaydeder.
-    await saveFormState(reportData, true); // reportData burada 'questions_status' içeriyor
+    await saveFormState(reportData, true);
 
     const storeInfo = state.dideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu));
     const fideStoreInfo = state.fideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu));
@@ -297,15 +286,12 @@ export async function generateEmail() {
         const itemDiv = document.getElementById(`fide-item-${q.id}`);
         if (!itemDiv || itemDiv.classList.contains('question-removed')) return;
         
-        // --- GÜNCELLENDİ: reportData'dan doğru veriyi al ---
         const questionStatus = reportData.questions_status[q.id];
-        if (!questionStatus) return; // Soru için veri yoksa atla
+        if (!questionStatus) return;
         
         const isQuestionCompleted = questionStatus.completed;
         let contentHtml = '';
         
-        // GÜNCELLENDİ: Fide 13 ve Fide 16'nın raporlamasını birleştirdik
-        // (İkisi de artık questionStatus.selectedProducts kullanıyor)
         if (q.type === 'standard') {
             const container = document.getElementById(`sub-items-container-fide${q.id}`);
             if (container) {
@@ -331,13 +317,11 @@ export async function generateEmail() {
                  }
             }
         } else if (q.type === 'product_list' || q.type === 'styling_list') {
-            // 'selectedProducts' artık hem Fide 13 hem de Fide 16'dan geliyor.
             const productItemsHtml = (questionStatus.selectedProducts || []).map(prod => {
-                const unit = getUnitForProduct(prod.name); // 'Adet' veya 'Paket' döner
+                const unit = getUnitForProduct(prod.name); 
                 return `<li>${prod.code} ${prod.name}: <b>${prod.qty} ${unit}</b></li>`;
             });
             
-            // Sadece Fide 13'e ait olan Pleksi alanı
             if (q.type === 'product_list') {
                 const pleksiContainer = document.getElementById(`sub-items-container-fide${q.id}_pleksi`);
                 const pleksiItemsHtml = pleksiContainer ? Array.from(pleksiContainer.querySelectorAll('input[type="text"]')).filter(i => !i.classList.contains('completed')).map(i => `<li>${i.value}</li>`) : [];
@@ -345,7 +329,6 @@ export async function generateEmail() {
                 if (productItemsHtml.length > 0) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
                 if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
             
-            // Sadece Fide 16'ya ait olan Kategori başlığı
             } else if (q.type === 'styling_list') {
                 if (productItemsHtml.length > 0) {
                     const selections = questionStatus.stylingCategorySelections;
@@ -358,7 +341,6 @@ export async function generateEmail() {
             const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !state.expiredCodes.includes(code));
             if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
         }
-        // --- GÜNCELLEME SONU ---
 
         if (contentHtml !== '' || isQuestionCompleted) {
             const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
@@ -421,7 +403,6 @@ export function loadReportUI(reportData) {
             }
             if (data.selectedProducts) {
                 const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
-                // GÜNCELLENDİ: Fide 13 veya Fide 16 listesine ekleme
                 data.selectedProducts.forEach(prod => {
                     if (qInfo.type === 'product_list') {
                         addProductToList(prod.code, prod.qty, false, prod.name);
@@ -435,7 +416,6 @@ export function loadReportUI(reportData) {
                 checkExpiredPopCodes();
             }
             
-            // --- GÜNCELLENDİ: Styling Listesi Rapor Yükleme (Kategori seçimi) ---
             if (data.stylingCategorySelections) {
                 const selections = data.stylingCategorySelections;
                 const mainSelect = questionItem.querySelector('.styling-main-category-select');
@@ -450,7 +430,6 @@ export function loadReportUI(reportData) {
                     }
                 }
             }
-            // --- GÜNCELLEME SONU ---
         }
         updateFormInteractivity(true);
     } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
@@ -475,8 +454,6 @@ function initializePopSystem(container) {
         checkbox.className = 'pop-checkbox';
         checkbox.addEventListener('change', () => {
             checkExpiredPopCodes();
-            // --- GÜNCELLENDİ ---
-            // Anlık kaydetme yerine debouncer'ı çağır
             debouncedSaveFormState();
         });
         label.appendChild(checkbox);
@@ -501,17 +478,13 @@ function initiateDeleteItem(buttonEl) {
         buttonEl.classList.add('btn-warning');
         const timerId = setTimeout(() => { 
             itemEl.remove(); 
-            // --- GÜNCELLENDİ ---
             debouncedSaveFormState(); 
         }, 4000);
         itemEl.dataset.deleteTimer = timerId;
     }
-    // --- GÜNCELLENDİ ---
-    // Geri alma/silme işlemini anlık kaydetmek için debouncer'ı çağır
     debouncedSaveFormState();
 }
 
-// GÜNCELLENDİ: Rapor yüklerken 'name' parametresi eklendi
 function addProductToList(productCode, quantity, shouldSave = true, productName = null) {
     const select = document.getElementById('product-selector');
     const qtyInput = document.getElementById('product-qty');
@@ -519,7 +492,6 @@ function addProductToList(productCode, quantity, shouldSave = true, productName 
     const selectedQty = quantity || qtyInput.value;
     if (!selectedProductCode || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.');
     
-    // GÜNCELLENDİ: 'name' parametresi veya state'den bul
     let product;
     if (productName) {
         product = { code: selectedProductCode, name: productName };
@@ -534,28 +506,21 @@ function addProductToList(productCode, quantity, shouldSave = true, productName 
     
     const unit = getUnitForProduct(product.name);
     const newItem = document.createElement('div');
-    // GÜNCELLENDİ: .selected-product-item (ortak sınıf)
     newItem.className = 'selected-product-item'; 
     newItem.dataset.code = product.code;
     newItem.dataset.qty = selectedQty;
-    newItem.dataset.name = product.name; // 'name' de data'ya eklendi
+    newItem.dataset.name = product.name; 
     
-    // --- GÜNCELLENDİ ---
-    // 'onclick' kaldırıldı ve 'addEventListener' eklendi.
     newItem.innerHTML = `<span>${product.code} ${product.name} - <span class="product-quantity"><b>${selectedQty} ${unit}</b></span></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler."><i class="fas fa-trash"></i></button>`;
     
-    // Olay dinleyici programatik olarak eklendi
     newItem.querySelector('.delete-item-btn').addEventListener('click', function() {
-        this.parentElement.remove(); // 'this' butonu işaret eder, parent'ı 'newItem' div'idir.
-        debouncedSaveFormState(); // Debounced fonksiyonu çağır
+        this.parentElement.remove(); 
+        debouncedSaveFormState(); 
     });
-    // --- GÜNCELLEME BİTTİ ---
     
     listContainer.appendChild(newItem);
     
     if (!productCode) { select.value = ''; qtyInput.value = '1'; }
-    
-    // --- GÜNCELLENDİ ---
     if (shouldSave) debouncedSaveFormState();
 }
 
@@ -565,7 +530,6 @@ function toggleCompleted(button) {
     input.readOnly = isCompleted;
     button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
     button.classList.toggle('undo', isCompleted);
-    // --- GÜNCELLENDİ ---
     debouncedSaveFormState();
 }
 
@@ -577,7 +541,6 @@ function toggleQuestionCompleted(button, id, shouldSave = true) {
     button.classList.toggle('undo', isQuestionCompleted);
     const inputArea = itemDiv.querySelector('.input-area');
     if (inputArea) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
-    // --- GÜNCELLENDİ ---
     if (shouldSave) debouncedSaveFormState();
 }
 
@@ -591,7 +554,6 @@ function toggleQuestionRemoved(button, id, shouldSave = true) {
     button.classList.toggle('btn-danger', !isRemoved);
     button.classList.toggle('btn-primary', isRemoved);
     if(actionsContainer) actionsContainer.querySelectorAll('.add-item-btn, .status-btn').forEach(btn => btn.disabled = isRemoved);
-    // --- GÜNCELLENDİ ---
     if (shouldSave) debouncedSaveFormState();
 }
 
@@ -609,10 +571,7 @@ function addDynamicInput(id, value = '', isCompleted = false, shouldSave = true)
     
     input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); addDynamicInput(id); } });
     
-    // --- GÜNCELLENDİ ---
-    // 'blur' olayında anlık kaydetme yerine debouncer'ı çağır
-    // Bu, "Yeni Eksik Ekle" butonuna basıldığında tıklamanın engellenmesi sorununu çözer.
-    input.addEventListener('input', () => debouncedSaveFormState()); // 'blur' yerine 'input' daha güvenli
+    input.addEventListener('input', () => debouncedSaveFormState());
     
     completeButton.onclick = () => toggleCompleted(completeButton);
     deleteButton.onclick = () => initiateDeleteItem(deleteButton);
@@ -621,7 +580,6 @@ function addDynamicInput(id, value = '', isCompleted = false, shouldSave = true)
     container.prepend(newItem);
     if (value === '') input.focus();
     
-    // --- GÜNCELLENDİ ---
     if (shouldSave) debouncedSaveFormState();
 }
 
@@ -641,14 +599,12 @@ function copySelectedCodes() {
 function clearSelectedCodes() {
     document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
     checkExpiredPopCodes();
-    // --- GÜNCELLENDİ ---
     debouncedSaveFormState();
 }
 
 function selectExpiredCodes() {
     document.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = state.expiredCodes.includes(cb.value); });
     checkExpiredPopCodes();
-    // --- GÜNCELLENDİ ---
     debouncedSaveFormState();
 }
 
@@ -666,7 +622,7 @@ function openEmailDraft() {
     emailWindow.document.close();
 }
 
-// --- GÜNCELLENDİ: Styling Listesi Arayüz Fonksiyonları (FİDE 16 MANTIĞI) ---
+// --- GÜNCELLENDİ: Styling Listesi Arayüz Fonksiyonları (OTOMATİK) ---
 
 /**
  * Ana Kategori seçimi değiştiğinde tetiklenir.
@@ -679,12 +635,12 @@ function handleStylingMainCatChange(event) {
     const question = state.fideQuestions.find(q => String(q.id) === questionId);
     
     const subContainer = document.getElementById(`styling-sub-container-${questionId}`);
-    const adderContainer = document.getElementById(`styling-adder-container-${questionId}`);
+    const listContainer = container.querySelector('.styling-selected-products-list');
     const subSelect = subContainer.querySelector('.styling-sub-category-select');
 
     // Alt bileşenleri temizle ve gizle
     subSelect.innerHTML = '<option value="">-- Alt Kategori Seçin --</option>';
-    adderContainer.style.display = 'none'; // Ekleme kutusunu gizle
+    listContainer.innerHTML = ''; // Listeyi temizle
 
     if (mainSelect.value && question && question.stylingData) {
         const selectedMainCat = question.stylingData.find(mc => mc.name === mainSelect.value);
@@ -693,21 +649,21 @@ function handleStylingMainCatChange(event) {
                 const option = new Option(subCat.name, subCat.name);
                 subSelect.add(option);
             });
-            subContainer.style.display = 'flex'; // GÜNCELLENDİ: 'flex' yapıldı
+            subContainer.style.display = 'flex'; 
             
-            // Olay dinleyiciyi (yeniden) bağla
-            subSelect.removeEventListener('change', handleStylingSubCatChange); // Öncekini temizle
+            subSelect.removeEventListener('change', handleStylingSubCatChange);
             subSelect.addEventListener('change', handleStylingSubCatChange); 
         }
     } else {
-        subContainer.style.display = 'none'; // Ana kategori seçilmezse alt kategoriyi gizle
+        subContainer.style.display = 'none';
     }
     
-    debouncedSaveFormState(); // Seçimi kaydet
+    debouncedSaveFormState(); 
 }
 
 /**
  * Alt Kategori seçimi değiştiğinde tetiklenir.
+ * ARTIK OTOMATİK ÜRÜN EKLİYOR.
  * @param {Event} event Olay nesnesi
  */
 function handleStylingSubCatChange(event) {
@@ -717,11 +673,8 @@ function handleStylingSubCatChange(event) {
     const question = state.fideQuestions.find(q => String(q.id) === questionId);
     const mainSelect = container.querySelector('.styling-main-category-select');
     
-    const adderContainer = document.getElementById(`styling-adder-container-${questionId}`);
-    const productSelect = adderContainer.querySelector('.styling-product-select');
-    const qtyInput = adderContainer.querySelector('.styling-product-qty');
-
-    productSelect.innerHTML = '<option value="">-- Malzeme Seçin --</option>'; // Ürün listesini temizle
+    const listContainer = container.querySelector('.styling-selected-products-list');
+    listContainer.innerHTML = ''; // Her seçimde listeyi sıfırla
 
     if (subSelect.value && mainSelect.value && question && question.stylingData) {
         const selectedMainCat = question.stylingData.find(mc => mc.name === mainSelect.value);
@@ -729,31 +682,21 @@ function handleStylingSubCatChange(event) {
         
         const selectedSubCat = selectedMainCat.subCategories.find(sc => sc.name === subSelect.value);
         if (selectedSubCat && selectedSubCat.products) {
+            // GÜNCELLENDİ: Ürünleri otomatik döngü ile ekle
             selectedSubCat.products.forEach(product => {
-                const option = new Option(`${product.name} (${product.code})`, product.code);
-                // Sabit adeti ve ismi 'option' elementinde sakla
-                option.dataset.fixedQty = product.qty || '1';
-                option.dataset.name = product.name;
-                productSelect.add(option);
+                // 'false' parametresi ile her biri için ayrı save atmayı engelliyoruz,
+                // döngü bitince tek bir save atacağız.
+                addStylingProductToList(questionId, product.code, product.qty || '1', product.name, false);
             });
-            
-            // Ürün seçildiğinde adet kutusunu doldur
-            productSelect.removeEventListener('change', handleStylingProductChange); // Temizle
-            productSelect.addEventListener('change', handleStylingProductChange);
-            
-            adderContainer.style.display = 'flex'; // GÜNCELLENDİ: 'flex' yapıldı
-            qtyInput.value = '1'; // Adet kutusunu sıfırla
         }
-    } else {
-         adderContainer.style.display = 'none'; // Alt kategori seçilmezse gizle
     }
     
-    debouncedSaveFormState(); // Seçimi kaydet
+    debouncedSaveFormState(); // Tüm liste oluşunca tek sefer kaydet
 }
 
 /**
  * Styling ürün seçimi değiştiğinde adet kutusunu doldurur.
- * @param {Event} event 
+ * (Manuel ekleme kapalı olduğu için bu fonksiyon şu an pasif ama kodda kalabilir)
  */
 function handleStylingProductChange(event) {
     const productSelect = event.target;
@@ -765,65 +708,54 @@ function handleStylingProductChange(event) {
     } else {
         qtyInput.value = '1';
     }
-    // Bu eylem debouncer'ı tetiklemez, sadece adet kutusunu doldurur.
 }
 
 /**
- * Styling listesine ürün ekler (FiDe 16 mantığı).
- * @param {number} qId Soru ID'si
+ * Styling listesine ürün ekler.
+ * GÜNCELLENDİ: Adet kısmı artık 'input' olarak render ediliyor.
  */
 function addStylingProductToList(qId, productCode, quantity, productName, shouldSave = true) {
     const itemDiv = document.getElementById(`fide-item-${qId}`);
-    const adderContainer = document.getElementById(`styling-adder-container-${qId}`);
-    const productSelect = adderContainer.querySelector('.styling-product-select');
-    const qtyInput = adderContainer.querySelector('.styling-product-qty');
+    // Manuel ekleme alanlarını okumaya gerek yok çünkü parametre olarak geliyor artık
     
-    let selectedProductCode, selectedQty, selectedProductName;
-
-    if (productCode) {
-        // Rapor yüklenirken (loadReportUI) çağrıldı
-        selectedProductCode = productCode;
-        selectedQty = quantity;
-        selectedProductName = productName;
-    } else {
-        // "Ekle" butonuna basılarak çağrıldı
-        const selectedOption = productSelect.options[productSelect.selectedIndex];
-        if (!selectedOption || !selectedOption.value) {
-            return alert('Lütfen eklenecek bir malzeme seçin.');
-        }
-        selectedProductCode = selectedOption.value;
-        selectedQty = qtyInput.value; // Zaten disabled ve dolu
-        selectedProductName = selectedOption.dataset.name;
-    }
-
     const listContainer = itemDiv.querySelector(`.styling-selected-products-list`);
-    if (listContainer.querySelector(`.selected-product-item[data-code="${selectedProductCode}"]`)) {
-        return alert('Bu ürün zaten eksikler listesinde.');
+    
+    // Zaten listede varsa ekleme (Tekrarı önle)
+    if (listContainer.querySelector(`.selected-product-item[data-code="${productCode}"]`)) {
+        return; 
     }
 
-    const unit = getUnitForProduct(selectedProductName); // "Adet"
+    const unit = getUnitForProduct(productName); 
     const newItem = document.createElement('div');
     
-    // GÜNCELLENDİ: FiDe 13 ile AYNI CSS sınıfını kullan [2025-10-02]
     newItem.className = 'selected-product-item'; 
-    newItem.dataset.code = selectedProductCode;
-    newItem.dataset.qty = selectedQty;
-    newItem.dataset.name = selectedProductName;
+    newItem.dataset.code = productCode;
+    newItem.dataset.qty = quantity; // Varsayılan değer (data attribute)
+    newItem.dataset.name = productName;
     
-    newItem.innerHTML = `<span>${selectedProductCode} ${selectedProductName} - <span class="product-quantity"><b>${selectedQty} ${unit}</b></span></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler."><i class="fas fa-trash"></i></button>`;
+    // GÜNCELLENDİ: Adet kısmını input yaptık
+    newItem.innerHTML = `
+        <span>${productCode} ${productName} - 
+            <span class="product-quantity">
+                <input type="number" class="qty-edit-input" value="${quantity}" min="0"> 
+                ${unit}
+            </span>
+        </span>
+        <button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler."><i class="fas fa-trash"></i></button>
+    `;
     
-    // Silme butonu için olay dinleyici
+    // Adet değişikliğini yakala ve kaydet
+    const qtyInput = newItem.querySelector('.qty-edit-input');
+    qtyInput.addEventListener('change', function() {
+        debouncedSaveFormState();
+    });
+
     newItem.querySelector('.delete-item-btn').addEventListener('click', function() {
         this.parentElement.remove();
         debouncedSaveFormState(); 
     });
     
     listContainer.appendChild(newItem);
-    
-    if (!productCode) { // Sadece "Ekle" butonuna basıldıysa
-        productSelect.value = ''; 
-        qtyInput.value = '1';
-    }
     
     if (shouldSave) debouncedSaveFormState();
 }
@@ -836,7 +768,6 @@ export function attachUiFunctionsToWindow() {
     window.returnToMainPage = returnToMainPage;
     window.initiateDeleteItem = initiateDeleteItem;
     window.addProductToList = addProductToList;
-    // --- YENİ: Styling ekleme fonksiyonu window'a eklendi ---
     window.addStylingProductToList = addStylingProductToList; 
     window.toggleQuestionCompleted = toggleQuestionCompleted;
     window.toggleQuestionRemoved = toggleQuestionRemoved;
