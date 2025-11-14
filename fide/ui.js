@@ -59,7 +59,7 @@ function generateQuestionHtml(q) {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
     
-    // --- GÜNCELLENDİ: Styling Listesi (TOGGLE SİSTEMİ EKLENDİ) ---
+    // --- GÜNCELLENDİ: Styling Listesi (AKILLI TOGGLE & STANDART GÖRÜNÜM) ---
     } else if (q.type === 'styling_list') {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         
@@ -69,7 +69,21 @@ function generateQuestionHtml(q) {
                 mainCategoryOptions += `<option value="${mainCat.name}">${mainCat.name}</option>`;
             });
         }
-        
+
+        // 1. Standart Görünüm İçeriği (Static Items - Açıklamalar)
+        // Bu içerik, Standart Soru tipindeki gibi oluşturulur.
+        let standardViewHTML = '';
+        if (q.staticItems && q.staticItems.length > 0) {
+             standardViewHTML = (q.staticItems || []).map(item => 
+                `<div class="static-item">
+                    <div class="content">${item}</div>
+                    <button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın."><i class="fas fa-trash"></i></button>
+                 </div>`
+            ).join('');
+        }
+        // Boşsa bile bir container oluştur ki script hata vermesin
+        standardViewHTML = `<div id="standard-view-container-${q.id}" style="display: block;">${standardViewHTML}</div>`;
+
         questionContentHTML = `
             <div class="mode-toggle-container">
                 <span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span>
@@ -78,6 +92,8 @@ function generateQuestionHtml(q) {
                     <span class="slider round"></span>
                 </label>
             </div>
+
+            ${standardViewHTML}
 
             <div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;">
                 
@@ -413,10 +429,13 @@ export function loadReportUI(reportData) {
                 // GÜNCELLENDİ: Eğer Styling List sorusunda kayıtlı ürün varsa, anahtarı aç ve listeyi göster
                 if (qInfo.type === 'styling_list') {
                     const toggleBtn = questionItem.querySelector('.styling-mode-toggle');
-                    const container = questionItem.querySelector('.styling-list-container');
-                    if (toggleBtn && container) {
+                    const stylingContainer = questionItem.querySelector('.styling-list-container');
+                    const standardContainer = document.getElementById(`standard-view-container-${qId}`);
+                    
+                    if (toggleBtn && stylingContainer) {
                         toggleBtn.checked = true;
-                        container.style.display = 'block';
+                        stylingContainer.style.display = 'block';
+                        if (standardContainer) standardContainer.style.display = 'none';
                     }
                 }
 
@@ -448,10 +467,13 @@ export function loadReportUI(reportData) {
 
                     // GÜNCELLENDİ: Sadece kategori seçimi varsa bile listeyi aç
                     const toggleBtn = questionItem.querySelector('.styling-mode-toggle');
-                    const container = questionItem.querySelector('.styling-list-container');
-                    if (toggleBtn && container && !toggleBtn.checked) {
+                    const stylingContainer = questionItem.querySelector('.styling-list-container');
+                    const standardContainer = document.getElementById(`standard-view-container-${qId}`);
+
+                    if (toggleBtn && stylingContainer && !toggleBtn.checked) {
                         toggleBtn.checked = true;
-                        container.style.display = 'block';
+                        stylingContainer.style.display = 'block';
+                        if (standardContainer) standardContainer.style.display = 'none';
                     }
                 }
             }
@@ -574,16 +596,20 @@ function toggleQuestionCompleted(button, id, shouldSave = true) {
     // Styling ise ve tamamlandıysa detayları gizleyebiliriz, geri alınınca switch durumuna bakılır
     if (isStyling) {
         const stylingContainer = itemDiv.querySelector('.styling-list-container');
+        const standardContainer = document.getElementById(`standard-view-container-${id}`);
         const toggleContainer = itemDiv.querySelector('.mode-toggle-container');
         if (isQuestionCompleted) {
             if (stylingContainer) stylingContainer.style.display = 'none';
+            if (standardContainer) standardContainer.style.display = 'none';
             if (toggleContainer) toggleContainer.style.display = 'none';
         } else {
             if (toggleContainer) toggleContainer.style.display = 'flex';
-            // Switch açıksa içeriği geri getir
+            // Switch durumuna göre geri yükle
             const toggleBtn = itemDiv.querySelector('.styling-mode-toggle');
-            if (toggleBtn && toggleBtn.checked && stylingContainer) {
-                stylingContainer.style.display = 'block';
+            if (toggleBtn && toggleBtn.checked) {
+                 if (stylingContainer) stylingContainer.style.display = 'block';
+            } else {
+                 if (standardContainer) standardContainer.style.display = 'block';
             }
         }
     }
@@ -602,14 +628,22 @@ function toggleQuestionRemoved(button, id, shouldSave = true) {
     if (toggleContainer) toggleContainer.style.display = isRemoved ? 'none' : 'flex';
 
     if(inputArea) inputArea.style.display = isRemoved ? 'none' : 'block';
-    // Styling listesi için ekstra kontrol: Eğer removed değilse ve switch kapalıysa inputArea yine gizli kalmalı
+    
+    // Styling listesi için ekstra kontrol
     const toggleBtn = itemDiv.querySelector('.styling-mode-toggle');
-    if (!isRemoved && toggleBtn && !toggleBtn.checked && inputArea) {
-        // Sadece container gizli kalsın, toggle görünecek
+    if (!isRemoved && toggleBtn) {
+        // Eğer geri alınıyorsa, switch durumuna göre doğru içeriği göster
         const stylingContainer = itemDiv.querySelector('.styling-list-container');
-        if (stylingContainer) stylingContainer.style.display = 'none';
+        const standardContainer = document.getElementById(`standard-view-container-${id}`);
+        
+        if (toggleBtn.checked) {
+             if (stylingContainer) stylingContainer.style.display = 'block';
+             if (standardContainer) standardContainer.style.display = 'none';
+        } else {
+             if (stylingContainer) stylingContainer.style.display = 'none';
+             if (standardContainer) standardContainer.style.display = 'block';
+        }
     }
-
 
     button.innerHTML = isRemoved ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar';
     button.classList.toggle('btn-danger', !isRemoved);
@@ -687,11 +721,19 @@ function openEmailDraft() {
 
 /**
  * Yeni Fonksiyon: Styling görünümünü açıp kapatır (Switch tetikler)
+ * Kapalıyken -> Standart Görünüm (Textler) AÇIK, Styling (Dropdown) KAPALI
+ * Açıkken  -> Standart Görünüm (Textler) KAPALI, Styling (Dropdown) AÇIK
  */
 function toggleStylingView(checkbox, qId) {
-    const container = document.getElementById(`styling-container-${qId}`);
-    if (container) {
-        container.style.display = checkbox.checked ? 'block' : 'none';
+    const stylingContainer = document.getElementById(`styling-container-${qId}`);
+    const standardContainer = document.getElementById(`standard-view-container-${qId}`);
+    
+    if (checkbox.checked) {
+        if (stylingContainer) stylingContainer.style.display = 'block';
+        if (standardContainer) standardContainer.style.display = 'none';
+    } else {
+        if (stylingContainer) stylingContainer.style.display = 'none';
+        if (standardContainer) standardContainer.style.display = 'block';
     }
 }
 
