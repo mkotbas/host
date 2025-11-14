@@ -198,15 +198,29 @@ input:checked + .slider:before { transform: translateX(22px); }
     gap: 10px; /* Ana Kategoriler arası boşluk */
 }
 
-/* Ana Kategori (Mor Başlık) */
+/* --- Ana Kategori (Mor Başlık) GÜNCELLENDİ: AKORDEON BUTON EKLENDİ --- */
 .main-category-row > .category-header {
     /* JS'den gelen .category-manager-row sınıfı mor arka planı (#4338ca) zaten uygulayacak */
-    /* Sadece ikon rengini ve input'u özelleştirelim */
+    /* [drag] [toggle] [icon] [input] [add-btn] [del-btn] */
     display: grid;
-    /* [icon-drag] [icon-layer] [input] [button-add-sub] [button-remove] */
-    grid-template-columns: 20px 20px 1fr auto auto;
+    grid-template-columns: 20px 25px 20px 1fr auto auto; /* Yeni grid yapısı */
     color: white; /* İkonların beyaz olması için */
 }
+.toggle-row-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+.toggle-row-btn:hover {
+    color: #fff;
+}
+
 .main-category-row .main-category-input {
     background: transparent;
     border: none;
@@ -290,4 +304,57 @@ input:checked + .slider:before { transform: translateX(22px); }
 .product-row-styling .product-qty-styling::-webkit-inner-spin-button {
     -webkit-appearance: none; /* Chrome/Safari'de okları gizle */
     margin: 0;
+}
+
+
+/* --- YENİ: Excel Toplu Yükleme Sihirbazı Stilleri --- */
+.styling-mapping-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+    margin-top: 10px;
+}
+.mapping-row {
+    display: grid;
+    grid-template-columns: 180px 1fr; /* Etiket | Select */
+    gap: 10px;
+    align-items: center;
+}
+.mapping-row label {
+    font-weight: 600;
+    font-size: 13px;
+    text-align: right;
+    color: #333;
+}
+/* Select ve Input stillerini eşitle */
+.mapping-row select, .mapping-row input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+}
+.mapping-row small {
+    grid-column: 2; /* Select/Input'un altına */
+    font-size: 11px;
+    color: #666;
+    margin-top: -5px;
+}
+/* Gizli file input */
+.bulk-styling-input-file {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+/* File input için sahte buton */
+.btn-file-label {
+    cursor: pointer;
+    display: inline-flex !important; /* Buton gibi görünmesi için */
 }
