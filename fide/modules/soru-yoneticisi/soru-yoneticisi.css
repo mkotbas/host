@@ -341,6 +341,17 @@ input:checked + .slider:before { transform: translateX(22px); }
 .btn-file-label {
     cursor: pointer;
     display: inline-flex !important; /* Buton gibi görünmesi için */
+
+    /* GÜNCELLENDİ: İsteğiniz üzerine Excel yeşili ve beyaz yazı */
+    background-color: var(--success-color); /* Excel yeşili (#16a34a) */
+    color: white !important; /* Yazı ve ikonu beyaz yap (ezilmelere karşı !important) */
+    border-color: var(--success-color); /* Kenar rengini de güncelleyelim */
+}
+
+/* GÜNCELLENDİ: Hover (üzerine gelme) efekti eklendi */
+.btn-file-label:hover {
+     background-color: #15803d; /* btn-success'ın hover rengi */
+     border-color: #15803d;
 }
 
 /* --- Ana Kategori Akordeon/Toggle Butonu --- */
