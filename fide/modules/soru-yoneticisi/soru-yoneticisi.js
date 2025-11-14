@@ -9,7 +9,7 @@ let parsedExcelData = null; // YENİ: Yüklenen Excel verisini tutar
 
 // --- YENİ: Dinamik Stil Ekleme Fonksiyonu ---
 /**
- * Yeni arayüz (Sütun Eşleştirme) için stilleri <head> içine enjekte eder.
+ * Yeni arayüz (Sütun Eşleştirme ve Akordeon Yapı) için stilleri <head> içine enjekte eder.
  * Bu sayede CSS dosyasıyla uğraşmak gerekmez.
  */
 function injectManagerStyles() {
@@ -68,6 +68,27 @@ function injectManagerStyles() {
         .btn-file-label {
             cursor: pointer;
             display: inline-flex !important; /* Buton gibi görünmesi için */
+        }
+        
+        /* --- YENİ: Ana Kategori Akordeon Grid Düzeni --- */
+        /* CSS dosyasındaki grid yapısını, yeni eklenen 'ok' butonu için güncelliyoruz */
+        .main-category-row > .category-header {
+            /* [drag] [toggle] [icon] [input] [add-btn] [del-btn] */
+            grid-template-columns: 20px 25px 20px 1fr auto auto !important;
+        }
+        .toggle-row-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+        .toggle-row-btn:hover {
+            color: #fff;
         }
     `;
     document.head.appendChild(style);
@@ -693,25 +714,42 @@ function parseStylingBulkData(container) {
 
 
 /**
- * Ana Kategori satırı ekler.
+ * Ana Kategori satırı ekler. (GÜNCELLENDİ: Akordeon/Toggle Yapısı)
  */
 function addMainCategoryRow(container, mainCatData) {
     const row = document.createElement('div');
     row.className = 'main-category-row'; 
 
+    // GÜNCELLENDİ: Başlığa bir Toggle (Aç/Kapa) butonu eklendi.
+    // sub-category-container varsayılan olarak gizlendi (style="display: none;").
     row.innerHTML = `
         <div class="category-header category-manager-row">
             <i class="fas fa-grip-vertical drag-handle"></i>
+            <button class="toggle-row-btn" title="İçeriği Göster/Gizle"><i class="fas fa-chevron-right"></i></button>
             <i class="fas fa-layer-group category-icon"></i>
             <input type="text" class="main-category-input" placeholder="Ana Kategori Adı (Örn: Vitrinler)" value="${mainCatData.name || ''}">
             <button class="btn-success btn-sm btn-add-sub-category" title="Alt Kategori Ekle"><i class="fas fa-plus"></i> Alt Kategori</button>
             <button class="btn-danger btn-sm btn-remove-row" title="Ana Kategoriyi Sil"><i class="fas fa-trash"></i></button>
         </div>
-        <div class="sub-category-container"></div>
+        <div class="sub-category-container" style="display: none;"></div>
     `;
     container.appendChild(row);
 
     const subCategoryContainer = row.querySelector('.sub-category-container');
+    const toggleBtn = row.querySelector('.toggle-row-btn');
+    const toggleIcon = toggleBtn.querySelector('i');
+
+    // GÜNCELLENDİ: Açma/Kapama işlevi
+    toggleBtn.addEventListener('click', () => {
+        if (subCategoryContainer.style.display === 'none') {
+            subCategoryContainer.style.display = 'block';
+            toggleIcon.className = 'fas fa-chevron-down'; // Aşağı ok
+        } else {
+            subCategoryContainer.style.display = 'none';
+            toggleIcon.className = 'fas fa-chevron-right'; // Sağ ok
+        }
+    });
+
     
     if (mainCatData.subCategories && Array.isArray(mainCatData.subCategories)) {
         mainCatData.subCategories.forEach(subCat => {
@@ -720,6 +758,11 @@ function addMainCategoryRow(container, mainCatData) {
     }
 
     row.querySelector('.btn-add-sub-category').addEventListener('click', () => {
+        // Eğer kapalıysa, alt kategori eklerken otomatik aç
+        if (subCategoryContainer.style.display === 'none') {
+            subCategoryContainer.style.display = 'block';
+            toggleIcon.className = 'fas fa-chevron-down';
+        }
         addSubCategoryRow(subCategoryContainer, {});
     });
     row.querySelector('.btn-remove-row').addEventListener('click', () => {
