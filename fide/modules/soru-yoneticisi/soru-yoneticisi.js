@@ -1,19 +1,33 @@
-// modules/soru-yoneticisi/soru-yoneticisi.js - (CSS Enjeksiyonu Kaldırıldı)
+// modules/soru-yoneticisi/soru-yoneticisi.js
 
 // --- Kapsüllenmiş Global Değişkenler ---
 let fideQuestions = [], productList = [], migrationMap = {};
 const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan yüklenemedi." }];
 let currentManagerView = 'active'; 
 let pbInstance = null; 
-let parsedExcelData = null; // Yüklenen Excel verisini tutar
+let parsedExcelData = null; 
 
 // --- MODÜL BAŞLATMA FONKSİYONU ---
 export async function initializeSoruYoneticisiModule(pb) {
-    pbInstance = pb; // Admin.js'den gelen PocketBase nesnesini al
-    // injectManagerStyles(); // CSS dosyasına taşındığı için kaldırıldı.
+    pbInstance = pb; 
+    loadModuleStyles(); // YENİ: CSS dosyasını yükle
     await loadInitialData();
     setupModuleEventListeners();
     renderQuestionManager();
+}
+
+// --- YENİ: CSS Dosyasını Yükleme Fonksiyonu ---
+function loadModuleStyles() {
+    // Admin paneli 'admin/' klasöründe çalıştığı için bir üst dizine çıkıp modules'e gidiyoruz
+    const cssPath = '../modules/soru-yoneticisi/soru-yoneticisi.css'; 
+    
+    // Eğer dosya daha önce eklenmemişse ekle
+    if (!document.querySelector(`link[href="${cssPath}"]`)) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = cssPath;
+        document.head.appendChild(link);
+    }
 }
 
 async function loadMigrationMap() {
@@ -351,7 +365,7 @@ function toggleSpecialManagerUI(s){ const m=s.closest('.manager-item'); const c=
 else{c.className='special-manager-container';}}
 function renderPopManagerUI(c,d){ const p=(d.popCodes||[]).join(', '); const e=(d.expiredCodes||[]).join(', '); const t=(d.popEmailTo||[]).join(', '); const cc=(d.popEmailCc||[]).join(', '); c.innerHTML=`<p class="pop-manager-info"><i class="fas fa-info-circle"></i> Kodları ve e-posta adreslerini aralarına virgül (,) koyarak girin.</p><div class="pop-manager-grid"><div class="pop-manager-group"><label>Geçerli POP Kodları</label><textarea class="pop-codes-input" rows="5">${p}</textarea></div><div class="pop-manager-group"><label>Süresi Dolmuş POP Kodları</label><textarea class="expired-pop-codes-input" rows="5">${e}</textarea></div><div class="pop-manager-group"><label>POP E-posta Alıcıları (Kime)</label><textarea class="pop-email-to-input" rows="5" placeholder="ornek1@mail.com...">${t}</textarea></div><div class="pop-manager-group"><label>POP E-posta Alıcıları (CC)</label><textarea class="pop-email-cc-input" rows="5" placeholder="ornek2@mail.com...">${cc}</textarea></div></div>`;}
 
-// --- GÜNCELLENDİ: STYLING LIST YÖNETİMİ VE EXCEL YÜKLEME FONKSİYONLARI ---
+// --- STYLING LIST YÖNETİMİ VE EXCEL YÜKLEME FONKSİYONLARI ---
 
 /**
  * Styling Listesi Yöneticisi'nin ana arayüzünü oluşturur.
@@ -436,7 +450,7 @@ function renderStylingListManagerUI(container, questionData) {
 }
 
 /**
- * YENİ: Excel dosyasını okur, analiz eder ve `parsedExcelData`'ya kaydeder.
+ * Excel dosyasını okur, analiz eder ve `parsedExcelData`'ya kaydeder.
  */
 function handleStylingExcelUpload(event, container) {
     const file = event.target.files[0];
@@ -485,7 +499,7 @@ function handleStylingExcelUpload(event, container) {
 
 
 /**
- * YENİ: Okunan Excel verisinin ilk satırını (başlıklar) analiz eder ve eşleştirme UI'ını doldurur.
+ * Okunan Excel verisinin ilk satırını (başlıklar) analiz eder ve eşleştirme UI'ını doldurur.
  */
 function analyzeExcelData(container, data) {
     const headers = data[0]; // İlk satır başlık satırıdır
@@ -526,7 +540,7 @@ function analyzeExcelData(container, data) {
 
 
 /**
- * YENİ: Styling Toplu Veri Ayrıştırma Fonksiyonu
+ * Styling Toplu Veri Ayrıştırma Fonksiyonu
  * Kullanıcının eşleştirmelerine ve `parsedExcelData`'ya göre veriyi işler.
  */
 function parseStylingBulkData(container) {
@@ -613,7 +627,7 @@ function parseStylingBulkData(container) {
         };
         
         // UI'ya satır olarak ekle
-        addMainCategoryRow(editor, mainCatObj, false); // GÜNCELLENDİ: false (isNew)
+        addMainCategoryRow(editor, mainCatObj, false); // false (isNew) -> Kapalı gelir
     });
 
     alert(`${addedCount} adet ürün başarıyla hiyerarşiye eklendi!`);
@@ -627,14 +641,13 @@ function parseStylingBulkData(container) {
 
 
 /**
- * GÜNCELLENDİ: Ana Kategori satırı ekler (Açılır/kapanır)
+ * Ana Kategori satırı ekler (Açılır/kapanır)
  * @param {boolean} isNew - Kategori yeni mi eklendi? (Varsayılan kapalı/açık durumu için)
  */
 function addMainCategoryRow(container, mainCatData, isNew = false) {
     const row = document.createElement('div');
     row.className = 'main-category-row'; 
 
-    // YENİ: 'isNew' true ise (manuel eklendiyse) açık, değilse (toplu/kayıttan geliyorsa) kapalı
     const collapsedClass = isNew ? '' : 'collapsed';
     const contentStyle = isNew ? 'display: block;' : 'display: none;';
 
@@ -654,9 +667,8 @@ function addMainCategoryRow(container, mainCatData, isNew = false) {
     const subCategoryContainer = row.querySelector('.sub-category-container');
     const header = row.querySelector('.category-header');
 
-    // YENİ: Başlığa tıklayınca açma/kapama olayı
+    // Başlığa tıklayınca açma/kapama olayı
     header.addEventListener('click', (e) => {
-        // Tıklanan şeyin buton veya input OLMADIĞINDAN emin ol
         if (e.target.closest('input, button')) {
             return; 
         }
@@ -669,14 +681,12 @@ function addMainCategoryRow(container, mainCatData, isNew = false) {
         }
     });
     
-    // Kayıtlı alt kategorileri yükle
     if (mainCatData.subCategories && Array.isArray(mainCatData.subCategories)) {
         mainCatData.subCategories.forEach(subCat => {
             addSubCategoryRow(subCategoryContainer, subCat);
         });
     }
 
-    // Buton olayları
     row.querySelector('.btn-add-sub-category').addEventListener('click', () => {
         addSubCategoryRow(subCategoryContainer, {});
     });
