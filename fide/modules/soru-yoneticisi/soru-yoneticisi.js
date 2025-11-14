@@ -253,6 +253,11 @@ async function saveQuestions(reloadPage = true) {
         const id = parseInt(item.querySelector('.manager-id-input').value);
         const title = item.querySelector('.question-title-input').value.trim();
         if (hasError) return;
+
+        // --- YENİ: Orijinal soruyu bul (verileri korumak için) ---
+        const originalQuestion = fideQuestions.find(fq => fq.id === id) || {};
+        // --- YENİ SONU ---
+
         if (!id || !title) { hasError = true; return alert(`ID veya Başlık boş olamaz.`); }
         if (ids.has(id)) { hasError = true; return alert(`HATA: ${id} ID'si mükerrer kullanılmış.`); }
         ids.add(id);
@@ -270,11 +275,10 @@ async function saveQuestions(reloadPage = true) {
             q.popEmailTo = (item.querySelector('.pop-email-to-input')?.value || '').split(',').map(e => e.trim()).filter(Boolean);
             q.popEmailCc = (item.querySelector('.pop-email-cc-input')?.value || '').split(',').map(e => e.trim()).filter(Boolean);
         }
-        // --- YENİ ---
-        // 'styling_list' tipindeki sorunun verilerini oku
+        // --- GÜNCELLENDİ: VERİ KORUMA MANTIĞI EKLENDİ ---
         else if (q.type === 'styling_list') {
+            // Tipi 'styling_list' ise, DOM'dan veriyi oku (mevcut kod)
             q.stylingData = [];
-            // GÜNCELLENDİ: '.styling-list-editor' -> '.styling-list-editor-container' olarak değiştirildi (CSS ile uyum için)
             item.querySelectorAll('.styling-list-editor-container > .main-category-row').forEach(mainRow => {
                 const mainCategoryName = mainRow.querySelector('.main-category-input').value.trim();
                 if (!mainCategoryName) return; // Boşsa atla
@@ -296,11 +300,9 @@ async function saveQuestions(reloadPage = true) {
                     subRow.querySelectorAll('.product-container-styling > .product-row-styling').forEach(productRow => {
                         const productCode = productRow.querySelector('.product-code-styling').value.trim();
                         const productName = productRow.querySelector('.product-name-styling').value.trim();
-                        // --- YENİ: Adet alanını oku ---
                         const productQty = productRow.querySelector('.product-qty-styling').value.trim();
                         
                         if (productCode && productName) { // Sadece dolu olanları ekle
-                            // --- YENİ: Adet verisini kaydet ---
                             subCat.products.push({ code: productCode, name: productName, qty: productQty || '1' });
                         }
                     });
@@ -315,7 +317,13 @@ async function saveQuestions(reloadPage = true) {
                 }
             });
         }
-        // --- YENİ SONU ---
+        else if (originalQuestion.type === 'styling_list' && originalQuestion.stylingData) {
+            // YENİ TİP 'styling_list' DEĞİL, AMA ESKİ TİPİ 'styling_list' İDİ.
+            // Veri kaybını önlemek için eski 'stylingData' verisini koru.
+            q.stylingData = originalQuestion.stylingData;
+        }
+        // --- GÜNCELLEME SONU ---
+        
         newQuestions.push(q);
     });
 
