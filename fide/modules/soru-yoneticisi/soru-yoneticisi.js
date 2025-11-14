@@ -7,97 +7,13 @@ let currentManagerView = 'active';
 let pbInstance = null; 
 let parsedExcelData = null; // YENİ: Yüklenen Excel verisini tutar
 
-// --- YENİ: Dinamik Stil Ekleme Fonksiyonu ---
-/**
- * Yeni arayüz (Sütun Eşleştirme ve Akordeon Yapı) için stilleri <head> içine enjekte eder.
- * Bu sayede CSS dosyasıyla uğraşmak gerekmez.
- */
-function injectManagerStyles() {
-    const styleId = 'soru-yoneticisi-dynamic-styles';
-    if (document.getElementById(styleId)) return; // Zaten eklenmişse tekrar ekleme
-
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.innerHTML = `
-        .styling-mapping-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            background: #fff;
-            padding: 15px;
-            border-radius: 4px;
-            border: 1px solid #e2e8f0;
-            margin-top: 10px;
-        }
-        .mapping-row {
-            display: grid;
-            grid-template-columns: 180px 1fr; /* Etiket | Select */
-            gap: 10px;
-            align-items: center;
-        }
-        .mapping-row label {
-            font-weight: 600;
-            font-size: 13px;
-            text-align: right;
-            color: #333;
-        }
-        /* Select ve Input stillerini eşitle */
-        .mapping-row select, .mapping-row input[type="text"] {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-        .mapping-row small {
-            grid-column: 2; /* Select/Input'un altına */
-            font-size: 11px;
-            color: #666;
-            margin-top: -5px;
-        }
-        /* Gizli file input */
-        .bulk-styling-input-file {
-            width: 0.1px;
-            height: 0.1px;
-            opacity: 0;
-            overflow: hidden;
-            position: absolute;
-            z-index: -1;
-        }
-        /* File input için sahte buton */
-        .btn-file-label {
-            cursor: pointer;
-            display: inline-flex !important; /* Buton gibi görünmesi için */
-        }
-        
-        /* --- YENİ: Ana Kategori Akordeon Grid Düzeni --- */
-        /* CSS dosyasındaki grid yapısını, yeni eklenen 'ok' butonu için güncelliyoruz */
-        .main-category-row > .category-header {
-            /* [drag] [toggle] [icon] [input] [add-btn] [del-btn] */
-            grid-template-columns: 20px 25px 20px 1fr auto auto !important;
-        }
-        .toggle-row-btn {
-            background: transparent;
-            border: none;
-            color: rgba(255,255,255,0.8);
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s ease;
-        }
-        .toggle-row-btn:hover {
-            color: #fff;
-        }
-    `;
-    document.head.appendChild(style);
-}
+// --- KALDIRILDI: Dinamik Stil Ekleme Fonksiyonu ---
+// injectManagerStyles fonksiyonu buradan kaldırıldı.
 
 // --- MODÜL BAŞLATMA FONKSİYONU ---
 export async function initializeSoruYoneticisiModule(pb) {
     pbInstance = pb; // Admin.js'den gelen PocketBase nesnesini al
-    injectManagerStyles(); // YENİ: Stilleri enjekte et
+    // injectManagerStyles(); // YENİ: Bu satır kaldırıldı.
     await loadInitialData();
     setupModuleEventListeners();
     renderQuestionManager();
