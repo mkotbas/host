@@ -198,29 +198,14 @@ input:checked + .slider:before { transform: translateX(22px); }
     gap: 10px; /* Ana Kategoriler arası boşluk */
 }
 
-/* --- Ana Kategori (Mor Başlık) GÜNCELLENDİ: AKORDEON BUTON EKLENDİ --- */
+/* Ana Kategori (Mor Başlık) */
 .main-category-row > .category-header {
     /* JS'den gelen .category-manager-row sınıfı mor arka planı (#4338ca) zaten uygulayacak */
-    /* [drag] [toggle] [icon] [input] [add-btn] [del-btn] */
+    /* GÜNCELLENDİ: [drag] [toggle] [icon] [input] [button-add-sub] [button-remove] */
     display: grid;
-    grid-template-columns: 20px 25px 20px 1fr auto auto; /* Yeni grid yapısı */
+    grid-template-columns: 20px 25px 20px 1fr auto auto;
     color: white; /* İkonların beyaz olması için */
 }
-.toggle-row-btn {
-    background: transparent;
-    border: none;
-    color: rgba(255,255,255,0.8);
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease;
-}
-.toggle-row-btn:hover {
-    color: #fff;
-}
-
 .main-category-row .main-category-input {
     background: transparent;
     border: none;
@@ -306,8 +291,7 @@ input:checked + .slider:before { transform: translateX(22px); }
     margin: 0;
 }
 
-
-/* --- YENİ: Excel Toplu Yükleme Sihirbazı Stilleri --- */
+/* --- Styling Listesi Yöneticisi (Excel Yükleme ve Akordeon Ekleri) --- */
 .styling-mapping-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -357,4 +341,20 @@ input:checked + .slider:before { transform: translateX(22px); }
 .btn-file-label {
     cursor: pointer;
     display: inline-flex !important; /* Buton gibi görünmesi için */
+}
+
+/* --- Ana Kategori Akordeon/Toggle Butonu --- */
+.toggle-row-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+.toggle-row-btn:hover {
+    color: #fff;
 }
