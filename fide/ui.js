@@ -59,7 +59,7 @@ function generateQuestionHtml(q) {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
     
-    // --- GÜNCELLENDİ: Styling Listesi (OTOMATİK ÜRÜN LİSTELEME) ---
+    // --- GÜNCELLENDİ: Styling Listesi (TOGGLE SİSTEMİ EKLENDİ) ---
     } else if (q.type === 'styling_list') {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         
@@ -70,9 +70,16 @@ function generateQuestionHtml(q) {
             });
         }
         
-        // 'Eksik Ekle' manuel kutusu artık GİZLİ (çünkü otomatik geliyor)
         questionContentHTML = `
-            <div class="input-area styling-list-container" data-question-id="${q.id}">
+            <div class="mode-toggle-container">
+                <span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span>
+                <label class="switch">
+                    <input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;">
                 
                 <div class="styling-row">
                     <div class="styling-label">Ana Kategori</div>
@@ -162,12 +169,12 @@ function getFormDataForSaving() {
         // --- GÜNCELLENDİ: Styling Listesi Veri Okuma ---
         } else if (q.type === 'styling_list') {
             const container = itemDiv.querySelector('.styling-list-container');
+            // Container gizli olsa bile verileri oku (arka planda kalmış olabilir)
             const mainCategorySelect = container.querySelector('.styling-main-category-select');
             const subCategorySelect = container.querySelector('.styling-sub-category-select');
 
             // Adet kutusu artık input içinde (class="qty-edit-input"). Değeri oradan al.
             document.querySelectorAll(`#fide-item-${q.id} .styling-selected-products-list .selected-product-item`).forEach(item => {
-                // GÜNCELLENDİ: Adet değerini input'tan oku
                 const qtyInput = item.querySelector('.qty-edit-input');
                 const currentQty = qtyInput ? qtyInput.value : item.dataset.qty;
 
@@ -331,13 +338,7 @@ export async function generateEmail() {
             
             } else if (q.type === 'styling_list') {
                 if (productItemsHtml.length > 0) {
-                    // const selections = questionStatus.stylingCategorySelections; // Artık kullanılmıyor
-                    
-                    // --- GÜNCELLEME (Başlık eklendi) ---
-                    // Başlık "Sipariş verilmesi gerekenler:" olarak ve ekteki stilde (koyu/italik) eklendi.
                     contentHtml = `<b><i>Sipariş verilmesi gerekenler:</i></b>`;
-                    
-                    // Ürün listesi
                     contentHtml += `<ul>${productItemsHtml.join('')}</ul>`;
                 }
             }
@@ -408,6 +409,17 @@ export function loadReportUI(reportData) {
             }
             if (data.selectedProducts) {
                 const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
+                
+                // GÜNCELLENDİ: Eğer Styling List sorusunda kayıtlı ürün varsa, anahtarı aç ve listeyi göster
+                if (qInfo.type === 'styling_list') {
+                    const toggleBtn = questionItem.querySelector('.styling-mode-toggle');
+                    const container = questionItem.querySelector('.styling-list-container');
+                    if (toggleBtn && container) {
+                        toggleBtn.checked = true;
+                        container.style.display = 'block';
+                    }
+                }
+
                 data.selectedProducts.forEach(prod => {
                     if (qInfo.type === 'product_list') {
                         addProductToList(prod.code, prod.qty, false, prod.name);
@@ -432,6 +444,14 @@ export function loadReportUI(reportData) {
                     if (subSelect && selections.subCategory) {
                         subSelect.value = selections.subCategory;
                         subSelect.dispatchEvent(new Event('change'));
+                    }
+
+                    // GÜNCELLENDİ: Sadece kategori seçimi varsa bile listeyi aç
+                    const toggleBtn = questionItem.querySelector('.styling-mode-toggle');
+                    const container = questionItem.querySelector('.styling-list-container');
+                    if (toggleBtn && container && !toggleBtn.checked) {
+                        toggleBtn.checked = true;
+                        container.style.display = 'block';
                     }
                 }
             }
@@ -545,7 +565,29 @@ function toggleQuestionCompleted(button, id, shouldSave = true) {
     button.innerHTML = isQuestionCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
     button.classList.toggle('undo', isQuestionCompleted);
     const inputArea = itemDiv.querySelector('.input-area');
-    if (inputArea) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
+    
+    // GÜNCELLENDİ: Standart gizleme mantığını koru ama Styling switch varsa ona dokunma (Toggle kendi içinde yönetir)
+    // Eğer soru tipi styling_list değilse gizle/göster yap
+    const isStyling = itemDiv.querySelector('.styling-mode-toggle');
+    if (inputArea && !isStyling) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
+    
+    // Styling ise ve tamamlandıysa detayları gizleyebiliriz, geri alınınca switch durumuna bakılır
+    if (isStyling) {
+        const stylingContainer = itemDiv.querySelector('.styling-list-container');
+        const toggleContainer = itemDiv.querySelector('.mode-toggle-container');
+        if (isQuestionCompleted) {
+            if (stylingContainer) stylingContainer.style.display = 'none';
+            if (toggleContainer) toggleContainer.style.display = 'none';
+        } else {
+            if (toggleContainer) toggleContainer.style.display = 'flex';
+            // Switch açıksa içeriği geri getir
+            const toggleBtn = itemDiv.querySelector('.styling-mode-toggle');
+            if (toggleBtn && toggleBtn.checked && stylingContainer) {
+                stylingContainer.style.display = 'block';
+            }
+        }
+    }
+
     if (shouldSave) debouncedSaveFormState();
 }
 
@@ -554,7 +596,21 @@ function toggleQuestionRemoved(button, id, shouldSave = true) {
     const isRemoved = itemDiv.classList.toggle('question-removed');
     const inputArea = itemDiv.querySelector('.input-area');
     const actionsContainer = button.closest('.fide-actions');
+    
+    // GÜNCELLENDİ: Styling Toggle'ı da gizle
+    const toggleContainer = itemDiv.querySelector('.mode-toggle-container');
+    if (toggleContainer) toggleContainer.style.display = isRemoved ? 'none' : 'flex';
+
     if(inputArea) inputArea.style.display = isRemoved ? 'none' : 'block';
+    // Styling listesi için ekstra kontrol: Eğer removed değilse ve switch kapalıysa inputArea yine gizli kalmalı
+    const toggleBtn = itemDiv.querySelector('.styling-mode-toggle');
+    if (!isRemoved && toggleBtn && !toggleBtn.checked && inputArea) {
+        // Sadece container gizli kalsın, toggle görünecek
+        const stylingContainer = itemDiv.querySelector('.styling-list-container');
+        if (stylingContainer) stylingContainer.style.display = 'none';
+    }
+
+
     button.innerHTML = isRemoved ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar';
     button.classList.toggle('btn-danger', !isRemoved);
     button.classList.toggle('btn-primary', isRemoved);
@@ -630,6 +686,16 @@ function openEmailDraft() {
 // --- GÜNCELLENDİ: Styling Listesi Arayüz Fonksiyonları (OTOMATİK) ---
 
 /**
+ * Yeni Fonksiyon: Styling görünümünü açıp kapatır (Switch tetikler)
+ */
+function toggleStylingView(checkbox, qId) {
+    const container = document.getElementById(`styling-container-${qId}`);
+    if (container) {
+        container.style.display = checkbox.checked ? 'block' : 'none';
+    }
+}
+
+/**
  * Ana Kategori seçimi değiştiğinde tetiklenir.
  * @param {Event} event Olay nesnesi
  */
@@ -696,23 +762,7 @@ function handleStylingSubCatChange(event) {
         }
     }
     
-    debouncedSaveFormFState(); // Tüm liste oluşunca tek sefer kaydet
-}
-
-/**
- * Styling ürün seçimi değiştiğinde adet kutusunu doldurur.
- * (Manuel ekleme kapalı olduğu için bu fonksiyon şu an pasif ama kodda kalabilir)
- */
-function handleStylingProductChange(event) {
-    const productSelect = event.target;
-    const qtyInput = productSelect.closest('.product-adder').querySelector('.styling-product-qty');
-    
-    const selectedOption = productSelect.options[productSelect.selectedIndex];
-    if (selectedOption && selectedOption.value) {
-        qtyInput.value = selectedOption.dataset.fixedQty || '1';
-    } else {
-        qtyInput.value = '1';
-    }
+    debouncedSaveFormState(); // Tüm liste oluşunca tek sefer kaydet
 }
 
 /**
@@ -781,4 +831,5 @@ export function attachUiFunctionsToWindow() {
     window.clearSelectedCodes = clearSelectedCodes;
     window.selectExpiredCodes = selectExpiredCodes;
     window.openEmailDraft = openEmailDraft;
+    window.toggleStylingView = toggleStylingView; // YENİ: Window'a ekle
 }
