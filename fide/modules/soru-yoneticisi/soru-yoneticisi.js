@@ -1,33 +1,85 @@
-// modules/soru-yoneticisi/soru-yoneticisi.js
+// GÜNCELLENDİ: (function() { ... })() sarmalayıcısı kaldırıldı.
 
 // --- Kapsüllenmiş Global Değişkenler ---
 let fideQuestions = [], productList = [], migrationMap = {};
 const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan yüklenemedi." }];
 let currentManagerView = 'active'; 
 let pbInstance = null; 
-let parsedExcelData = null; 
+let parsedExcelData = null; // YENİ: Yüklenen Excel verisini tutar
+
+// --- YENİ: Dinamik Stil Ekleme Fonksiyonu ---
+/**
+ * Yeni arayüz (Sütun Eşleştirme) için stilleri <head> içine enjekte eder.
+ * Bu sayede CSS dosyasıyla uğraşmak gerekmez.
+ */
+function injectManagerStyles() {
+    const styleId = 'soru-yoneticisi-dynamic-styles';
+    if (document.getElementById(styleId)) return; // Zaten eklenmişse tekrar ekleme
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.innerHTML = `
+        .styling-mapping-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            margin-top: 10px;
+        }
+        .mapping-row {
+            display: grid;
+            grid-template-columns: 180px 1fr; /* Etiket | Select */
+            gap: 10px;
+            align-items: center;
+        }
+        .mapping-row label {
+            font-weight: 600;
+            font-size: 13px;
+            text-align: right;
+            color: #333;
+        }
+        /* Select ve Input stillerini eşitle */
+        .mapping-row select, .mapping-row input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .mapping-row small {
+            grid-column: 2; /* Select/Input'un altına */
+            font-size: 11px;
+            color: #666;
+            margin-top: -5px;
+        }
+        /* Gizli file input */
+        .bulk-styling-input-file {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+        /* File input için sahte buton */
+        .btn-file-label {
+            cursor: pointer;
+            display: inline-flex !important; /* Buton gibi görünmesi için */
+        }
+    `;
+    document.head.appendChild(style);
+}
 
 // --- MODÜL BAŞLATMA FONKSİYONU ---
 export async function initializeSoruYoneticisiModule(pb) {
-    pbInstance = pb; 
-    loadModuleStyles(); // YENİ: CSS dosyasını yükle
+    pbInstance = pb; // Admin.js'den gelen PocketBase nesnesini al
+    injectManagerStyles(); // YENİ: Stilleri enjekte et
     await loadInitialData();
     setupModuleEventListeners();
     renderQuestionManager();
-}
-
-// --- YENİ: CSS Dosyasını Yükleme Fonksiyonu ---
-function loadModuleStyles() {
-    // Admin paneli 'admin/' klasöründe çalıştığı için bir üst dizine çıkıp modules'e gidiyoruz
-    const cssPath = '../modules/soru-yoneticisi/soru-yoneticisi.css'; 
-    
-    // Eğer dosya daha önce eklenmemişse ekle
-    if (!document.querySelector(`link[href="${cssPath}"]`)) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = cssPath;
-        document.head.appendChild(link);
-    }
 }
 
 async function loadMigrationMap() {
@@ -365,7 +417,7 @@ function toggleSpecialManagerUI(s){ const m=s.closest('.manager-item'); const c=
 else{c.className='special-manager-container';}}
 function renderPopManagerUI(c,d){ const p=(d.popCodes||[]).join(', '); const e=(d.expiredCodes||[]).join(', '); const t=(d.popEmailTo||[]).join(', '); const cc=(d.popEmailCc||[]).join(', '); c.innerHTML=`<p class="pop-manager-info"><i class="fas fa-info-circle"></i> Kodları ve e-posta adreslerini aralarına virgül (,) koyarak girin.</p><div class="pop-manager-grid"><div class="pop-manager-group"><label>Geçerli POP Kodları</label><textarea class="pop-codes-input" rows="5">${p}</textarea></div><div class="pop-manager-group"><label>Süresi Dolmuş POP Kodları</label><textarea class="expired-pop-codes-input" rows="5">${e}</textarea></div><div class="pop-manager-group"><label>POP E-posta Alıcıları (Kime)</label><textarea class="pop-email-to-input" rows="5" placeholder="ornek1@mail.com...">${t}</textarea></div><div class="pop-manager-group"><label>POP E-posta Alıcıları (CC)</label><textarea class="pop-email-cc-input" rows="5" placeholder="ornek2@mail.com...">${cc}</textarea></div></div>`;}
 
-// --- STYLING LIST YÖNETİMİ VE EXCEL YÜKLEME FONKSİYONLARI ---
+// --- GÜNCELLENDİ: STYLING LIST YÖNETİMİ VE EXCEL YÜKLEME FONKSİYONLARI ---
 
 /**
  * Styling Listesi Yöneticisi'nin ana arayüzünü oluşturur.
@@ -390,7 +442,7 @@ function renderStylingListManagerUI(container, questionData) {
             </p>
             
             <input type="file" class="bulk-styling-input-file" id="${fileInputId}" accept=".xlsx, .xls">
-            <label for="${fileInputId}" class="btn-success btn-file-label">
+            <label for="${fileInputId}" class="btn-primary btn-sm btn-file-label">
                 <i class="fas fa-file-excel"></i> Excel Dosyası Seç...
             </label>
             <span class="file-name-display" style="margin-left: 10px; font-style: italic; color: #333;"></span>
@@ -429,13 +481,13 @@ function renderStylingListManagerUI(container, questionData) {
     // Kayıtlı veriyi yükle
     if (questionData.stylingData && Array.isArray(questionData.stylingData)) {
         questionData.stylingData.forEach(mainCat => {
-            addMainCategoryRow(editor, mainCat, false); // Kayıttan gelenler kapalı (false)
+            addMainCategoryRow(editor, mainCat);
         });
     }
 
     // Manuel Ekleme Butonu
     container.querySelector('.btn-add-main-category').addEventListener('click', () => {
-        addMainCategoryRow(editor, {}, true); // Yeni eklenen açık (true)
+        addMainCategoryRow(editor, {});
     });
 
     // "Dosya Seç" inputu
@@ -450,7 +502,7 @@ function renderStylingListManagerUI(container, questionData) {
 }
 
 /**
- * Excel dosyasını okur, analiz eder ve `parsedExcelData`'ya kaydeder.
+ * YENİ: Excel dosyasını okur, analiz eder ve `parsedExcelData`'ya kaydeder.
  */
 function handleStylingExcelUpload(event, container) {
     const file = event.target.files[0];
@@ -499,7 +551,7 @@ function handleStylingExcelUpload(event, container) {
 
 
 /**
- * Okunan Excel verisinin ilk satırını (başlıklar) analiz eder ve eşleştirme UI'ını doldurur.
+ * YENİ: Okunan Excel verisinin ilk satırını (başlıklar) analiz eder ve eşleştirme UI'ını doldurur.
  */
 function analyzeExcelData(container, data) {
     const headers = data[0]; // İlk satır başlık satırıdır
@@ -540,7 +592,7 @@ function analyzeExcelData(container, data) {
 
 
 /**
- * Styling Toplu Veri Ayrıştırma Fonksiyonu
+ * YENİ: Styling Toplu Veri Ayrıştırma Fonksiyonu
  * Kullanıcının eşleştirmelerine ve `parsedExcelData`'ya göre veriyi işler.
  */
 function parseStylingBulkData(container) {
@@ -627,7 +679,7 @@ function parseStylingBulkData(container) {
         };
         
         // UI'ya satır olarak ekle
-        addMainCategoryRow(editor, mainCatObj, false); // false (isNew) -> Kapalı gelir
+        addMainCategoryRow(editor, mainCatObj);
     });
 
     alert(`${addedCount} adet ürün başarıyla hiyerarşiye eklendi!`);
@@ -641,45 +693,25 @@ function parseStylingBulkData(container) {
 
 
 /**
- * Ana Kategori satırı ekler (Açılır/kapanır)
- * @param {boolean} isNew - Kategori yeni mi eklendi? (Varsayılan kapalı/açık durumu için)
+ * Ana Kategori satırı ekler.
  */
-function addMainCategoryRow(container, mainCatData, isNew = false) {
+function addMainCategoryRow(container, mainCatData) {
     const row = document.createElement('div');
     row.className = 'main-category-row'; 
 
-    const collapsedClass = isNew ? '' : 'collapsed';
-    const contentStyle = isNew ? 'display: block;' : 'display: none;';
-
     row.innerHTML = `
-        <div class="category-header category-manager-row collapsible ${collapsedClass}">
+        <div class="category-header category-manager-row">
             <i class="fas fa-grip-vertical drag-handle"></i>
             <i class="fas fa-layer-group category-icon"></i>
             <input type="text" class="main-category-input" placeholder="Ana Kategori Adı (Örn: Vitrinler)" value="${mainCatData.name || ''}">
             <button class="btn-success btn-sm btn-add-sub-category" title="Alt Kategori Ekle"><i class="fas fa-plus"></i> Alt Kategori</button>
             <button class="btn-danger btn-sm btn-remove-row" title="Ana Kategoriyi Sil"><i class="fas fa-trash"></i></button>
-            <i class="fas fa-chevron-down category-toggle-icon"></i>
         </div>
-        <div class="sub-category-container" style="${contentStyle}"></div>
+        <div class="sub-category-container"></div>
     `;
     container.appendChild(row);
 
     const subCategoryContainer = row.querySelector('.sub-category-container');
-    const header = row.querySelector('.category-header');
-
-    // Başlığa tıklayınca açma/kapama olayı
-    header.addEventListener('click', (e) => {
-        if (e.target.closest('input, button')) {
-            return; 
-        }
-        e.currentTarget.classList.toggle('collapsed');
-        const content = e.currentTarget.nextElementSibling; // .sub-category-container
-        if (content.style.display === 'none') {
-            content.style.display = 'block';
-        } else {
-            content.style.display = 'none';
-        }
-    });
     
     if (mainCatData.subCategories && Array.isArray(mainCatData.subCategories)) {
         mainCatData.subCategories.forEach(subCat => {
