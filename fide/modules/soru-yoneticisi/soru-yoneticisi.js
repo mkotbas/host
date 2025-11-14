@@ -5,10 +5,78 @@ let fideQuestions = [], productList = [], migrationMap = {};
 const fallbackFideQuestions = [{ id: 0, type: 'standard', title: "HATA: Sorular buluttan yüklenemedi." }];
 let currentManagerView = 'active'; 
 let pbInstance = null; 
+let parsedExcelData = null; // YENİ: Yüklenen Excel verisini tutar
+
+// --- YENİ: Dinamik Stil Ekleme Fonksiyonu ---
+/**
+ * Yeni arayüz (Sütun Eşleştirme) için stilleri <head> içine enjekte eder.
+ * Bu sayede CSS dosyasıyla uğraşmak gerekmez.
+ */
+function injectManagerStyles() {
+    const styleId = 'soru-yoneticisi-dynamic-styles';
+    if (document.getElementById(styleId)) return; // Zaten eklenmişse tekrar ekleme
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.innerHTML = `
+        .styling-mapping-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            margin-top: 10px;
+        }
+        .mapping-row {
+            display: grid;
+            grid-template-columns: 180px 1fr; /* Etiket | Select */
+            gap: 10px;
+            align-items: center;
+        }
+        .mapping-row label {
+            font-weight: 600;
+            font-size: 13px;
+            text-align: right;
+            color: #333;
+        }
+        /* Select ve Input stillerini eşitle */
+        .mapping-row select, .mapping-row input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .mapping-row small {
+            grid-column: 2; /* Select/Input'un altına */
+            font-size: 11px;
+            color: #666;
+            margin-top: -5px;
+        }
+        /* Gizli file input */
+        .bulk-styling-input-file {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+        /* File input için sahte buton */
+        .btn-file-label {
+            cursor: pointer;
+            display: inline-flex !important; /* Buton gibi görünmesi için */
+        }
+    `;
+    document.head.appendChild(style);
+}
 
 // --- MODÜL BAŞLATMA FONKSİYONU ---
 export async function initializeSoruYoneticisiModule(pb) {
     pbInstance = pb; // Admin.js'den gelen PocketBase nesnesini al
+    injectManagerStyles(); // YENİ: Stilleri enjekte et
     await loadInitialData();
     setupModuleEventListeners();
     renderQuestionManager();
@@ -349,28 +417,57 @@ function toggleSpecialManagerUI(s){ const m=s.closest('.manager-item'); const c=
 else{c.className='special-manager-container';}}
 function renderPopManagerUI(c,d){ const p=(d.popCodes||[]).join(', '); const e=(d.expiredCodes||[]).join(', '); const t=(d.popEmailTo||[]).join(', '); const cc=(d.popEmailCc||[]).join(', '); c.innerHTML=`<p class="pop-manager-info"><i class="fas fa-info-circle"></i> Kodları ve e-posta adreslerini aralarına virgül (,) koyarak girin.</p><div class="pop-manager-grid"><div class="pop-manager-group"><label>Geçerli POP Kodları</label><textarea class="pop-codes-input" rows="5">${p}</textarea></div><div class="pop-manager-group"><label>Süresi Dolmuş POP Kodları</label><textarea class="expired-pop-codes-input" rows="5">${e}</textarea></div><div class="pop-manager-group"><label>POP E-posta Alıcıları (Kime)</label><textarea class="pop-email-to-input" rows="5" placeholder="ornek1@mail.com...">${t}</textarea></div><div class="pop-manager-group"><label>POP E-posta Alıcıları (CC)</label><textarea class="pop-email-cc-input" rows="5" placeholder="ornek2@mail.com...">${cc}</textarea></div></div>`;}
 
-// --- STYLING LIST YÖNETİMİ VE TOPLU YÜKLEME FONKSİYONLARI ---
+// --- GÜNCELLENDİ: STYLING LIST YÖNETİMİ VE EXCEL YÜKLEME FONKSİYONLARI ---
 
+/**
+ * Styling Listesi Yöneticisi'nin ana arayüzünü oluşturur.
+ * (EXCEL YÜKLEME SİHİRBAZI)
+ */
 function renderStylingListManagerUI(container, questionData) {
+    // Benzersiz ID oluştur (birden fazla soru yöneticisi aynı anda açık olabilir diye)
+    const fileInputId = `styling-file-input-${container.closest('.manager-item').dataset.id}`;
+
     container.innerHTML = `
         <h4><i class="fas fa-sitemap"></i> Styling Listesi Yöneticisi</h4>
         <p class="product-manager-info">
-            <i class="fas fa-info-circle"></i> 3 katmanlı hiyerarşik yapıyı yönetin veya toplu veri yapıştırın.
+            <i class="fas fa-info-circle"></i> 3 katmanlı hiyerarşik yapıyı yönetin veya Excel'den toplu veri yükleyin.
         </p>
         
-        <div class="bulk-add-container" style="background: #f0f9ff; border: 1px dashed #007bff; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-            <h5><i class="fas fa-table"></i> Akıllı Toplu Yükleme (Excel/Tablo)</h5>
-            <p class="bulk-add-info" style="font-size: 11px; color: #666; margin-bottom: 5px;">
-                Excel'den veya web tablosundan kopyaladığınız verileri (başlıksız) aşağıya yapıştırın.<br>
-                <b>Format:</b> [Alt Kategori (Stant Çeşidi)] [Stok Kodu] [Malzeme İsmi] [Adet]<br>
-                *Boş Alt Kategori sütunları otomatik olarak bir üstteki değerle doldurulur.
+        <div class="bulk-add-container" style="background: #f0f9ff; border: 1px dashed #007bff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h5><i class="fas fa-file-excel"></i> Akıllı Toplu Yükleme Sihirbazı (Excel)</h5>
+            
+            <p class="bulk-add-info" style="font-size: 13px; color: #333; margin-bottom: 10px;">
+                <b>1. Adım:</b> Ürünleri içeren Excel dosyasını seçin (.xlsx, .xls).<br>
+                <small><i>Dosyanın ilk satırı 'Stant Çeşidi', 'Stok Kodu' gibi başlıkları içermelidir.</i></small>
             </p>
-            <div style="display:flex; gap:10px; margin-bottom: 5px;">
-                <input type="text" class="bulk-main-cat-name" placeholder="Ana Kategori Adı (Örn: Vitrin)" style="flex:1; padding:5px; border:1px solid #ccc; border-radius:3px;">
+            
+            <input type="file" class="bulk-styling-input-file" id="${fileInputId}" accept=".xlsx, .xls">
+            <label for="${fileInputId}" class="btn-primary btn-sm btn-file-label">
+                <i class="fas fa-file-excel"></i> Excel Dosyası Seç...
+            </label>
+            <span class="file-name-display" style="margin-left: 10px; font-style: italic; color: #333;"></span>
+
+            <div class="styling-mapping-container" style="display: none; margin-top: 20px; border-top: 2px solid #007bff; padding-top: 15px;">
+                <p class="bulk-add-info" style="font-size: 13px; color: #333; font-weight:bold;"><b>2. Adım:</b> Algılanan sütunları doğru alanlarla eşleştirin.</p>
+                
+                <div class="styling-mapping-grid">
+                    <div class="mapping-row">
+                        <label>Ana Kategori (Manuel)</label>
+                        <input type="text" class="bulk-main-cat-name" placeholder="Tüm ürünler için Ana Kategori (Örn: Vitrin)">
+                        <small><i>(VEYA aşağıdaki açılır menüden bir sütun seçin)</i></small>
+                    </div>
+                    
+                    <div class="mapping-row"><label>Ana Kategori Sütunu</label><select class="mapper-select" data-map="mainCategory"><option value="-1">-- Sütun Kullanma (Manuel Gir) --</option></select></div>
+                    <div class="mapping-row"><label>Alt Kategori Sütunu</label><select class="mapper-select" data-map="subCategory"><option value="-1">-- Gerekli Alan --</option></select></div>
+                    <div class="mapping-row"><label>Stok Kodu Sütunu</label><select class="mapper-select" data-map="code"><option value="-1">-- Gerekli Alan --</option></select></div>
+                    <div class="mapping-row"><label>Malzeme İsmi Sütunu</label><select class="mapper-select" data-map="name"><option value="-1">-- Gerekli Alan --</option></select></div>
+                    <div class="mapping-row"><label>Adet Sütunu</label><select class="mapper-select" data-map="qty"><option value="-1">-- Gerekli Alan --</option></select></div>
+                </div>
+                
+                <button class="btn-success btn-sm btn-parse-styling" style="margin-top:20px;"><i class="fas fa-magic"></i> Verileri İşle ve Hiyerarşiye Ekle</button>
             </div>
-            <textarea class="bulk-styling-input" rows="4" placeholder="Tablo verilerini buraya yapıştırın..." style="width:100%; padding:5px; border:1px solid #ccc; border-radius:3px; font-size:11px; font-family:monospace;"></textarea>
-            <button class="btn-success btn-sm btn-parse-styling" style="margin-top:5px;"><i class="fas fa-magic"></i> Verileri İşle ve Ekle</button>
         </div>
+        
         <div class="product-manager-actions">
              <button class="btn-primary btn-sm btn-add-main-category">
                 <i class="fas fa-plus"></i> Ana Kategori Ekle (Manuel)
@@ -381,100 +478,223 @@ function renderStylingListManagerUI(container, questionData) {
 
     const editor = container.querySelector('.styling-list-editor-container');
     
+    // Kayıtlı veriyi yükle
     if (questionData.stylingData && Array.isArray(questionData.stylingData)) {
         questionData.stylingData.forEach(mainCat => {
             addMainCategoryRow(editor, mainCat);
         });
     }
 
+    // Manuel Ekleme Butonu
     container.querySelector('.btn-add-main-category').addEventListener('click', () => {
         addMainCategoryRow(editor, {});
     });
 
-    // GÜNCELLENDİ: Toplu yükleme butonu dinleyicisi
+    // "Dosya Seç" inputu
+    container.querySelector('.bulk-styling-input-file').addEventListener('change', (e) => {
+        handleStylingExcelUpload(e, container);
+    });
+
+    // "İşle ve Ekle" butonu
     container.querySelector('.btn-parse-styling').addEventListener('click', () => {
         parseStylingBulkData(container);
     });
 }
 
 /**
- * Styling Toplu Veri Ayrıştırma Fonksiyonu
+ * YENİ: Excel dosyasını okur, analiz eder ve `parsedExcelData`'ya kaydeder.
  */
-function parseStylingBulkData(container) {
-    const rawText = container.querySelector('.bulk-styling-input').value.trim();
-    const mainCatName = container.querySelector('.bulk-main-cat-name').value.trim();
-    const editor = container.querySelector('.styling-list-editor-container');
+function handleStylingExcelUpload(event, container) {
+    const file = event.target.files[0];
+    const fileNameDisplay = container.querySelector('.file-name-display');
+    if (!file) {
+        fileNameDisplay.textContent = '';
+        return;
+    }
 
-    if (!rawText) return alert("Lütfen yapıştırılmış veri girin.");
-    if (!mainCatName) return alert("Lütfen bir 'Ana Kategori Adı' (Örn: Vitrin) girin.");
+    // Dosya adını ekranda göster
+    fileNameDisplay.textContent = file.name;
 
-    const lines = rawText.split('\n');
-    let addedCount = 0;
-    
-    // Veri yapısı: { "Alt Kategori Adı": [ {code, name, qty}, ... ] }
-    const groupedData = {};
-    let lastSubCategory = "Tanımsız Kategori";
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = e.target.result;
+            // XLSX kütüphanesini (globale yüklendiğini varsayarak) kullan
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            
+            // { header: 1 } -> veriyi [["Başlık1", "Başlık2"], ["Veri1", "Veri2"]] formatında array-of-arrays olarak verir.
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-    lines.forEach(line => {
-        const cleanLine = line.trim();
-        if (!cleanLine) return;
-
-        // Excel/HTML tablosundan kopyalandığında sütunlar genellikle TAB (\t) ile ayrılır
-        // Bazen çoklu boşluk olabilir, onları da regex ile yakalayabiliriz ama TAB daha güvenlidir.
-        let cols = cleanLine.split('\t');
+            if (!jsonData || jsonData.length < 2) { // En az 1 başlık + 1 veri satırı olmalı
+                alert("Hata: Excel dosyası boş veya geçersiz bir formatta.");
+                fileNameDisplay.textContent = "Hata oluştu!";
+                return;
+            }
+            
+            parsedExcelData = jsonData; // Veriyi modül değişkenine kaydet
+            analyzeExcelData(container, parsedExcelData); // Analiz fonksiyonunu çağır
         
-        // Eğer tab ile ayrılmamışsa, belki 2 veya daha fazla boşlukla ayrılmıştır?
-        if (cols.length < 2) {
-            cols = cleanLine.split(/\s{2,}/); 
+        } catch (error) {
+            console.error("Excel okuma hatası:", error);
+            alert("Excel dosyası okunurken bir hata oluştu. Dosya şifreli veya bozuk olabilir.");
+            fileNameDisplay.textContent = "Hata oluştu!";
         }
-
-        if (cols.length < 3) return; // En azından AltKat, Kod, İsim olmalı
-
-        // Sütunları Ayıkla
-        // Beklenen: [0]Stant Çeşidi, [1]Stok Kodu, [2]İsim, [3]Adet
-        let subCatRaw = cols[0].trim();
-        let code = cols[1].trim();
-        let name = cols[2].trim();
-        let qty = cols[3] ? cols[3].trim() : "1";
-
-        // "Fill Down" Mantığı: Eğer Alt Kategori boşsa, bir öncekini kullan
-        if (subCatRaw !== "") {
-            lastSubCategory = subCatRaw;
-        }
-        
-        // Geçersiz satırları atla (Örn: Başlık satırı "Stok Kodu" içeriyorsa)
-        if (code.toLowerCase().includes("stok") || code.toLowerCase().includes("kodu")) return;
-
-        // Gruba ekle
-        if (!groupedData[lastSubCategory]) {
-            groupedData[lastSubCategory] = [];
-        }
-        groupedData[lastSubCategory].push({ code, name, qty });
-        addedCount++;
-    });
-
-    if (addedCount === 0) return alert("Hiçbir geçerli ürün bulunamadı. Formatı kontrol edin.");
-
-    // Ayrıştırılan veriyi UI'ya ekle (Sanal bir Ana Kategori objesi oluşturup ekliyoruz)
-    const subCategoriesArray = Object.keys(groupedData).map(subName => {
-        return {
-            name: subName,
-            products: groupedData[subName]
-        };
-    });
-
-    const mainCatObj = {
-        name: mainCatName,
-        subCategories: subCategoriesArray
     };
-
-    // UI'ya satır olarak ekle
-    addMainCategoryRow(editor, mainCatObj);
-
-    alert(`${addedCount} adet ürün "${mainCatName}" altına başarıyla eklendi!`);
-    container.querySelector('.bulk-styling-input').value = ''; // Temizle
+    reader.onerror = () => {
+        alert("Dosya okunurken bir hata oluştu.");
+        fileNameDisplay.textContent = "Hata oluştu!";
+    };
+    reader.readAsArrayBuffer(file);
 }
 
+
+/**
+ * YENİ: Okunan Excel verisinin ilk satırını (başlıklar) analiz eder ve eşleştirme UI'ını doldurur.
+ */
+function analyzeExcelData(container, data) {
+    const headers = data[0]; // İlk satır başlık satırıdır
+    
+    if (!headers || headers.length < 2) return alert("Sütun başlıkları algılanamadı.");
+
+    const mappingContainer = container.querySelector('.styling-mapping-container');
+    const selects = mappingContainer.querySelectorAll('.mapper-select');
+    
+    selects.forEach(select => {
+        // Eski seçenekleri temizle (ilk seçenek hariç)
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
+        
+        let bestGuessIndex = -1;
+        const mapKey = select.dataset.map.toLowerCase();
+
+        headers.forEach((header, index) => {
+            if (!header) header = `Sütun ${index + 1}`; // Boş başlıklar için
+            const option = new Option(header, index); // Değer (value) olarak sütun index'ini (0, 1, 2...) kullan
+            select.add(option);
+            
+            // Otomatik eşleştirme (tahmin)
+            const headerLower = String(header).toLowerCase();
+            if (mapKey === 'maincategory' && (headerLower.includes('ana kat') || headerLower.includes('ana_kat'))) bestGuessIndex = index;
+            if (mapKey === 'subcategory' && (headerLower.includes('alt kat') || headerLower.includes('stant çeşidi') || headerLower.includes('stand çeşit'))) bestGuessIndex = index;
+            if (mapKey === 'code' && (headerLower.includes('stok') || headerLower.includes('kod'))) bestGuessIndex = index;
+            if (mapKey === 'name' && (headerLower.includes('isim') || headerLower.includes('malzeme'))) bestGuessIndex = index;
+            if (mapKey === 'qty' && (headerLower.includes('adet') || headerLower.includes('qty') || headerLower.includes('miktar'))) bestGuessIndex = index;
+        });
+        
+        select.value = bestGuessIndex; // Tahmini seç
+    });
+    
+    mappingContainer.style.display = 'block'; // Eşleştirme alanını göster
+}
+
+
+/**
+ * YENİ: Styling Toplu Veri Ayrıştırma Fonksiyonu
+ * Kullanıcının eşleştirmelerine ve `parsedExcelData`'ya göre veriyi işler.
+ */
+function parseStylingBulkData(container) {
+    if (!parsedExcelData) return alert("Hata: Önce bir Excel dosyası yükleyip analiz etmelisiniz.");
+    
+    const editor = container.querySelector('.styling-list-editor-container');
+    
+    // 1. Eşleştirmeleri al (değerler artık sütun index'leri)
+    const getIndex = (key) => parseInt(container.querySelector(`.mapper-select[data-map="${key}"]`).value, 10);
+    const mainCatIndex = getIndex('mainCategory');
+    const subCatIndex = getIndex('subCategory');
+    const codeIndex = getIndex('code');
+    const nameIndex = getIndex('name');
+    const qtyIndex = getIndex('qty');
+    
+    let manualMainCatName = container.querySelector('.bulk-main-cat-name').value.trim();
+
+    // 2. Eşleştirmeleri doğrula
+    if (subCatIndex === -1 || codeIndex === -1 || nameIndex === -1 || qtyIndex === -1) {
+        return alert("Hata: Lütfen Alt Kategori, Stok Kodu, Malzeme İsmi ve Adet için sütunları eşleştirin.");
+    }
+    if (mainCatIndex === -1 && !manualMainCatName) {
+        return alert("Hata: Lütfen manuel bir 'Ana Kategori Adı' girin VEYA bir 'Ana Kategori Sütunu' seçin.");
+    }
+
+    // 3. Veriyi İşle
+    const lines = parsedExcelData; // Veri zaten array-of-arrays
+    let addedCount = 0;
+    
+    // Veri yapısı: { "Ana Kat": { "Alt Kat": [ {code, name, qty}, ... ] } }
+    const groupedData = {};
+    let lastSubCategory = "Tanımsız Alt Kategori";
+    let lastMainCategory = manualMainCatName || "Tanımsız Ana Kategori";
+
+    // İlk satırı (başlık) atla
+    for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i]; // Satır zaten bir array
+        if (!cols) continue;
+        
+        // 4. Eşleşen index'lere göre veriyi çek
+        const maxIndex = Math.max(mainCatIndex, subCatIndex, codeIndex, nameIndex, qtyIndex);
+        if (cols.length <= maxIndex) continue; // Satırda yeterli sütun yoksa atla
+
+        if (mainCatIndex !== -1) {
+            const mainCatRaw = cols[mainCatIndex] ? String(cols[mainCatIndex]).trim() : "";
+            if (mainCatRaw !== "") lastMainCategory = mainCatRaw; // "Fill Down"
+        }
+        
+        const subCatRaw = cols[subCatIndex] ? String(cols[subCatIndex]).trim() : "";
+        if (subCatRaw !== "") lastSubCategory = subCatRaw; // "Fill Down"
+        
+        const code = cols[codeIndex] ? String(cols[codeIndex]).trim() : "";
+        const name = cols[nameIndex] ? String(cols[nameIndex]).trim() : "";
+        const qty = (qtyIndex !== -1 && cols[qtyIndex]) ? String(cols[qtyIndex]).trim() : "1";
+        
+        if (!code || !name) continue; // Kod veya İsim yoksa atla
+
+        // 5. Hiyerarşik yapıyı kur
+        if (!groupedData[lastMainCategory]) {
+            groupedData[lastMainCategory] = {};
+        }
+        if (!groupedData[lastMainCategory][lastSubCategory]) {
+            groupedData[lastMainCategory][lastSubCategory] = [];
+        }
+        
+        groupedData[lastMainCategory][lastSubCategory].push({ code, name, qty });
+        addedCount++;
+    }
+
+    if (addedCount === 0) return alert("Hiçbir geçerli ürün bulunamadı. Lütfen veriyi ve eşleştirmeleri kontrol edin.");
+
+    // 6. UI'ya Ekle
+    Object.keys(groupedData).forEach(mainName => {
+        const subCategoriesArray = Object.keys(groupedData[mainName]).map(subName => {
+            return {
+                name: subName,
+                products: groupedData[mainName][subName]
+            };
+        });
+        
+        const mainCatObj = {
+            name: mainName,
+            subCategories: subCategoriesArray
+        };
+        
+        // UI'ya satır olarak ekle
+        addMainCategoryRow(editor, mainCatObj);
+    });
+
+    alert(`${addedCount} adet ürün başarıyla hiyerarşiye eklendi!`);
+    
+    // Sihirbazı sıfırla
+    parsedExcelData = null; 
+    container.querySelector('.bulk-styling-input-file').value = null;
+    container.querySelector('.file-name-display').textContent = '';
+    container.querySelector('.styling-mapping-container').style.display = 'none'; 
+}
+
+
+/**
+ * Ana Kategori satırı ekler.
+ */
 function addMainCategoryRow(container, mainCatData) {
     const row = document.createElement('div');
     row.className = 'main-category-row'; 
@@ -509,6 +729,9 @@ function addMainCategoryRow(container, mainCatData) {
     });
 }
 
+/**
+ * Alt Kategori satırı ekler.
+ */
 function addSubCategoryRow(container, subCatData) {
     const row = document.createElement('div');
     row.className = 'sub-category-row'; 
@@ -543,6 +766,9 @@ function addSubCategoryRow(container, subCatData) {
     });
 }
 
+/**
+ * Styling ürünü satırı ekler.
+ */
 function addProductRowStyling(container, productData) {
     const row = document.createElement('div');
     row.className = 'product-row-styling product-manager-row';
@@ -560,6 +786,8 @@ function addProductRowStyling(container, productData) {
         row.remove();
     });
 }
+
+// --- Diğer Fonksiyonlar (Değişmedi) ---
 
 function renderProductManagerUI(c){ const cats=productList.filter(p=>p.type==='header'); let opts='<option value="__end">Ana Liste (Sona Ekle)</option>'; cats.forEach(cat=>{opts+=`<option value="${cat.name}">${cat.name}</option>`;}); c.innerHTML=`<h4><i class="fas fa-boxes"></i> Ürün Listesi Yöneticisi</h4><p class="product-manager-info"><i class="fas fa-info-circle"></i> Bu liste tüm "product_list" tipi sorular için ortaktır.</p><div class="bulk-add-container"><h5><i class="fas fa-paste"></i> Toplu Ürün Ekle</h5><p class="bulk-add-info">Her satıra bir ürün gelecek şekilde yapıştırın. (Örn: 123456 Enerji Etiketi)</p><div class="bulk-add-controls"><select id="bulk-add-category-select">${opts}</select><textarea id="bulk-product-input"></textarea></div><button class="btn-success btn-sm" id="btn-parse-products"><i class="fas fa-plus-circle"></i> Yapıştırılanları Ekle</button></div><button id="toggle-detailed-editor-btn" class="btn-sm"><i class="fas fa-edit"></i> Detaylı Editörü Göster</button><div id="detailed-editor-panel"><div class="product-manager-actions"><button class="btn-primary btn-sm" id="btn-add-category-row"><i class="fas fa-tags"></i> Kategori Ekle</button><button class="btn-success btn-sm" id="btn-add-product-row"><i class="fas fa-box"></i> Ürün Ekle</button></div><div class="product-list-editor"></div></div>`; const e=c.querySelector('.product-list-editor'); c.querySelector('#btn-parse-products').addEventListener('click', parseAndAddProducts); c.querySelector('#toggle-detailed-editor-btn').addEventListener('click', (e_btn) => toggleDetailedEditor(e_btn.currentTarget)); const panel = c.querySelector('#detailed-editor-panel'); panel.querySelector('#btn-add-category-row').addEventListener('click', () => addCategoryRow(e)); panel.querySelector('#btn-add-product-row').addEventListener('click', () => addProductRow(e)); productList.forEach(i=>{if(i.type==='header'){addCategoryRow(e,i);}else{addProductRow(e,i);}}); setupProductManagerDragDrop(e);}
 function toggleDetailedEditor(b){ const p=document.getElementById('detailed-editor-panel'); p.classList.toggle('open'); b.innerHTML=p.classList.contains('open')?'<i class="fas fa-eye-slash"></i> Detaylı Editörü Gizle':'<i class="fas fa-edit"></i> Detaylı Editörü Göster';}
