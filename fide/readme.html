@@ -147,9 +147,7 @@
             color: #92400e;
         }
         
-        /* YENİ EKLENEN TALİMAT BÖLÜMÜ */
         #ai-instructions {
-            /* Bu bölüm <section> içinde DEĞİL, <main> içindedir */
             background-color: #fef2f2; /* Açık Kırmızı */
             border: 1px solid #fecaca;
             border-left: 5px solid var(--danger-color, #ef4444);
@@ -196,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.0</strong> (Döküman İlk Oluşturuldu)</p>
+            <p>Proje Sürümü: <strong>v1.0.1</strong> (Styling modülüne alt kategori adet çarpanı eklendi.)</p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.0)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.1)</li>
                 <li>Herhangi bir şey güncellendiğinde veya çıkartıldığında dosyadaki kodların tamamı güncellenerek yazılsın.</li>
                 <li>Güncelleme yapıldığında eğer birden çok dosya güncellenmesi gerekiyorsa dosyaları ikişer ikişer iste.</li>
                 <li>İstediğim güncelleme hangi dosyayı ilgilendiriyorsa o dosyayı iste, projenin tamamını isteme.</li>
@@ -333,7 +331,7 @@
                             <strong><code>soruDurumlari</code> (json)</strong><br>
                             <code>denetimTamamlanmaTarihi</code> (date)
                         </td>
-                        <td><strong>Projenin çekirdek verisidir.</strong> Denetçilerin kaydettiği tüm cevaplar <code>soruDurumlari</code> JSON nesnesinde saklanır (Örn: <code>{"3": {"completed": true}, "16": {...}}</code>).</td>
+                        <td><strong>Projenin çekirdek verisidir.</strong> Denetçilerin kaydettiği tüm cevaplar <code>soruDurumlari</code> JSON nesnesinde saklanır (Örn: <code>{"16": {"subCategoryQty": "3", ...}}</code>).</td>
                     </tr>
                     <tr>
                         <td><code>user_devices</code></td>
@@ -425,11 +423,14 @@
                         <li><code>subscribeToRealtimeChanges()</code>: <code>users</code> (ban için) ve <code>user_devices</code> (lock için) koleksiyonlarını dinler. Bir yönetici bu kayıtlarda değişiklik yaparsa, kullanıcıyı sistemden atar.</li>
                     </ul>
                 </li>
+                
                 <li><code>ui.js</code> (Arayüz Katmanı): <strong>Tüm HTML oluşturma ve DOM manipülasyonu buradadır.</strong>
                     <ul>
                         <li><code>buildForm()</code>: <code>state.fideQuestions</code> dizisini döngüye alarak <code>generateQuestionHtml</code>'i çağırır.</li>
-                        <li><code>generateQuestionHtml(q)</code>: Soru tipine (<code>q.type</code>) göre (<code>standard</code>, <code>product_list</code>, <code>pop_system</code>, <code>styling_list</code>) farklı HTML yapısı oluşturur.</li>
-                        <li><code>getFormDataForSaving()</code>: Formdaki tüm cevapları (inputlar, ürün listeleri, pop seçimleri) okur ve <code>api.saveFormState</code>'in anlayacağı bir JSON nesnesine dönüştürür.</li>
+                        <li><code>generateQuestionHtml(q)</code>: Soru tipine (<code>q.type</code>) göre (<code>standard</code>, <code>product_list</code>, <code>pop_system</code>, <code>styling_list</code>) farklı HTML yapısı oluşturur. <strong>v1.0.1:</strong> <code>styling_list</code> için "Alt Kategori Adet" (<code>.sub-category-qty-input</code>) girişini ekler.</li>
+                        <li><code>handleStylingSubCatChange(event)</code>: <strong>v1.0.1:</strong> Styling alt kategorisi seçildiğinde tetiklenir. <code>.sub-category-qty-input</code>'tan adedi okur, varsayılan ürün adetleriyle çarpar ve listeyi otomatik olarak doldurur.</li>
+                        <li><code>getFormDataForSaving()</code>: Formdaki tüm cevapları (inputlar, ürün listeleri, pop seçimleri) okur ve <code>api.saveFormState</code>'in anlayacağı bir JSON nesnesine dönüştürür. <strong>v1.0.1:</strong> <code>styling_list</code> için <code>subCategoryQty</code> (Alt Kategori Adedi) değerini de JSON'a ekler.</li>
+                        <li><code>loadReportUI()</code>: Kayıtlı rapordan verileri okur ve forma geri yükler. <strong>v1.0.1:</strong> Kayıtlı <code>subCategoryQty</code> değerini "Alt Kategori Adet" kutusuna yükler.</li>
                         <li><code>debouncedSaveFormState()</code>: Formdaki her değişikliği 800ms gecikmeyle otomatik olarak kaydetmek için <code>saveFormState</code>'i tetikleyen mekanizmadır.</li>
                         <li><code>generateEmail()</code>: E-posta taslağını oluşturur. <code>excel.js</code>'den gelen puan verilerini tabloya dönüştürür ve formdaki tüm cevapları listeler.</li>
                     </ul>
