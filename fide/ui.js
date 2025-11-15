@@ -415,18 +415,20 @@ export function loadReportUI(reportData) {
             if (data.selectedProducts) {
                 const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
                 
-                // GÜNCELLENDİ: Eğer Styling List sorusunda kayıtlı ürün varsa, anahtarı aç ve listeyi göster
-                if (qInfo.type === 'styling_list') {
+                // --- HATA DÜZELTMESİ BURADA ---
+                // Sadece listede ürün varsa "Detaylı Giriş" modunu aç
+                if (qInfo.type === 'styling_list' && data.selectedProducts.length > 0) {
                     const toggleBtn = questionItem.querySelector('.styling-mode-toggle');
                     const stylingContainer = questionItem.querySelector('.styling-list-container');
                     const standardContainer = document.getElementById(`standard-view-container-${qId}`);
                     
-                    if (toggleBtn && stylingContainer) {
+                    if (toggleBtn && stylingContainer) { 
                         toggleBtn.checked = true;
                         stylingContainer.style.display = 'block';
                         if (standardContainer) standardContainer.style.display = 'none';
                     }
                 }
+                // --- HATA DÜZELTMESİ SONU ---
 
                 data.selectedProducts.forEach(prod => {
                     if (qInfo.type === 'product_list') {
