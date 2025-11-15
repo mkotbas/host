@@ -71,7 +71,6 @@ function generateQuestionHtml(q) {
         }
 
         // 1. Standart Görünüm İçeriği (Static Items - Açıklamalar)
-        // Bu içerik, Standart Soru tipindeki gibi oluşturulur.
         let standardViewHTML = '';
         if (q.staticItems && q.staticItems.length > 0) {
              standardViewHTML = (q.staticItems || []).map(item => 
@@ -81,7 +80,6 @@ function generateQuestionHtml(q) {
                  </div>`
             ).join('');
         }
-        // Boşsa bile bir container oluştur ki script hata vermesin
         standardViewHTML = `<div id="standard-view-container-${q.id}" style="display: block;">${standardViewHTML}</div>`;
 
         questionContentHTML = `
@@ -108,19 +106,7 @@ function generateQuestionHtml(q) {
                     <div class="styling-label">Alt Kategori</div>
                     <div class="styling-content">
                         <select class="styling-sub-category-select"></select>
-                    </div>
-                </div>
-
-                <div class="styling-row" id="styling-adder-container-${q.id}" style="display: none;">
-                     <div class="styling-label">Eksik Ekle</div>
-                     <div class="styling-content product-adder">
-                        <select class="styling-product-select">
-                            <option value="">-- Malzeme Seçin --</option>
-                        </select>
-                        <input type="number" class="styling-product-qty qty-input" placeholder="Adet" min="1" value="1" disabled>
-                        <button class="btn-add-styling" onclick="addStylingProductToList(${q.id})" title="Seçili malzemeyi listeye ekler.">
-                            <i class="fas fa-plus"></i> Ekle
-                        </button>
+                        <input type="number" class="sub-category-qty-input" min="1" value="1" title="Alt Kategori Adedi">
                     </div>
                 </div>
 
@@ -185,9 +171,10 @@ function getFormDataForSaving() {
         // --- GÜNCELLENDİ: Styling Listesi Veri Okuma ---
         } else if (q.type === 'styling_list') {
             const container = itemDiv.querySelector('.styling-list-container');
-            // Container gizli olsa bile verileri oku (arka planda kalmış olabilir)
             const mainCategorySelect = container.querySelector('.styling-main-category-select');
             const subCategorySelect = container.querySelector('.styling-sub-category-select');
+            // YENİ: Adet input'unu oku
+            const subCategoryQtyInput = container.querySelector('.sub-category-qty-input');
 
             // Adet kutusu artık input içinde (class="qty-edit-input"). Değeri oradan al.
             document.querySelectorAll(`#fide-item-${q.id} .styling-selected-products-list .selected-product-item`).forEach(item => {
@@ -205,6 +192,8 @@ function getFormDataForSaving() {
                  questionData.stylingCategorySelections = {
                     mainCategory: mainCategorySelect.value,
                     subCategory: subCategorySelect.value,
+                    // YENİ: Adedi kaydet
+                    subCategoryQty: subCategoryQtyInput ? subCategoryQtyInput.value : '1'
                 };
             }
         }
@@ -460,8 +449,17 @@ export function loadReportUI(reportData) {
                     mainSelect.dispatchEvent(new Event('change')); 
                     
                     const subSelect = questionItem.querySelector('.styling-sub-category-select');
+                    
+                    // --- GÜNCELLENDİ: Kayıtlı adedi yükle ---
+                    const subCategoryQtyInput = questionItem.querySelector('.sub-category-qty-input');
+                    if (subCategoryQtyInput && selections.subCategoryQty) {
+                        subCategoryQtyInput.value = selections.subCategoryQty;
+                    }
+                    // --- GÜNCELLEME SONU ---
+                    
                     if (subSelect && selections.subCategory) {
                         subSelect.value = selections.subCategory;
+                        // Adet yüklendikten SONRA event'i tetikle
                         subSelect.dispatchEvent(new Event('change'));
                     }
 
@@ -589,7 +587,6 @@ function toggleQuestionCompleted(button, id, shouldSave = true) {
     const inputArea = itemDiv.querySelector('.input-area');
     
     // GÜNCELLENDİ: Standart gizleme mantığını koru ama Styling switch varsa ona dokunma (Toggle kendi içinde yönetir)
-    // Eğer soru tipi styling_list değilse gizle/göster yap
     const isStyling = itemDiv.querySelector('.styling-mode-toggle');
     if (inputArea && !isStyling) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
     
@@ -717,12 +714,10 @@ function openEmailDraft() {
     emailWindow.document.close();
 }
 
-// --- GÜNCELLENDİ: Styling Listesi Arayüz Fonksiyonları (OTOMATİK) ---
+// --- GÜNCELLENDİ: Styling Listesi Arayüz Fonksiyonları ---
 
 /**
  * Yeni Fonksiyon: Styling görünümünü açıp kapatır (Switch tetikler)
- * Kapalıyken -> Standart Görünüm (Textler) AÇIK, Styling (Dropdown) KAPALI
- * Açıkken  -> Standart Görünüm (Textler) KAPALI, Styling (Dropdown) AÇIK
  */
 function toggleStylingView(checkbox, qId) {
     const stylingContainer = document.getElementById(`styling-container-${qId}`);
@@ -739,7 +734,6 @@ function toggleStylingView(checkbox, qId) {
 
 /**
  * Ana Kategori seçimi değiştiğinde tetiklenir.
- * @param {Event} event Olay nesnesi
  */
 function handleStylingMainCatChange(event) {
     const mainSelect = event.target;
@@ -750,9 +744,12 @@ function handleStylingMainCatChange(event) {
     const subContainer = document.getElementById(`styling-sub-container-${questionId}`);
     const listContainer = container.querySelector('.styling-selected-products-list');
     const subSelect = subContainer.querySelector('.styling-sub-category-select');
+    // YENİ: Adet input'unu bul
+    const subCategoryQtyInput = subContainer.querySelector('.sub-category-qty-input');
 
     // Alt bileşenleri temizle ve gizle
     subSelect.innerHTML = '<option value="">-- Alt Kategori Seçin --</option>';
+    if (subCategoryQtyInput) subCategoryQtyInput.value = '1'; // YENİ: Adedi 1'e sıfırla
     listContainer.innerHTML = ''; // Listeyi temizle
 
     if (mainSelect.value && question && question.stylingData) {
@@ -766,6 +763,12 @@ function handleStylingMainCatChange(event) {
             
             subSelect.removeEventListener('change', handleStylingSubCatChange);
             subSelect.addEventListener('change', handleStylingSubCatChange); 
+            
+            // YENİ: Adet input'u için event listener ekle
+            if (subCategoryQtyInput) {
+                subCategoryQtyInput.removeEventListener('change', handleStylingSubQtyChange);
+                subCategoryQtyInput.addEventListener('change', handleStylingSubQtyChange);
+            }
         }
     } else {
         subContainer.style.display = 'none';
@@ -777,7 +780,6 @@ function handleStylingMainCatChange(event) {
 /**
  * Alt Kategori seçimi değiştiğinde tetiklenir.
  * ARTIK OTOMATİK ÜRÜN EKLİYOR.
- * @param {Event} event Olay nesnesi
  */
 function handleStylingSubCatChange(event) {
     const subSelect = event.target;
@@ -785,6 +787,9 @@ function handleStylingSubCatChange(event) {
     const questionId = container.dataset.questionId;
     const question = state.fideQuestions.find(q => String(q.id) === questionId);
     const mainSelect = container.querySelector('.styling-main-category-select');
+    // YENİ: Kategori adetini oku
+    const subCategoryQtyInput = container.querySelector('.sub-category-qty-input');
+    const subCategoryMultiplier = parseInt(subCategoryQtyInput.value, 10) || 1;
     
     const listContainer = container.querySelector('.styling-selected-products-list');
     listContainer.innerHTML = ''; // Her seçimde listeyi sıfırla
@@ -797,9 +802,12 @@ function handleStylingSubCatChange(event) {
         if (selectedSubCat && selectedSubCat.products) {
             // GÜNCELLENDİ: Ürünleri otomatik döngü ile ekle
             selectedSubCat.products.forEach(product => {
-                // 'false' parametresi ile her biri için ayrı save atmayı engelliyoruz,
-                // döngü bitince tek bir save atacağız.
-                addStylingProductToList(questionId, product.code, product.qty || '1', product.name, false);
+                // YENİ: Adedi çarp
+                const defaultQty = parseInt(product.qty || '1', 10);
+                const finalQty = defaultQty * subCategoryMultiplier;
+
+                // 'false' parametresi ile her biri için ayrı save atmayı engelliyoruz
+                addStylingProductToList(questionId, product.code, finalQty, product.name, false);
             });
         }
     }
@@ -808,13 +816,30 @@ function handleStylingSubCatChange(event) {
 }
 
 /**
+ * YENİ: Alt Kategori Adet girişi değiştiğinde tetiklenir.
+ * Bu, mevcut alt kategori seçimini yeniden tetikler.
+ * @param {Event} event Olay nesnesi
+ */
+function handleStylingSubQtyChange(event) {
+    const qtyInput = event.target;
+    const container = qtyInput.closest('.styling-list-container');
+    const subSelect = container.querySelector('.styling-sub-category-select');
+    
+    // Adet değiştiğinde, alt kategori seçimi 'change' event'ini
+    // manuel olarak tetikle. Bu, listeyi yeni adetle yeniden hesaplar.
+    if (subSelect && subSelect.value) {
+        subSelect.dispatchEvent(new Event('change'));
+    } else {
+        // Alt kategori seçili değilse bile, değişikliği kaydet (Kural 2)
+        debouncedSaveFormState();
+    }
+}
+
+/**
  * Styling listesine ürün ekler.
- * GÜNCELLENDİ: Adet kısmı artık 'input' olarak render ediliyor.
  */
 function addStylingProductToList(qId, productCode, quantity, productName, shouldSave = true) {
     const itemDiv = document.getElementById(`fide-item-${qId}`);
-    // Manuel ekleme alanlarını okumaya gerek yok çünkü parametre olarak geliyor artık
-    
     const listContainer = itemDiv.querySelector(`.styling-selected-products-list`);
     
     // Zaten listede varsa ekleme (Tekrarı önle)
@@ -830,7 +855,7 @@ function addStylingProductToList(qId, productCode, quantity, productName, should
     newItem.dataset.qty = quantity; // Varsayılan değer (data attribute)
     newItem.dataset.name = productName;
     
-    // GÜNCELLENDİ: Adet kısmı input yaptık ve `-` işaretini kaldırdık
+    // GÜNCELLENDİ: Adet kısmı input yaptık
     newItem.innerHTML = `
         <span>${productCode} ${productName} 
             <span class="product-quantity">

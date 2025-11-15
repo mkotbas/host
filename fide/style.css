@@ -508,7 +508,9 @@ input:checked + .slider.green {
 .styling-content select, 
 .styling-content input[type="text"],
 .styling-content input[type="number"] {
-    width: 100%;
+    flex-grow: 1; /* GÜNCELLENDİ */
+    width: auto;  /* GÜNCELLENDİ */
+    min-width: 0; /* GÜNCELLENDİ */
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -525,10 +527,29 @@ input:checked + .slider.green {
 
 /* Adet Kutusu (Dar) */
 .styling-content .qty-input {
-    width: 70px !important;
+    width: 70px;
+    flex-grow: 0;   /* GÜNCELLENDİ */
+    flex-shrink: 0; /* GÜNCELLENDİ */
     text-align: center;
     padding-right: 12px; /* Ok ikonu olmasın */
     background-image: none;
+}
+
+/* YENİ: Alt Kategori Adet Kutusu */
+.styling-content .sub-category-qty-input {
+    width: 80px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    text-align: center;
+    padding-right: 12px; /* Ok ikonu olmasın */
+    background-image: none;
+    /* Okları göster (input[type=number] varsayılanı) */
+    -moz-appearance: textfield; 
+}
+.styling-content .sub-category-qty-input::-webkit-outer-spin-button,
+.styling-content .sub-category-qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: revert;
+    margin: 0;
 }
 
 /* Yeşil Ekle Butonu (Görseldeki gibi) */
@@ -603,6 +624,8 @@ input:checked + .slider.green {
 /* Adet input kutusu (Görseldeki gibi oklar görünecek) */
 .styling-selected-products-list .selected-product-item .qty-edit-input {
     width: 75px; /* Oklar için biraz daha genişlik */
+    flex-grow: 0;   /* GÜNCELLENDİ */
+    flex-shrink: 0; /* GÜNCELLENDİ */
     padding: 5px 8px;
     border: 1px solid var(--border);
     border-radius: 8px; /* Köşeleri daha yuvarlak yaptık */
