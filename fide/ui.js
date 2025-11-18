@@ -3,7 +3,7 @@ import { saveFormState } from './api.js';
 
 let pb; // PocketBase instance
 
-// --- DEBOUNCE MEKANİZMASI ---
+// --- DEBOUNCE MEKANİZMASI (Otomatik Kayıt Gecikmesi) ---
 let saveDebounceTimer;
 function debouncedSaveFormState() {
     clearTimeout(saveDebounceTimer);
@@ -31,17 +31,56 @@ function getUnitForProduct(productName) {
     return 'Adet';
 }
 
+/**
+ * Her bir sorunun HTML yapısını oluşturur.
+ * YENİ TASARIMA GÖRE GÜNCELLENDİ.
+ */
 function generateQuestionHtml(q) {
     let questionActionsHTML = '';
     let questionContentHTML = '';
     let isArchivedClass = q.isArchived ? 'archived-item' : ''; 
 
+    // Ortak Butonlar (Tamamlandı ve Çıkar)
+    const commonButtons = `
+        <button class="status-btn btn-success btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Tamamlandı işaretle">
+            <i class="fas fa-check"></i> Tamamlandı
+        </button>
+        <button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Listeden çıkar">
+            <i class="fas fa-trash-alt"></i> Çıkar
+        </button>
+    `;
+
     if (q.type === 'standard') {
-        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-        let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`).join('');
+        // Standart Soru Tipi
+        questionActionsHTML = `
+            <div class="fide-actions">
+                <button class="add-item-btn btn-primary btn-sm" onclick="addDynamicInput('fide${q.id}')">
+                    <i class="fas fa-plus"></i> Not Ekle
+                </button>
+                ${commonButtons}
+            </div>`;
+            
+        let staticItemsHTML = (q.staticItems || []).map(item => `
+            <div class="static-item">
+                <div class="content">${item}</div>
+                <button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>`).join('');
+            
         questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
+
     } else if (q.type === 'product_list') {
-        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')" title="Pleksi kullanımıyla ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        // Ürün Listesi Tipi
+        questionActionsHTML = `
+            <div class="fide-actions">
+                <button class="add-item-btn btn-primary btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')">
+                    <i class="fas fa-plus"></i> Pleksi Notu Ekle
+                </button>
+                ${commonButtons}
+            </div>`;
+            
+        // Ürün Seçim Listesi (Select)
         let productOptions = '';
         let currentOptgroup = false;
         state.productList.forEach(p => {
@@ -54,14 +93,43 @@ function generateQuestionHtml(q) {
             }
         });
         if (currentOptgroup) productOptions += `</optgroup>`;
-        questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b class="plexi-header"><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
+
+        questionContentHTML = `
+            <div class="input-area">
+                <p><b>Sipariş Listesi:</b></p>
+                <div class="product-adder">
+                    <select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select>
+                    <div style="display:flex; gap:5px; margin-top:5px;">
+                        <input type="number" id="product-qty" placeholder="Adet" min="1" value="1" style="width: 80px;">
+                        <button class="btn-success btn-sm" style="flex-grow:1;" onclick="addProductToList()">
+                            <i class="fas fa-plus"></i> Ekle
+                        </button>
+                    </div>
+                </div>
+                <div id="selected-products-list"></div>
+                <hr style="margin: 15px 0; border-color: var(--border);">
+                <p><b>Pleksi / Diğer Notlar:</b></p>
+                <div id="sub-items-container-fide${q.id}_pleksi"></div>
+            </div>`;
+
     } else if (q.type === 'pop_system') {
-        questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-        questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
+        // POP Sistemi Tipi
+        questionActionsHTML = `<div class="fide-actions">${commonButtons}</div>`;
+        questionContentHTML = `
+            <div class="input-area">
+                <div class="pop-container" id="popCodesContainer"></div>
+                <div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar var!</div>
+                <div class="pop-button-container" style="margin-top: 15px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn-primary btn-sm" onclick="copySelectedCodes()"><i class="fas fa-copy"></i> Kopyala</button>
+                    <button class="btn-warning btn-sm" onclick="clearSelectedCodes()"><i class="fas fa-eraser"></i> Temizle</button>
+                    <button class="btn-danger btn-sm" onclick="selectExpiredCodes()"><i class="fas fa-clock"></i> Bitenler</button>
+                    <button class="btn-success btn-sm" onclick="openEmailDraft()"><i class="fas fa-envelope"></i> E-Posta</button>
+                </div>
+            </div>`;
     
-    // --- GÜNCELLENDİ: Styling Listesi (AKILLI TOGGLE & STANDART GÖRÜNÜM) ---
     } else if (q.type === 'styling_list') {
-        questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        // Styling Listesi (Fide 16) - YENİ TASARIM
+        questionActionsHTML = `<div class="fide-actions">${commonButtons}</div>`;
         
         let mainCategoryOptions = '<option value="">-- Ana Kategori Seçin --</option>';
         if (q.stylingData && Array.isArray(q.stylingData)) {
@@ -70,30 +138,32 @@ function generateQuestionHtml(q) {
             });
         }
 
-        // 1. Standart Görünüm İçeriği (Static Items - Açıklamalar)
+        // Standart Görünüm (Eski tip notlar)
         let standardViewHTML = '';
         if (q.staticItems && q.staticItems.length > 0) {
              standardViewHTML = (q.staticItems || []).map(item => 
                 `<div class="static-item">
                     <div class="content">${item}</div>
-                    <button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın."><i class="fas fa-trash"></i></button>
+                    <button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button>
                  </div>`
             ).join('');
         }
-        standardViewHTML = `<div id="standard-view-container-${q.id}" style="display: block;">${standardViewHTML}</div>`;
+        standardViewHTML = `<div id="standard-view-container-${q.id}" style="display: block; padding: 20px;">${standardViewHTML}</div>`;
 
         questionContentHTML = `
-            <div class="mode-toggle-container">
-                <span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span>
-                <label class="switch">
-                    <input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})">
-                    <span class="slider round"></span>
-                </label>
+            <div class="input-area" style="padding-bottom: 0;">
+                <div class="mode-toggle-container">
+                    <span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span>
+                    <label class="switch">
+                        <input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
             </div>
 
             ${standardViewHTML}
 
-            <div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;">
+            <div class="styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;">
                 
                 <div class="styling-row">
                     <div class="styling-label">Ana Kategori</div>
@@ -106,12 +176,12 @@ function generateQuestionHtml(q) {
                     <div class="styling-label">Alt Kategori</div>
                     <div class="styling-content">
                         <select class="styling-sub-category-select"></select>
-                        <input type="number" class="sub-category-qty-input" min="1" value="1" title="Alt Kategori Adedi">
+                        <input type="number" class="sub-category-qty-input" min="1" value="1" title="Alt Kategori Adedi" style="width: 70px; text-align: center;">
                     </div>
                 </div>
 
                 <div class="styling-row">
-                    <div class="styling-label">Sipariş Listesi</div>
+                    <div class="styling-label">Siparişler</div>
                     <div class="styling-content" style="display: block;">
                         <div class="styling-selected-products-list"></div>
                     </div>
@@ -119,9 +189,15 @@ function generateQuestionHtml(q) {
 
             </div>`;
     }
-    // --- GÜNCELLEME SONU ---
 
-    return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
+    return `
+        <div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}">
+            <div class="fide-title-container">
+                <p><span class="badge">FiDe ${q.id}</span> ${q.title}</p>
+            </div>
+            ${questionContentHTML}
+            ${questionActionsHTML}
+        </div>`;
 }
 
 function getFormDataForSaving() {
@@ -168,15 +244,13 @@ function getFormDataForSaving() {
         } else if (q.type === 'pop_system') {
             questionData.selectedPops = Array.from(document.querySelectorAll(`#fide-item-${q.id} .pop-checkbox:checked`)).map(cb => cb.value);
         
-        // --- GÜNCELLENDİ: Styling Listesi Veri Okuma ---
         } else if (q.type === 'styling_list') {
             const container = itemDiv.querySelector('.styling-list-container');
             const mainCategorySelect = container.querySelector('.styling-main-category-select');
             const subCategorySelect = container.querySelector('.styling-sub-category-select');
-            // YENİ: Adet input'unu oku
             const subCategoryQtyInput = container.querySelector('.sub-category-qty-input');
 
-            // Adet kutusu artık input içinde (class="qty-edit-input"). Değeri oradan al.
+            // Adet kutusu input içinde
             document.querySelectorAll(`#fide-item-${q.id} .styling-selected-products-list .selected-product-item`).forEach(item => {
                 const qtyInput = item.querySelector('.qty-edit-input');
                 const currentQty = qtyInput ? qtyInput.value : item.dataset.qty;
@@ -192,12 +266,10 @@ function getFormDataForSaving() {
                  questionData.stylingCategorySelections = {
                     mainCategory: mainCategorySelect.value,
                     subCategory: subCategorySelect.value,
-                    // YENİ: Adedi kaydet
                     subCategoryQty: subCategoryQtyInput ? subCategoryQtyInput.value : '1'
                 };
             }
         }
-        // --- GÜNCELLEME SONU ---
 
         reportData.questions_status[q.id] = questionData;
     });
@@ -415,8 +487,6 @@ export function loadReportUI(reportData) {
             if (data.selectedProducts) {
                 const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
                 
-                // --- HATA DÜZELTMESİ BURADA ---
-                // Sadece listede ürün varsa "Detaylı Giriş" modunu aç
                 if (qInfo.type === 'styling_list' && data.selectedProducts.length > 0) {
                     const toggleBtn = questionItem.querySelector('.styling-mode-toggle');
                     const stylingContainer = questionItem.querySelector('.styling-list-container');
@@ -428,7 +498,6 @@ export function loadReportUI(reportData) {
                         if (standardContainer) standardContainer.style.display = 'none';
                     }
                 }
-                // --- HATA DÜZELTMESİ SONU ---
 
                 data.selectedProducts.forEach(prod => {
                     if (qInfo.type === 'product_list') {
@@ -452,20 +521,16 @@ export function loadReportUI(reportData) {
                     
                     const subSelect = questionItem.querySelector('.styling-sub-category-select');
                     
-                    // --- GÜNCELLENDİ: Kayıtlı adedi yükle ---
                     const subCategoryQtyInput = questionItem.querySelector('.sub-category-qty-input');
                     if (subCategoryQtyInput && selections.subCategoryQty) {
                         subCategoryQtyInput.value = selections.subCategoryQty;
                     }
-                    // --- GÜNCELLEME SONU ---
                     
                     if (subSelect && selections.subCategory) {
                         subSelect.value = selections.subCategory;
-                        // Adet yüklendikten SONRA event'i tetikle
                         subSelect.dispatchEvent(new Event('change'));
                     }
 
-                    // GÜNCELLENDİ: Sadece kategori seçimi varsa bile listeyi aç
                     const toggleBtn = questionItem.querySelector('.styling-mode-toggle');
                     const stylingContainer = questionItem.querySelector('.styling-list-container');
                     const standardContainer = document.getElementById(`standard-view-container-${qId}`);
@@ -558,7 +623,11 @@ function addProductToList(productCode, quantity, shouldSave = true, productName 
     newItem.dataset.qty = selectedQty;
     newItem.dataset.name = product.name; 
     
-    newItem.innerHTML = `<span>${product.code} ${product.name} - <span class="product-quantity"><b>${selectedQty} ${unit}</b></span></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler."><i class="fas fa-trash"></i></button>`;
+    newItem.innerHTML = `
+        <span>${product.code} ${product.name} 
+            <span class="product-quantity"><b>${selectedQty} ${unit}</b></span>
+        </span>
+        <button class="delete-item-btn btn-danger btn-sm" title="Sil"><i class="fas fa-trash-alt"></i></button>`;
     
     newItem.querySelector('.delete-item-btn').addEventListener('click', function() {
         this.parentElement.remove(); 
@@ -575,8 +644,10 @@ function toggleCompleted(button) {
     const input = button.parentElement.querySelector('input[type="text"]');
     const isCompleted = input.classList.toggle('completed');
     input.readOnly = isCompleted;
-    button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
+    button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i>' : '<i class="fas fa-check"></i>';
     button.classList.toggle('undo', isCompleted);
+    button.classList.toggle('btn-warning', isCompleted);
+    button.classList.toggle('btn-success', !isCompleted);
     debouncedSaveFormState();
 }
 
@@ -586,13 +657,14 @@ function toggleQuestionCompleted(button, id, shouldSave = true) {
     const isQuestionCompleted = titleContainer.classList.toggle('question-completed');
     button.innerHTML = isQuestionCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
     button.classList.toggle('undo', isQuestionCompleted);
+    button.classList.toggle('btn-warning', isQuestionCompleted);
+    button.classList.toggle('btn-success', !isQuestionCompleted);
+
     const inputArea = itemDiv.querySelector('.input-area');
     
-    // GÜNCELLENDİ: Standart gizleme mantığını koru ama Styling switch varsa ona dokunma (Toggle kendi içinde yönetir)
     const isStyling = itemDiv.querySelector('.styling-mode-toggle');
     if (inputArea && !isStyling) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
     
-    // Styling ise ve tamamlandıysa detayları gizleyebiliriz, geri alınınca switch durumuna bakılır
     if (isStyling) {
         const stylingContainer = itemDiv.querySelector('.styling-list-container');
         const standardContainer = document.getElementById(`standard-view-container-${id}`);
@@ -603,7 +675,6 @@ function toggleQuestionCompleted(button, id, shouldSave = true) {
             if (toggleContainer) toggleContainer.style.display = 'none';
         } else {
             if (toggleContainer) toggleContainer.style.display = 'flex';
-            // Switch durumuna göre geri yükle
             const toggleBtn = itemDiv.querySelector('.styling-mode-toggle');
             if (toggleBtn && toggleBtn.checked) {
                  if (stylingContainer) stylingContainer.style.display = 'block';
@@ -622,16 +693,13 @@ function toggleQuestionRemoved(button, id, shouldSave = true) {
     const inputArea = itemDiv.querySelector('.input-area');
     const actionsContainer = button.closest('.fide-actions');
     
-    // GÜNCELLENDİ: Styling Toggle'ı da gizle
     const toggleContainer = itemDiv.querySelector('.mode-toggle-container');
     if (toggleContainer) toggleContainer.style.display = isRemoved ? 'none' : 'flex';
 
     if(inputArea) inputArea.style.display = isRemoved ? 'none' : 'block';
     
-    // Styling listesi için ekstra kontrol
     const toggleBtn = itemDiv.querySelector('.styling-mode-toggle');
     if (!isRemoved && toggleBtn) {
-        // Eğer geri alınıyorsa, switch durumuna göre doğru içeriği göster
         const stylingContainer = itemDiv.querySelector('.styling-list-container');
         const standardContainer = document.getElementById(`standard-view-container-${id}`);
         
@@ -644,7 +712,7 @@ function toggleQuestionRemoved(button, id, shouldSave = true) {
         }
     }
 
-    button.innerHTML = isRemoved ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar';
+    button.innerHTML = isRemoved ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-trash-alt"></i> Çıkar';
     button.classList.toggle('btn-danger', !isRemoved);
     button.classList.toggle('btn-primary', isRemoved);
     if(actionsContainer) actionsContainer.querySelectorAll('.add-item-btn, .status-btn').forEach(btn => btn.disabled = isRemoved);
@@ -657,7 +725,12 @@ function addDynamicInput(id, value = '', isCompleted = false, shouldSave = true)
 
     const newItem = document.createElement('div');
     newItem.className = 'dynamic-input-item';
-    newItem.innerHTML = `<input type="text" placeholder="Eksikliği yazın..." value="${value}"><button class="status-btn btn-sm" title="Bu eksikliği 'Tamamlandı' olarak işaretler."><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger" title="Bu satırı silmek için tıklayın."><i class="fas fa-trash"></i></button>`;
+    // GÜNCELLENDİ: Yeni tasarımda input ve butonlar
+    newItem.innerHTML = `
+        <input type="text" placeholder="Eksikliği yazın..." value="${value}">
+        <button class="status-btn btn-success btn-sm" style="margin-left:5px;" title="Tamamlandı"><i class="fas fa-check"></i></button>
+        <button class="delete-bar btn-danger btn-sm" style="margin-left:5px; border-radius:6px; width:auto; padding:6px 10px;" title="Sil"><i class="fas fa-trash"></i></button>
+    `;
     
     const input = newItem.querySelector('input');
     const completeButton = newItem.querySelector('.status-btn');
@@ -668,7 +741,10 @@ function addDynamicInput(id, value = '', isCompleted = false, shouldSave = true)
     input.addEventListener('input', () => debouncedSaveFormState());
     
     completeButton.onclick = () => toggleCompleted(completeButton);
-    deleteButton.onclick = () => initiateDeleteItem(deleteButton);
+    deleteButton.onclick = () => {
+        newItem.remove();
+        debouncedSaveFormState();
+    };
     
     if(isCompleted) toggleCompleted(completeButton);
     container.prepend(newItem);
@@ -716,11 +792,8 @@ function openEmailDraft() {
     emailWindow.document.close();
 }
 
-// --- GÜNCELLENDİ: Styling Listesi Arayüz Fonksiyonları ---
+// --- Styling Listesi Arayüz Fonksiyonları ---
 
-/**
- * Yeni Fonksiyon: Styling görünümünü açıp kapatır (Switch tetikler)
- */
 function toggleStylingView(checkbox, qId) {
     const stylingContainer = document.getElementById(`styling-container-${qId}`);
     const standardContainer = document.getElementById(`standard-view-container-${qId}`);
@@ -734,9 +807,6 @@ function toggleStylingView(checkbox, qId) {
     }
 }
 
-/**
- * Ana Kategori seçimi değiştiğinde tetiklenir.
- */
 function handleStylingMainCatChange(event) {
     const mainSelect = event.target;
     const container = mainSelect.closest('.styling-list-container');
@@ -746,13 +816,11 @@ function handleStylingMainCatChange(event) {
     const subContainer = document.getElementById(`styling-sub-container-${questionId}`);
     const listContainer = container.querySelector('.styling-selected-products-list');
     const subSelect = subContainer.querySelector('.styling-sub-category-select');
-    // YENİ: Adet input'unu bul
     const subCategoryQtyInput = subContainer.querySelector('.sub-category-qty-input');
 
-    // Alt bileşenleri temizle ve gizle
     subSelect.innerHTML = '<option value="">-- Alt Kategori Seçin --</option>';
-    if (subCategoryQtyInput) subCategoryQtyInput.value = '1'; // YENİ: Adedi 1'e sıfırla
-    listContainer.innerHTML = ''; // Listeyi temizle
+    if (subCategoryQtyInput) subCategoryQtyInput.value = '1'; 
+    listContainer.innerHTML = ''; 
 
     if (mainSelect.value && question && question.stylingData) {
         const selectedMainCat = question.stylingData.find(mc => mc.name === mainSelect.value);
@@ -766,7 +834,6 @@ function handleStylingMainCatChange(event) {
             subSelect.removeEventListener('change', handleStylingSubCatChange);
             subSelect.addEventListener('change', handleStylingSubCatChange); 
             
-            // YENİ: Adet input'u için event listener ekle
             if (subCategoryQtyInput) {
                 subCategoryQtyInput.removeEventListener('change', handleStylingSubQtyChange);
                 subCategoryQtyInput.addEventListener('change', handleStylingSubQtyChange);
@@ -779,22 +846,17 @@ function handleStylingMainCatChange(event) {
     debouncedSaveFormState(); 
 }
 
-/**
- * Alt Kategori seçimi değiştiğinde tetiklenir.
- * ARTIK OTOMATİK ÜRÜN EKLİYOR.
- */
 function handleStylingSubCatChange(event) {
     const subSelect = event.target;
     const container = subSelect.closest('.styling-list-container');
     const questionId = container.dataset.questionId;
     const question = state.fideQuestions.find(q => String(q.id) === questionId);
     const mainSelect = container.querySelector('.styling-main-category-select');
-    // YENİ: Kategori adetini oku
     const subCategoryQtyInput = container.querySelector('.sub-category-qty-input');
     const subCategoryMultiplier = parseInt(subCategoryQtyInput.value, 10) || 1;
     
     const listContainer = container.querySelector('.styling-selected-products-list');
-    listContainer.innerHTML = ''; // Her seçimde listeyi sıfırla
+    listContainer.innerHTML = '';
 
     if (subSelect.value && mainSelect.value && question && question.stylingData) {
         const selectedMainCat = question.stylingData.find(mc => mc.name === mainSelect.value);
@@ -802,49 +864,32 @@ function handleStylingSubCatChange(event) {
         
         const selectedSubCat = selectedMainCat.subCategories.find(sc => sc.name === subSelect.value);
         if (selectedSubCat && selectedSubCat.products) {
-            // GÜNCELLENDİ: Ürünleri otomatik döngü ile ekle
             selectedSubCat.products.forEach(product => {
-                // YENİ: Adedi çarp
                 const defaultQty = parseInt(product.qty || '1', 10);
                 const finalQty = defaultQty * subCategoryMultiplier;
-
-                // 'false' parametresi ile her biri için ayrı save atmayı engelliyoruz
                 addStylingProductToList(questionId, product.code, finalQty, product.name, false);
             });
         }
     }
-    
-    debouncedSaveFormState(); // Tüm liste oluşunca tek sefer kaydet
+    debouncedSaveFormState();
 }
 
-/**
- * YENİ: Alt Kategori Adet girişi değiştiğinde tetiklenir.
- * Bu, mevcut alt kategori seçimini yeniden tetikler.
- * @param {Event} event Olay nesnesi
- */
 function handleStylingSubQtyChange(event) {
     const qtyInput = event.target;
     const container = qtyInput.closest('.styling-list-container');
     const subSelect = container.querySelector('.styling-sub-category-select');
     
-    // Adet değiştiğinde, alt kategori seçimi 'change' event'ini
-    // manuel olarak tetikle. Bu, listeyi yeni adetle yeniden hesaplar.
     if (subSelect && subSelect.value) {
         subSelect.dispatchEvent(new Event('change'));
     } else {
-        // Alt kategori seçili değilse bile, değişikliği kaydet (Kural 2)
         debouncedSaveFormState();
     }
 }
 
-/**
- * Styling listesine ürün ekler.
- */
 function addStylingProductToList(qId, productCode, quantity, productName, shouldSave = true) {
     const itemDiv = document.getElementById(`fide-item-${qId}`);
     const listContainer = itemDiv.querySelector(`.styling-selected-products-list`);
     
-    // Zaten listede varsa ekleme (Tekrarı önle)
     if (listContainer.querySelector(`.selected-product-item[data-code="${productCode}"]`)) {
         return; 
     }
@@ -854,10 +899,9 @@ function addStylingProductToList(qId, productCode, quantity, productName, should
     
     newItem.className = 'selected-product-item'; 
     newItem.dataset.code = productCode;
-    newItem.dataset.qty = quantity; // Varsayılan değer (data attribute)
+    newItem.dataset.qty = quantity;
     newItem.dataset.name = productName;
     
-    // GÜNCELLENDİ: Adet kısmı input yaptık
     newItem.innerHTML = `
         <span>${productCode} ${productName} 
             <span class="product-quantity">
@@ -865,10 +909,9 @@ function addStylingProductToList(qId, productCode, quantity, productName, should
                 ${unit}
             </span>
         </span>
-        <button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler."><i class="fas fa-trash"></i></button>
+        <button class="delete-item-btn btn-danger btn-sm" title="Sil"><i class="fas fa-trash-alt"></i></button>
     `;
     
-    // Adet değişikliğini yakala ve kaydet
     const qtyInput = newItem.querySelector('.qty-edit-input');
     qtyInput.addEventListener('change', function() {
         debouncedSaveFormState();
@@ -900,5 +943,5 @@ export function attachUiFunctionsToWindow() {
     window.clearSelectedCodes = clearSelectedCodes;
     window.selectExpiredCodes = selectExpiredCodes;
     window.openEmailDraft = openEmailDraft;
-    window.toggleStylingView = toggleStylingView; // YENİ: Window'a ekle
+    window.toggleStylingView = toggleStylingView;
 }
