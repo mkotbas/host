@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.1</strong> (Styling modülüne alt kategori adet çarpanı eklendi.)</p>
+            <p>Proje Sürümü: <strong>v1.0.2</strong> (Styling modülü varsayılan görünüm hatası düzeltildi.)</p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.1)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.2)</li>
                 <li>Herhangi bir şey güncellendiğinde veya çıkartıldığında dosyadaki kodların tamamı güncellenerek yazılsın.</li>
                 <li>Güncelleme yapıldığında eğer birden çok dosya güncellenmesi gerekiyorsa dosyaları ikişer ikişer iste.</li>
                 <li>İstediğim güncelleme hangi dosyayı ilgilendiriyorsa o dosyayı iste, projenin tamamını isteme.</li>
@@ -207,6 +207,7 @@
                 <li>Ben herhangi bir güncelleme ya da özellik çıkartılmasını istiyorsam talimatı yazacağım, anladığını söyleyeceksin ve ben <code>başla</code> dediğimde başlayacaksın. Ben <code>başla</code> demezsem başlama.</li>
                 <li>Herhangi bir güncelleme istersem ya da özelliğin çıkartılmasını istersem tüm dosyaları analiz et ve hiçbir kod kalıntısı bırakma. Projenin kod kalabalığıyla dolu olmasını istemiyorum; daima stabil olsun ve olabildiğince az kod barındırsın ancak fonksiyonları tamamen çalışsın.</li>
                 <li>Bir güncelleme olduğunda veya çıkartıldığında mutlaka tamamlandığını bana söyle ve devamında dökümanı güncelleyip güncellemek istemediğimi de sor. Dökümanda o özellik varsa yeni güncellemeyle beraber o kısmı da güncelle veya özellik çıkartıldıysa dökümandan bu özelliği de çıkart.</li>
+                <li><strong>(YENİ) Kural 11:</strong> Sadece özellik ekleme/çıkarma değil, yapılan <strong>hata düzeltmeleri (bug fix)</strong> sonrasında da dökümanın (özellikle "Modül ve Dosya Analizi" bölümünün) bu değişikliği yansıtacak şekilde güncellenmesi gerekir.</li>
             </ol>
         </div>
         <section id="introduction">
@@ -430,7 +431,7 @@
                         <li><code>generateQuestionHtml(q)</code>: Soru tipine (<code>q.type</code>) göre (<code>standard</code>, <code>product_list</code>, <code>pop_system</code>, <code>styling_list</code>) farklı HTML yapısı oluşturur. <strong>v1.0.1:</strong> <code>styling_list</code> için "Alt Kategori Adet" (<code>.sub-category-qty-input</code>) girişini ekler.</li>
                         <li><code>handleStylingSubCatChange(event)</code>: <strong>v1.0.1:</strong> Styling alt kategorisi seçildiğinde tetiklenir. <code>.sub-category-qty-input</code>'tan adedi okur, varsayılan ürün adetleriyle çarpar ve listeyi otomatik olarak doldurur.</li>
                         <li><code>getFormDataForSaving()</code>: Formdaki tüm cevapları (inputlar, ürün listeleri, pop seçimleri) okur ve <code>api.saveFormState</code>'in anlayacağı bir JSON nesnesine dönüştürür. <strong>v1.0.1:</strong> <code>styling_list</code> için <code>subCategoryQty</code> (Alt Kategori Adedi) değerini de JSON'a ekler.</li>
-                        <li><code>loadReportUI()</code>: Kayıtlı rapordan verileri okur ve forma geri yükler. <strong>v1.0.1:</strong> Kayıtlı <code>subCategoryQty</code> değerini "Alt Kategori Adet" kutusuna yükler.</li>
+                        <li><code>loadReportUI()</code>: Kayıtlı rapordan verileri okur ve forma geri yükler. <strong>v1.0.1:</strong> Kayıtlı <code>subCategoryQty</code> değerini "Alt Kategori Adet" kutusuna yükler. <strong>v1.0.2 (Düzeltme):</strong> Artık <code>styling_list</code> modunu, sadece <code>selectedProducts.length > 0</code> veya <code>stylingCategorySelections</code> verisi varsa otomatik olarak açar, varsayılan olarak kapalı (standart görünümde) tutar.</li>
                         <li><code>debouncedSaveFormState()</code>: Formdaki her değişikliği 800ms gecikmeyle otomatik olarak kaydetmek için <code>saveFormState</code>'i tetikleyen mekanizmadır.</li>
                         <li><code>generateEmail()</code>: E-posta taslağını oluşturur. <code>excel.js</code>'den gelen puan verilerini tabloya dönüştürür ve formdaki tüm cevapları listeler.</li>
                     </ul>
