@@ -172,17 +172,6 @@ function setupEventListeners() {
     });
 }
 
-
-/**
- * --- KALDIRILDI ---
- * YENİ FONKSİYON: Anlık ban sistemini dinler.
- * (Bu fonksiyon 'api.js' içindeki 'subscribeToRealtimeChanges' 
- * fonksiyonuna taşındı ve genişletildi. 
- * [2025-10-02] kuralı gereği kaldırıldı.)
- */
-// function subscribeToUserChanges() { ... }
-
-
 /**
  * Oturum durumuna göre giriş/çıkış butonlarını günceller.
  * (Bu fonksiyonda değişiklik yok)
