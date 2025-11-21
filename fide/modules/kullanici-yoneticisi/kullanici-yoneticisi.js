@@ -15,9 +15,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     const listView = document.getElementById('user-list-view');
     const formView = document.getElementById('user-form-view');
     
-    // Global Ayarlar Elemanları (KALDIRILDI)
-    // clientDeviceLimitInput, saveDeviceLimitBtn, deviceLimitStatus KALDIRILDI.
-    
     // Liste Elemanları
     const tableBody = document.getElementById('users-table-body');
     
@@ -84,10 +81,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             }
         }
     }
-
-    /**
-     * Global Cihaz limiti ayarını çeken 'loadDeviceLimitSetting' fonksiyonu KALDIRILDI.
-     */
 
     /**
      * Belirli bir kullanıcının kayıtlı cihazlarını çeker. (Değişiklik yok)
@@ -427,10 +420,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
     
     /**
-     * 'handleSaveDeviceLimit' fonksiyonu (global ayar için) KALDIRILDI.
-     */
-    
-    /**
      * "Hesabı Kilitle / Kilidi Aç" butonu
      * DÜZELTME: Hata mesajı basitleştirildi.
      */
@@ -541,7 +530,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         if (cancelUserFormBtn) cancelUserFormBtn.addEventListener('click', showListView);
         if (form) form.addEventListener('submit', handleFormSubmit);
         
-        // Global ayar butonu dinleyicisi KALDIRILDI
         if (toggleBanUserBtn) toggleBanUserBtn.addEventListener('click', handleToggleBanUser);
         
         // YENİ Dinleyici
@@ -551,5 +539,4 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     // --- 6. Modülü Başlat ---
     setupEventListeners();
     loadUsers(); // Ana kullanıcı listesini yükle
-    // loadDeviceLimitSetting() çağrısı KALDIRILDI.
 }

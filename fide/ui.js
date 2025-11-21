@@ -26,8 +26,7 @@ export function initUi(pbInstance) {
 // --- Form ve Arayüz Yönetimi Fonksiyonları ---
 
 function getUnitForProduct(productName) {
-    const upperCaseName = productName.toUpperCase();
-    if (upperCaseName.includes('TSHIRT') || upperCaseName.includes('HIRKA')) { return 'Adet'; }
+    // GÜNCELLEME: Gereksiz mantık kaldırıldı. Standart birim "Adet" olarak sabitlendi.
     return 'Adet';
 }
 
