@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.2</strong> (Styling modülü varsayılan görünüm hatası düzeltildi.)</p>
+            <p>Proje Sürümü: <strong>v1.0.3</strong> (Dokümantasyon Güncellemesi: Temiz Kod, Mantıksal Sadelik ve Görsel Tutarlılık kuralları eklendi.)</p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.2)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.3)</li>
                 <li>Herhangi bir şey güncellendiğinde veya çıkartıldığında dosyadaki kodların tamamı güncellenerek yazılsın.</li>
                 <li>Güncelleme yapıldığında eğer birden çok dosya güncellenmesi gerekiyorsa dosyaları ikişer ikişer iste.</li>
                 <li>İstediğim güncelleme hangi dosyayı ilgilendiriyorsa o dosyayı iste, projenin tamamını isteme.</li>
@@ -208,6 +208,10 @@
                 <li>Herhangi bir güncelleme istersem ya da özelliğin çıkartılmasını istersem tüm dosyaları analiz et ve hiçbir kod kalıntısı bırakma. Projenin kod kalabalığıyla dolu olmasını istemiyorum; daima stabil olsun ve olabildiğince az kod barındırsın ancak fonksiyonları tamamen çalışsın.</li>
                 <li>Bir güncelleme olduğunda veya çıkartıldığında mutlaka tamamlandığını bana söyle ve devamında dökümanı güncelleyip güncellemek istemediğimi de sor. Dökümanda o özellik varsa yeni güncellemeyle beraber o kısmı da güncelle veya özellik çıkartıldıysa dökümandan bu özelliği de çıkart.</li>
                 <li><strong>(YENİ) Kural 11:</strong> Sadece özellik ekleme/çıkarma değil, yapılan <strong>hata düzeltmeleri (bug fix)</strong> sonrasında da dökümanın (özellikle "Modül ve Dosya Analizi" bölümünün) bu değişikliği yansıtacak şekilde güncellenmesi gerekir.</li>
+                
+                <li><strong>(YENİ) Kural 12 - Temiz Kod ve Ölü Kod Temizliği:</strong> Zamanla yapılan güncellemelerden sonra devre dışı bırakılan kodları (eski fonksiyonlar, kullanılmayan değişkenler) "yorum satırı" haline getirip dosyada bırakma. Bu kodları <strong>tamamen sil</strong>. Dosyaları her zaman temiz ve sadece çalışan kodlardan oluşacak şekilde tut.</li>
+                <li><strong>(YENİ) Kural 13 - Mantıksal İyileştirme (Basitleştirme):</strong> Kod mantığını her zaman en sade ve performanslı olacak şekilde kurgula. Gereksiz koşul kontrolleri (Örn: Her koşulda aynı sonucu dönen if/else yapıları) veya dolaylı mantıklar yerine doğrudan ve basit çözümler uygula.</li>
+                <li><strong>(YENİ) Kural 14 - Yapısal Tavsiye (Görsel Tutarlılık):</strong> Tasarım (CSS) güncellemelerinde, <code>style.css</code> gibi <strong>merkezi stil dosyalarını</strong> temel al. Modül bazlı CSS dosyalarında (örn: <code>kullanici-yoneticisi.css</code>), ana dosyada zaten tanımlı olan stilleri (renk kodları, buton yapıları, kart stilleri vb.) tekrar tanımlama (DRY Prensibi). Merkezi yönetimi koru.</li>
             </ol>
         </div>
         <section id="introduction">
