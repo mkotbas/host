@@ -28,7 +28,7 @@
     font-size: 0.9em;
 }
 
-/* Raporlama Alanı (GÜNCELLENDİ) */
+/* Raporlama Alanı */
 .report-fieldset {
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -46,67 +46,55 @@
     color: #555;
     font-size: 0.95em;
     margin-top: 5px;
-    margin-bottom: 15px; /* P elementi için standart alt boşluk */
+    margin-bottom: 15px;
 }
 
-/* YENİ: Raporlama ve İçe Aktarma Sütunları */
 .fieldset-content-wrapper {
     display: flex;
-    flex-wrap: wrap; /* Mobil için alt alta düşebilir */
+    flex-wrap: wrap;
     gap: 20px;
-    /* YENİ: Kutuların dikeyde esnemesini sağla (varsayılan gerçi) */
     align-items: stretch;
 }
 
 .report-export-section,
 .report-import-section,
 .report-assign-section { 
-    /* GÜNCELLENDİ: 'flex: 1' ortak kuralı buradan kaldırıldı. */
-    min-width: 300px; /* Minimum genişlik */
+    min-width: 300px;
     border: 1px solid #e9ecef;
     padding: 20px;
     border-radius: 6px;
     background-color: #fcfcfc;
-
-    /* YENİ: Dikey flex layout GEREKLİ (Butonları dibe itmek için) */
     display: flex;
     flex-direction: column;
 }
 .report-import-section {
-    border-left: 2px solid #007bff; /* İçe aktarma bölümünü ayırmak için */
+    border-left: 2px solid #007bff;
 }
 
-/* YENİ: İçe aktarma ve atama kutuları için flex tanımı */
 .report-import-section,
 .report-assign-section {
-    flex: 1; /* Standart esneme */
+    flex: 1;
 }
 
-/* YENİ: Raporlama kutusu için daha geniş flex tanımı (sıkışıklığı gidermek için) */
 .report-export-section {
-    flex: 1.5; /* %50 daha fazla esneme payı */
+    flex: 1.5;
 }
 
-
-/* GÜNCELLENDİ: Sadece İçe Aktarma ve Toplu Atama kutularını yatayda ortala */
-/* (dikey ortalama kaldırıldı) */
 .report-import-section,
 .report-assign-section {
-    align-items: center;     /* İçeriği yatayda ortalar */
-    text-align: center;      /* Metinleri ortalar */
+    align-items: center;
+    text-align: center;
 }
 
-/* YENİ: İçe Aktarma ve Toplu Atama kutularındaki açıklama paragraflarını dikeyde ortala */
 .report-import-section p,
 .report-assign-section p {
-    flex-grow: 1; /* Paragrafın dikeyde genişlemesini sağla */
-    display: flex; /* İçindeki metni ortalamak için */
-    align-items: center; /* Metni dikeyde ortala */
-    justify-content: center; /* Metni yatayda ortala */
-    margin-bottom: 0; /* Standart P marjını sıfırla */
-    padding: 10px 0; /* Üstten ve alttan boşluk ver */
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0;
+    padding: 10px 0;
 }
-
 
 .report-export-section strong,
 .report-import-section strong,
@@ -116,8 +104,6 @@
     display: block;
     margin-bottom: 5px;
 }
-/* --- Raporlama Alanı Güncellemesi Sonu --- */
-
 
 .checkbox-group {
     display: flex;
@@ -136,59 +122,10 @@
 .report-actions {
     display: flex;
     gap: 10px;
-    
-    /* GÜNCELLENDİ: Butonları yatayda ortala */
     justify-content: center;
-
-    /* YENİ: Bu kural, .report-actions div'ini flex container'ın (kutu) en dibine iter */
     margin-top: auto; 
-    
-    /* YENİ: Ortalamanın düzgün çalışması için genişliği ayarla */
     width: 100%;
 }
-
-
-/* Buton Stilleri */
-#bayi-yonetici-container .btn {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.95em;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-    color: white; 
-}
-#bayi-yonetici-container .btn i {
-    font-size: 0.9em;
-}
-#bayi-yonetici-container .btn-primary { background-color: #007bff; color: white; }
-#bayi-yonetici-container .btn-primary:hover { background-color: #0069d9; }
-#bayi-yonetici-container .btn-danger { background-color: #dc3545; color: white; }
-#bayi-yonetici-container .btn-danger:hover { background-color: #c82333; }
-#bayi-yonetici-container .btn-secondary { background-color: #6c757d; color: white; }
-#bayi-yonetici-container .btn-secondary:hover { background-color: #5a6268; }
-#bayi-yonetici-container .btn-success { background-color: #28a745; color: white; }
-#bayi-yonetici-container .btn-success:hover { background-color: #218838; }
-#bayi-yonetici-container .btn-warning { background-color: #ffc107; color: #212529; }
-#bayi-yonetici-container .btn-warning:hover { background-color: #e0a800; }
-#bayi-yonetici-container .btn-light { background-color: #f8f9fa; color: #212529; border: 1px solid #ddd; }
-#bayi-yonetici-container .btn-light:hover { background-color: #e2e6ea; }
-
-/* YENİ: Bilgi Butonu Stili */
-#bayi-yonetici-container .btn-info { background-color: #17a2b8; color: white; }
-#bayi-yonetici-container .btn-info:hover { background-color: #138496; }
-
-/* YENİ: Devre dışı bırakılmış buton stili */
-#bayi-yonetici-container .btn:disabled {
-    background-color: #c0c0c0;
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
 
 /* Tablo Stilleri */
 .table-container {
@@ -215,7 +152,7 @@
     padding: 14px 18px;
     text-align: left;
     border-bottom: 1px solid #eef2f7;
-    border-right: 1px solid #eef2f7; /* Dikey ayırıcı çizgi */
+    border-right: 1px solid #eef2f7;
 }
 
 #bayi-table th {
@@ -238,7 +175,6 @@
     background-color: #f1f3f5;
 }
 
-
 /* Eylem Butonları (İkon-Sadece) */
 #bayi-table .action-buttons {
     display: flex;
@@ -254,7 +190,6 @@
     justify-content: center; 
     flex-shrink: 0; 
 }
-
 
 /* Arama Çubuğu Satırı Stilleri */
 #bayi-table tr.search-row th {
@@ -278,15 +213,13 @@
     box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
 }
 
-/* Son sütunlardaki gereksiz sağ çizgiyi kaldır */
 #bayi-table th:last-child,
 #bayi-table td:last-child,
 #bayi-table tr.search-row th:last-child {
     border-right: none;
 }
 
-
-/* Modal (Açılır Pencere) Stilleri - Ekle/Düzenle ve İçe Aktarma */
+/* Modal Stilleri */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -306,17 +239,15 @@
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     width: 90%;
-    max-width: 800px; /* Standart modal genişliği */
+    max-width: 800px;
     max-height: 90vh;
     overflow-y: auto;
-    position: relative; /* Yükleme overlay'i için eklendi */
+    position: relative;
 }
 
-/* YENİ: Geniş Modal (İçe Aktarma Sihirbazı için) */
 .modal-content.modal-large {
-    max-width: 1000px; /* Daha geniş modal */
+    max-width: 1000px;
 }
-
 
 .modal-content h3,
 .modal-content h4 {
@@ -337,7 +268,6 @@
     line-height: 1.6;
 }
 
-
 /* Form Stilleri (Modal İçi) */
 .form-grid {
     display: grid;
@@ -350,22 +280,8 @@
     flex-direction: column;
 }
 
-.form-control {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    font-size: 1em;
-    box-sizing: border-box; 
-    color: #333; 
-    background-color: #fff; 
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-.form-control:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
-}
+/* .form-control style.css'den geliyor */
+
 .form-actions {
     display: flex;
     justify-content: flex-end;
@@ -393,8 +309,7 @@
     100% { transform: rotate(360deg); }
 }
 
-
-/* YENİ: Modal İçi Yükleme Ekranı */
+/* Modal İçi Yükleme Ekranı */
 .modal-loading-overlay {
     position: absolute;
     top: 0;
@@ -402,7 +317,7 @@
     width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0.85);
-    z-index: 1001; /* Modal içeriğinin üstünde */
+    z-index: 1001;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -410,8 +325,8 @@
     border-radius: 10px;
 }
 .modal-loading-overlay .spinner {
-    position: static; /* Mutlak konumlandırmayı kaldır */
-    margin: 0 0 20px 0; /* Boşluk ayarı */
+    position: static;
+    margin: 0 0 20px 0;
 }
 .modal-loading-overlay p {
     font-weight: 500;
@@ -419,10 +334,9 @@
     font-size: 1.1em;
 }
 
-
-/* YENİ: Sütun Eşleştirme Arayüzü */
+/* Sütun Eşleştirme Arayüzü */
 .mapping-container-class {
-    max-height: 40vh; /* Yükseklik sınırı */
+    max-height: 40vh;
     overflow-y: auto;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -452,31 +366,28 @@
 }
 .db-field-select {
     flex: 1;
-    /* .form-control stilini zaten alıyor */
 }
 
-/* YENİ: Toplu Kullanıcı Atama Alanı Stilleri */
+/* Toplu Kullanıcı Atama Alanı */
 .global-assignment-container {
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid #dee2e6; /* Ayırıcı çizgi */
+    border-top: 1px solid #dee2e6;
 }
 .global-assignment-row {
-    /* .mapping-row stilini HTML'den alarak hizalanır */
-    background-color: #f8f9fa; /* Hafif vurgu rengi */
+    background-color: #f8f9fa;
     padding-top: 15px;
     padding-bottom: 15px;
-    border-bottom: none; /* Alt çizgisi olmasın */
+    border-bottom: none;
 }
 .global-label {
-    /* .excel-column-label'in bazı stillerini ezer */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Normal font */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 1.05em;
-    color: #007bff; /* Vurgu rengi */
+    color: #007bff;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 10px; /* İkon ve yazı arası boşluk */
+    gap: 10px;
 }
 .global-label i {
     font-size: 1.1em;
@@ -488,10 +399,8 @@
     padding: 0 5px;
     line-height: 1.5;
 }
-/* --- Toplu Atama Stilleri Sonu --- */
 
-
-/* YENİ: Sonuç Alanı */
+/* Sonuç Alanı */
 .import-results-class {
     min-height: 100px;
     max-height: 300px;
@@ -501,11 +410,10 @@
     border-radius: 6px;
     padding: 20px;
     font-family: monospace;
-    white-space: pre-wrap; /* Sonuçların düzgün görünmesi için */
+    white-space: pre-wrap;
 }
 
-
-/* YENİ: Uyarı Notu Stilleri (Dokümantasyondan alındı) */
+/* Uyarı Notu */
 .note {
     background-color: #fff3cd;
     border-left: 5px solid #ffc107;
@@ -523,16 +431,14 @@
     margin-bottom: 5px;
 }
 
-
-/* YENİ: Toplu Atama Bölümü (Fieldset içi) */
 .report-assign-section {
-    border-left: 2px solid #ffc107; /* Sarı/Warning rengi */
+    border-left: 2px solid #ffc107;
 }
 
-/* YENİ: Toplu Atama Modalı Filtre Stilleri (GÜNCELLENDİ) */
+/* Toplu Atama Modalı Filtre Stilleri */
 .bulk-assign-filters {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Esnek grid */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
     margin-bottom: 25px;
     padding: 15px;
@@ -544,9 +450,9 @@
     margin-top: 20px;
 }
 
-/* YENİ: Toplu Atama Modalı - Çoklu Seçim Checkbox Liste Stilleri */
+/* Checkbox Liste Stilleri */
 .checkbox-list-container {
-    max-height: 150px; /* Yükseklik sınırı, kaydırma çubuğu çıkar */
+    max-height: 150px;
     overflow-y: auto;
     border: 1px solid #ced4da;
     border-radius: 6px;
@@ -555,9 +461,9 @@
     font-size: 0.95em;
 }
 .checkbox-list-container label {
-    display: block; /* Her seçenek bir satırda */
+    display: block;
     margin-bottom: 8px;
-    font-weight: 400; /* Normal font ağırlığı */
+    font-weight: 400;
     color: #333;
     cursor: pointer;
 }
@@ -569,13 +475,11 @@
     margin-bottom: 0;
 }
 
-/* YENİ: "Yönetmeni Olmayanlar" seçeneğini vurgulamak için */
 .checkbox-list-container label strong {
-    color: #0d6efd; /* Vurgu rengi (mavi) */
+    color: #0d6efd;
     font-weight: 600;
 }
 
-/* YENİ: "Yönetmeni Olmayanlar" seçeneğini ayırmak için çizgi */
 .checkbox-list-container hr {
     margin: 8px -2px;
     border: none;
