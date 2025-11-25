@@ -194,24 +194,23 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.4</strong> (Hata Düzeltmesi: Styling Listesi sorularının e-posta taslağında görünmeme sorunu giderildi.)</p>
+            <p>Proje Sürümü: <strong>v1.0.6</strong> (Sistem genel durumu günceldir.)</p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.4)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.6)</li>
+                <li><strong>KURAL: Dökümanı "Canlı" Tut:</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. Sistemin o anki çalışan son halini yansıtmalıdır.</li>
+                <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
+                <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
                 <li>Herhangi bir şey güncellendiğinde veya çıkartıldığında dosyadaki kodların tamamı güncellenerek yazılsın.</li>
                 <li>Güncelleme yapıldığında eğer birden çok dosya güncellenmesi gerekiyorsa dosyaları ikişer ikişer iste.</li>
                 <li>İstediğim güncelleme hangi dosyayı ilgilendiriyorsa o dosyayı iste, projenin tamamını isteme.</li>
                 <li>Herhangi bir güncelleme istersem sadece projeye ait yükleyeceğin dosyalar üzerinde güncelleme yapılsın. Kendin dosya vermeden kod yazma.</li>
-                <li>Güncelleme yaparken ya da özellik silerken, JS kodları JS dosyasına, CSS kodları CSS dosyasına, HTML kodları sadece HTML dosyasına işlensin. (Örn: Stil/tasarım güncellemesi JS koduna yazılmasın).</li>
+                <li>Güncelleme yaparken ya da özellik silerken, JS kodları JS dosyasına, CSS kodları CSS dosyasına, HTML kodları sadece HTML dosyasına işlensin.</li>
                 <li>Ben herhangi bir güncelleme ya da özellik çıkartılmasını istiyorsam talimatı yazacağım, anladığını söyleyeceksin ve ben <code>başla</code> dediğimde başlayacaksın. Ben <code>başla</code> demezsem başlama.</li>
-                <li>Herhangi bir güncelleme istersem ya da özelliğin çıkartılmasını istersem tüm dosyaları analiz et ve hiçbir kod kalıntısı bırakma. Projenin kod kalabalığıyla dolu olmasını istemiyorum; daima stabil olsun ve olabildiğince az kod barındırsın ancak fonksiyonları tamamen çalışsın.</li>
-                <li>Bir güncelleme olduğunda veya çıkartıldığında mutlaka tamamlandığını bana söyle ve devamında dökümanı güncelleyip güncellemek istemediğimi de sor. Dökümanda o özellik varsa yeni güncellemeyle beraber o kısmı da güncelle veya özellik çıkartıldıysa dökümandan bu özelliği de çıkart.</li>
-                <li><strong>(YENİ) Kural 11:</strong> Sadece özellik ekleme/çıkarma değil, yapılan <strong>hata düzeltmeleri (bug fix)</strong> sonrasında da dökümanın (özellikle "Modül ve Dosya Analizi" bölümünün) bu değişikliği yansıtacak şekilde güncellenmesi gerekir.</li>
-                
-                <li><strong>(YENİ) Kural 12 - Temiz Kod ve Ölü Kod Temizliği:</strong> Zamanla yapılan güncellemelerden sonra devre dışı bırakılan kodları (eski fonksiyonlar, kullanılmayan değişkenler) "yorum satırı" haline getirip dosyada bırakma. Bu kodları <strong>tamamen sil</strong>. Dosyaları her zaman temiz ve sadece çalışan kodlardan oluşacak şekilde tut.</li>
-                <li><strong>(YENİ) Kural 13 - Mantıksal İyileştirme (Basitleştirme):</strong> Kod mantığını her zaman en sade ve performanslı olacak şekilde kurgula. Gereksiz koşul kontrolleri (Örn: Her koşulda aynı sonucu dönen if/else yapıları) veya dolaylı mantıklar yerine doğrudan ve basit çözümler uygula.</li>
-                <li><strong>(YENİ) Kural 14 - Yapısal Tavsiye (Görsel Tutarlılık):</strong> Tasarım (CSS) güncellemelerinde, <code>style.css</code> gibi <strong>merkezi stil dosyalarını</strong> temel al. Modül bazlı CSS dosyalarında (örn: <code>kullanici-yoneticisi.css</code>), ana dosyada zaten tanımlı olan stilleri (renk kodları, buton yapıları, kart stilleri vb.) tekrar tanımlama (DRY Prensibi). Merkezi yönetimi koru.</li>
+                <li>Herhangi bir güncelleme istersem ya da özelliğin çıkartılmasını istersem tüm dosyaları analiz et ve hiçbir kod kalıntısı bırakma.</li>
+                <li><strong>Temiz Kod ve Ölü Kod Temizliği:</strong> Zamanla yapılan güncellemelerden sonra devre dışı bırakılan kodları (eski fonksiyonlar, kullanılmayan değişkenler) "yorum satırı" haline getirip dosyada bırakma. Bu kodları <strong>tamamen sil</strong>.</li>
+                <li><strong>Mantıksal İyileştirme (Basitleştirme):</strong> Kod mantığını her zaman en sade ve performanslı olacak şekilde kurgula.</li>
             </ol>
         </div>
         <section id="introduction">
@@ -432,12 +431,27 @@
                 <li><code>ui.js</code> (Arayüz Katmanı): <strong>Tüm HTML oluşturma ve DOM manipülasyonu buradadır.</strong>
                     <ul>
                         <li><code>buildForm()</code>: <code>state.fideQuestions</code> dizisini döngüye alarak <code>generateQuestionHtml</code>'i çağırır.</li>
-                        <li><code>generateQuestionHtml(q)</code>: Soru tipine (<code>q.type</code>) göre (<code>standard</code>, <code>product_list</code>, <code>pop_system</code>, <code>styling_list</code>) farklı HTML yapısı oluşturur. <strong>v1.0.1:</strong> <code>styling_list</code> için "Alt Kategori Adet" (<code>.sub-category-qty-input</code>) girişini ekler.</li>
-                        <li><code>handleStylingSubCatChange(event)</code>: <strong>v1.0.1:</strong> Styling alt kategorisi seçildiğinde tetiklenir. <code>.sub-category-qty-input</code>'tan adedi okur, varsayılan ürün adetleriyle çarpar ve listeyi otomatik olarak doldurur.</li>
-                        <li><code>getFormDataForSaving()</code>: Formdaki tüm cevapları (inputlar, ürün listeleri, pop seçimleri) okur ve <code>api.saveFormState</code>'in anlayacağı bir JSON nesnesine dönüştürür. <strong>v1.0.1:</strong> <code>styling_list</code> için <code>subCategoryQty</code> (Alt Kategori Adedi) değerini de JSON'a ekler.</li>
-                        <li><code>loadReportUI()</code>: Kayıtlı rapordan verileri okur ve forma geri yükler. <strong>v1.0.1:</strong> Kayıtlı <code>subCategoryQty</code> değerini "Alt Kategori Adet" kutusuna yükler. <strong>v1.0.2 (Düzeltme):</strong> Artık <code>styling_list</code> modunu, sadece <code>selectedProducts.length > 0</code> veya <code>stylingCategorySelections</code> verisi varsa otomatik olarak açar, varsayılan olarak kapalı (standart görünümde) tutar.</li>
+                        <li><code>generateQuestionHtml(q)</code>: Soru tipine (<code>q.type</code>) göre (<code>standard</code>, <code>product_list</code>, <code>pop_system</code>, <code>styling_list</code>) farklı HTML yapısı oluşturur.
+                            <ul>
+                                <li><code>styling_list</code>: "Hibrit Mod" olarak çalışır. Hem açılır menüden kategori/ürün seçimi yapılabilir hem de "Yeni Eksik Ekle" butonu ile serbest metin girişi (not) eklenebilir.</li>
+                            </ul>
+                        </li>
+                        <li><code>handleStylingSubCatChange(event)</code>: Styling alt kategorisi seçildiğinde tetiklenir. <code>.sub-category-qty-input</code>'tan adedi okur, varsayılan ürün adetleriyle çarpar ve listeyi otomatik olarak doldurur.</li>
+                        <li><code>getFormDataForSaving()</code>: Formdaki tüm cevapları okur ve JSON nesnesine dönüştürür. 
+                            <ul>
+                                <li><code>styling_list</code> için: Seçilen ürünler (<code>selectedProducts</code>), kategori seçimleri (<code>stylingCategorySelections</code>) ve manuel girilen notlar (<code>dynamicInputs</code>) kaydedilir.</li>
+                            </ul>
+                        </li>
+                        <li><code>loadReportUI()</code>: Kayıtlı rapordan verileri okur ve forma geri yükler. <code>styling_list</code> için notlar (<code>_notes</code>), ürünler ve kategori seçimleri ilgili alanlara yerleştirilir.</li>
                         <li><code>debouncedSaveFormState()</code>: Formdaki her değişikliği 800ms gecikmeyle otomatik olarak kaydetmek için <code>saveFormState</code>'i tetikleyen mekanizmadır.</li>
-                        <li><code>generateEmail()</code>: E-posta taslağını oluşturur. <code>excel.js</code>'den gelen puan verilerini tabloya dönüştürür ve formdaki tüm cevapları listeler. <strong>v1.0.4:</strong> <code>styling_list</code> tipi sorularda ürün seçilmese dahi statik içeriği (açıklama/link) e-postaya ekler.</li>
+                        <li><code>generateEmail()</code>: E-posta taslağını oluşturur. <code>styling_list</code> tipi sorularda sıralama şöyledir:
+                            <ol>
+                                <li>Statik Açıklama Metni (Sirkü linki vb.)</li>
+                                <li>Kullanıcının eklediği serbest notlar (Yeni Eksik Ekle verileri)</li>
+                                <li>Otomatik hesaplanan ürün sipariş listesi</li>
+                            </ol>
+                            Ürün seçilmemiş olsa dahi, statik metin veya not varsa soru e-postaya dahil edilir.
+                        </li>
                     </ul>
                 </li>
                 <li><code>state.js</code> (Durum Yönetimi): <code>dideData</code>, <code>fideData</code>, <code>fideQuestions</code>, <code>selectedStore</code> gibi tüm uygulama tarafından kullanılan global değişkenleri tutar ve <code>set...</code> fonksiyonları ile güvenli bir şekilde güncellenmesini sağlar.</li>
