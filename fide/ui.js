@@ -341,10 +341,26 @@ export async function generateEmail() {
                 if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
             
             } else if (q.type === 'styling_list') {
+                // --- DÜZELTME: Styling Listesi E-posta İçeriği ---
+                // 1. Statik Metinleri (Açıklama/Link) Al
+                const standardContainer = document.getElementById(`standard-view-container-${q.id}`);
+                let staticHtml = '';
+                if (standardContainer) {
+                    const staticItems = Array.from(standardContainer.querySelectorAll('.static-item .content'));
+                    if (staticItems.length > 0) {
+                        staticHtml = `<ul>${staticItems.map(div => `<li>${div.innerHTML}</li>`).join('')}</ul>`;
+                    }
+                }
+
+                // E-posta içeriğine önce açıklamayı ekle
+                contentHtml = staticHtml; 
+
+                // 2. Ürünler varsa onları da ekle
                 if (productItemsHtml.length > 0) {
-                    contentHtml = `<b><i>Sipariş verilmesi gerekenler:</i></b>`;
+                    contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b>`;
                     contentHtml += `<ul>${productItemsHtml.join('')}</ul>`;
                 }
+                // --- DÜZELTME SONU ---
             }
             
         } else if (q.type === 'pop_system') {
