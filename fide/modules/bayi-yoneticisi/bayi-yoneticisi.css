@@ -40,7 +40,7 @@
 .report-fieldset legend {
     font-weight: 600;
     padding: 0 10px;
-    color: var(--primary, #007bff);
+    color: #007bff;
 }
 .report-fieldset p {
     color: #555;
@@ -67,18 +67,23 @@
     display: flex;
     flex-direction: column;
 }
+.report-import-section {
+    border-left: 2px solid #007bff;
+}
 
-/* HİZALAMA DÜZELTMESİ: Flex itemleri dikey ortalamayı kaldırıp içeriğin doğal akışına bıraktık */
 .report-import-section,
 .report-assign-section {
     flex: 1;
-    align-items: stretch; /* Dikeyde gerdirmeyi sağlar, center yerine */
-    text-align: center;
-    border-left: 3px solid var(--info, #17a2b8); /* Sol çizgi vurgusu */
 }
 
 .report-export-section {
     flex: 1.5;
+}
+
+.report-import-section,
+.report-assign-section {
+    align-items: center;
+    text-align: center;
 }
 
 .report-import-section p,
@@ -87,7 +92,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 10px;
+    margin-bottom: 0;
     padding: 10px 0;
 }
 
@@ -98,7 +103,6 @@
     color: #333;
     display: block;
     margin-bottom: 5px;
-    text-align: center;
 }
 
 .checkbox-group {
@@ -115,17 +119,12 @@
     font-size: 0.95em;
     color: #333; 
 }
-
-/* BUTON HİZALAMA DÜZELTMESİ: Butonları kutunun altına sabitlemek için margin-top: auto */
 .report-actions {
     display: flex;
     gap: 10px;
     justify-content: center;
     margin-top: auto; 
     width: 100%;
-}
-.report-actions button {
-    min-width: 180px; /* Butonların çok küçük görünmesini engelle */
 }
 
 /* Tablo Stilleri */
@@ -210,7 +209,7 @@
 }
 #bayi-table tr.search-row input:focus {
     outline: none;
-    border-color: var(--primary, #007bff);
+    border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
 }
 
@@ -259,7 +258,7 @@
     color: #333; 
 }
 .modal-content h4 {
-    color: var(--primary, #007bff);
+    color: #007bff;
     font-size: 1.3em;
     margin-bottom: 15px;
 }
@@ -281,24 +280,7 @@
     flex-direction: column;
 }
 
-/* GÜNCELLEME: Modal içi inputlar için zorlayıcı stil.
-   Global style.css bazen modal içinde eziliyor olabilir, burada garantiye alıyoruz. */
-.modal-content .form-control {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border, #ced4da) !important;
-    border-radius: 6px;
-    font-size: 1em;
-    background-color: #fff;
-    box-shadow: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.modal-content .form-control:focus {
-    border-color: var(--primary, #007bff) !important;
-    box-shadow: 0 0 0 3px rgba(0, 140, 186, 0.2);
-    outline: none;
-}
+/* .form-control style.css'den geliyor */
 
 .form-actions {
     display: flex;
@@ -315,7 +297,7 @@
     width: 50px;
     height: 50px;
     border: 6px solid #f3f3f3;
-    border-top: 6px solid var(--primary, #007bff);
+    border-top: 6px solid #007bff;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-top: -25px; 
@@ -379,7 +361,7 @@
     font-size: 1.1em;
 }
 .mapping-row .fas.fa-arrow-right {
-    color: var(--primary, #007bff);
+    color: #007bff;
     font-size: 1.2em;
 }
 .db-field-select {
@@ -401,7 +383,7 @@
 .global-label {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 1.05em;
-    color: var(--primary, #007bff);
+    color: #007bff;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -434,14 +416,14 @@
 /* Uyarı Notu */
 .note {
     background-color: #fff3cd;
-    border-left: 5px solid var(--warning, #ffc107);
+    border-left: 5px solid #ffc107;
     padding: 20px;
     margin: 25px 0;
     border-radius: 4px;
 }
 .note.note-warning {
     background-color: #fff3cd;
-    border-left-color: var(--warning, #ffc107);
+    border-left-color: #ffc107;
 }
 .note strong {
     color: #856404;
@@ -450,7 +432,7 @@
 }
 
 .report-assign-section {
-    border-left: 3px solid var(--warning, #ffc107);
+    border-left: 2px solid #ffc107;
 }
 
 /* Toplu Atama Modalı Filtre Stilleri */
@@ -494,7 +476,7 @@
 }
 
 .checkbox-list-container label strong {
-    color: var(--primary, #0d6efd);
+    color: #0d6efd;
     font-weight: 600;
 }
 
