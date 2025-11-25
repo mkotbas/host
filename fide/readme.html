@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.3</strong> (Dokümantasyon Güncellemesi: Temiz Kod, Mantıksal Sadelik ve Görsel Tutarlılık kuralları eklendi.)</p>
+            <p>Proje Sürümü: <strong>v1.0.4</strong> (Hata Düzeltmesi: Styling Listesi sorularının e-posta taslağında görünmeme sorunu giderildi.)</p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.3)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.4)</li>
                 <li>Herhangi bir şey güncellendiğinde veya çıkartıldığında dosyadaki kodların tamamı güncellenerek yazılsın.</li>
                 <li>Güncelleme yapıldığında eğer birden çok dosya güncellenmesi gerekiyorsa dosyaları ikişer ikişer iste.</li>
                 <li>İstediğim güncelleme hangi dosyayı ilgilendiriyorsa o dosyayı iste, projenin tamamını isteme.</li>
@@ -437,7 +437,7 @@
                         <li><code>getFormDataForSaving()</code>: Formdaki tüm cevapları (inputlar, ürün listeleri, pop seçimleri) okur ve <code>api.saveFormState</code>'in anlayacağı bir JSON nesnesine dönüştürür. <strong>v1.0.1:</strong> <code>styling_list</code> için <code>subCategoryQty</code> (Alt Kategori Adedi) değerini de JSON'a ekler.</li>
                         <li><code>loadReportUI()</code>: Kayıtlı rapordan verileri okur ve forma geri yükler. <strong>v1.0.1:</strong> Kayıtlı <code>subCategoryQty</code> değerini "Alt Kategori Adet" kutusuna yükler. <strong>v1.0.2 (Düzeltme):</strong> Artık <code>styling_list</code> modunu, sadece <code>selectedProducts.length > 0</code> veya <code>stylingCategorySelections</code> verisi varsa otomatik olarak açar, varsayılan olarak kapalı (standart görünümde) tutar.</li>
                         <li><code>debouncedSaveFormState()</code>: Formdaki her değişikliği 800ms gecikmeyle otomatik olarak kaydetmek için <code>saveFormState</code>'i tetikleyen mekanizmadır.</li>
-                        <li><code>generateEmail()</code>: E-posta taslağını oluşturur. <code>excel.js</code>'den gelen puan verilerini tabloya dönüştürür ve formdaki tüm cevapları listeler.</li>
+                        <li><code>generateEmail()</code>: E-posta taslağını oluşturur. <code>excel.js</code>'den gelen puan verilerini tabloya dönüştürür ve formdaki tüm cevapları listeler. <strong>v1.0.4:</strong> <code>styling_list</code> tipi sorularda ürün seçilmese dahi statik içeriği (açıklama/link) e-postaya ekler.</li>
                     </ul>
                 </li>
                 <li><code>state.js</code> (Durum Yönetimi): <code>dideData</code>, <code>fideData</code>, <code>fideQuestions</code>, <code>selectedStore</code> gibi tüm uygulama tarafından kullanılan global değişkenleri tutar ve <code>set...</code> fonksiyonları ile güvenli bir şekilde güncellenmesini sağlar.</li>
