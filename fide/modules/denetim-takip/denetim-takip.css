@@ -255,7 +255,14 @@
     border-bottom: 1px solid var(--light-border);
     color: var(--light-text-secondary);
 }
-.region-container .store-list { max-height: 250px; overflow-y: auto; }
+
+/* GÜNCELLENDİ: Listenin yükseklik sınırı (max-height: 250px) kaldırıldı. 
+   Artık kolonun tamamını dolduracak şekilde uzayabilir. */
+.region-container .store-list { 
+    height: auto; 
+    overflow-y: visible; 
+}
+
 .region-container .store-list-item { background-color: var(--light-bg); } /* Bölge içindeki satırlar beyaz */
 
 .empty-list-message { text-align: center; padding: 20px; color: var(--light-text-secondary); font-style: italic; }
