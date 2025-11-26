@@ -14,6 +14,10 @@ let auditedStoreCodesCurrentYear = [];
 let geriAlinanKayitlariBuAy = [];
 let geriAlinanKayitlariBuYil = [];
 
+// YENİ EKLENDİ: Local filtreleme için gerekli değişkenler
+let currentGlobalFilteredStores = []; // 'Denetlenecek Bayiler' hesaplaması için son kullanılan global filtre sonucu
+let localCityFilterValue = 'Tümü';    // Listeye özel şehir filtresinin anlık değeri
+
 let globalAylikHedef = 0; // Ayarlardan gelen global hedef
 let aylikHedef = 0; // O anki görünümün (view) hedefi
 
@@ -259,6 +263,11 @@ function applyDataFilterAndRunDashboard(viewId) {
         }
     }
 
+    // Global filtre değiştiğinde, local filtreyi sıfırla ki kullanıcı yeni veri setinde şaşırmasın
+    localCityFilterValue = 'Tümü'; 
+    const localFilter = document.getElementById('local-city-filter');
+    if(localFilter) localFilter.value = 'Tümü';
+
     // --- 6. Dashboard'u Çalıştır ---
     runDashboard();
 }
@@ -270,7 +279,11 @@ function applyDataFilterAndRunDashboard(viewId) {
 function runDashboard() {
     calculateAndDisplayDashboard();
     populateAllFilters(allStores); // Filtreleri o anki 'allStores' görünümüne göre doldur
-    renderRemainingStores(allStores); // Kalan bayileri o anki 'allStores' görünümüne göre listele
+    
+    // 'ApplyAndRepopulateFilters' fonksiyonu 'currentGlobalFilteredStores' değişkenini günceller
+    // ve 'renderRemainingStores'u çağırır. Bu yüzden doğrudan render çağırmak yerine
+    // filtre uygulayıcıyı tetikliyoruz. Bu sayede ilk açılışta da (varsayılan "Tümü") filtreler çalışır.
+    applyAndRepopulateFilters(); 
 }
 
 /**
@@ -315,6 +328,14 @@ function setupModuleEventListeners(userRole) {
     document.getElementById('yonetmen-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('sehir-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('ilce-filter').addEventListener('change', applyAndRepopulateFilters);
+
+    // YENİ EKLENDİ: Local Şehir Filtresi Dinleyicisi
+    document.getElementById('local-city-filter').addEventListener('change', (e) => {
+        localCityFilterValue = e.target.value;
+        // Global filtreler değişmediği için sadece 'currentGlobalFilteredStores' 
+        // kullanarak listeyi yeniden çiziyoruz.
+        renderRemainingStores(currentGlobalFilteredStores); 
+    });
 }
 
 async function resetProgress() {
@@ -487,32 +508,76 @@ function applyAndRepopulateFilters() {
         sehir: document.getElementById('sehir-filter').value, ilce: document.getElementById('ilce-filter').value
     };
     // 'allStores' zaten o anki görünüme (örn: "Benim Verilerim") göre filtrelenmiş durumda
-    let filteredStores = allStores.filter(s =>
+    currentGlobalFilteredStores = allStores.filter(s =>
         (selected.bolge === 'Tümü' || s.bolge === selected.bolge) &&
         (selected.yonetmen === 'Tümü' || s.yonetmen === selected.yonetmen) &&
         (selected.sehir === 'Tümü' || s.sehir === selected.sehir) &&
         (selected.ilce === 'Tümü' || s.ilce === selected.ilce)
     );
-    renderRemainingStores(filteredStores); // List_eyi bu alt filtreye göre yeniden çiz
+    // YENİ EKLENDİ: Local filtreleme için 'currentGlobalFilteredStores'u güncelledik.
+    // Listeyi bu filtrelenmiş sete göre çiz.
+    renderRemainingStores(currentGlobalFilteredStores); 
 }
 
 /**
  * O anki 'View'e göre 'Denetlenecek Bayiler' listesini (Bölge bazlı) çizer.
+ * YENİ ÖZELLİK: Local şehir filtresine göre de süzer.
  */
 function renderRemainingStores(filteredStores) {
     const container = document.getElementById('denetlenecek-bayiler-container');
     container.innerHTML = '';
+    
     // 'auditedStoreCodesCurrentMonth' zaten o anki görünüme göre filtrelenmiş
     const auditedCodesThisMonth = auditedStoreCodesCurrentMonth.map(audit => audit.code);
     
-    const remainingStores = filteredStores.filter(store => !auditedCodesThisMonth.includes(store.bayiKodu));
+    // 1. Önce henüz denetlenmemiş TÜM bayileri bul (Local filtre öncesi)
+    // Bu liste dropdown'ı doldurmak için kullanılacak.
+    const allRemainingStores = filteredStores.filter(store => !auditedCodesThisMonth.includes(store.bayiKodu));
 
-    if (remainingStores.length === 0) {
+    if (allRemainingStores.length === 0) {
+        // Dropdown'ı temizle
+        const select = document.getElementById('local-city-filter');
+        if(select) select.innerHTML = '<option value="Tümü">Şehir Yok</option>';
         container.innerHTML = `<p class="empty-list-message">Seçili kriterlere uygun, bu ay denetlenmemiş bayi bulunamadı.</p>`;
         return;
     }
 
-    const storesByRegion = remainingStores.reduce((acc, store) => {
+    // 2. Local Filtre Dropdown'ını Doldur
+    // Mevcut seçimi korumaya çalış, eğer listede yoksa 'Tümü' yap.
+    const select = document.getElementById('local-city-filter');
+    const previousSelection = localCityFilterValue; 
+    
+    // Kalan bayilerin şehirlerini benzersiz olarak al
+    const uniqueCities = [...new Set(allRemainingStores.map(s => s.sehir))].sort((a, b) => a.localeCompare(b, 'tr'));
+    
+    select.innerHTML = '<option value="Tümü">Tüm Şehirler</option>';
+    uniqueCities.forEach(city => {
+        if (city) {
+            select.innerHTML += `<option value="${city}">${city}</option>`;
+        }
+    });
+
+    // Eski seçimi geri yükle (Eğer hala geçerliyse)
+    if (uniqueCities.includes(previousSelection)) {
+        select.value = previousSelection;
+    } else {
+        select.value = 'Tümü';
+        localCityFilterValue = 'Tümü';
+    }
+
+    // 3. Listeyi Local Filtreye Göre Süz
+    const storesToShow = localCityFilterValue === 'Tümü' 
+        ? allRemainingStores 
+        : allRemainingStores.filter(s => s.sehir === localCityFilterValue);
+
+
+    // 4. Ekrana Çiz
+    if (storesToShow.length === 0) {
+        container.innerHTML = `<p class="empty-list-message">"${localCityFilterValue}" şehrinde denetlenmemiş bayi kalmadı.</p>`;
+        return;
+    }
+
+    const storesByRegion = storesToShow.reduce((acc, store) => {
         const region = store.bolge || 'Bölge Belirtilmemiş';
         (acc[region] = acc[region] || []).push(store);
         return acc;
@@ -520,7 +585,9 @@ function renderRemainingStores(filteredStores) {
 
     Object.keys(storesByRegion).sort().forEach(region => {
         const regionStores = storesByRegion[region];
-        // Bölge bazlı ilerleme de o anki 'allStores' (görünüm) listesi üzerinden hesaplanır
+        // Bölge bazlı ilerleme hesabı (Burada local filtreyi dikkate almıyoruz, genel ilerlemeyi gösteriyoruz)
+        // Ancak bu kafa karıştırıcı olabilir, o yüzden sadece listeyi çizmek daha sade.
+        // Yine de mevcut yapıyı koruyarak ilerleme çubuğunu o bölgedeki GENEL duruma göre bırakıyorum.
         const totalInRegion = allStores.filter(s => (s.bolge || 'Bölge Belirtilmemiş') === region).length;
         const auditedInRegion = allStores.filter(s => (s.bolge || 'Bölge Belirtilmemiş') === region && auditedCodesThisMonth.includes(s.bayiKodu)).length;
         const progress = totalInRegion > 0 ? (auditedInRegion / totalInRegion) * 100 : 0;
