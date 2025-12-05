@@ -8,7 +8,7 @@
   <style>
     /* --- GENEL VE MASAÜSTÜ STİLLERİ --- */
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fontu biraz daha modernleştirdik */
       margin: 20px;
       display: flex;
       flex-direction: column;
@@ -69,9 +69,9 @@
     /* MASAÜSTÜ TABLO YAPISI */
     .table-container {
       width: 100%;
-      max-width: 1000px; /* Tablo için biraz daha genişlik */
+      max-width: 1000px;
       margin: 0 auto;
-      overflow-x: auto; /* Taşarsa kaydırma çubuğu */
+      overflow-x: auto;
     }
     table {
       width: 100%;
@@ -82,7 +82,7 @@
       border: 1px solid #ddd;
       padding: 12px;
       text-align: left;
-      vertical-align: middle; /* İçerikleri dikey ortala */
+      vertical-align: middle;
     }
     th {
       background-color: #f2f2f2;
@@ -90,7 +90,6 @@
       top: 0;
       z-index: 10;
     }
-    /* Masaüstünde "Seç" ve "Görüntülü" sütunlarını ortala */
     .select-column {
       text-align: center;
       width: 80px;
@@ -100,7 +99,6 @@
       height: 20px;
       cursor: pointer;
     }
-    /* Masaüstünde butonlar yan yana */
     .action-column {
         display: flex;
         gap: 5px;
@@ -128,95 +126,114 @@
     .map-button:hover { transform: scale(1.1); }
 
 
-    /* --- SADECE MOBİL İÇİN GEÇERLİ STİLLER (KART GÖRÜNÜMÜ) --- */
+    /* --- MOBİL İÇİN ÖZEL STİLLER (KART GÖRÜNÜMÜ) --- */
     @media (max-width: 768px) {
-      /* Tablo Başlıklarını Gizle */
       thead { display: none; }
       
-      /* Tabloyu blok yapıya dönüştür */
       table, tbody {
         display: block;
         width: 100%;
       }
 
-      /* Her satırı bir KART yap */
       tr {
-        display: flex; /* Flexbox ile içerik sıralama */
-        flex-wrap: wrap; /* Sığmazsa aşağı at */
+        display: flex;
+        flex-wrap: wrap;
         align-items: center;
         margin-bottom: 15px;
         background-color: #fff;
         border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-radius: 12px; /* Köşeleri biraz daha yumuşattık */
+        box-shadow: 0 4px 8px rgba(0,0,0,0.06); /* Gölgeyi modernleştirdik */
         padding: 15px;
         position: relative;
       }
 
-      /* Hücreleri blok yap ve sınırları kaldır */
       td {
         display: block;
         border: none;
-        padding: 2px 5px;
+        padding: 2px 0; /* padding'i kıstık, hizalama için */
         font-size: 14px;
       }
 
-      /* --- MOBİL SIRALAMA (ORDER) --- */
+      /* --- MOBİL SIRALAMA VE TASARIM --- */
       
-      /* 1. SIRA: Bayi Adı (6. hücre) */
+      /* 1. SIRA: Bayi Adı (Başlık) */
       td:nth-child(6) {
         order: 1;
         width: 100%;
-        font-weight: bold;
+        font-weight: 800;
         font-size: 18px;
-        color: #333;
-        margin-bottom: 10px;
-        padding-bottom: 5px;
-        border-bottom: 2px solid #f0f0f0;
+        color: #1a1a1a;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #eee;
       }
 
-      /* 2. SIRA: Şehir / İlçe / Bayi Kodu */
-      /* Şehir (1. hücre) */
+      /* --- GÜNCELLENEN KISIM BAŞLANGIÇ --- */
+      
+      /* 2. SIRA: Şehir */
       td:nth-child(1) {
         order: 2;
         width: auto;
-        color: #555;
-        font-weight: 500;
+        color: #2c3e50; /* Koyu lacivert tonu */
+        font-weight: 700; /* Kalın */
+        font-size: 15px;
       }
-      td:nth-child(1)::after { content: " /"; color: #999; margin-left: 5px;}
+      /* Şehir yanına modern nokta koyuyoruz */
+      td:nth-child(1)::after { 
+          content: "•"; 
+          color: #bbb; 
+          margin: 0 6px; 
+          font-weight: normal;
+      }
 
-      /* İlçe (2. hücre) */
+      /* 2. SIRA: İlçe */
       td:nth-child(2) {
         order: 3;
         width: auto;
         color: #555;
+        font-size: 15px;
       }
-      td:nth-child(2)::after { content: " /"; color: #999; margin-left: 5px;}
+      /* İlçe yanındaki slash'i kaldırdık */
+      td:nth-child(2)::after { content: ""; }
 
-      /* Bayi Kodu (5. hücre) */
+      /* 2. SIRA: Bayi Kodu (Badge Tasarımı) */
       td:nth-child(5) {
         order: 4;
         width: auto;
-        color: #888;
-        font-style: italic;
+        margin-left: 8px; /* İlçeden biraz uzaklaşsın */
+        background-color: #e3f2fd; /* Açık mavi arka plan */
+        color: #1565c0; /* Mavi yazı */
+        padding: 3px 8px;
+        border-radius: 6px; /* Yuvarlak köşe */
+        font-size: 12px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
       }
+      /* Kodun başına # simgesi */
+      td:nth-child(5)::before {
+        content: "#";
+        margin-right: 2px;
+        opacity: 0.6;
+      }
+      /* --- GÜNCELLENEN KISIM BİTİŞ --- */
 
       /* Zorunlu satır başı için ara eleman */
       tr::after {
         content: "";
         width: 100%;
         order: 5;
-        height: 15px; /* Bilgiler ile alt kısım arası boşluk */
+        height: 15px; 
       }
 
       /* 3. SIRA SOL: Checkboxlar */
-      /* Seç Kutusu (3. hücre) */
       td:nth-child(3) {
         order: 6;
         width: auto;
         display: flex;
         align-items: center;
-        text-align: left; /* Mobilde sola yasla */
+        text-align: left; 
       }
       td:nth-child(3)::before {
         content: "Seç";
@@ -226,7 +243,6 @@
         font-weight: bold;
       }
 
-      /* Görüntülü Kutusu (4. hücre) */
       td:nth-child(4) {
         order: 7;
         width: auto;
@@ -243,16 +259,15 @@
         font-weight: bold;
       }
 
-      /* 3. SIRA SAĞ: Butonlar (7. hücre) */
+      /* 3. SIRA SAĞ: Butonlar */
       td:nth-child(7) {
         order: 8;
         width: auto;
-        margin-left: auto; /* Sağa yasla */
+        margin-left: auto; 
       }
-      /* Mobilde action-column içindeki flex yapısını koru */
       .action-column {
           display: flex;
-          gap: 5px;
+          gap: 8px; /* Buton aralarını biraz açtık */
       }
     }
   </style>
@@ -325,7 +340,7 @@
       table.style.display = data.length > 1 ? 'table' : 'none';
 
       data.forEach((row, index) => {
-        if (index === 0) return; // Başlık satırını atla
+        if (index === 0) return; 
 
         const sehir = row[4] || '';
         const ilce = row[5] || '';
@@ -341,7 +356,6 @@
           const td = document.createElement('td');
 
           if (colIndex === 2) { 
-            // SEÇ Sütunu
             td.className = 'select-column';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -349,7 +363,6 @@
             td.appendChild(checkbox);
           } 
           else if (colIndex === 3) {
-            // GÖRÜNTÜLÜ Sütunu 
             td.className = 'select-column';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -357,7 +370,6 @@
             td.appendChild(checkbox);
           }
           else if (colIndex === 6 && konum) {
-            // Konum Butonları
             const actionDiv = document.createElement('div');
             actionDiv.className = 'action-column';
 
@@ -443,10 +455,8 @@
         const selectBox = row.querySelector('.checkbox-select');
         
         if (selectBox && selectBox.checked) {
-          // Mobilde eklenen "/" işaretini temizlemek için textContent yerine nodeValue veya childNodes kullanabiliriz, 
-          // ancak en basiti replace ile temizlemektir.
-          const sehir = row.cells[0].textContent.replace(' /', '').trim();
-          const bayiKodu = row.cells[4].textContent;
+          const sehir = row.cells[0].textContent.replace('•', '').trim(); // Noktayı temizle
+          const bayiKodu = row.cells[4].textContent.replace('#', '').trim(); // # işaretini temizle
           const bayiAdi = row.cells[5].textContent;
 
           const videoBox = row.querySelector('.checkbox-video');
