@@ -3,15 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bayi Konum Otomasyonu (Görüntülü Mod)</title>
+  <title>Bayi Konum Otomasyonu (Duyarlı Mod)</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
   <style>
+    /* --- GENEL VE MASAÜSTÜ STİLLERİ --- */
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      background-color: #f9f9f9;
     }
     .header {
       font-size: 24px;
@@ -24,6 +26,7 @@
       margin-bottom: 20px;
       width: 90%;
       max-width: 800px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     #search {
       display: block;
@@ -38,6 +41,7 @@
     .buttons-container {
       display: flex;
       justify-content: center;
+      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 20px;
       width: 90%;
@@ -45,13 +49,14 @@
     }
     .buttons-container button,
     #customButton {
-      padding: 6px 12px;
+      padding: 8px 16px;
       font-size: 14px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       background-color: #059862;
       color: white;
+      text-align: center;
     }
     #customButton:hover,
     .buttons-container button:hover {
@@ -60,84 +65,208 @@
     #fileInput {
       display: none;
     }
+
+    /* MASAÜSTÜ TABLO YAPISI */
     .table-container {
-      display: inline-block;
-      overflow-x: auto;
-      max-width: 100%;
-      margin: 0 auto;
-      padding: 0 10px;
-      text-align: center;
       width: 100%;
+      max-width: 1000px; /* Tablo için biraz daha genişlik */
+      margin: 0 auto;
+      overflow-x: auto; /* Taşarsa kaydırma çubuğu */
     }
     table {
+      width: 100%;
       border-collapse: collapse;
-      width: auto;
-      table-layout: auto;
-      margin: 0 auto;
+      background-color: white;
     }
     th, td {
       border: 1px solid #ddd;
-      padding: 10px;
+      padding: 12px;
       text-align: left;
-      white-space: nowrap;
-      max-width: 250px;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      vertical-align: middle; /* İçerikleri dikey ortala */
     }
     th {
       background-color: #f2f2f2;
       position: sticky;
       top: 0;
+      z-index: 10;
     }
+    /* Masaüstünde "Seç" ve "Görüntülü" sütunlarını ortala */
     .select-column {
       text-align: center;
-      width: 60px;
+      width: 80px;
     }
     .select-column input {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       cursor: pointer;
     }
+    /* Masaüstünde butonlar yan yana */
+    .action-column {
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+    }
+
+    /* HARİTA BUTONLARI */
     .map-button {
       display: inline-flex;
       justify-content: center;
       align-items: center;
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       font-size: 14px;
       border: none;
       border-radius: 4px;
-      margin: 0 2px;
       color: white;
       cursor: pointer;
+      font-weight: bold;
+      transition: transform 0.1s;
     }
     .map-button.google { background-color: #4285F4; }
     .map-button.yandex { background-color: #FF0000; }
     .map-button.copy { background-color: #059862; }
-    .map-button:hover {
-      transform: scale(1.1);
-    }
+    .map-button:hover { transform: scale(1.1); }
+
+
+    /* --- SADECE MOBİL İÇİN GEÇERLİ STİLLER (KART GÖRÜNÜMÜ) --- */
     @media (max-width: 768px) {
-      .header { font-size: 20px; }
-      #search { font-size: 14px; }
-      th, td {
+      /* Tablo Başlıklarını Gizle */
+      thead { display: none; }
+      
+      /* Tabloyu blok yapıya dönüştür */
+      table, tbody {
+        display: block;
+        width: 100%;
+      }
+
+      /* Her satırı bir KART yap */
+      tr {
+        display: flex; /* Flexbox ile içerik sıralama */
+        flex-wrap: wrap; /* Sığmazsa aşağı at */
+        align-items: center;
+        margin-bottom: 15px;
+        background-color: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        padding: 15px;
+        position: relative;
+      }
+
+      /* Hücreleri blok yap ve sınırları kaldır */
+      td {
+        display: block;
+        border: none;
+        padding: 2px 5px;
         font-size: 14px;
-        padding: 8px;
-        max-width: 150px;
+      }
+
+      /* --- MOBİL SIRALAMA (ORDER) --- */
+      
+      /* 1. SIRA: Bayi Adı (6. hücre) */
+      td:nth-child(6) {
+        order: 1;
+        width: 100%;
+        font-weight: bold;
+        font-size: 18px;
+        color: #333;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #f0f0f0;
+      }
+
+      /* 2. SIRA: Şehir / İlçe / Bayi Kodu */
+      /* Şehir (1. hücre) */
+      td:nth-child(1) {
+        order: 2;
+        width: auto;
+        color: #555;
+        font-weight: 500;
+      }
+      td:nth-child(1)::after { content: " /"; color: #999; margin-left: 5px;}
+
+      /* İlçe (2. hücre) */
+      td:nth-child(2) {
+        order: 3;
+        width: auto;
+        color: #555;
+      }
+      td:nth-child(2)::after { content: " /"; color: #999; margin-left: 5px;}
+
+      /* Bayi Kodu (5. hücre) */
+      td:nth-child(5) {
+        order: 4;
+        width: auto;
+        color: #888;
+        font-style: italic;
+      }
+
+      /* Zorunlu satır başı için ara eleman */
+      tr::after {
+        content: "";
+        width: 100%;
+        order: 5;
+        height: 15px; /* Bilgiler ile alt kısım arası boşluk */
+      }
+
+      /* 3. SIRA SOL: Checkboxlar */
+      /* Seç Kutusu (3. hücre) */
+      td:nth-child(3) {
+        order: 6;
+        width: auto;
+        display: flex;
+        align-items: center;
+        text-align: left; /* Mobilde sola yasla */
+      }
+      td:nth-child(3)::before {
+        content: "Seç";
+        font-size: 14px;
+        margin-right: 8px;
+        color: #059862;
+        font-weight: bold;
+      }
+
+      /* Görüntülü Kutusu (4. hücre) */
+      td:nth-child(4) {
+        order: 7;
+        width: auto;
+        display: flex;
+        align-items: center;
+        margin-left: 15px;
+        text-align: left;
+      }
+      td:nth-child(4)::before {
+        content: "Görüntülü";
+        font-size: 14px;
+        margin-right: 8px;
+        color: #cc0000;
+        font-weight: bold;
+      }
+
+      /* 3. SIRA SAĞ: Butonlar (7. hücre) */
+      td:nth-child(7) {
+        order: 8;
+        width: auto;
+        margin-left: auto; /* Sağa yasla */
+      }
+      /* Mobilde action-column içindeki flex yapısını koru */
+      .action-column {
+          display: flex;
+          gap: 5px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="header">Bayi Konum Otomasyonu (Görüntülü Mod)</div>
-  <input type="text" id="search" placeholder="Arama yapın..." />
+  <div class="header">Bayi Konum Otomasyonu</div>
+  <input type="text" id="search" placeholder="Bayi, Şehir veya Kod Ara..." />
 
   <div class="buttons-container">
-    <label for="fileInput" id="customButton">Yükle</label>
+    <label for="fileInput" id="customButton">Dosya Yükle</label>
     <input type="file" id="fileInput" accept=".xlsx, .xls" />
-    <button id="copyButton">Kopyala</button>
+    <button id="copyButton">Seçilenleri Kopyala</button>
     <button id="clearButton">Temizle</button>
-    <button id="dbButton">DB</button>
+    <button id="dbButton">Veritabanını Sil</button>
   </div>
 
   <div class="table-container">
@@ -159,9 +288,8 @@
 
   <script>
     let excelData = [];
-    // Not: Eski 'copiedData' dizisine artık ihtiyacımız yok, 
-    // çünkü kopyalama anında tabloyu canlı tarıyoruz.
 
+    // Veri Süresi Kontrolü
     function checkDataExpiry() {
       const lastUploadDate = localStorage.getItem('lastUploadDate');
       if (lastUploadDate) {
@@ -175,11 +303,13 @@
       }
     }
 
+    // Veriyi Kaydet
     function saveDataToLocalStorage() {
       localStorage.setItem('lastUploadDate', new Date().toISOString());
       localStorage.setItem('excelData', JSON.stringify(excelData));
     }
 
+    // Yandex Harita Aç
     function openYandexMaps(coordinates) {
       const cleanedCoords = coordinates.trim().replace(/\s+/g, '');
       const [lat, lon] = cleanedCoords.split(',');
@@ -187,6 +317,7 @@
       window.open(url, '_blank');
     }
 
+    // Tabloyu Ekrana Bas
     function displayResults(data) {
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
@@ -194,7 +325,7 @@
       table.style.display = data.length > 1 ? 'table' : 'none';
 
       data.forEach((row, index) => {
-        if (index === 0) return;
+        if (index === 0) return; // Başlık satırını atla
 
         const sehir = row[4] || '';
         const ilce = row[5] || '';
@@ -203,7 +334,7 @@
         const konum = row[10] || '';
 
         const tr = document.createElement('tr');
-        // Yeni sütun yapısı: Şehir | İlçe | SEÇ | GÖRÜNTÜLÜ | Kod | Ad | Konum
+        // Sütun Sırası: 0:Şehir, 1:İlçe, 2:Seç, 3:Görüntülü, 4:Kod, 5:Ad, 6:Konum
         const cells = [sehir, ilce, 'SEÇ', 'GÖRÜNTÜLÜ', bayiKodu, bayiAdi, konum];
 
         cells.forEach((cell, colIndex) => {
@@ -214,43 +345,47 @@
             td.className = 'select-column';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.classList.add('checkbox-select'); // Seçim için özel sınıf
+            checkbox.classList.add('checkbox-select'); 
             td.appendChild(checkbox);
           } 
           else if (colIndex === 3) {
-            // GÖRÜNTÜLÜ Sütunu (Yeni)
+            // GÖRÜNTÜLÜ Sütunu 
             td.className = 'select-column';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.classList.add('checkbox-video'); // Görüntülü için özel sınıf
+            checkbox.classList.add('checkbox-video'); 
             td.appendChild(checkbox);
           }
           else if (colIndex === 6 && konum) {
-            // Konum Butonları Sütunu (İndeks kaydı: 5 -> 6)
+            // Konum Butonları
+            const actionDiv = document.createElement('div');
+            actionDiv.className = 'action-column';
+
             const gBtn = document.createElement('button');
             gBtn.className = 'map-button google';
             gBtn.innerHTML = 'G';
-            gBtn.title = 'Google Haritalar\'da aç';
+            gBtn.title = 'Google Haritalar';
             gBtn.onclick = () => window.open(`https://www.google.com/maps/search/?api=1&query=${konum}`, '_blank');
 
             const yBtn = document.createElement('button');
             yBtn.className = 'map-button yandex';
             yBtn.innerHTML = 'Y';
-            yBtn.title = 'Yandex Haritalar\'da rota oluştur';
+            yBtn.title = 'Yandex Rota';
             yBtn.onclick = () => openYandexMaps(konum);
 
             const cBtn = document.createElement('button');
             cBtn.className = 'map-button copy';
             cBtn.innerHTML = 'K';
-            cBtn.title = 'Koordinatları kopyala';
+            cBtn.title = 'Kopyala';
             cBtn.onclick = () => {
               navigator.clipboard.writeText(konum);
               alert('Koordinatlar kopyalandı.');
             };
 
-            td.appendChild(gBtn);
-            td.appendChild(yBtn);
-            td.appendChild(cBtn);
+            actionDiv.appendChild(gBtn);
+            actionDiv.appendChild(yBtn);
+            actionDiv.appendChild(cBtn);
+            td.appendChild(actionDiv);
           } else {
             td.textContent = cell || '';
           }
@@ -260,14 +395,9 @@
 
         tbody.appendChild(tr);
       });
-
-      setTimeout(() => {
-        const container = document.querySelector('.table-container');
-        const tableWidth = table.offsetWidth;
-        container.style.maxWidth = `${Math.min(tableWidth + 20, window.innerWidth - 40)}px`;
-      }, 0);
     }
 
+    // Sayfa Yüklendiğinde
     document.addEventListener('DOMContentLoaded', () => {
       checkDataExpiry();
       const saved = localStorage.getItem('excelData');
@@ -277,6 +407,7 @@
       }
     });
 
+    // Dosya Yükleme
     document.getElementById('fileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (file) {
@@ -293,6 +424,7 @@
       }
     });
 
+    // Arama Fonksiyonu
     document.getElementById('search').addEventListener('input', function(e) {
       const query = e.target.value.toLowerCase();
       const filtered = excelData.filter((row, i) => {
@@ -302,27 +434,25 @@
       displayResults(filtered);
     });
 
-    // GÜNCELLENEN KOPYALAMA FONKSİYONU
+    // Kopyalama Fonksiyonu
     document.getElementById('copyButton').addEventListener('click', () => {
       const rows = document.querySelectorAll('#tableBody tr');
       let textToCopy = [];
 
       rows.forEach(row => {
-        // "Seç" kutusunu bul
         const selectBox = row.querySelector('.checkbox-select');
         
         if (selectBox && selectBox.checked) {
-          // Hücrelerden veriyi al (Sütun indeksleri değiştiği için: 0=Şehir, 4=Kod, 5=Ad)
-          const sehir = row.cells[0].textContent;
+          // Mobilde eklenen "/" işaretini temizlemek için textContent yerine nodeValue veya childNodes kullanabiliriz, 
+          // ancak en basiti replace ile temizlemektir.
+          const sehir = row.cells[0].textContent.replace(' /', '').trim();
           const bayiKodu = row.cells[4].textContent;
           const bayiAdi = row.cells[5].textContent;
 
-          // "Görüntülü" kutusunu bul
           const videoBox = row.querySelector('.checkbox-video');
           const isVideo = videoBox && videoBox.checked;
           const denetimTuru = isVideo ? "Görüntülü" : "Rutin";
 
-          // Formatı oluştur
           const satirMetni = `Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdi}\nŞehir: ${sehir}\nDenetim Türü: ${denetimTuru}`;
           textToCopy.push(satirMetni);
         }
@@ -332,22 +462,24 @@
         const finalText = `Bugün FiDe Yapılacak Bayiler:\n\n${textToCopy.join('\n\n')}`;
         navigator.clipboard.writeText(finalText).then(() => alert('Veri kopyalandı!'));
       } else {
-        alert('Öncelikle "Seç" sütunundan en az bir bayi seçin!');
+        alert('Öncelikle "Seç" kutucuğundan en az bir bayi seçin!');
       }
     });
 
+    // Temizleme Butonu
     document.getElementById('clearButton').addEventListener('click', () => {
-      // Tüm kutucukları temizle
       document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-      // Not: Artık copiedData dizisi olmadığı için onu sıfırlamaya gerek yok.
     });
 
+    // Veritabanı Silme Butonu
     document.getElementById('dbButton').addEventListener('click', () => {
-      localStorage.clear();
-      excelData = [];
-      document.getElementById('tableBody').innerHTML = '';
-      document.getElementById('resultsTable').style.display = 'none';
-      alert('Veritabanı sıfırlandı!');
+      if(confirm('Tüm kayıtlı veriler silinecek. Emin misiniz?')) {
+        localStorage.clear();
+        excelData = [];
+        document.getElementById('tableBody').innerHTML = '';
+        document.getElementById('resultsTable').style.display = 'none';
+        alert('Veritabanı sıfırlandı!');
+      }
     });
   </script>
 </body>
