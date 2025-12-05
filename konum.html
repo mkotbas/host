@@ -8,7 +8,7 @@
   <style>
     /* --- GENEL VE MASAÜSTÜ STİLLERİ --- */
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fontu biraz daha modernleştirdik */
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 20px;
       display: flex;
       flex-direction: column;
@@ -57,6 +57,7 @@
       background-color: #059862;
       color: white;
       text-align: center;
+      white-space: nowrap;
     }
     #customButton:hover,
     .buttons-container button:hover {
@@ -126,8 +127,27 @@
     .map-button:hover { transform: scale(1.1); }
 
 
-    /* --- MOBİL İÇİN ÖZEL STİLLER (KART GÖRÜNÜMÜ) --- */
+    /* --- MOBİL İÇİN ÖZEL STİLLER --- */
     @media (max-width: 768px) {
+      
+      /* --- BUTONLARI TEK SATIRA SIĞDIRMA --- */
+      .buttons-container {
+        flex-wrap: nowrap;
+        gap: 5px;
+        width: 100%;
+        padding: 0 5px;
+        box-sizing: border-box; 
+      }
+      
+      .buttons-container button,
+      #customButton {
+        flex: 1;
+        padding: 10px 2px;
+        font-size: 12px;
+        min-width: 0;
+      }
+
+      /* --- KART GÖRÜNÜMÜ --- */
       thead { display: none; }
       
       table, tbody {
@@ -142,8 +162,8 @@
         margin-bottom: 15px;
         background-color: #fff;
         border: 1px solid #e0e0e0;
-        border-radius: 12px; /* Köşeleri biraz daha yumuşattık */
-        box-shadow: 0 4px 8px rgba(0,0,0,0.06); /* Gölgeyi modernleştirdik */
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.06);
         padding: 15px;
         position: relative;
       }
@@ -151,13 +171,13 @@
       td {
         display: block;
         border: none;
-        padding: 2px 0; /* padding'i kıstık, hizalama için */
+        padding: 2px 0;
         font-size: 14px;
       }
 
-      /* --- MOBİL SIRALAMA VE TASARIM --- */
+      /* MOBİL SIRALAMA VE TASARIM */
       
-      /* 1. SIRA: Bayi Adı (Başlık) */
+      /* 1. SIRA: Bayi Adı */
       td:nth-child(6) {
         order: 1;
         width: 100%;
@@ -169,17 +189,14 @@
         border-bottom: 1px solid #eee;
       }
 
-      /* --- GÜNCELLENEN KISIM BAŞLANGIÇ --- */
-      
       /* 2. SIRA: Şehir */
       td:nth-child(1) {
         order: 2;
         width: auto;
-        color: #2c3e50; /* Koyu lacivert tonu */
-        font-weight: 700; /* Kalın */
+        color: #2c3e50;
+        font-weight: 700;
         font-size: 15px;
       }
-      /* Şehir yanına modern nokta koyuyoruz */
       td:nth-child(1)::after { 
           content: "•"; 
           color: #bbb; 
@@ -194,32 +211,29 @@
         color: #555;
         font-size: 15px;
       }
-      /* İlçe yanındaki slash'i kaldırdık */
       td:nth-child(2)::after { content: ""; }
 
-      /* 2. SIRA: Bayi Kodu (Badge Tasarımı) */
+      /* 2. SIRA: Bayi Kodu (Badge) */
       td:nth-child(5) {
         order: 4;
         width: auto;
-        margin-left: 8px; /* İlçeden biraz uzaklaşsın */
-        background-color: #e3f2fd; /* Açık mavi arka plan */
-        color: #1565c0; /* Mavi yazı */
+        margin-left: 8px;
+        background-color: #e3f2fd;
+        color: #1565c0;
         padding: 3px 8px;
-        border-radius: 6px; /* Yuvarlak köşe */
+        border-radius: 6px;
         font-size: 12px;
         font-weight: bold;
         display: flex;
         align-items: center;
       }
-      /* Kodun başına # simgesi */
       td:nth-child(5)::before {
         content: "#";
         margin-right: 2px;
         opacity: 0.6;
       }
-      /* --- GÜNCELLENEN KISIM BİTİŞ --- */
 
-      /* Zorunlu satır başı için ara eleman */
+      /* Zorunlu satır başı */
       tr::after {
         content: "";
         width: 100%;
@@ -227,7 +241,11 @@
         height: 15px; 
       }
 
+      /* --- GÜNCELLENEN ALAN (CHECKBOX KISMI) --- */
+
       /* 3. SIRA SOL: Checkboxlar */
+      
+      /* 'Seç' Kutusu */
       td:nth-child(3) {
         order: 6;
         width: auto;
@@ -238,23 +256,25 @@
       td:nth-child(3)::before {
         content: "Seç";
         font-size: 14px;
-        margin-right: 8px;
+        margin-right: 4px;
         color: #059862;
         font-weight: bold;
       }
 
+      /* 'Görüntü' Kutusu */
       td:nth-child(4) {
         order: 7;
         width: auto;
         display: flex;
         align-items: center;
-        margin-left: 15px;
+        margin-left: 8px;
         text-align: left;
       }
+      /* Etiketi 'Görüntü' olarak güncelledik */
       td:nth-child(4)::before {
-        content: "Görüntülü";
+        content: "Görüntü"; 
         font-size: 14px;
-        margin-right: 8px;
+        margin-right: 4px;
         color: #cc0000;
         font-weight: bold;
       }
@@ -267,7 +287,7 @@
       }
       .action-column {
           display: flex;
-          gap: 8px; /* Buton aralarını biraz açtık */
+          gap: 8px;
       }
     }
   </style>
@@ -455,8 +475,8 @@
         const selectBox = row.querySelector('.checkbox-select');
         
         if (selectBox && selectBox.checked) {
-          const sehir = row.cells[0].textContent.replace('•', '').trim(); // Noktayı temizle
-          const bayiKodu = row.cells[4].textContent.replace('#', '').trim(); // # işaretini temizle
+          const sehir = row.cells[0].textContent.replace('•', '').trim(); 
+          const bayiKodu = row.cells[4].textContent.replace('#', '').trim(); 
           const bayiAdi = row.cells[5].textContent;
 
           const videoBox = row.querySelector('.checkbox-video');
