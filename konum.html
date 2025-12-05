@@ -241,8 +241,6 @@
         height: 15px; 
       }
 
-      /* --- GÜNCELLENEN ALAN (CHECKBOX KISMI) --- */
-
       /* 3. SIRA SOL: Checkboxlar */
       
       /* 'Seç' Kutusu */
@@ -270,7 +268,6 @@
         margin-left: 8px;
         text-align: left;
       }
-      /* Etiketi 'Görüntü' olarak güncelledik */
       td:nth-child(4)::before {
         content: "Görüntü"; 
         font-size: 14px;
@@ -466,7 +463,7 @@
       displayResults(filtered);
     });
 
-    // Kopyalama Fonksiyonu
+    // Kopyalama Fonksiyonu (Whatsapp Formatlı)
     document.getElementById('copyButton').addEventListener('click', () => {
       const rows = document.querySelectorAll('#tableBody tr');
       let textToCopy = [];
@@ -482,15 +479,20 @@
           const videoBox = row.querySelector('.checkbox-video');
           const isVideo = videoBox && videoBox.checked;
           const denetimTuru = isVideo ? "Görüntülü" : "Rutin";
-
-          const satirMetni = `Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdi}\nŞehir: ${sehir}\nDenetim Türü: ${denetimTuru}`;
+          
+          // Whatsapp için özel simgeler ve format
+          const turSimge = isVideo ? "📹" : "📋";
+          
+          // Satır Metni - DEĞİŞİKLİK BURADA YAPILDI
+          const satirMetni = `🏢 *Bayi:* ${bayiAdi}\n🆔 *Kod:* ${bayiKodu}\n📍 *Şehir:* ${sehir}\n${turSimge} *Denetim Türü:* ${denetimTuru}`;
           textToCopy.push(satirMetni);
         }
       });
 
       if (textToCopy.length > 0) {
-        const finalText = `Bugün FiDe Yapılacak Bayiler:\n\n${textToCopy.join('\n\n')}`;
-        navigator.clipboard.writeText(finalText).then(() => alert('Veri kopyalandı!'));
+        // Whatsapp Başlığı
+        const finalText = `📅 *BUGÜN FİDE YAPILACAK BAYİLER*\n\n${textToCopy.join('\n\n------------------\n\n')}`;
+        navigator.clipboard.writeText(finalText).then(() => alert('Whatsapp formatında kopyalandı!'));
       } else {
         alert('Öncelikle "Seç" kutucuğundan en az bir bayi seçin!');
       }
