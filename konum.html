@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bayi Konum Otomasyonu (Yeni)</title>
+  <title>Bayi Konum Otomasyonu (Görüntülü Mod)</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
   <style>
     body {
@@ -91,7 +91,7 @@
     }
     .select-column {
       text-align: center;
-      width: 50px;
+      width: 60px;
     }
     .select-column input {
       width: 18px;
@@ -129,7 +129,7 @@
   </style>
 </head>
 <body>
-  <div class="header">Bayi Konum Otomasyonu (Yeni)</div>
+  <div class="header">Bayi Konum Otomasyonu (Görüntülü Mod)</div>
   <input type="text" id="search" placeholder="Arama yapın..." />
 
   <div class="buttons-container">
@@ -147,6 +147,7 @@
           <th>Şehir</th>
           <th>İlçe</th>
           <th class="select-column">Seç</th>
+          <th class="select-column">Görüntülü</th>
           <th>Bayi Kodu</th>
           <th>Bayi Adı</th>
           <th>Konum</th>
@@ -158,7 +159,8 @@
 
   <script>
     let excelData = [];
-    let copiedData = [];
+    // Not: Eski 'copiedData' dizisine artık ihtiyacımız yok, 
+    // çünkü kopyalama anında tabloyu canlı tarıyoruz.
 
     function checkDataExpiry() {
       const lastUploadDate = localStorage.getItem('lastUploadDate');
@@ -181,12 +183,7 @@
     function openYandexMaps(coordinates) {
       const cleanedCoords = coordinates.trim().replace(/\s+/g, '');
       const [lat, lon] = cleanedCoords.split(',');
-      
-      // Yeni rota planlama URL'si
-      // rtext: ~ ile sadece hedef belirtilir (kullanıcı konumu otomatik alınır)
-      // rtt=auto: rota türü otomatik seçilir (araba/yürüme/toplu taşıma)
       const url = `https://yandex.com.tr/harita/?rtext=~${lat},${lon}&rtt=auto`;
-      
       window.open(url, '_blank');
     }
 
@@ -206,18 +203,30 @@
         const konum = row[10] || '';
 
         const tr = document.createElement('tr');
-        const cells = [sehir, ilce, 'SEÇ', bayiKodu, bayiAdi, konum];
+        // Yeni sütun yapısı: Şehir | İlçe | SEÇ | GÖRÜNTÜLÜ | Kod | Ad | Konum
+        const cells = [sehir, ilce, 'SEÇ', 'GÖRÜNTÜLÜ', bayiKodu, bayiAdi, konum];
 
         cells.forEach((cell, colIndex) => {
           const td = document.createElement('td');
 
-          if (colIndex === 2) {
+          if (colIndex === 2) { 
+            // SEÇ Sütunu
             td.className = 'select-column';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.classList.add('checkbox');
+            checkbox.classList.add('checkbox-select'); // Seçim için özel sınıf
             td.appendChild(checkbox);
-          } else if (colIndex === 5 && konum) {
+          } 
+          else if (colIndex === 3) {
+            // GÖRÜNTÜLÜ Sütunu (Yeni)
+            td.className = 'select-column';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.classList.add('checkbox-video'); // Görüntülü için özel sınıf
+            td.appendChild(checkbox);
+          }
+          else if (colIndex === 6 && konum) {
+            // Konum Butonları Sütunu (İndeks kaydı: 5 -> 6)
             const gBtn = document.createElement('button');
             gBtn.className = 'map-button google';
             gBtn.innerHTML = 'G';
@@ -293,41 +302,49 @@
       displayResults(filtered);
     });
 
-    document.getElementById('resultsTable').addEventListener('change', function(e) {
-      if (e.target.type === 'checkbox') {
-        const row = e.target.closest('tr');
-        const bayiKodu = row.cells[3].textContent.trim();
-        const bayiAdi = row.cells[4].textContent.trim();
-        const sehir = row.cells[0].textContent.trim();
-
-        if (e.target.checked) {
-          copiedData.push(`Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdi}\nŞehir: ${sehir}`);
-        } else {
-          copiedData = copiedData.filter(item => !item.includes(`Bayi Kodu: ${bayiKodu}`));
-        }
-      }
-    });
-
+    // GÜNCELLENEN KOPYALAMA FONKSİYONU
     document.getElementById('copyButton').addEventListener('click', () => {
-      if (copiedData.length > 0) {
-        const text = `Bugün FiDe Yapılacak Bayiler:\n\n${copiedData.join('\n\n')}`;
-        navigator.clipboard.writeText(text).then(() => alert('Veri kopyalandı!'));
+      const rows = document.querySelectorAll('#tableBody tr');
+      let textToCopy = [];
+
+      rows.forEach(row => {
+        // "Seç" kutusunu bul
+        const selectBox = row.querySelector('.checkbox-select');
+        
+        if (selectBox && selectBox.checked) {
+          // Hücrelerden veriyi al (Sütun indeksleri değiştiği için: 0=Şehir, 4=Kod, 5=Ad)
+          const sehir = row.cells[0].textContent;
+          const bayiKodu = row.cells[4].textContent;
+          const bayiAdi = row.cells[5].textContent;
+
+          // "Görüntülü" kutusunu bul
+          const videoBox = row.querySelector('.checkbox-video');
+          const isVideo = videoBox && videoBox.checked;
+          const denetimTuru = isVideo ? "Görüntülü" : "Rutin";
+
+          // Formatı oluştur
+          const satirMetni = `Bayi Kodu: ${bayiKodu}\nBayi Adı: ${bayiAdi}\nŞehir: ${sehir}\nDenetim Türü: ${denetimTuru}`;
+          textToCopy.push(satirMetni);
+        }
+      });
+
+      if (textToCopy.length > 0) {
+        const finalText = `Bugün FiDe Yapılacak Bayiler:\n\n${textToCopy.join('\n\n')}`;
+        navigator.clipboard.writeText(finalText).then(() => alert('Veri kopyalandı!'));
       } else {
-        alert('Öncelikle bir veri seçin!');
+        alert('Öncelikle "Seç" sütunundan en az bir bayi seçin!');
       }
     });
 
     document.getElementById('clearButton').addEventListener('click', () => {
-      document.querySelectorAll('.checkbox').forEach(cb => cb.checked = false);
-      copiedData = [];
-      document.getElementById('tableBody').innerHTML = '';
-      document.getElementById('resultsTable').style.display = 'none';
+      // Tüm kutucukları temizle
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+      // Not: Artık copiedData dizisi olmadığı için onu sıfırlamaya gerek yok.
     });
 
     document.getElementById('dbButton').addEventListener('click', () => {
       localStorage.clear();
       excelData = [];
-      copiedData = [];
       document.getElementById('tableBody').innerHTML = '';
       document.getElementById('resultsTable').style.display = 'none';
       alert('Veritabanı sıfırlandı!');
