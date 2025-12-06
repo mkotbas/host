@@ -490,7 +490,7 @@
 
       if (textToCopy.length > 0) {
         // Whatsapp Başlığı (Emoji Kaldırıldı)
-        const finalText = `*BUGÜN FİDE YAPILACAK BAYİLER*\n\n${textToCopy.join('\n\n------------------\n\n')}`;
+        const finalText = `*Bugün FiDe Yapıllacak Bayiler;*\n\n${textToCopy.join('\n\n------------------\n\n')}`;
         navigator.clipboard.writeText(finalText).then(() => alert('Whatsapp formatında kopyalandı!'));
       } else {
         alert('Öncelikle "Seç" kutucuğundan en az bir bayi seçin!');
