@@ -483,15 +483,14 @@
           // Whatsapp için özel simgeler ve format
           const turSimge = isVideo ? "📹" : "📋";
           
-          // Satır Metni - DEĞİŞİKLİK BURADA YAPILDI
           const satirMetni = `🏢 *Bayi:* ${bayiAdi}\n🆔 *Kod:* ${bayiKodu}\n📍 *Şehir:* ${sehir}\n${turSimge} *Denetim Türü:* ${denetimTuru}`;
           textToCopy.push(satirMetni);
         }
       });
 
       if (textToCopy.length > 0) {
-        // Whatsapp Başlığı
-        const finalText = `📅 *BUGÜN FİDE YAPILACAK BAYİLER*\n\n${textToCopy.join('\n\n------------------\n\n')}`;
+        // Whatsapp Başlığı (Emoji Kaldırıldı)
+        const finalText = `*BUGÜN FİDE YAPILACAK BAYİLER*\n\n${textToCopy.join('\n\n------------------\n\n')}`;
         navigator.clipboard.writeText(finalText).then(() => alert('Whatsapp formatında kopyalandı!'));
       } else {
         alert('Öncelikle "Seç" kutucuğundan en az bir bayi seçin!');
