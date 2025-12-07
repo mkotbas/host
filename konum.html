@@ -351,6 +351,7 @@
       displayResults(filtered);
     });
 
+    // --- GÜNCELLENEN KISIM BURASI (Kopyalama İşlemi) ---
     document.getElementById('copyButton').addEventListener('click', () => {
       let textToCopy = [];
       excelData.forEach((row, index) => {
@@ -361,21 +362,24 @@
           const bayiAdi = row[9];
           const isVideo = videoCodes.has(bKodu);
           const denetimTuru = isVideo ? "Görüntülü" : "Rutin";
-          const turSimge = isVideo ? "📹" : "📋";
+          // Emojiler kaldırıldı, sadece metin ve kalınlaştırma (*) işaretleri var
           const cleanCode = bKodu.replace('#', '').trim();
 
-          const satirMetni = `🏢 *Bayi:* ${bayiAdi}\n🆔 *Kod:* ${cleanCode}\n📍 *Şehir:* ${sehir}\n${turSimge} *Denetim Türü:* ${denetimTuru}`;
+          // Resimdeki formata uygun sade yapı
+          const satirMetni = `*Bayi:* ${bayiAdi}\n*Kod:* ${cleanCode}\n*Şehir:* ${sehir}\n*Denetim Türü:* ${denetimTuru}`;
           textToCopy.push(satirMetni);
         }
       });
 
       if (textToCopy.length > 0) {
-        const finalText = `*Bugün FiDe Yapılacak Bayiler;*\n\n${textToCopy.join('\n\n------------------\n\n')}`;
+        // Her bayi arasına tire (-) eklenirken fazladan boşluklar kaldırıldı
+        const finalText = `*Bugün FiDe Yapılacak Bayiler;*\n\n${textToCopy.join('\n------------------\n')}`;
         navigator.clipboard.writeText(finalText).then(() => alert('Whatsapp formatında kopyalandı!'));
       } else {
         alert('Öncelikle "Seç" kutucuğundan en az bir bayi seçin!');
       }
     });
+    // --- GÜNCELLEME SONU ---
 
     document.getElementById('clearButton').addEventListener('click', () => {
       selectedCodes.clear();
