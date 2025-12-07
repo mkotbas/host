@@ -5,6 +5,72 @@
     color: #333; 
 }
 
+/* --- EKLENEN MODERN STİLLER (Görünüm Düzeltmesi) --- */
+
+/* Giriş Kutucukları (Input) Stili */
+.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1em;
+    color: #333;
+    background-color: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box; /* Kutucukların taşmasını engeller */
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Buton Temel Stilleri */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95em;
+    gap: 8px; /* İkon ile yazı arası boşluk */
+    text-decoration: none;
+    line-height: 1.5;
+}
+
+.btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Buton Renk Varyasyonları */
+.btn-primary { background-color: #007bff; color: white; }
+.btn-primary:hover { background-color: #0069d9; }
+
+.btn-secondary { background-color: #6c757d; color: white; }
+.btn-secondary:hover { background-color: #5a6268; }
+
+.btn-success { background-color: #28a745; color: white; }
+.btn-success:hover { background-color: #218838; }
+
+.btn-danger { background-color: #dc3545; color: white; }
+.btn-danger:hover { background-color: #c82333; }
+
+.btn-warning { background-color: #ffc107; color: #212529; }
+.btn-warning:hover { background-color: #e0a800; }
+
+.btn-info { background-color: #17a2b8; color: white; }
+.btn-info:hover { background-color: #138496; }
+
+/* --- MEVCUT MODÜL STİLLERİ --- */
+
 /* Üst Araç Çubuğu */
 .toolbar {
     display: flex;
@@ -175,7 +241,7 @@
     background-color: #f1f3f5;
 }
 
-/* Eylem Butonları (İkon-Sadece) */
+/* Eylem Butonları (Tablo İçi Özel Ayar) */
 #bayi-table .action-buttons {
     display: flex;
     gap: 10px;
@@ -189,6 +255,7 @@
     font-size: 1em; 
     justify-content: center; 
     flex-shrink: 0; 
+    /* Tablo butonları için özel override */
 }
 
 /* Arama Çubuğu Satırı Stilleri */
@@ -279,8 +346,6 @@
     display: flex;
     flex-direction: column;
 }
-
-/* .form-control style.css'den geliyor */
 
 .form-actions {
     display: flex;
