@@ -208,7 +208,7 @@
 
   <script>
     let excelData = [];
-    let selectedCodes = new Set(); // Hafıza: Seçilen bayi kodları
+    let selectedCodes = []; // ÖNEMLİ GÜNCELLEME: Sırayı korumak için Set yerine Array kullanıldı.
     let videoCodes = new Set();    // Hafıza: Görüntülü seçilen kodlar
 
     function checkDataExpiry() {
@@ -264,11 +264,24 @@
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.className = 'checkbox-select';
-            if (selectedCodes.has(bayiKodu)) checkbox.checked = true;
             
+            // Seçim durumunu kontrol et
+            if (selectedCodes.includes(bayiKodu)) checkbox.checked = true;
+            
+            // GÜNCELLEME: Seçim sırasını koruyarak ekleme/çıkarma
             checkbox.addEventListener('change', (e) => {
-              if (e.target.checked) selectedCodes.add(bayiKodu);
-              else selectedCodes.delete(bayiKodu);
+              if (e.target.checked) {
+                // Eğer listede yoksa ekle (sırayı korumak için push)
+                if (!selectedCodes.includes(bayiKodu)) {
+                    selectedCodes.push(bayiKodu);
+                }
+              } else {
+                // Listedeyse kaldır (sırayı korumak için splice)
+                const index = selectedCodes.indexOf(bayiKodu);
+                if (index > -1) {
+                  selectedCodes.splice(index, 1);
+                }
+              }
             });
             td.appendChild(checkbox);
           } 
@@ -320,6 +333,7 @@
       const saved = localStorage.getItem('excelData');
       if (saved) {
         excelData = JSON.parse(saved);
+        // selectedCodes ve videoCodes hafızada tutulmadığı için yeniden yüklemede temiz kalır.
         displayResults(excelData);
       }
     });
@@ -333,7 +347,7 @@
           const workbook = XLSX.read(data, { type: 'array' });
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-          selectedCodes.clear();
+          selectedCodes = []; // GÜNCELLEME
           videoCodes.clear();
           displayResults(excelData);
           saveDataToLocalStorage();
@@ -351,22 +365,37 @@
       displayResults(filtered);
     });
 
-    // --- GÜNCELLENEN KISIM BURASI (Kopyalama İşlemi) ---
+    // --- KOPYALAMA İŞLEMİ GÜNCELLENDİ (Sıra Koruma) ---
     document.getElementById('copyButton').addEventListener('click', () => {
       let textToCopy = [];
+      
+      // Bayi kodlarına göre veriye hızlı erişim için Map oluştur
+      const dataMap = new Map();
       excelData.forEach((row, index) => {
         if (index === 0) return;
         const bKodu = row[7] ? row[7].toString() : null;
-        if (bKodu && selectedCodes.has(bKodu)) {
+        if (bKodu) {
+          dataMap.set(bKodu, row);
+        }
+      });
+
+      // selectedCodes Array'i üzerinde döngü kurarak seçim sırasını takip et
+      selectedCodes.forEach(bKodu => {
+        const row = dataMap.get(bKodu); // Sıradaki bayi verisini Map'ten al
+        
+        if (row) {
           const sehir = (row[4] || '').toString().replace('•', '').trim();
           const bayiAdi = row[9];
           const isVideo = videoCodes.has(bKodu);
-          const denetimTuru = isVideo ? "Görüntülü" : "Rutin";
-          // Emojiler kaldırıldı, sadece metin ve kalınlaştırma (*) işaretleri var
+          
+          // Denetim türü metni ve emojisi belirleniyor
+          const denetimMetni = isVideo ? "Görüntülü" : "Rutin";
+          const denetimEmoji = isVideo ? "📸" : "📋";
+
           const cleanCode = bKodu.replace('#', '').trim();
 
-          // Resimdeki formata uygun sade yapı
-          const satirMetni = `*Bayi:* ${bayiAdi}\n*Kod:* ${cleanCode}\n*Şehir:* ${sehir}\n*Denetim Türü:* ${denetimTuru}`;
+          // İstediğin emojili format
+          const satirMetni = `🏢 *Bayi:* ${bayiAdi}\n🪪 *Kod:* ${cleanCode}\n📌 *Şehir:* ${sehir}\n${denetimEmoji} *Denetim Türü:* ${denetimMetni}`;
           textToCopy.push(satirMetni);
         }
       });
@@ -374,7 +403,7 @@
       if (textToCopy.length > 0) {
         // Her bayi arasına tire (-) eklenirken fazladan boşluklar kaldırıldı
         const finalText = `*Bugün FiDe Yapılacak Bayiler;*\n\n${textToCopy.join('\n------------------\n')}`;
-        navigator.clipboard.writeText(finalText).then(() => alert('Whatsapp formatında kopyalandı!'));
+        navigator.clipboard.writeText(finalText).then(() => alert('Whatsapp formatında emojili ve sırasına uygun olarak kopyalandı!'));
       } else {
         alert('Öncelikle "Seç" kutucuğundan en az bir bayi seçin!');
       }
@@ -382,7 +411,7 @@
     // --- GÜNCELLEME SONU ---
 
     document.getElementById('clearButton').addEventListener('click', () => {
-      selectedCodes.clear();
+      selectedCodes = []; // GÜNCELLEME
       videoCodes.clear();
       document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
       alert("Tüm seçimler temizlendi.");
@@ -392,7 +421,7 @@
       if(confirm('Tüm kayıtlı veriler silinecek. Emin misiniz?')) {
         localStorage.clear();
         excelData = [];
-        selectedCodes.clear();
+        selectedCodes = []; // GÜNCELLEME
         videoCodes.clear();
         document.getElementById('tableBody').innerHTML = '';
         document.getElementById('resultsTable').style.display = 'none';
