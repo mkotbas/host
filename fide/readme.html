@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.11</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.12</strong></p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.11)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.12)</li>
                 <li><strong>KURAL: Dökümanı "Canlı" Tut:</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. Sistemin o anki çalışan son halini yansıtmalıdır.</li>
                 <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
                 <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
@@ -458,7 +458,13 @@
                 </li>
                 <li><code>state.js</code> (Durum Yönetimi): <code>dideData</code>, <code>fideData</code>, <code>fideQuestions</code>, <code>selectedStore</code> gibi tüm uygulama tarafından kullanılan global değişkenleri tutar ve <code>set...</code> fonksiyonları ile güvenli bir şekilde güncellenmesini sağlar.</li>
                 <li><code>store.js</code>: Bayi arama (<code>displayStores</code>) ve seçme (<code>selectStore</code>) mantığını içerir. Bir bayi seçildiğinde, <code>api.loadReportForStore</code>'u tetikler.</li>
-                <li><code>excel.js</code>: <code>handleFileSelect</code> ve <code>processDideExcelData</code>/<code>processFideExcelData</code> fonksiyonları ile yüklenen DiDe/FiDe Excel dosyalarını okur, işler ve <code>excel_verileri</code> koleksiyonuna kaydeder.</li>
+                <li><code>excel.js</code>: DiDe ve FiDe puan dosyalarını okuyan modüldür.
+                    <ul>
+                        <li><code>handleFileSelect</code>: Dosya seçimini dinler.</li>
+                        <li><strong>DiDe Okuma Mantığı:</strong> Dosyada tam olarak "Bayi Kodu" yazan hücreyi arar ve bunu başlık satırı kabul eder. Bu satırda ayrıca "Bayi" ve "Bayi Yönetmeni" başlıklarının olması zorunludur. Puanları okumak için sütun başlıklarında "1", "2"... "12" şeklinde sadece rakam olan (Ocak=1 vb.) sütunlara bakar.</li>
+                        <li><strong>FiDe Okuma Mantığı:</strong> Dosyada içinde bulunulan yılı (Örn: 2025) içeren bir hücre arar. Bu satırın hemen altındaki satırı "Aylar" satırı olarak kabul eder. Sol taraftaki "Bayi Kodu" sütunu ile ayları eşleştirerek puanları çeker.</li>
+                    </ul>
+                </li>
                 <li><code>utils.js</code>: Genel yardımcıları içerir. En önemlileri <code>showLoadingOverlay</code> (yükleniyor ekranı) ve <code>showLockoutOverlay</code> (kullanıcıyı kilitleyen kırmızı ekran).</li>
             </ul>
 
