@@ -67,7 +67,6 @@
       display: none;
     }
 
-    /* MASAÜSTÜ TABLO YAPISI */
     .table-container {
       width: 100%;
       max-width: 1000px;
@@ -106,7 +105,6 @@
         justify-content: center;
     }
 
-    /* HARİTA BUTONLARI */
     .map-button {
       display: inline-flex;
       justify-content: center;
@@ -126,11 +124,7 @@
     .map-button.copy { background-color: #059862; }
     .map-button:hover { transform: scale(1.1); }
 
-
-    /* --- MOBİL İÇİN ÖZEL STİLLER --- */
     @media (max-width: 768px) {
-      
-      /* --- BUTONLARI TEK SATIRA SIĞDIRMA --- */
       .buttons-container {
         flex-wrap: nowrap;
         gap: 5px;
@@ -138,7 +132,6 @@
         padding: 0 5px;
         box-sizing: border-box; 
       }
-      
       .buttons-container button,
       #customButton {
         flex: 1;
@@ -146,15 +139,8 @@
         font-size: 12px;
         min-width: 0;
       }
-
-      /* --- KART GÖRÜNÜMÜ --- */
       thead { display: none; }
-      
-      table, tbody {
-        display: block;
-        width: 100%;
-      }
-
+      table, tbody { display: block; width: 100%; }
       tr {
         display: flex;
         flex-wrap: wrap;
@@ -167,125 +153,27 @@
         padding: 15px;
         position: relative;
       }
-
-      td {
-        display: block;
-        border: none;
-        padding: 2px 0;
-        font-size: 14px;
-      }
-
-      /* MOBİL SIRALAMA VE TASARIM */
-      
-      /* 1. SIRA: Bayi Adı */
+      td { display: block; border: none; padding: 2px 0; font-size: 14px; }
       td:nth-child(6) {
-        order: 1;
-        width: 100%;
-        font-weight: 800;
-        font-size: 18px;
-        color: #1a1a1a;
-        margin-bottom: 8px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #eee;
+        order: 1; width: 100%; font-weight: 800; font-size: 18px; color: #1a1a1a;
+        margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;
       }
-
-      /* 2. SIRA: Şehir */
-      td:nth-child(1) {
-        order: 2;
-        width: auto;
-        color: #2c3e50;
-        font-weight: 700;
-        font-size: 15px;
-      }
-      td:nth-child(1)::after { 
-          content: "•"; 
-          color: #bbb; 
-          margin: 0 6px; 
-          font-weight: normal;
-      }
-
-      /* 2. SIRA: İlçe */
-      td:nth-child(2) {
-        order: 3;
-        width: auto;
-        color: #555;
-        font-size: 15px;
-      }
-      td:nth-child(2)::after { content: ""; }
-
-      /* 2. SIRA: Bayi Kodu (Badge) */
+      td:nth-child(1) { order: 2; width: auto; color: #2c3e50; font-weight: 700; font-size: 15px; }
+      td:nth-child(1)::after { content: "•"; color: #bbb; margin: 0 6px; font-weight: normal; }
+      td:nth-child(2) { order: 3; width: auto; color: #555; font-size: 15px; }
       td:nth-child(5) {
-        order: 4;
-        width: auto;
-        margin-left: 8px;
-        background-color: #e3f2fd;
-        color: #1565c0;
-        padding: 3px 8px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
+        order: 4; width: auto; margin-left: 8px; background-color: #e3f2fd;
+        color: #1565c0; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;
+        display: flex; align-items: center;
       }
-      td:nth-child(5)::before {
-        content: "#";
-        margin-right: 2px;
-        opacity: 0.6;
-      }
-
-      /* Zorunlu satır başı */
-      tr::after {
-        content: "";
-        width: 100%;
-        order: 5;
-        height: 15px; 
-      }
-
-      /* 3. SIRA SOL: Checkboxlar */
-      
-      /* 'Seç' Kutusu */
-      td:nth-child(3) {
-        order: 6;
-        width: auto;
-        display: flex;
-        align-items: center;
-        text-align: left; 
-      }
-      td:nth-child(3)::before {
-        content: "Seç";
-        font-size: 14px;
-        margin-right: 4px;
-        color: #059862;
-        font-weight: bold;
-      }
-
-      /* 'Görüntü' Kutusu */
-      td:nth-child(4) {
-        order: 7;
-        width: auto;
-        display: flex;
-        align-items: center;
-        margin-left: 8px;
-        text-align: left;
-      }
-      td:nth-child(4)::before {
-        content: "Görüntü"; 
-        font-size: 14px;
-        margin-right: 4px;
-        color: #cc0000;
-        font-weight: bold;
-      }
-
-      /* 3. SIRA SAĞ: Butonlar */
-      td:nth-child(7) {
-        order: 8;
-        width: auto;
-        margin-left: auto; 
-      }
-      .action-column {
-          display: flex;
-          gap: 8px;
-      }
+      td:nth-child(5)::before { content: "#"; margin-right: 2px; opacity: 0.6; }
+      tr::after { content: ""; width: 100%; order: 5; height: 15px; }
+      td:nth-child(3) { order: 6; width: auto; display: flex; align-items: center; text-align: left; }
+      td:nth-child(3)::before { content: "Seç"; font-size: 14px; margin-right: 4px; color: #059862; font-weight: bold; }
+      td:nth-child(4) { order: 7; width: auto; display: flex; align-items: center; margin-left: 8px; text-align: left; }
+      td:nth-child(4)::before { content: "Görüntü"; font-size: 14px; margin-right: 4px; color: #cc0000; font-weight: bold; }
+      td:nth-child(7) { order: 8; width: auto; margin-left: auto; }
+      .action-column { display: flex; gap: 8px; }
     }
   </style>
 </head>
@@ -320,8 +208,9 @@
 
   <script>
     let excelData = [];
+    let selectedCodes = new Set(); // Hafıza: Seçilen bayi kodları
+    let videoCodes = new Set();    // Hafıza: Görüntülü seçilen kodlar
 
-    // Veri Süresi Kontrolü
     function checkDataExpiry() {
       const lastUploadDate = localStorage.getItem('lastUploadDate');
       if (lastUploadDate) {
@@ -335,13 +224,11 @@
       }
     }
 
-    // Veriyi Kaydet
     function saveDataToLocalStorage() {
       localStorage.setItem('lastUploadDate', new Date().toISOString());
       localStorage.setItem('excelData', JSON.stringify(excelData));
     }
 
-    // Yandex Harita Aç
     function openYandexMaps(coordinates) {
       const cleanedCoords = coordinates.trim().replace(/\s+/g, '');
       const [lat, lon] = cleanedCoords.split(',');
@@ -349,24 +236,24 @@
       window.open(url, '_blank');
     }
 
-    // Tabloyu Ekrana Bas
     function displayResults(data) {
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
       const table = document.getElementById('resultsTable');
-      table.style.display = data.length > 1 ? 'table' : 'none';
+      table.style.display = (data.length > 0 || excelData.length > 1) ? 'table' : 'none';
 
       data.forEach((row, index) => {
-        if (index === 0) return; 
+        // Excel başlığını veya boş satırı atla (Bayi Kodu sütunu kontrolüyle)
+        if (index === 0 && (row[7] === 'Bayi Kodu' || row[7] === undefined)) return;
+        if (!row[7]) return;
 
         const sehir = row[4] || '';
         const ilce = row[5] || '';
-        const bayiKodu = row[7] || '';
+        const bayiKodu = row[7].toString(); 
         const bayiAdi = row[9] || '';
         const konum = row[10] || '';
 
         const tr = document.createElement('tr');
-        // Sütun Sırası: 0:Şehir, 1:İlçe, 2:Seç, 3:Görüntülü, 4:Kod, 5:Ad, 6:Konum
         const cells = [sehir, ilce, 'SEÇ', 'GÖRÜNTÜLÜ', bayiKodu, bayiAdi, konum];
 
         cells.forEach((cell, colIndex) => {
@@ -376,14 +263,26 @@
             td.className = 'select-column';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.classList.add('checkbox-select'); 
+            checkbox.className = 'checkbox-select';
+            if (selectedCodes.has(bayiKodu)) checkbox.checked = true;
+            
+            checkbox.addEventListener('change', (e) => {
+              if (e.target.checked) selectedCodes.add(bayiKodu);
+              else selectedCodes.delete(bayiKodu);
+            });
             td.appendChild(checkbox);
           } 
           else if (colIndex === 3) {
             td.className = 'select-column';
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
-            checkbox.classList.add('checkbox-video'); 
+            checkbox.className = 'checkbox-video';
+            if (videoCodes.has(bayiKodu)) checkbox.checked = true;
+
+            checkbox.addEventListener('change', (e) => {
+              if (e.target.checked) videoCodes.add(bayiKodu);
+              else videoCodes.delete(bayiKodu);
+            });
             td.appendChild(checkbox);
           }
           else if (colIndex === 6 && konum) {
@@ -391,42 +290,31 @@
             actionDiv.className = 'action-column';
 
             const gBtn = document.createElement('button');
-            gBtn.className = 'map-button google';
-            gBtn.innerHTML = 'G';
-            gBtn.title = 'Google Haritalar';
+            gBtn.className = 'map-button google'; gBtn.innerHTML = 'G';
             gBtn.onclick = () => window.open(`https://www.google.com/maps/search/?api=1&query=${konum}`, '_blank');
 
             const yBtn = document.createElement('button');
-            yBtn.className = 'map-button yandex';
-            yBtn.innerHTML = 'Y';
-            yBtn.title = 'Yandex Rota';
+            yBtn.className = 'map-button yandex'; yBtn.innerHTML = 'Y';
             yBtn.onclick = () => openYandexMaps(konum);
 
             const cBtn = document.createElement('button');
-            cBtn.className = 'map-button copy';
-            cBtn.innerHTML = 'K';
-            cBtn.title = 'Kopyala';
+            cBtn.className = 'map-button copy'; cBtn.innerHTML = 'K';
             cBtn.onclick = () => {
               navigator.clipboard.writeText(konum);
               alert('Koordinatlar kopyalandı.');
             };
 
-            actionDiv.appendChild(gBtn);
-            actionDiv.appendChild(yBtn);
-            actionDiv.appendChild(cBtn);
+            actionDiv.appendChild(gBtn); actionDiv.appendChild(yBtn); actionDiv.appendChild(cBtn);
             td.appendChild(actionDiv);
           } else {
             td.textContent = cell || '';
           }
-
           tr.appendChild(td);
         });
-
         tbody.appendChild(tr);
       });
     }
 
-    // Sayfa Yüklendiğinde
     document.addEventListener('DOMContentLoaded', () => {
       checkDataExpiry();
       const saved = localStorage.getItem('excelData');
@@ -436,7 +324,6 @@
       }
     });
 
-    // Dosya Yükleme
     document.getElementById('fileInput').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (file) {
@@ -446,6 +333,8 @@
           const workbook = XLSX.read(data, { type: 'array' });
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          selectedCodes.clear();
+          videoCodes.clear();
           displayResults(excelData);
           saveDataToLocalStorage();
         };
@@ -453,7 +342,6 @@
       }
     });
 
-    // Arama Fonksiyonu
     document.getElementById('search').addEventListener('input', function(e) {
       const query = e.target.value.toLowerCase();
       const filtered = excelData.filter((row, i) => {
@@ -463,50 +351,45 @@
       displayResults(filtered);
     });
 
-    // Kopyalama Fonksiyonu (Whatsapp Formatlı)
     document.getElementById('copyButton').addEventListener('click', () => {
-      const rows = document.querySelectorAll('#tableBody tr');
       let textToCopy = [];
-
-      rows.forEach(row => {
-        const selectBox = row.querySelector('.checkbox-select');
-        
-        if (selectBox && selectBox.checked) {
-          const sehir = row.cells[0].textContent.replace('•', '').trim(); 
-          const bayiKodu = row.cells[4].textContent.replace('#', '').trim(); 
-          const bayiAdi = row.cells[5].textContent;
-
-          const videoBox = row.querySelector('.checkbox-video');
-          const isVideo = videoBox && videoBox.checked;
+      excelData.forEach((row, index) => {
+        if (index === 0) return;
+        const bKodu = row[7] ? row[7].toString() : null;
+        if (bKodu && selectedCodes.has(bKodu)) {
+          const sehir = (row[4] || '').toString().replace('•', '').trim();
+          const bayiAdi = row[9];
+          const isVideo = videoCodes.has(bKodu);
           const denetimTuru = isVideo ? "Görüntülü" : "Rutin";
-          
-          // Whatsapp için özel simgeler ve format
           const turSimge = isVideo ? "📹" : "📋";
-          
-          const satirMetni = `🏢 *Bayi:* ${bayiAdi}\n🆔 *Kod:* ${bayiKodu}\n📍 *Şehir:* ${sehir}\n${turSimge} *Denetim Türü:* ${denetimTuru}`;
+          const cleanCode = bKodu.replace('#', '').trim();
+
+          const satirMetni = `🏢 *Bayi:* ${bayiAdi}\n🆔 *Kod:* ${cleanCode}\n📍 *Şehir:* ${sehir}\n${turSimge} *Denetim Türü:* ${denetimTuru}`;
           textToCopy.push(satirMetni);
         }
       });
 
       if (textToCopy.length > 0) {
-        // Whatsapp Başlığı (Emoji Kaldırıldı)
-        const finalText = `*Bugün FiDe Yapıllacak Bayiler;*\n\n${textToCopy.join('\n\n------------------\n\n')}`;
+        const finalText = `*Bugün FiDe Yapılacak Bayiler;*\n\n${textToCopy.join('\n\n------------------\n\n')}`;
         navigator.clipboard.writeText(finalText).then(() => alert('Whatsapp formatında kopyalandı!'));
       } else {
         alert('Öncelikle "Seç" kutucuğundan en az bir bayi seçin!');
       }
     });
 
-    // Temizleme Butonu
     document.getElementById('clearButton').addEventListener('click', () => {
+      selectedCodes.clear();
+      videoCodes.clear();
       document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+      alert("Tüm seçimler temizlendi.");
     });
 
-    // Veritabanı Silme Butonu
     document.getElementById('dbButton').addEventListener('click', () => {
       if(confirm('Tüm kayıtlı veriler silinecek. Emin misiniz?')) {
         localStorage.clear();
         excelData = [];
+        selectedCodes.clear();
+        videoCodes.clear();
         document.getElementById('tableBody').innerHTML = '';
         document.getElementById('resultsTable').style.display = 'none';
         alert('Veritabanı sıfırlandı!');
