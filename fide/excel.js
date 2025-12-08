@@ -12,6 +12,40 @@ export function initExcel(pbInstance) {
 }
 
 /**
+ * Hafızadaki kayıtlı ayarları kontrol eder.
+ * Dosya yapısı (imzası) tutuyorsa kayıtlı ayarları döndürür.
+ */
+function checkSavedMapping(dataAsArray, type) {
+    const storageKey = 'excel_mapping_' + type;
+    const savedJson = localStorage.getItem(storageKey);
+    
+    if (!savedJson) return null; // Kayıt yok
+
+    try {
+        const savedConfig = JSON.parse(savedJson);
+        const rowIndex = savedConfig.headerRowIndex;
+
+        // Dosya o satıra sahip mi?
+        if (rowIndex >= dataAsArray.length) return null;
+
+        const currentRow = dataAsArray[rowIndex];
+        // Basit bir imza oluştur: Satırdaki dolu hücreleri birleştir
+        const currentSignature = currentRow.map(c => String(c || "").trim()).join("|");
+
+        // İmzalar eşleşiyor mu? (Yani dosya yapısı aynı mı?)
+        if (currentSignature === savedConfig.signature) {
+            console.log(`${type.toUpperCase()} için kayıtlı ayarlar kullanılıyor.`);
+            return savedConfig;
+        } else {
+            console.log(`${type.toUpperCase()} dosya yapısı değişmiş. Yeni ayar isteniyor.`);
+        }
+    } catch (e) {
+        console.error("Kayıtlı ayar okuma hatası:", e);
+    }
+    return null;
+}
+
+/**
  * Kullanıcıdan Excel sütun eşleştirmesi yapmasını isteyen sihirbazı yönetir.
  * @param {Array} dataAsArray Tüm Excel verisi
  * @param {'dide'|'fide'} type İşlem tipi
@@ -69,34 +103,24 @@ function openMappingModal(dataAsArray, type) {
             stepColumn.style.display = 'block';
             saveBtn.disabled = false;
 
-            // --- GÜNCELLEME BURADA ---
-            // Eğer tip 'fide' ise, kullanıcı YIL satırını seçmiştir.
-            // Başlıklar (Bayi Kodu vb.) genellikle bir alt satırdadır.
-            // Bu yüzden etiketleri okumak için bir alt satıra bakacağız.
-            let labelRowData = rowData; // Varsayılan (DiDe için)
-            
+            // --- GÜNCELLEME: FiDe için alt satır başlıklarını okuma ---
+            let labelRowData = rowData; 
             if (type === 'fide') {
-                // Bir alt satır var mı diye kontrol et
                 if (rowIndex + 1 < dataAsArray.length) {
                     labelRowData = dataAsArray[rowIndex + 1];
                 }
             }
-            // ------------------------
 
             // Sütun seçim kutularını doldur
             const fillSelect = (selectEl) => {
                 selectEl.innerHTML = '<option value="">-- Sütun Seçin --</option>';
-                // Sütun sayısı olarak en uzun satırı baz almak daha güvenli ama şimdilik labelRowData uzunluğunu kullanıyoruz.
-                // labelRowData boş olabilir, bu yüzden rowData uzunluğunu da kontrol edelim.
                 const columnCount = Math.max(rowData.length, labelRowData.length);
 
                 for (let i = 0; i < columnCount; i++) {
                     const cell = labelRowData[i];
-                    // Hücre içeriğini al, yoksa (Boş) yaz
                     const cellText = (cell !== null && cell !== undefined && String(cell).trim() !== "") 
                                      ? String(cell).substring(0, 40) 
                                      : "(Boş)";
-                    
                     selectEl.innerHTML += `<option value="${i}">Sütun ${i + 1}: ${cellText}</option>`;
                 }
             };
@@ -114,15 +138,19 @@ function openMappingModal(dataAsArray, type) {
             const selectedMapping = {
                 headerRowIndex: rowIndex,
                 bayiKoduIndex: parseInt(mapBayiKodu.value),
-                // DiDe için opsiyonel alanlar
                 bayiAdiIndex: type === 'dide' ? parseInt(mapBayiAdi.value) : -1,
-                yonetmenIndex: type === 'dide' ? parseInt(mapYonetmen.value) : -1
+                yonetmenIndex: type === 'dide' ? parseInt(mapYonetmen.value) : -1,
+                // İMZA OLUŞTURMA: Bu dosyanın yapısını hatırlamak için
+                signature: dataAsArray[rowIndex].map(c => String(c || "").trim()).join("|")
             };
 
             if (isNaN(selectedMapping.bayiKoduIndex)) {
                 alert("Lütfen en azından 'Bayi Kodu' sütununu seçin.");
                 return;
             }
+
+            // --- AYARLARI HAFIZAYA KAYDET ---
+            localStorage.setItem('excel_mapping_' + type, JSON.stringify(selectedMapping));
 
             modal.style.display = 'none';
             resolve(selectedMapping);
@@ -139,8 +167,6 @@ function openMappingModal(dataAsArray, type) {
 
 /**
  * DiDe Excel verisini işler ve buluta kaydeder.
- * @param {Array} dataAsArray Excel'den okunmuş ham veri.
- * @returns {Promise<Array|null>} İşlenmiş veri veya hata durumunda null.
  */
 async function processDideExcelData(dataAsArray, filename) {
     if (dataAsArray.length < 2) {
@@ -149,18 +175,21 @@ async function processDideExcelData(dataAsArray, filename) {
     }
 
     try {
-        // Kullanıcıya eşleştirme yaptır
-        const mapping = await openMappingModal(dataAsArray, 'dide');
+        // Önce hafızayı kontrol et, yoksa kullanıcıya sor
+        let mapping = checkSavedMapping(dataAsArray, 'dide');
+        if (!mapping) {
+            mapping = await openMappingModal(dataAsArray, 'dide');
+        }
+        
         showLoadingOverlay("Veriler işleniyor...");
 
         const headerRow = dataAsArray[mapping.headerRowIndex];
         const dataRows = dataAsArray.slice(mapping.headerRowIndex + 1);
         
         const processedData = dataRows.map(row => {
-            if (!row[mapping.bayiKoduIndex]) return null; // Bayi kodu yoksa atla
+            if (!row[mapping.bayiKoduIndex]) return null;
             
             const scores = {};
-            // Başlık satırında 1-12 arası rakam olan sütunları bul ve puanları al
             headerRow.forEach((header, index) => {
                 const monthNumber = parseInt(header);
                 if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
@@ -176,7 +205,6 @@ async function processDideExcelData(dataAsArray, filename) {
             };
         }).filter(d => d);
         
-        // Buluta Kaydetme Kısmı
         if (pb && pb.authStore.isValid) {
             const dataToSave = { "tip": "dide", "dosyaAdi": filename, "veri": processedData };
             try {
@@ -196,15 +224,13 @@ async function processDideExcelData(dataAsArray, filename) {
         return processedData;
 
     } catch (e) {
-        console.log(e); // İptal edilirse buraya düşer
+        console.log(e);
         return null;
     }
 }
 
 /**
  * FiDe Excel verisini işler ve buluta kaydeder.
- * @param {Array} dataAsArray Excel'den okunmuş ham veri.
- * @returns {Promise<Array|null>} İşlenmiş veri veya hata durumunda null.
  */
 async function processFideExcelData(dataAsArray, filename) {
     if (dataAsArray.length < 3) {
@@ -213,21 +239,23 @@ async function processFideExcelData(dataAsArray, filename) {
     }
 
     try {
-        // Kullanıcıya eşleştirme yaptır (FiDe için)
-        // Burada headerRowIndex aslında YILIN olduğu satır olacak
-        const mapping = await openMappingModal(dataAsArray, 'fide');
+        // Önce hafızayı kontrol et, yoksa kullanıcıya sor
+        let mapping = checkSavedMapping(dataAsArray, 'fide');
+        if (!mapping) {
+            mapping = await openMappingModal(dataAsArray, 'fide');
+        }
+
         showLoadingOverlay("Veriler işleniyor...");
 
         const yearRowIndex = mapping.headerRowIndex;
         const yearRow = dataAsArray[yearRowIndex];
-        const monthRow = dataAsArray[yearRowIndex + 1]; // Ayların hemen altta olduğunu varsayıyoruz
+        const monthRow = dataAsArray[yearRowIndex + 1]; 
         
         if (!monthRow) {
             alert("Seçilen yıl satırının altında ay bilgileri bulunamadı.");
             return null;
         }
 
-        // Yılları doldurma mantığı (Excel merged cells mantığı)
         const filledYearRow = yearRow.reduce((acc, cell) => {
             acc.lastKnown = (cell !== null && cell !== undefined && String(cell).trim() !== "") ? String(cell).trim() : acc.lastKnown;
             acc.result.push(acc.lastKnown);
@@ -235,13 +263,12 @@ async function processFideExcelData(dataAsArray, filename) {
         }, { result: [], lastKnown: null }).result;
 
         const currentYear = new Date().getFullYear();
-        const dataRows = dataAsArray.slice(yearRowIndex + 2); // Veriler 2 satır alttan başlar
+        const dataRows = dataAsArray.slice(yearRowIndex + 2); 
 
         const processedData = dataRows.map(row => {
             if (!row[mapping.bayiKoduIndex]) return null;
             const scores = {};
             
-            // Tüm sütunları gez, yılı ve ayı tutanları bul
             for (let i = 0; i < filledYearRow.length; i++) {
                 if (filledYearRow[i] == currentYear) {
                     const monthNumber = parseInt(monthRow[i]);
@@ -253,7 +280,6 @@ async function processFideExcelData(dataAsArray, filename) {
             return { 'Bayi Kodu': row[mapping.bayiKoduIndex], 'scores': scores };
         }).filter(d => d);
 
-        // Buluta Kaydet
         if (pb && pb.authStore.isValid) {
             const dataToSave = { "tip": "fide", "dosyaAdi": filename, "veri": processedData };
             try {
@@ -291,9 +317,6 @@ export async function handleFileSelect(event, type) {
     const filename = file.name;
     const fileNameSpan = type === 'dide' ? document.getElementById('file-name') : document.getElementById('fide-file-name');
     fileNameSpan.textContent = `Yüklü dosya: ${filename}`;
-    
-    // Yükleme ekranını hemen gösterme, sihirbazdan sonra göstereceğiz
-    // Sadece okuma için bekle
     
     return new Promise((resolve) => {
         const reader = new FileReader();
