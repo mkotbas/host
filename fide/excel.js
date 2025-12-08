@@ -12,17 +12,51 @@ export function initExcel(pbInstance) {
 }
 
 /**
- * Hafızadaki kayıtlı ayarları kontrol eder.
- * Dosya yapısı (imzası) tutuyorsa kayıtlı ayarları döndürür.
+ * Ayarları buluta (PocketBase -> ayarlar koleksiyonuna) kaydeder.
  */
-function checkSavedMapping(dataAsArray, type) {
-    const storageKey = 'excel_mapping_' + type;
-    const savedJson = localStorage.getItem(storageKey);
+async function saveMappingToCloud(type, mapping) {
+    if (!pb || !pb.authStore.isValid) return;
     
-    if (!savedJson) return null; // Kayıt yok
+    const key = `excel_mapping_${type}`; // Anahtar örn: excel_mapping_dide
+    const dataToSave = {
+        anahtar: key,
+        deger: mapping
+    };
 
     try {
-        const savedConfig = JSON.parse(savedJson);
+        // Önce var mı diye kontrol et
+        try {
+            const record = await pb.collection('ayarlar').getFirstListItem(`anahtar="${key}"`);
+            // Varsa güncelle
+            await pb.collection('ayarlar').update(record.id, { deger: mapping });
+        } catch (err) {
+            // Yoksa (404) yeni oluştur
+            if (err.status === 404) {
+                await pb.collection('ayarlar').create(dataToSave);
+            } else {
+                throw err;
+            }
+        }
+        console.log(`${type.toUpperCase()} ayarları buluta kaydedildi.`);
+    } catch (error) {
+        console.error("Ayarlar buluta kaydedilemedi:", error);
+    }
+}
+
+/**
+ * Buluttaki kayıtlı ayarları kontrol eder.
+ * Dosya yapısı (imzası) tutuyorsa kayıtlı ayarları döndürür.
+ */
+async function checkSavedMapping(dataAsArray, type) {
+    if (!pb || !pb.authStore.isValid) return null;
+
+    try {
+        const key = `excel_mapping_${type}`;
+        const record = await pb.collection('ayarlar').getFirstListItem(`anahtar="${key}"`);
+        const savedConfig = record.deger;
+        
+        if (!savedConfig) return null;
+
         const rowIndex = savedConfig.headerRowIndex;
 
         // Dosya o satıra sahip mi?
@@ -34,13 +68,14 @@ function checkSavedMapping(dataAsArray, type) {
 
         // İmzalar eşleşiyor mu? (Yani dosya yapısı aynı mı?)
         if (currentSignature === savedConfig.signature) {
-            console.log(`${type.toUpperCase()} için kayıtlı ayarlar kullanılıyor.`);
+            console.log(`${type.toUpperCase()} için BULUTTAKİ ayarlar kullanılıyor.`);
             return savedConfig;
         } else {
             console.log(`${type.toUpperCase()} dosya yapısı değişmiş. Yeni ayar isteniyor.`);
         }
     } catch (e) {
-        console.error("Kayıtlı ayar okuma hatası:", e);
+        // Kayıt bulunamazsa (404) veya hata olursa null dön, sihirbazı aç
+        if (e.status !== 404) console.error("Bulut ayar okuma hatası:", e);
     }
     return null;
 }
@@ -103,7 +138,7 @@ function openMappingModal(dataAsArray, type) {
             stepColumn.style.display = 'block';
             saveBtn.disabled = false;
 
-            // --- GÜNCELLEME: FiDe için alt satır başlıklarını okuma ---
+            // --- FİDE İÇİN ALT SATIR OKUMA ---
             let labelRowData = rowData; 
             if (type === 'fide') {
                 if (rowIndex + 1 < dataAsArray.length) {
@@ -133,7 +168,7 @@ function openMappingModal(dataAsArray, type) {
         };
 
         // Kaydet butonu
-        saveBtn.onclick = () => {
+        saveBtn.onclick = async () => {
             const rowIndex = parseInt(rowSelect.value);
             const selectedMapping = {
                 headerRowIndex: rowIndex,
@@ -149,8 +184,10 @@ function openMappingModal(dataAsArray, type) {
                 return;
             }
 
-            // --- AYARLARI HAFIZAYA KAYDET ---
-            localStorage.setItem('excel_mapping_' + type, JSON.stringify(selectedMapping));
+            // --- AYARLARI BULUTA KAYDET ---
+            // Bu işlem asenkron olduğu için kullanıcıyı bekletmemek adına arka planda başlatıyoruz
+            // ancak hata alırsak kullanıcıyı uyarmayacağız, sessizce devam edecek.
+            saveMappingToCloud(type, selectedMapping);
 
             modal.style.display = 'none';
             resolve(selectedMapping);
@@ -175,8 +212,8 @@ async function processDideExcelData(dataAsArray, filename) {
     }
 
     try {
-        // Önce hafızayı kontrol et, yoksa kullanıcıya sor
-        let mapping = checkSavedMapping(dataAsArray, 'dide');
+        // Önce BULUTU kontrol et, yoksa kullanıcıya sor
+        let mapping = await checkSavedMapping(dataAsArray, 'dide');
         if (!mapping) {
             mapping = await openMappingModal(dataAsArray, 'dide');
         }
@@ -239,8 +276,8 @@ async function processFideExcelData(dataAsArray, filename) {
     }
 
     try {
-        // Önce hafızayı kontrol et, yoksa kullanıcıya sor
-        let mapping = checkSavedMapping(dataAsArray, 'fide');
+        // Önce BULUTU kontrol et, yoksa kullanıcıya sor
+        let mapping = await checkSavedMapping(dataAsArray, 'fide');
         if (!mapping) {
             mapping = await openMappingModal(dataAsArray, 'fide');
         }

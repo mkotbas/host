@@ -149,6 +149,7 @@ function setupEventListeners() {
             api.clearExcelFromCloud('fide');
         }
     });
+    
     document.getElementById('store-search-input').addEventListener('keyup', (e) => {
         state.setSelectedStore(null); 
         state.setCurrentReportId(null);
