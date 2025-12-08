@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.12</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.13</strong></p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.12)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.13)</li>
                 <li><strong>KURAL: Dökümanı "Canlı" Tut:</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. Sistemin o anki çalışan son halini yansıtmalıdır.</li>
                 <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
                 <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
@@ -280,6 +280,7 @@
                 <li><strong>Kimlik Doğrulama:</strong> <code>api.js</code> üzerinden <code>loginUser</code> fonksiyonu ile güvenli giriş yapılır. Bu giriş, <code>is_banned</code> (hesap kilidi), <code>mobile_access</code> (mobil izin) ve <code>user_devices</code> (cihaz limiti) kontrollerini içerir.</li>
                 <li><strong>Veri Yükleme:</strong> Giriş başarılıysa, <code>api.loadInitialData</code> fonksiyonu tüm gerekli verileri (Sorular, Bayiler, Excel verileri) çeker.</li>
                 <li><strong>Arayüz Oluşturma:</strong> <code>ui.buildForm</code>, <code>ayarlar</code> tablosundan çekilen sorulara (<code>fideQuestionsData</code>) göre formu dinamik olarak HTML'e dönüştürür.</li>
+                <li><strong>Excel İşleme (Sihirbaz):</strong> <code>excel.js</code>, yüklenen dosyaların yapısını analiz eder. Dosya formatı değişse bile "Eşleştirme Sihirbazı" sayesinde kullanıcı sütunları manuel seçebilir ve bu ayarlar buluta kaydedilir.</li>
                 <li><strong>Anlık Güvenlik:</strong> <code>api.subscribeToRealtimeChanges</code> fonksiyonu, kullanıcının <code>users</code> ve <code>user_devices</code> kayıtlarını anlık olarak dinler. Eğer bir yönetici kullanıcıyı banlarsa veya cihazı kilitlerse, kullanıcı anında sistemden atılır (<code>utils.js -> showLockoutOverlay</code>).</li>
                 <li><strong>Otomatik Kayıt:</strong> Formda yapılan her değişiklik (yazı yazma, kutu işaretleme), <code>ui.js</code> içindeki <code>debouncedSaveFormState</code> fonksiyonu sayesinde 800ms gecikmeyle otomatik olarak <code>api.saveFormState</code> aracılığıyla veritabanına kaydedilir.</li>
             </ul>
@@ -355,7 +356,7 @@
                             <code>anahtar</code> (text, <i>Unique</i>)<br>
                             <code>deger</code> (json | text | number)
                         </td>
-                        <td>Global ayarlar için bir Anahtar-Değer (Key-Value) tablosu. <strong>Tüm sorular (<code>fideQuestionsData</code>)</strong>, e-posta şablonu (<code>emailTemplate</code>), aylık hedef (<code>aylikHedef</code>) ve soru ID yönlendirmeleri (<code>migrationMap</code>) burada saklanır.</td>
+                        <td>Global ayarlar için bir Anahtar-Değer (Key-Value) tablosu. <strong>Sorular (<code>fideQuestionsData</code>)</strong>, E-posta şablonu, <strong>Excel Eşleştirme Ayarları (<code>excel_mapping_dide/fide</code>)</strong> burada saklanır.</td>
                     </tr>
                     <tr>
                         <td><code>excel_verileri</code></td>
@@ -399,16 +400,16 @@
 │   ├── <strong>soru-yoneticisi/</strong>
 │   │   └── soru-yoneticisi.html, .css, .js     <em>(Ana denetim soruları (fideQuestionsData) yönetimi, 'Senaryo Sistemi')</em>
 │   └── <strong>veritabani-yonetim/</strong>
-│       └── veritabani-yonetim.html, .css, .js  <em>(Tehlikeli/Yıkıcı veritabanı temizleme işlemleri)</em>
+│       └── veritabani-yonetim.html, .css, .js  <em>(Yıkıcı temizlik işlemleri ve Excel ayarlarını sıfırlama)</em>
 │
-├── <strong>index.html</strong>              <em>(Ana denetim formu - Denetçi Arayüzü)</em>
-├── style.css               <em>(Ana formun stili)</em>
+├── <strong>index.html</strong>              <em>(Ana denetim formu - Excel Eşleştirme Modalı içerir)</em>
+├── style.css               <em>(Ana form ve Modal stilleri)</em>
 ├── db-config.js            <em>(PocketBase bağlantı URL'sini içerir)</em>
 ├── <strong>main.js</strong>                 <em>(Uygulama başlatıcısı ve popup giriş mantığı - Client)</em>
 ├── state.js                <em>(Global uygulama durumu yönetimi - Client)</em>
 ├── <strong>api.js</strong>                  <em>(Tüm PocketBase veritabanı işlemleri ve güvenlik kontrolleri - Client)</em>
 ├── <strong>ui.js</strong>                   <em>(Kullanıcı arayüzü (DOM) oluşturma ve yönetimi - Client)</em>
-├── excel.js                <em>(DiDe/FiDe Excel dosyası işleme mantığı - Client)</em>
+├── <strong>excel.js</strong>                <em>(Excel okuma, Eşleştirme Sihirbazı, Bulut Kaydı - Client)</em>
 ├── store.js                <em>(Bayi arama ve seçme mantığı - Client)</em>
 └── utils.js                <em>(Genel yardımcı fonksiyonlar, örn: showLoadingOverlay)</em>
 </pre>
@@ -430,6 +431,16 @@
                     </ul>
                 </li>
                 
+                <li><code>excel.js</code> (Excel İşleme & Sihirbaz): <strong>DiDe ve FiDe dosyalarını dinamik okuyan modüldür.</strong>
+                    <ul>
+                        <li><strong>Excel Eşleştirme Sihirbazı:</strong> Dosya formatı değiştiğinde veya ilk kez yüklendiğinde, kullanıcıya bir pencere (modal) açar. Kullanıcıdan başlık satırını ve sütunları seçmesini ister.</li>
+                        <li><code>openMappingModal</code>: Sihirbaz penceresini açar ve kullanıcının seçimlerini yönetir.</li>
+                        <li><code>checkSavedMapping</code>: Dosyanın yapısını (imzasını) kontrol eder. Eğer dosya yapısı daha önce kaydedilmiş ayarlarla (<code>ayarlar</code> tablosunda) uyuşuyorsa, sihirbazı açmadan otomatik işler.</li>
+                        <li><code>saveMappingToCloud</code>: Kullanıcının yaptığı eşleştirme ayarlarını buluta kaydeder.</li>
+                        <li><code>processDideExcelData</code> / <code>processFideExcelData</code>: Eşleştirme kurallarına göre veriyi işler. FiDe için yıl (örn: 2025) satırının altındaki sütun başlıklarını okuma zekasına sahiptir.</li>
+                    </ul>
+                </li>
+
                 <li><code>ui.js</code> (Arayüz Katmanı): <strong>Tüm HTML oluşturma ve DOM manipülasyonu buradadır.</strong>
                     <ul>
                         <li><code>buildForm()</code>: <code>state.fideQuestions</code> dizisini döngüye alarak <code>generateQuestionHtml</code>'i çağırır.</li>
@@ -438,14 +449,11 @@
                                 <li><code>styling_list</code>: "Hibrit Mod" olarak çalışır. Hem açılır menüden kategori/ürün seçimi yapılabilir hem de "Yeni Eksik Ekle" butonu ile serbest metin girişi (not) eklenebilir.</li>
                             </ul>
                         </li>
-                        <li><code>handleStylingSubCatChange(event)</code>: Styling alt kategorisi seçildiğinde tetiklenir. <code>.sub-category-qty-input</code>'tan adedi okur, varsayılan ürün adetleriyle çarpar ve listeyi otomatik olarak doldurur.</li>
                         <li><code>getFormDataForSaving()</code>: Formdaki tüm cevapları okur ve JSON nesnesine dönüştürür. 
                             <ul>
                                 <li><code>styling_list</code> için: Seçilen ürünler (<code>selectedProducts</code>), kategori seçimleri (<code>stylingCategorySelections</code>) ve manuel girilen notlar (<code>dynamicInputs</code>) kaydedilir.</li>
                             </ul>
                         </li>
-                        <li><code>loadReportUI()</code>: Kayıtlı rapordan verileri okur ve forma geri yükler. <code>styling_list</code> için notlar (<code>_notes</code>), ürünler ve kategori seçimleri ilgili alanlara yerleştirilir.</li>
-                        <li><code>debouncedSaveFormState()</code>: Formdaki her değişikliği 800ms gecikmeyle otomatik olarak kaydetmek için <code>saveFormState</code>'i tetikleyen mekanizmadır.</li>
                         <li><code>generateEmail()</code>: E-posta taslağını oluşturur. <code>styling_list</code> tipi sorularda sıralama şöyledir:
                             <ol>
                                 <li>Statik Açıklama Metni (Sirkü linki vb.)</li>
@@ -458,13 +466,6 @@
                 </li>
                 <li><code>state.js</code> (Durum Yönetimi): <code>dideData</code>, <code>fideData</code>, <code>fideQuestions</code>, <code>selectedStore</code> gibi tüm uygulama tarafından kullanılan global değişkenleri tutar ve <code>set...</code> fonksiyonları ile güvenli bir şekilde güncellenmesini sağlar.</li>
                 <li><code>store.js</code>: Bayi arama (<code>displayStores</code>) ve seçme (<code>selectStore</code>) mantığını içerir. Bir bayi seçildiğinde, <code>api.loadReportForStore</code>'u tetikler.</li>
-                <li><code>excel.js</code>: DiDe ve FiDe puan dosyalarını okuyan modüldür.
-                    <ul>
-                        <li><code>handleFileSelect</code>: Dosya seçimini dinler.</li>
-                        <li><strong>DiDe Okuma Mantığı:</strong> Dosyada tam olarak "Bayi Kodu" yazan hücreyi arar ve bunu başlık satırı kabul eder. Bu satırda ayrıca "Bayi" ve "Bayi Yönetmeni" başlıklarının olması zorunludur. Puanları okumak için sütun başlıklarında "1", "2"... "12" şeklinde sadece rakam olan (Ocak=1 vb.) sütunlara bakar.</li>
-                        <li><strong>FiDe Okuma Mantığı:</strong> Dosyada içinde bulunulan yılı (Örn: 2025) içeren bir hücre arar. Bu satırın hemen altındaki satırı "Aylar" satırı olarak kabul eder. Sol taraftaki "Bayi Kodu" sütunu ile ayları eşleştirerek puanları çeker.</li>
-                    </ul>
-                </li>
                 <li><code>utils.js</code>: Genel yardımcıları içerir. En önemlileri <code>showLoadingOverlay</code> (yükleniyor ekranı) ve <code>showLockoutOverlay</code> (kullanıcıyı kilitleyen kırmızı ekran).</li>
             </ul>
 
@@ -516,6 +517,7 @@
                         <li><code>handleDeleteUserAndData_Modal</code> (Güvenli): Bir kullanıcıyı, raporlarını (<code>denetim_raporlari</code>) siler VE bayilerini (<code>bayiler</code>) "Atanmamış" (null) olarak günceller.</li>
                         <li><code>handleDeleteUnassignedBayis_Modal</code> (Yıkıcı): "Atanmamış" (<code>sorumlu_kullanici</code> alanı null olan) tüm bayileri <code>bayiler</code> koleksiyonundan siler VE bu bayilere ait TÜM raporları (<code>denetim_raporlari</code>) siler.</li>
                         <li><code>deleteTable</code>: Bir koleksiyondaki tüm kayıtları toplu olarak siler.</li>
+                        <li><strong>Excel Ayarlarını Sıfırla (<code>resetExcelMappings</code>):</strong> <code>ayarlar</code> tablosundaki kayıtlı Excel sütun eşleştirmelerini (<code>excel_mapping_dide/fide</code>) siler. Böylece sihirbazın tekrar açılmasını sağlar.</li>
                     </ul>
                 </li>
             </ul>
@@ -566,23 +568,13 @@
                 </li>
             </ol>
             
-            <h3>Senaryo 2: Yeni Bir Admin Modülü Ekleme (Örn: 'raporlama')</h3>
+            <h3>Senaryo 2: Excel İşleme Mantığını Değiştirme</h3>
+            <p>Eğer DiDe veya FiDe dosyalarının işlenme mantığı değişecekse (örn: yeni sütun ekleme veya farklı bir hesaplama):</p>
             <ol>
-                <li><code>/modules/</code> dizini altına <code>raporlama/</code> adında yeni bir klasör oluşturulur.</li>
-                <li>Bu klasörün içine <code>raporlama.html</code>, <code>raporlama.css</code> ve <code>raporlama.js</code> dosyaları eklenir.</li>
-                <li><code>raporlama.js</code> dosyasının dışarıya <code>export function initializeRaporlamaModule(pb) { ... }</code> adında bir ana fonksiyon sunması gerekir.</li>
-                <li><code>admin/admin.js</code> dosyası açılır ve <code>const modules</code> dizisinin içine yeni modül nesnesi eklenir:
-<pre>
-{
-    id: 'raporlama',
-    name: 'Raporlama Modülü',
-    icon: 'fas fa-chart-bar',
-    path: '../modules/raporlama/'
-}
-</pre>
-                </li>
+                <li><strong>İşleme Mantığı:</strong> <code>excel.js</code> dosyasındaki <code>processDideExcelData</code> veya <code>processFideExcelData</code> fonksiyonlarını incele. Bu fonksiyonlar "ham veri"yi alıp "işlenmiş veri"ye dönüştürür.</li>
+                <li><strong>Sihirbaz Arayüzü:</strong> Eğer kullanıcıdan yeni bir sütun seçmesini isteyeceksen, <code>openMappingModal</code> fonksiyonundaki HTML (`select` elementleri) ve <code>saveBtn.onclick</code> olayındaki kayıt mantığını güncelle.</li>
+                <li><strong>Bulut Kaydı:</strong> <code>saveMappingToCloud</code> ve <code>checkSavedMapping</code> fonksiyonları otomatik olarak çalışır, genellikle değişiklik gerektirmez ancak yeni bir parametre eklediysen kayıt yapısına dahil olduğundan emin ol.</li>
             </ol>
-            <p>Bu işlemden sonra <code>admin.js</code> (modül yükleyici) menüye yeni butonu ekler ve tıklandığında dosyaları otomatik olarak yükler.</p>
         </section>
     </main>
 
