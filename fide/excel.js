@@ -12,60 +12,170 @@ export function initExcel(pbInstance) {
 }
 
 /**
+ * Kullanıcıdan Excel sütun eşleştirmesi yapmasını isteyen sihirbazı yönetir.
+ * @param {Array} dataAsArray Tüm Excel verisi
+ * @param {'dide'|'fide'} type İşlem tipi
+ * @returns {Promise<object>} Kullanıcının seçtiği ayarlar (satır indeksi ve sütun indeksleri)
+ */
+function openMappingModal(dataAsArray, type) {
+    return new Promise((resolve, reject) => {
+        const modal = document.getElementById('excel-mapping-modal');
+        const rowSelect = document.getElementById('mapping-row-select');
+        const rowPreview = document.getElementById('row-preview-text');
+        const stepColumn = document.getElementById('step-column-mapping');
+        
+        const mapBayiKodu = document.getElementById('map-bayi-kodu');
+        const mapBayiAdi = document.getElementById('map-bayi-adi');
+        const mapYonetmen = document.getElementById('map-yonetmen');
+        const dideExtraFields = document.getElementById('dide-extra-fields');
+        const saveBtn = document.getElementById('mapping-save-btn');
+        const cancelBtn = document.getElementById('mapping-cancel-btn');
+
+        // Modalı göster
+        modal.style.display = 'flex';
+        stepColumn.style.display = 'none';
+        saveBtn.disabled = true;
+
+        // Tipe göre arayüzü ayarla
+        if (type === 'fide') {
+            dideExtraFields.style.display = 'none';
+            document.querySelector('#step-row-selection p').textContent = "1. Yıl Bilgisi (Örn: 2025) Hangi Satırda?";
+        } else {
+            dideExtraFields.style.display = 'block';
+            document.querySelector('#step-row-selection p').textContent = "1. Başlıklar (Bayi Kodu vb.) Hangi Satırda?";
+        }
+
+        // İlk 20 satırı (veya daha azsa hepsini) satır seçim kutusuna doldur
+        rowSelect.innerHTML = '<option value="">-- Satır Seçin --</option>';
+        const limit = Math.min(dataAsArray.length, 20);
+        for (let i = 0; i < limit; i++) {
+            // Satırın ilk 3 dolu hücresini önizleme olarak göster
+            const preview = dataAsArray[i].filter(c => c !== null && c !== undefined && String(c).trim() !== "").slice(0, 3).join(" | ");
+            const label = `Satır ${i + 1}: ${preview ? preview : '(Boş)'}`;
+            rowSelect.innerHTML += `<option value="${i}">${label}</option>`;
+        }
+
+        // Satır değiştiğinde sütunları doldur
+        rowSelect.onchange = () => {
+            const rowIndex = parseInt(rowSelect.value);
+            if (isNaN(rowIndex)) {
+                stepColumn.style.display = 'none';
+                rowPreview.textContent = "";
+                return;
+            }
+
+            const rowData = dataAsArray[rowIndex];
+            rowPreview.textContent = `Seçilen Satır İçeriği: ${rowData.join(" | ")}`;
+            stepColumn.style.display = 'block';
+            saveBtn.disabled = false;
+
+            // Sütun seçim kutularını doldur
+            const fillSelect = (selectEl) => {
+                selectEl.innerHTML = '<option value="">-- Sütun Seçin --</option>';
+                rowData.forEach((cell, index) => {
+                    const cellText = (cell !== null && cell !== undefined) ? String(cell).substring(0, 30) : "(Boş)";
+                    selectEl.innerHTML += `<option value="${index}">Sütun ${index + 1}: ${cellText}</option>`;
+                });
+            };
+
+            fillSelect(mapBayiKodu);
+            if (type === 'dide') {
+                fillSelect(mapBayiAdi);
+                fillSelect(mapYonetmen);
+            }
+        };
+
+        // Kaydet butonu
+        saveBtn.onclick = () => {
+            const rowIndex = parseInt(rowSelect.value);
+            const selectedMapping = {
+                headerRowIndex: rowIndex,
+                bayiKoduIndex: parseInt(mapBayiKodu.value),
+                // DiDe için opsiyonel alanlar
+                bayiAdiIndex: type === 'dide' ? parseInt(mapBayiAdi.value) : -1,
+                yonetmenIndex: type === 'dide' ? parseInt(mapYonetmen.value) : -1
+            };
+
+            if (isNaN(selectedMapping.bayiKoduIndex)) {
+                alert("Lütfen en azından 'Bayi Kodu' sütununu seçin.");
+                return;
+            }
+
+            modal.style.display = 'none';
+            resolve(selectedMapping);
+        };
+
+        // İptal butonu
+        cancelBtn.onclick = () => {
+            modal.style.display = 'none';
+            reject("Kullanıcı iptal etti.");
+        };
+    });
+}
+
+
+/**
  * DiDe Excel verisini işler ve buluta kaydeder.
  * @param {Array} dataAsArray Excel'den okunmuş ham veri.
  * @returns {Promise<Array|null>} İşlenmiş veri veya hata durumunda null.
  */
 async function processDideExcelData(dataAsArray, filename) {
     if (dataAsArray.length < 2) {
-        alert('DiDe Excel dosyası beklenen formatta değil (en az 2 satır gerekli).');
-        return null;
-    }
-    let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
-    if (headerRowIndex === -1) {
-        alert('DiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
+        alert('Dosya çok boş görünüyor.');
         return null;
     }
 
-    const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h);
-    const dataRows = dataAsArray.slice(headerRowIndex + 1);
-    const bayiKoduIndex = headerRow.indexOf('Bayi Kodu');
-    const bayiIndex = headerRow.indexOf('Bayi');
-    const bayiYonetmeniIndex = headerRow.indexOf('Bayi Yönetmeni');
-    if ([bayiKoduIndex, bayiIndex, bayiYonetmeniIndex].includes(-1)) {
-        alert('DiDe Excel dosyasında "Bayi Kodu", "Bayi" veya "Bayi Yönetmeni" sütunlarından biri bulunamadı.');
+    try {
+        // Kullanıcıya eşleştirme yaptır
+        const mapping = await openMappingModal(dataAsArray, 'dide');
+        showLoadingOverlay("Veriler işleniyor...");
+
+        const headerRow = dataAsArray[mapping.headerRowIndex];
+        const dataRows = dataAsArray.slice(mapping.headerRowIndex + 1);
+        
+        const processedData = dataRows.map(row => {
+            if (!row[mapping.bayiKoduIndex]) return null; // Bayi kodu yoksa atla
+            
+            const scores = {};
+            // Başlık satırında 1-12 arası rakam olan sütunları bul ve puanları al
+            headerRow.forEach((header, index) => {
+                const monthNumber = parseInt(header);
+                if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
+                    if(row[index] !== null && row[index] !== undefined) scores[monthNumber] = row[index];
+                }
+            });
+
+            return { 
+                'Bayi Kodu': row[mapping.bayiKoduIndex], 
+                'Bayi': mapping.bayiAdiIndex > -1 ? row[mapping.bayiAdiIndex] : '', 
+                'Bayi Yönetmeni': mapping.yonetmenIndex > -1 ? row[mapping.yonetmenIndex] : '', 
+                'scores': scores 
+            };
+        }).filter(d => d);
+        
+        // Buluta Kaydetme Kısmı
+        if (pb && pb.authStore.isValid) {
+            const dataToSave = { "tip": "dide", "dosyaAdi": filename, "veri": processedData };
+            try {
+                const record = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
+                await pb.collection('excel_verileri').update(record.id, dataToSave);
+            } catch (error) {
+                if (error.status === 404) {
+                    await pb.collection('excel_verileri').create(dataToSave);
+                } else {
+                    console.error("Hata:", error);
+                    alert("Buluta kaydetme hatası.");
+                    return null;
+                }
+            }
+            alert('DiDe puan dosyası başarıyla işlendi ve kaydedildi.');
+        }
+        return processedData;
+
+    } catch (e) {
+        console.log(e); // İptal edilirse buraya düşer
         return null;
     }
-    
-    const processedData = dataRows.map(row => {
-        if (!row[bayiKoduIndex]) return null;
-        const scores = {};
-        headerRow.forEach((header, index) => {
-            const monthNumber = parseInt(header);
-            if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
-                if(row[index] !== null && row[index] !== undefined) scores[monthNumber] = row[index];
-            }
-        });
-        return { 'Bayi Kodu': row[bayiKoduIndex], 'Bayi': row[bayiIndex], 'Bayi Yönetmeni': row[bayiYonetmeniIndex], 'scores': scores };
-    }).filter(d => d);
-    
-    if (pb && pb.authStore.isValid) {
-        const dataToSave = { "tip": "dide", "dosyaAdi": filename, "veri": processedData };
-        try {
-            const record = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
-            await pb.collection('excel_verileri').update(record.id, dataToSave);
-        } catch (error) {
-            if (error.status === 404) {
-                await pb.collection('excel_verileri').create(dataToSave);
-            } else {
-                console.error("DiDe verisi kaydedilirken hata:", error);
-                alert("DiDe verisi buluta kaydedilirken bir hata oluştu.");
-                return null;
-            }
-        }
-        alert('DiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
-    }
-    return processedData;
 }
 
 /**
@@ -75,80 +185,74 @@ async function processDideExcelData(dataAsArray, filename) {
  */
 async function processFideExcelData(dataAsArray, filename) {
     if (dataAsArray.length < 3) {
-        alert('FiDe Excel dosyası beklenen formatta değil (en az 3 satır gerekli).');
+        alert('Dosya çok boş görünüyor.');
         return null;
     }
-    const currentYear = new Date().getFullYear();
-    let yearRowIndex = -1;
-    for(let i = 0; i < dataAsArray.length; i++) {
-        if(dataAsArray[i].some(cell => String(cell).trim() == currentYear)) {
-            yearRowIndex = i;
-            break;
+
+    try {
+        // Kullanıcıya eşleştirme yaptır (FiDe için)
+        // Burada headerRowIndex aslında YILIN olduğu satır olacak
+        const mapping = await openMappingModal(dataAsArray, 'fide');
+        showLoadingOverlay("Veriler işleniyor...");
+
+        const yearRowIndex = mapping.headerRowIndex;
+        const yearRow = dataAsArray[yearRowIndex];
+        const monthRow = dataAsArray[yearRowIndex + 1]; // Ayların hemen altta olduğunu varsayıyoruz
+        
+        if (!monthRow) {
+            alert("Seçilen yıl satırının altında ay bilgileri bulunamadı.");
+            return null;
         }
-    }
-    if (yearRowIndex === -1) {
-        alert(`FiDe Excel dosyasında '${currentYear}' yılını içeren bir satır bulunamadı.`);
-        return null;
-    }
 
-    const yearRow = dataAsArray[yearRowIndex];
-    const filledYearRow = yearRow.reduce((acc, cell) => {
-        acc.lastKnown = (cell !== null && cell !== undefined && String(cell).trim() !== "") ? String(cell).trim() : acc.lastKnown;
-        acc.result.push(acc.lastKnown);
-        return acc;
-    }, { result: [], lastKnown: null }).result;
+        // Yılları doldurma mantığı (Excel merged cells mantığı)
+        const filledYearRow = yearRow.reduce((acc, cell) => {
+            acc.lastKnown = (cell !== null && cell !== undefined && String(cell).trim() !== "") ? String(cell).trim() : acc.lastKnown;
+            acc.result.push(acc.lastKnown);
+            return acc;
+        }, { result: [], lastKnown: null }).result;
 
-    let monthRowIndex = yearRowIndex + 1;
-    if (monthRowIndex >= dataAsArray.length) {
-        alert('FiDe Excel dosyasında ay bilgileri (yıl satırının altında) bulunamadı.');
-        return null;
-    }
-    const monthRow = dataAsArray[monthRowIndex];
-    let headerRowIndex = dataAsArray.findIndex(row => row.some(cell => typeof cell === 'string' && cell.trim() === 'Bayi Kodu'));
-    if (headerRowIndex === -1) {
-        alert('FiDe Excel dosyasında "Bayi Kodu" içeren bir başlık satırı bulunamadı.');
-        return null;
-    }
+        const currentYear = new Date().getFullYear();
+        const dataRows = dataAsArray.slice(yearRowIndex + 2); // Veriler 2 satır alttan başlar
 
-    const headerRow = dataAsArray[headerRowIndex].map(h => typeof h === 'string' ? h.trim() : h);
-    const dataRows = dataAsArray.slice(headerRowIndex + 1);
-    const bayiKoduIndex = headerRow.indexOf('Bayi Kodu');
-    if (bayiKoduIndex === -1) {
-        alert('FiDe Excel dosyasında "Bayi Kodu" sütunu bulunamadı.');
-        return null;
-    }
-
-    const processedData = dataRows.map(row => {
-        if (!row[bayiKoduIndex]) return null;
-        const scores = {};
-        for (let i = 0; i < filledYearRow.length; i++) {
-            if (filledYearRow[i] == currentYear) {
-                const monthNumber = parseInt(monthRow[i]);
-                if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
-                    if(row[i] !== null && row[i] !== undefined && row[i] !== "") scores[monthNumber] = row[i];
+        const processedData = dataRows.map(row => {
+            if (!row[mapping.bayiKoduIndex]) return null;
+            const scores = {};
+            
+            // Tüm sütunları gez, yılı ve ayı tutanları bul
+            for (let i = 0; i < filledYearRow.length; i++) {
+                if (filledYearRow[i] == currentYear) {
+                    const monthNumber = parseInt(monthRow[i]);
+                    if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
+                        if(row[i] !== null && row[i] !== undefined && row[i] !== "") scores[monthNumber] = row[i];
+                    }
                 }
             }
-        }
-        return { 'Bayi Kodu': row[bayiKoduIndex], 'scores': scores };
-    }).filter(d => d);
+            return { 'Bayi Kodu': row[mapping.bayiKoduIndex], 'scores': scores };
+        }).filter(d => d);
 
-    if (pb && pb.authStore.isValid) {
-        const dataToSave = { "tip": "fide", "dosyaAdi": filename, "veri": processedData };
-        try {
-            const record = await pb.collection('excel_verileri').getFirstListItem('tip="fide"');
-            await pb.collection('excel_verileri').update(record.id, dataToSave);
-        } catch (error) {
-            if (error.status === 404) {
-                await pb.collection('excel_verileri').create(dataToSave);
-            } else {
-                console.error("FiDe verisi kaydedilirken hata:", error);
-                alert("FiDe verisi buluta kaydedilirken bir hata oluştu.");
-                return null;
+        // Buluta Kaydet
+        if (pb && pb.authStore.isValid) {
+            const dataToSave = { "tip": "fide", "dosyaAdi": filename, "veri": processedData };
+            try {
+                const record = await pb.collection('excel_verileri').getFirstListItem('tip="fide"');
+                await pb.collection('excel_verileri').update(record.id, dataToSave);
+            } catch (error) {
+                if (error.status === 404) {
+                    await pb.collection('excel_verileri').create(dataToSave);
+                } else {
+                    console.error("Hata:", error);
+                    alert("Buluta kaydetme hatası.");
+                    return null;
+                }
             }
+            alert('FiDe puan dosyası başarıyla işlendi ve kaydedildi.');
         }
-        alert('FiDe puan dosyası başarıyla işlendi ve buluta kaydedildi.');
+        return processedData;
+
+    } catch (e) {
+        console.log(e);
+        return null;
     }
-    return processedData;
 }
 
 /**
@@ -164,8 +268,10 @@ export async function handleFileSelect(event, type) {
     const filename = file.name;
     const fileNameSpan = type === 'dide' ? document.getElementById('file-name') : document.getElementById('fide-file-name');
     fileNameSpan.textContent = `Yüklü dosya: ${filename}`;
-    showLoadingOverlay("Excel dosyası işleniyor...");
-
+    
+    // Yükleme ekranını hemen gösterme, sihirbazdan sonra göstereceğiz
+    // Sadece okuma için bekle
+    
     return new Promise((resolve) => {
         const reader = new FileReader();
         reader.readAsArrayBuffer(file);
@@ -186,7 +292,7 @@ export async function handleFileSelect(event, type) {
                     if (processedData) state.setFideData(processedData);
                 }
                 
-                resolve(!!processedData); // processedData null değilse true döner
+                resolve(!!processedData); 
 
             } catch (error) { 
                 alert("Excel dosyası okunurken bir hata oluştu."); 

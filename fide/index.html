@@ -16,6 +16,41 @@
         <p>İşlem yapılıyor, lütfen bekleyin...</p>
     </div>
 
+    <div id="excel-mapping-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3><i class="fas fa-magic"></i> Excel Sütun Eşleştirme Sihirbazı</h3>
+            <p style="font-size: 13px; color: #666;">Yüklediğiniz Excel dosyasının yapısını anlamamız için lütfen aşağıdaki seçimleri yapın.</p>
+            
+            <div class="modal-step" id="step-row-selection">
+                <p>1. Başlıklar Hangi Satırda?</p>
+                <select id="mapping-row-select"></select>
+                <div class="modal-info" id="row-preview-text">Seçilen satırın içeriği burada görünecek...</div>
+            </div>
+
+            <div id="step-column-mapping" style="display: none;">
+                <div class="modal-step">
+                    <p>2. Sütunları Eşleştirin</p>
+                    
+                    <label style="display:block; margin-top:10px; font-size:13px;">Bayi Kodu Sütunu:</label>
+                    <select id="map-bayi-kodu"></select>
+                    
+                    <div id="dide-extra-fields">
+                        <label style="display:block; margin-top:10px; font-size:13px;">Bayi Adı Sütunu (Opsiyonel):</label>
+                        <select id="map-bayi-adi"></select>
+                        
+                        <label style="display:block; margin-top:10px; font-size:13px;">Yönetmen Sütunu (Opsiyonel):</label>
+                        <select id="map-yonetmen"></select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="mapping-cancel-btn" class="btn-secondary btn-sm">İptal</button>
+                <button id="mapping-save-btn" class="btn-primary btn-sm" disabled>Verileri İşle <i class="fas fa-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         
         <div class="top-controls">
