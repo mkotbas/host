@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase'den PocketBase'e Veri Aktarım Aracı</title>
+    <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 20px auto; padding: 20px; background-color: #f9f9f9; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 25px; background-color: #fff; margin-bottom: 20px; }
+        h1, h2, h3 { color: #0056b3; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        #fileInput { display: block; margin: 20px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: white; width: 100%; box-sizing: border-box; }
+        button, .btn { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        button:disabled, .btn:disabled { background-color: #aaa; cursor: not-allowed; }
+        button:hover:not(:disabled), .btn:hover:not(:disabled) { background-color: #0056b3; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-danger:hover:not(:disabled) { background-color: #c82333; }
+        #log { margin-top: 20px; background-color: #2e2e2e; color: #f1f1f1; border: 1px solid #444; padding: 15px; height: 350px; overflow-y: scroll; font-family: "Courier New", Courier, monospace; font-size: 14px; white-space: pre-wrap; border-radius: 5px; }
+        .log-success { color: #4ade80; } .log-error { color: #f87171; font-weight: bold; } .log-info { color: #60a5fa; } .log-warn { color: #facc15; } .log-header { color: #93c5fd; font-weight: bold; margin-top: 10px; display: block; }
+        #data-selection { display: none; }
+        .selection-item { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 5px; padding: 15px; margin-bottom: 10px; }
+        .selection-item label { font-weight: bold; font-size: 1.1em; color: #212529; }
+        .selection-item p { font-size: 0.9em; color: #6c757d; margin-top: 5px; margin-bottom: 10px; }
+        .selection-item .target-table { font-style: italic; background-color: #e9ecef; padding: 2px 6px; border-radius: 4px; font-family: "Courier New", monospace; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; }
+        .checkbox-group input { transform: scale(1.2); }
+        .clean-option { font-size: 0.85em; color: #dc3545; display: flex; align-items: center; gap: 5px; margin-top: 10px; }
+        .clean-option input { transform: scale(1.1); }
+        ol { padding-left: 20px; } li { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h3><i class="fas fa-tools"></i> Araçlar</h3>
+        <p>Veri aktarımı sonrası düzenlemeler için bu araçları kullanabilirsiniz.</p>
+        <br>
+        <button id="reset-completion-btn" class="btn btn-danger"><i class="fas fa-history"></i> Tüm Raporların Tamamlanma Tarihini Sıfırla</button>
+        <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">
+            <b>Not:</b> Bu işlem, `denetim_raporlari` tablosundaki tüm raporların 'denetimTamamlanmaTarihi' alanını temizler. Bu, eski denetim verileri nedeniyle tüm bayilerin 'denetlenmiş' görünmesi sorununu düzeltir. Raporların içeriği silinmez.
+        </p>
+    </div>
+
+    <div class="card">
+        <h1><i class="fas fa-rocket"></i> Firebase'den PocketBase'e Veri Aktarım Aracı</h1>
+        <ol>
+            <li>PocketBase sunucunuzu başlattığınızdan emin olun.</li>
+            <li>Aşağıdaki butonu kullanarak Firebase JSON yedeğinizi seçin.</li>
+            <li>Aktarmak istediklerinizi seçin ve "Aktarımı Başlat" butonuna tıklayın.</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h2><i class="fas fa-file-upload"></i> 1. Adım: Yedek Dosyasını Yükle</h2>
+        <input type="file" id="fileInput" accept=".json">
+        <div id="data-selection">
+            <h2><i class="fas fa-tasks"></i> 2. Adım: Aktarılacak Verileri Seç</h2>
+        </div>
+        <button id="migrateBtn" class="btn" disabled><i class="fas fa-file-alt"></i> Lütfen Önce Dosya Seçin</button>
+    </div>
+
+    <div class="card">
+        <h2><i class="fas fa-terminal"></i> 3. Adım: İşlem Kayıtları</h2>
+        <div id="log">İşlem kayıtları burada görünecektir...</div>
+    </div>
+    
+    <script>
+        const pb = new PocketBase('http://127.0.0.1:8090');
+        const fileInput = document.getElementById('fileInput');
+        const migrateBtn = document.getElementById('migrateBtn');
+        const logDiv = document.getElementById('log');
+        const dataSelectionDiv = document.getElementById('data-selection');
+        const resetBtn = document.getElementById('reset-completion-btn');
+
+        let jsonData = null;
+
+        fileInput.onchange = (event) => {
+            const file = event.target.files[0];
+            dataSelectionDiv.innerHTML = '<h2><i class="fas fa-tasks"></i> 2. Adım: Aktarılacak Verileri Seç</h2>';
+            dataSelectionDiv.style.display = 'none';
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        jsonData = JSON.parse(e.target.result);
+                        log('info', `Dosya başarıyla okundu ve analiz edildi: ${file.name}`);
+                        populateDataSelection(jsonData);
+                        migrateBtn.disabled = false;
+                        migrateBtn.innerHTML = '<i class="fas fa-cogs"></i> Aktarımı Başlat';
+                    } catch (error) {
+                        log('error', 'HATA: Geçersiz JSON dosyası!');
+                        jsonData = null;
+                        migrateBtn.disabled = true;
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                migrateBtn.disabled = true;
+                migrateBtn.innerHTML = '<i class="fas fa-file-alt"></i> Lütfen Önce Dosya Seçin';
+            }
+        };
+
+        resetBtn.onclick = async () => {
+            if (!confirm("DİKKAT!\n\nBu işlem, 'denetim_raporlari' tablosundaki TÜM raporların 'tamamlandı' durumunu sıfırlayacaktır.\n\nEski verilerden kaynaklanan 'bu bayi zaten denetlenmiş' sorununu çözmek için kullanılır. Raporlarınızın içeriği silinmeyecektir.\n\nDevam etmek istiyor musunuz?")) {
+                return;
+            }
+            log('header', '-> Raporların Tamamlanma Durumları Sıfırlanıyor...');
+            resetBtn.disabled = true;
+            resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşlem Yapılıyor...';
+            try {
+                const records = await pb.collection('denetim_raporlari').getFullList({ fields: 'id,denetimTamamlanmaTarihi' });
+                const updates = [];
+                for (const record of records) {
+                    if (record.denetimTamamlanmaTarihi !== null) {
+                        updates.push(pb.collection('denetim_raporlari').update(record.id, { 'denetimTamamlanmaTarihi': null }));
+                    }
+                }
+
+                if (updates.length > 0) {
+                    await Promise.all(updates);
+                    log('success', `  Başarılı: ${updates.length} adet raporun tamamlanma tarihi sıfırlandı.`);
+                    alert(`${updates.length} adet raporun durumu başarıyla sıfırlandı. Ana uygulamayı şimdi kullanabilirsiniz.`);
+                } else {
+                    log('info', '  Sıfırlanacak \'tamamlandı\' durumunda bir rapor bulunamadı.');
+                    alert("Sıfırlanacak bir rapor bulunamadı.");
+                }
+
+            } catch (error) {
+                log('error', `  HATA: Raporlar sıfırlanırken bir sorun oluştu: ${error.message}`);
+                alert("Raporlar sıfırlanırken bir hata oluştu. Lütfen PocketBase yönetici panelinden API kurallarını kontrol edin.");
+            } finally {
+                resetBtn.disabled = false;
+                resetBtn.innerHTML = '<i class="fas fa-history"></i> Tüm Raporların Tamamlanma Tarihini Sıfırla';
+            }
+        };
+        
+        function createSelectionItem(id, title, description, targetTable, hasCleanOption = false, isChecked = false) {
+            const item = document.createElement('div');
+            item.className = 'selection-item';
+            let cleanOptionHTML = '';
+            if (hasCleanOption) {
+                cleanOptionHTML = `<div class="clean-option"><input type="checkbox" id="clean_${id}" name="clean_${id}" checked><label for="clean_${id}">Aktarmadan önce <span class="target-table">${targetTable}</span> tablosunu temizle (Önerilir)</label></div>`;
+            }
+            item.innerHTML = `<div class="checkbox-group"><input type="checkbox" id="cb_${id}" value="${id}" name="data_sources" ${isChecked ? 'checked' : ''}><label for="cb_${id}">${title}</label></div><p>${description} Hedef tablo: <span class="target-table">${targetTable}</span></p>${cleanOptionHTML}`;
+            dataSelectionDiv.appendChild(item);
+        }
+        function populateDataSelection(data) {
+             const sources = {
+                bayiler: { key: 'tumBayilerListesi', title: 'Bayi Listesi ve E-postalar', desc: 'Tüm bayi ana verilerini ve e-posta adreslerini aktarır.', table: 'bayiler', clean: true, checked: true },
+                ayarlar: { key: 'fideQuestionsData', title: 'Genel Ayarlar', desc: 'Soru listesi, aylık hedef ve e-posta şablonunu aktarır.', table: 'ayarlar', clean: true, checked: true },
+                migrationMap: { key: 'migrationSettings', title: 'Yönlendirme Kuralları (migrationMap)', desc: 'Soru ID eşleştirme kurallarını aktarır.', table: 'ayarlar', clean: false, checked: true },
+                excelVerileri: { key: 'excelData', title: 'Excel Puan Verileri', desc: 'Geçmiş DiDe ve FiDe puanlarını aktarır.', table: 'excel_verileri', clean: true, checked: true },
+                denetimRaporlari: { key: 'allFideReports', title: 'Eski Denetim Raporları', desc: 'Kaydedilmiş tüm bayi denetim raporlarını aktarır.', table: 'denetim_raporlari', clean: true, checked: true },
+                geriAlinanlar: { key: 'denetimGeriAlinanlar', title: 'Geri Alınmış Denetimler', desc: 'Geçmişte "Geri Al" olarak işaretlenmiş kayıtları tutar.', table: 'denetim_geri_alinanlar', clean: true, checked: true }
+            };
+            Object.keys(sources).forEach(id => {
+                if (data.hasOwnProperty(sources[id].key) && data[sources[id].key] !== null) {
+                    createSelectionItem(id, sources[id].title, sources[id].desc, sources[id].table, sources[id].clean, sources[id].checked);
+                }
+            });
+            dataSelectionDiv.style.display = 'block';
+        }
+        migrateBtn.onclick = async () => {
+            if (!jsonData) { log('error', 'Aktarılacak veri bulunamadı.'); return; }
+            const selected = Array.from(document.querySelectorAll('input[name="data_sources"]:checked')).map(cb => cb.value);
+            if (selected.length === 0) { log('error', 'Hata: Aktarım için en az bir veri kaynağı seçmelisiniz.'); return; }
+            if ((selected.includes('denetimRaporlari') || selected.includes('geriAlinanlar')) && !selected.includes('bayiler')) { log('error', 'Hata: Raporları veya geri alınanları aktarmak için "Bayi Listesi" de seçilmelidir!'); return; }
+            migrateBtn.disabled = true; migrateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aktarım Yapılıyor...';
+            log('info', '--- Veri Aktarımı Başlatıldı ---');
+            try {
+                if (selected.includes('bayiler')) await migrateBayiler();
+                if (selected.includes('ayarlar')) await migrateAyarlar();
+                if (selected.includes('migrationMap')) await migrateMigrationMap();
+                if (selected.includes('excelVerileri')) await migrateExcelVerileri();
+                if (selected.includes('denetimRaporlari')) await migrateDenetimRaporlari();
+                if (selected.includes('geriAlinanlar')) await migrateGeriAlinanlar();
+                log('success', '\n--- SEÇİLEN VERİLER BAŞARIYLA AKTARILDI! ---');
+            } catch (error) { log('error', `\nKRİTİK HATA: ${error.message}`); } 
+            finally { migrateBtn.innerHTML = '<i class="fas fa-check-circle"></i> Aktarım Tamamlandı'; }
+        };
+        function log(type, message) { logDiv.innerHTML += `<span class="log-${type}">${message}</span>\n`; logDiv.scrollTop = logDiv.scrollHeight; }
+        async function clearCollection(c) { const chk = document.getElementById(`clean_${c}`); if (chk && chk.checked) { log('warn', `'${c}' koleksiyonu temizleniyor...`); try { const r = await pb.collection(c).getFullList({ fields: 'id' }); for (const rec of r) { await pb.collection(c).delete(rec.id); } log('success', `  '${c}' koleksiyonu temizlendi.`); return true; } catch (e) { log('error', `  HATA: '${c}' temizlenemedi: ${e.message}`); return false; } } return true; }
+        async function migrateBayiler(){ log('header', '-> Bayi Listesi Aktarımı'); if(!await clearCollection('bayiler'))return; const s=jsonData.tumBayilerListesi?.stores||[]; if(s.length===0){log('warn',' Bayi bulunamadı.');return;} log('info',` ${s.length} bayi bulundu.`); for(const st of s){await pb.collection('bayiler').create({bayiKodu:String(st.bayiKodu).trim(),bayiAdi:st.bayiAdi.trim(),bolge:st.bolge.trim(),yonetmen:st.yonetmen.trim(),sehir:st.sehir.trim(),ilce:st.ilce.trim(),email:''});} log('success',` ${s.length} bayi aktarıldı.`); const e=jsonData.storeEmails||{}; if(Object.keys(e).length>0){log('info',' E-postalar eşleştiriliyor...');let u=0; for(const b in e){try{const r=await pb.collection('bayiler').getFirstListItem(`bayiKodu="${b}"`);await pb.collection('bayiler').update(r.id,{email:e[b]});u++;}catch(err){if(err.status===404)log('warn',` E-posta için bayi bulunamadı: ${b}`);}} log('success',` ${u} e-posta güncellendi.`);}}
+        async function migrateAyarlar(){ log('header', '-> Genel Ayarlar Aktarımı'); if(!await clearCollection('ayarlar'))return; const sets={fideQuestionsData:jsonData.fideQuestionsData,aylikHedef:jsonData.denetimAyarlari?.aylikHedef,emailTemplate:jsonData.fideSettings?.emailTemplate}; for(const a in sets){const d=sets[a]; if(d!==undefined&&d!==null){await pb.collection('ayarlar').create({anahtar:a,deger:d});log('success',` Ayar aktarıldı: '${a}'`);}}}
+        async function migrateMigrationMap(){ log('header','-> Yönlendirme Kuralları Aktarımı'); const m=jsonData.migrationSettings; if(!m||!m.map){log('warn',' Yönlendirme kuralı bulunamadı.');return;} const nm={}; m.map.forEach((v,i)=>{if(v!==null)nm[String(i)]=String(v);}); if(Object.keys(nm).length===0){log('info',' Dolu kural bulunamadı.');return;} log('info',` ${Object.keys(nm).length} kural dönüştürüldü.`); const a='migrationMap'; const d={deger:nm}; try{const r=await pb.collection('ayarlar').getFirstListItem(`anahtar="${a}"`); await pb.collection('ayarlar').update(r.id,d); log('success',' Mevcut \'migrationMap\' güncellendi.');}catch(e){if(e.status===404){await pb.collection('ayarlar').create({anahtar:a,...d}); log('success',' Yeni \'migrationMap\' oluşturuldu.');}else{log('error',` HATA: 'migrationMap' kaydedilemedi: ${e.message}`);}}}
+        async function migrateExcelVerileri(){ log('header','-> Excel Verileri Aktarımı'); if(!await clearCollection('excel_verileri'))return; if(jsonData.excelData?.dide?.data){await pb.collection('excel_verileri').create({tip:'dide',veri:jsonData.excelData.dide.data,dosyaAdi:jsonData.excelData.dide.filename||'Firebase Yedeği'}); log('success',' DiDe verisi aktarıldı.');} if(jsonData.excelData?.fide?.data){await pb.collection('excel_verileri').create({tip:'fide',veri:jsonData.excelData.fide.data,dosyaAdi:jsonData.excelData.fide.filename||'Firebase Yedeği'}); log('success',' FiDe verisi aktarıldı.');}}
+        async function migrateDenetimRaporlari(){ log('header','-> Denetim Raporları Aktarımı'); if(!await clearCollection('denetim_raporlari'))return; const r=jsonData.allFideReports||{}; if(Object.keys(r).length===0){log('warn',' Rapor bulunamadı.');return;} log('info',' Raporlar aktarılıyor...'); let s=0,e=0; const a=await pb.collection('bayiler').getFullList(); const sm=new Map(a.map(st=>[st.bayiKodu,st.id])); for(const k in r){const rp=r[k].data; const bk=rp.selectedStore.bayiKodu.trim(); const bi=sm.get(bk); if(!bi){log('warn',` Rapor için bayi bulunamadı: '${bk}'`); e++; continue;} const sd={}; if(Array.isArray(rp.questions_status)){rp.questions_status.forEach((st,i)=>{if(st)sd[i]=st;});} const d={bayi:bi,soruDurumlari:sd,denetimTamamlanmaTarihi:rp.auditCompletedTimestamp?new Date(rp.auditCompletedTimestamp).toISOString():null}; try{await pb.collection('denetim_raporlari').create(d); s++;}catch(err){log('error',` HATA: ${bk} için rapor oluşturulamadı: ${err.message}`); e++;}} log('success',` ${s} rapor aktarıldı.`); if(e>0)log('warn',` ${e} rapor aktarılamadı.`);}
+        async function migrateGeriAlinanlar(){ log('header','-> Geri Alınanlar Aktarımı'); if(!await clearCollection('denetim_geri_alinanlar'))return; const g=jsonData.denetimGeriAlinanlar||{}; if(Object.keys(g).length===0){log('warn',' Geri alınmış kayıt bulunamadı.');return;} log('info',' Geri alınmış kayıtlar aktarılıyor...'); let s=0,e=0; const a=await pb.collection('bayiler').getFullList(); const sm=new Map(a.map(st=>[st.bayiKodu,st.id])); for(const y in g){const bks=g[y]||[]; for(const bk of bks){if(!bk)continue; const bi=sm.get(bk.trim()); if(bi){await pb.collection('denetim_geri_alinanlar').create({yil_ay:y,bayi:bi}); s++;}else{log('warn',` Geri alma kaydı için bayi bulunamadı: '${bk}'`); e++;}}} log('success',` ${s} geri alma kaydı aktarıldı.`); if(e>0)log('warn',` ${e} geri alma kaydı aktarılamadı.`);}
+
+    </script>
+</body>
+</html>

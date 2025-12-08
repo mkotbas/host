@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proje Dökümantasyonu: Arçelik Denetim Formu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --light-bg: #ffffff;
+            --light-border: #e5e7eb;
+            --light-text-primary: #1f2937;
+            --light-text-secondary: #6b7280;
+            --light-container-bg: #f9fafb;
+            --primary-color: #3b82f6;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--light-container-bg);
+            color: var(--light-text-primary);
+            line-height: 1.7;
+            padding: 20px;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--light-bg);
+            border: 1px solid var(--light-border);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        header {
+            padding: 30px 40px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        header p {
+            margin: 5px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        section {
+            padding: 30px 40px;
+            border-bottom: 1px solid var(--light-border);
+        }
+
+        section:last-child {
+            border-bottom: none;
+        }
+
+        h2, h3, h4 {
+            color: var(--light-text-primary);
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+            display: inline-block;
+        }
+        
+        h2 i, h3 i, h4 i {
+            color: var(--primary-color);
+            margin-right: 10px;
+        }
+
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: #f3f4f6;
+            color: #4b5563;
+            padding: 3px 6px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background-color: var(--light-container-bg);
+            border: 1px solid var(--light-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--light-border);
+        }
+
+        th, td {
+            border: 1px solid var(--light-border);
+            padding: 12px 15px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: var(--light-container-bg);
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fcfcfc;
+        }
+        
+        td:first-child code,
+        td:first-child strong {
+            font-weight: 600;
+            color: #3730a3;
+        }
+        
+        ul {
+            padding-left: 20px;
+        }
+        
+        li {
+            margin-bottom: 10px;
+        }
+        
+        .update-guide .info-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-left: 5px solid var(--warning-color);
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .update-guide .info-box strong {
+            color: #92400e;
+        }
+        
+        #ai-instructions {
+            background-color: #fef2f2; /* Açık Kırmızı */
+            border: 1px solid #fecaca;
+            border-left: 5px solid var(--danger-color, #ef4444);
+            border-radius: 8px;
+            margin: 30px 40px 0 40px; /* main padding'ine uyumlu */
+            padding: 25px;
+        }
+        #ai-instructions h2 {
+            border-bottom-color: var(--danger-color);
+            margin-top: 0;
+            color: #991b1b;
+        }
+        #ai-instructions h2 i {
+            color: var(--danger-color);
+        }
+        #ai-instructions p {
+            color: #991b1b;
+        }
+        #ai-instructions ol {
+            padding-left: 25px;
+            margin-top: 15px;
+        }
+        #ai-instructions li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+            color: #b91c1c; /* Koyu kırmızı metin */
+        }
+        #ai-instructions code {
+            background-color: #fee2e2;
+            color: #991b1b;
+            font-weight: 600;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <main>
+        <header>
+            <h1>Proje Dökümantasyonu: Arçelik Denetim Formu</h1>
+            <p>PocketBase destekli, modüler denetim ve yönetim web uygulaması.</p>
+        </header>
+
+        <div id="ai-instructions">
+            <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
+            <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.1</strong> (Styling modülüne alt kategori adet çarpanı eklendi.)</p>
+            
+            <ol>
+                <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında veya silindiğinde versiyon numarası buna göre güncellensin. (Mevcut: v1.0.1)</li>
+                <li>Herhangi bir şey güncellendiğinde veya çıkartıldığında dosyadaki kodların tamamı güncellenerek yazılsın.</li>
+                <li>Güncelleme yapıldığında eğer birden çok dosya güncellenmesi gerekiyorsa dosyaları ikişer ikişer iste.</li>
+                <li>İstediğim güncelleme hangi dosyayı ilgilendiriyorsa o dosyayı iste, projenin tamamını isteme.</li>
+                <li>Herhangi bir güncelleme istersem sadece projeye ait yükleyeceğin dosyalar üzerinde güncelleme yapılsın. Kendin dosya vermeden kod yazma.</li>
+                <li>Güncelleme yaparken ya da özellik silerken, JS kodları JS dosyasına, CSS kodları CSS dosyasına, HTML kodları sadece HTML dosyasına işlensin. (Örn: Stil/tasarım güncellemesi JS koduna yazılmasın).</li>
+                <li>Ben herhangi bir güncelleme ya da özellik çıkartılmasını istiyorsam talimatı yazacağım, anladığını söyleyeceksin ve ben <code>başla</code> dediğimde başlayacaksın. Ben <code>başla</code> demezsem başlama.</li>
+                <li>Herhangi bir güncelleme istersem ya da özelliğin çıkartılmasını istersem tüm dosyaları analiz et ve hiçbir kod kalıntısı bırakma. Projenin kod kalabalığıyla dolu olmasını istemiyorum; daima stabil olsun ve olabildiğince az kod barındırsın ancak fonksiyonları tamamen çalışsın.</li>
+                <li>Bir güncelleme olduğunda veya çıkartıldığında mutlaka tamamlandığını bana söyle ve devamında dökümanı güncelleyip güncellemek istemediğimi de sor. Dökümanda o özellik varsa yeni güncellemeyle beraber o kısmı da güncelle veya özellik çıkartıldıysa dökümandan bu özelliği de çıkart.</li>
+            </ol>
+        </div>
+        <section id="introduction">
+            <h2><i class="fas fa-rocket"></i> Giriş ve Teknoloji Yığını</h2>
+            <p>
+                Bu proje, Arçelik denetim uzmanlarının saha ve dijital denetimlerini (FiDe/DiDe) gerçekleştirmeleri için tasarlanmış, <strong>PocketBase (Backend-as-a-Service)</strong> destekli modern bir web uygulamasıdır.
+            </p>
+            <p>
+                Uygulama iki ana bileşenden oluşur:
+            </p>
+            <ul>
+                <li><strong>Denetçi Arayüzü (Ana Form):</strong> Denetçilerin bayileri seçip denetim formlarını doldurduğu, anlık otomatik kayıt yapan ve e-posta taslağı oluşturan ana arayüz.</li>
+                <li><strong>Yönetim Paneli (Admin):</strong> Bayilerin, kullanıcıların, denetim sorularının ve veritabanının yönetildiği modüler yönetici arayüzü.</li>
+            </ul>
+
+            <h3>Teknoloji Yığını</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kategori</th>
+                        <th>Teknoloji</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Veritabanı & Backend</strong></td>
+                        <td><code>PocketBase</code></td>
+                        <td>Tüm veritabanı, kimlik doğrulama (auth) ve dosya depolama işlemleri için kullanılır.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ön Yüz (Frontend)</strong></td>
+                        <td><code>Vanilla JavaScript (ES6+ Modülleri)</code></td>
+                        <td>Proje, herhangi bir framework (React, Vue vb.) kullanmadan, modern ES6 modül yapısı (<code>import</code>/<code>export</code>) ile yazılmıştır.</td>
+                    </tr>
+                    <tr>
+                        <td rowspan="3"><strong>Temel Kütüphaneler</strong></td>
+                        <td><code>PocketBase.js</code></td>
+                        <td>PocketBase sunucusu ile iletişim için resmi JavaScript SDK'sı.</td>
+                    </tr>
+                    <tr>
+                        <td><code>XLSX.js (SheetJS)</code></td>
+                        <td>Excel dosyalarını okumak (DiDe/FiDe Puanları, Bayi Listesi, Styling Listesi) ve yazmak (Raporlama) için kullanılır.</td>
+                    </tr>
+                    <tr>
+                        <td><code>Quill.js</code></td>
+                        <td>Yönetim panelindeki "E-posta Taslağı" modülünde zengin metin (rich text) editörü sağlamak için kullanılır.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="architecture">
+            <h2><i class="fas fa-sitemap"></i> Proje Mimarisi</h2>
+            <p>
+                Proje, iki ana giriş noktasına sahip modüler bir yapı kullanır. Bu yapı, denetçi (client) ve yönetici (admin) işlevlerini net bir şekilde ayırır.
+            </p>
+            
+            <h3>1. Denetçi Arayüzü (<code>index.html</code>)</h3>
+            <p>
+                Kullanıcının ana giriş noktasıdır. <code>main.js</code> dosyası tarafından başlatılır. Tüm işlevsellik (<code>api.js</code>, <code>ui.js</code>, <code>store.js</code> vb.) ES6 modülleri aracılığıyla <code>main.js</code>'e aktarılır.
+            </p>
+            <ul>
+                <li><strong>Başlatma:</strong> <code>main.js</code>, <code>db-config.js</code>'den PocketBase URL'ini alarak veritabanı bağlantısını (<code>pb</code>) başlatır.</li>
+                <li><strong>Kimlik Doğrulama:</strong> <code>api.js</code> üzerinden <code>loginUser</code> fonksiyonu ile güvenli giriş yapılır. Bu giriş, <code>is_banned</code> (hesap kilidi), <code>mobile_access</code> (mobil izin) ve <code>user_devices</code> (cihaz limiti) kontrollerini içerir.</li>
+                <li><strong>Veri Yükleme:</strong> Giriş başarılıysa, <code>api.loadInitialData</code> fonksiyonu tüm gerekli verileri (Sorular, Bayiler, Excel verileri) çeker.</li>
+                <li><strong>Arayüz Oluşturma:</strong> <code>ui.buildForm</code>, <code>ayarlar</code> tablosundan çekilen sorulara (<code>fideQuestionsData</code>) göre formu dinamik olarak HTML'e dönüştürür.</li>
+                <li><strong>Anlık Güvenlik:</strong> <code>api.subscribeToRealtimeChanges</code> fonksiyonu, kullanıcının <code>users</code> ve <code>user_devices</code> kayıtlarını anlık olarak dinler. Eğer bir yönetici kullanıcıyı banlarsa veya cihazı kilitlerse, kullanıcı anında sistemden atılır (<code>utils.js -> showLockoutOverlay</code>).</li>
+                <li><strong>Otomatik Kayıt:</strong> Formda yapılan her değişiklik (yazı yazma, kutu işaretleme), <code>ui.js</code> içindeki <code>debouncedSaveFormState</code> fonksiyonu sayesinde 800ms gecikmeyle otomatik olarak <code>api.saveFormState</code> aracılığıyla veritabanına kaydedilir.</li>
+            </ul>
+
+            <h3>2. Yönetim Paneli (<code>admin/admin.html</code>)</h3>
+            <p>
+                Yöneticinin giriş noktasıdır. <code>admin/admin.js</code> dosyası tarafından başlatılır. Bu dosya, temel bir "modül yükleyici" (module loader) görevi görür.
+            </p>
+            <ul>
+                <li><strong>Rol Kontrolü:</strong> <code>admin.js</code>, giriş yapan kullanıcının rolünü (<code>admin</code> veya <code>client</code>) kontrol eder.</li>
+                <li><strong>Dinamik Menü:</strong> <code>admin</code> rolü tüm modülleri görürken, <code>client</code> rolü (denetim uzmanı) yalnızca "Denetim Takip" modülünü görür.</li>
+                <li><strong>Modül Yükleme:</strong> Menüden bir modül seçildiğinde, <code>admin.js</code> içindeki <code>loadModule</code> fonksiyonu çalışır. Bu fonksiyon, JavaScript'in dinamik <code>import()</code> özelliğini kullanarak <code>/modules/MODUL_ADI/</code> klasöründen ilgili <code>.html</code>, <code>.css</code> ve <code>.js</code> dosyalarını çeker ve ana panele enjekte eder.</li>
+            </ul>
+        </section>
+
+        <section id="schema">
+            <h2><i class="fas fa-database"></i> Veritabanı Şeması (PocketBase)</h2>
+            <p>Kod analizi ve işlevselliğe dayalı olarak çıkarılan PocketBase koleksiyon (tablo) yapısı:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Koleksiyon (Tablo)</th>
+                        <th>Önemli Alanlar (Alan Tipi)</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>users</code></td>
+                        <td>
+                            <code>name</code> (text)<br>
+                            <code>role</code> (select: 'admin' | 'client')<br>
+                            <code>mobile_access</code> (bool)<br>
+                            <code>device_limit</code> (number)<br>
+                            <code>is_banned</code> (bool)
+                        </td>
+                        <td>Sisteme giriş yapan kullanıcılar. <code>role</code> admin paneli erişimini belirler. <code>is_banned</code> anlık hesap kilididir. <code>device_limit</code> bireysel cihaz sınırıdır.</td>
+                    </tr>
+                    <tr>
+                        <td><code>bayiler</code></td>
+                        <td>
+                            <code>bayiKodu</code> (text, <i>Unique</i>)<br>
+                            <code>bayiAdi</code> (text)<br>
+                            <code>bolge</code>, <code>sehir</code>, <code>ilce</code> (text)<br>
+                            <code>yonetmen</code> (text)<br>
+                            <code>sorumlu_kullanici</code> (relation &rarr; <code>users</code>)
+                        </td>
+                        <td>Denetlenecek tüm bayi kayıtları. <code>sorumlu_kullanici</code>, bayinin hangi denetçiye (client) atandığını belirler.</td>
+                    </tr>
+                    <tr>
+                        <td><code>denetim_raporlari</code></td>
+                        <td>
+                            <code>bayi</code> (relation &rarr; <code>bayiler</code>)<br>
+                            <code>user</code> (relation &rarr; <code>users</code>)<br>
+                            <strong><code>soruDurumlari</code> (json)</strong><br>
+                            <code>denetimTamamlanmaTarihi</code> (date)
+                        </td>
+                        <td><strong>Projenin çekirdek verisidir.</strong> Denetçilerin kaydettiği tüm cevaplar <code>soruDurumlari</code> JSON nesnesinde saklanır (Örn: <code>{"16": {"subCategoryQty": "3", ...}}</code>).</td>
+                    </tr>
+                    <tr>
+                        <td><code>user_devices</code></td>
+                        <td>
+                            <code>user</code> (relation &rarr; <code>users</code>)<br>
+                            <code>device_key</code> (text, <i>Unique</i>)<br>
+                            <code>device_info</code> (text)<br>
+                            <code>is_locked</code> (bool)
+                        </td>
+                        <td>Kullanıcıların giriş yaptığı cihazların kaydı. <code>is_locked</code> (True ise) o cihazdan girişi anlık olarak engeller (Cihaz Kilidi).</td>
+                    </tr>
+                    <tr>
+                        <td><code>ayarlar</code></td>
+                        <td>
+                            <code>anahtar</code> (text, <i>Unique</i>)<br>
+                            <code>deger</code> (json | text | number)
+                        </td>
+                        <td>Global ayarlar için bir Anahtar-Değer (Key-Value) tablosu. <strong>Tüm sorular (<code>fideQuestionsData</code>)</strong>, e-posta şablonu (<code>emailTemplate</code>), aylık hedef (<code>aylikHedef</code>) ve soru ID yönlendirmeleri (<code>migrationMap</code>) burada saklanır.</td>
+                    </tr>
+                    <tr>
+                        <td><code>excel_verileri</code></td>
+                        <td>
+                            <code>tip</code> (select: 'dide' | 'fide')<br>
+                            <code>veri</code> (json)
+                        </td>
+                        <td>Yönetim panelinden yüklenen DiDe ve FiDe Excel puanlarının JSON olarak saklandığı yer. E-posta taslağındaki puan tablosu bu veriyi çeker.</td>
+                    </tr>
+                    <tr>
+                        <td><code>denetim_geri_alinanlar</code></td>
+                        <td>
+                            <code>bayi</code> (relation &rarr; <code>bayiler</code>)<br>
+                            <code>yil_ay</code> (text)
+                        </td>
+                        <td>"Denetim Takip" modülünde "Geri Al" yapılan denetimlerin kaydını tutar. Sayaçları düzeltmek için kullanılır.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="file-structure">
+            <h2><i class="far fa-folder-open"></i> Klasör ve Dosya Yapısı</h2>
+            <p>Projenin tam dosya hiyerarşisi ve her dosyanın birincil sorumluluğu:</p>
+<pre>
+/ (Ana Dizin)
+├── <strong>admin/</strong>
+│   ├── admin.html          <em>(Yönetim paneli ana iskeleti/kabuğu)</em>
+│   ├── admin.css           <em>(Panel iskeletinin stili)</em>
+│   └── <strong>admin.js</strong>            <em>(Panel modül yükleyicisi ve admin/client rol kontrolü)</em>
+│
+├── <strong>modules/</strong>
+│   ├── <strong>bayi-yoneticisi/</strong>
+│   │   └── bayi-yoneticisi.html, .css, .js     <em>(Bayiler koleksiyonu için CRUD, Excel İçe/Dışa Aktarma)</em>
+│   ├── <strong>denetim-takip/</strong>
+│   │   └── denetim-takip.html, .css, .js     <em>(Denetim ilerleme paneli (dashboard) ve kullanıcı filtreleme)</em>
+│   ├── <strong>eposta-taslagi/</strong>
+│   │   └── eposta-taslagi.html, .css, .js    <em>(Quill.js editörü ile e-posta şablonu yönetimi)</em>
+│   ├── <strong>kullanici-yoneticisi/</strong>
+│   │   └── kullanici-yoneticisi.html, .css, .js  <em>(Users koleksiyonu için CRUD, rol, ban ve cihaz yönetimi)</em>
+│   ├── <strong>soru-yoneticisi/</strong>
+│   │   └── soru-yoneticisi.html, .css, .js     <em>(Ana denetim soruları (fideQuestionsData) yönetimi, 'Senaryo Sistemi')</em>
+│   └── <strong>veritabani-yonetim/</strong>
+│       └── veritabani-yonetim.html, .css, .js  <em>(Tehlikeli/Yıkıcı veritabanı temizleme işlemleri)</em>
+│
+├── <strong>index.html</strong>              <em>(Ana denetim formu - Denetçi Arayüzü)</em>
+├── style.css               <em>(Ana formun stili)</em>
+├── db-config.js            <em>(PocketBase bağlantı URL'sini içerir)</em>
+├── <strong>main.js</strong>                 <em>(Uygulama başlatıcısı ve popup giriş mantığı - Client)</em>
+├── state.js                <em>(Global uygulama durumu yönetimi - Client)</em>
+├── <strong>api.js</strong>                  <em>(Tüm PocketBase veritabanı işlemleri ve güvenlik kontrolleri - Client)</em>
+├── <strong>ui.js</strong>                   <em>(Kullanıcı arayüzü (DOM) oluşturma ve yönetimi - Client)</em>
+├── excel.js                <em>(DiDe/FiDe Excel dosyası işleme mantığı - Client)</em>
+├── store.js                <em>(Bayi arama ve seçme mantığı - Client)</em>
+└── utils.js                <em>(Genel yardımcı fonksiyonlar, örn: showLoadingOverlay)</em>
+</pre>
+        </section>
+
+        <section id="module-analysis">
+            <h2><i class="fas fa-cogs"></i> Modül ve Dosya Analizi</h2>
+            
+            <h3>Grup 1: Ana (Client) Arayüzü (Kök Dizin <code>/</code>)</h3>
+            <ul>
+                <li><code>main.js</code> (Başlatıcı): <code>initializeApp</code> fonksiyonu ile uygulamayı başlatır. PocketBase'i (<code>pb</code>) ilklendirir. <code>api.loadInitialData</code> ile tüm verileri yükler, <code>ui.buildForm</code> ile formu çizer. <code>api.subscribeToRealtimeChanges</code> ile anlık güvenlik dinlemesini başlatır.</li>
+                <li><code>api.js</code> (Veri Katmanı): <strong>Tüm PocketBase iletişiminin merkezidir.</strong>
+                    <ul>
+                        <li><code>loginUser(email, password)</code>: Güvenli giriş yapar. <code>is_banned</code>, <code>mobile_access</code> ve <code>user_devices</code> (bireysel limit) kontrollerini içerir.</li>
+                        <li><code>loadInitialData()</code>: Gerekli tüm verileri (Bayiler, Sorular, Ayarlar, Excel Verileri, Aylık Denetimler) çeker.</li>
+                        <li><code>loadReportForStore(bayiKodu)</code>: Seçilen bayi için kaydedilmiş <code>denetim_raporlari</code> verisini çeker.</li>
+                        <li><code>saveFormState(reportData, isFinalizing)</code>: Formdaki verileri <code>denetim_raporlari</code> koleksiyonuna kaydeder/günceller. <code>isFinalizing</code> True ise <code>denetimTamamlanmaTarihi</code> alanını da ekler.</li>
+                        <li><code>subscribeToRealtimeChanges()</code>: <code>users</code> (ban için) ve <code>user_devices</code> (lock için) koleksiyonlarını dinler. Bir yönetici bu kayıtlarda değişiklik yaparsa, kullanıcıyı sistemden atar.</li>
+                    </ul>
+                </li>
+                
+                <li><code>ui.js</code> (Arayüz Katmanı): <strong>Tüm HTML oluşturma ve DOM manipülasyonu buradadır.</strong>
+                    <ul>
+                        <li><code>buildForm()</code>: <code>state.fideQuestions</code> dizisini döngüye alarak <code>generateQuestionHtml</code>'i çağırır.</li>
+                        <li><code>generateQuestionHtml(q)</code>: Soru tipine (<code>q.type</code>) göre (<code>standard</code>, <code>product_list</code>, <code>pop_system</code>, <code>styling_list</code>) farklı HTML yapısı oluşturur. <strong>v1.0.1:</strong> <code>styling_list</code> için "Alt Kategori Adet" (<code>.sub-category-qty-input</code>) girişini ekler.</li>
+                        <li><code>handleStylingSubCatChange(event)</code>: <strong>v1.0.1:</strong> Styling alt kategorisi seçildiğinde tetiklenir. <code>.sub-category-qty-input</code>'tan adedi okur, varsayılan ürün adetleriyle çarpar ve listeyi otomatik olarak doldurur.</li>
+                        <li><code>getFormDataForSaving()</code>: Formdaki tüm cevapları (inputlar, ürün listeleri, pop seçimleri) okur ve <code>api.saveFormState</code>'in anlayacağı bir JSON nesnesine dönüştürür. <strong>v1.0.1:</strong> <code>styling_list</code> için <code>subCategoryQty</code> (Alt Kategori Adedi) değerini de JSON'a ekler.</li>
+                        <li><code>loadReportUI()</code>: Kayıtlı rapordan verileri okur ve forma geri yükler. <strong>v1.0.1:</strong> Kayıtlı <code>subCategoryQty</code> değerini "Alt Kategori Adet" kutusuna yükler.</li>
+                        <li><code>debouncedSaveFormState()</code>: Formdaki her değişikliği 800ms gecikmeyle otomatik olarak kaydetmek için <code>saveFormState</code>'i tetikleyen mekanizmadır.</li>
+                        <li><code>generateEmail()</code>: E-posta taslağını oluşturur. <code>excel.js</code>'den gelen puan verilerini tabloya dönüştürür ve formdaki tüm cevapları listeler.</li>
+                    </ul>
+                </li>
+                <li><code>state.js</code> (Durum Yönetimi): <code>dideData</code>, <code>fideData</code>, <code>fideQuestions</code>, <code>selectedStore</code> gibi tüm uygulama tarafından kullanılan global değişkenleri tutar ve <code>set...</code> fonksiyonları ile güvenli bir şekilde güncellenmesini sağlar.</li>
+                <li><code>store.js</code>: Bayi arama (<code>displayStores</code>) ve seçme (<code>selectStore</code>) mantığını içerir. Bir bayi seçildiğinde, <code>api.loadReportForStore</code>'u tetikler.</li>
+                <li><code>excel.js</code>: <code>handleFileSelect</code> ve <code>processDideExcelData</code>/<code>processFideExcelData</code> fonksiyonları ile yüklenen DiDe/FiDe Excel dosyalarını okur, işler ve <code>excel_verileri</code> koleksiyonuna kaydeder.</li>
+                <li><code>utils.js</code>: Genel yardımcıları içerir. En önemlileri <code>showLoadingOverlay</code> (yükleniyor ekranı) ve <code>showLockoutOverlay</code> (kullanıcıyı kilitleyen kırmızı ekran).</li>
+            </ul>
+
+            <h3>Grup 2: Yönetim Paneli (<code>/admin</code> ve <code>/modules</code>)</h3>
+            <ul>
+                <li><code>admin/admin.js</code> (Modül Yükleyici):
+                    <ul>
+                        <li><code>initializeAdminPanel</code>: Kullanıcı rolünü (<code>admin</code>/<code>client</code>) kontrol eder.</li>
+                        <li><code>renderModuleMenu</code>: Role göre menüyü dinamik olarak oluşturur (Client sadece <code>denetim-takip</code> görür).</li>
+                        <li><code>loadModule(moduleId)</code>: <strong>Çekirdek fonksiyondur.</strong> Seçilen modülün <code>.html</code>'ini <code>fetch</code> ile, <code>.css</code>'ini <code>&lt;link&gt;</code> etiketi ekleyerek ve <code>.js</code>'ini dinamik <code>import()</code> ile yükler. Yüklenen JS'in <code>initialize[ModulAdi]Module(pb)</code> fonksiyonunu çağırır.</li>
+                    </ul>
+                </li>
+                <li><code>modules/denetim-takip.js</code>:
+                    <ul>
+                        <li><code>loadMasterData()</code>: Role göre tüm verileri (Admin: tümü, Client: sadece kendi) <code>allStoresMaster</code>, <code>allReportsMaster</code> gibi ana listelere yükler.</li>
+                        <li><code>applyDataFilterAndRunDashboard(viewId)</code>: Admin'in seçtiği görünüme ('Benim Verilerim', 'Genel Bakış' veya 'Diğer Kullanıcı') göre ana listeleri filtreleyerek <code>allStores</code>, <code>auditedStoreCodesCurrentMonth</code> gibi "Görünüm" listelerini doldurur.</li>
+                        <li><code>runDashboard()</code>: Filtrelenmiş "Görünüm" listelerine göre sayaçları (<code>calculateAndDisplayDashboard</code>) ve listeleri (<code>renderRemainingStores</code>) çizer.</li>
+                    </ul>
+                </li>
+                <li><code>modules/bayi-yoneticisi.js</code>:
+                    <ul>
+                        <li>Bayi CRUD işlemleri (<code>handleNewBayi</code>, <code>handleEditBayi</code>, <code>handleDeleteBayi</code>).</li>
+                        <li><code>handleExportExcel</code>: XLSX.js kullanarak filtrelenmiş bayi listesini Excel'e aktarır.</li>
+                        <li><code>executeImport</code>: <strong>Excel'den İçe Aktarma</strong> sihirbazının (<code>openImportModal</code>) son adımıdır. Sütun eşleştirmelerine göre <code>bayiler</code> koleksiyonunu toplu olarak günceller veya oluşturur.</li>
+                        <li><code>executeBulkAssign</code>: <strong>Toplu Atama</strong> sihirbazının (<code>openBulkAssignModal</code>) son adımıdır. Filtrelenmiş (Bölge, Şehir vb.) "Atanmamış" bayilere seçilen denetim uzmanını (<code>sorumlu_kullanici</code>) atar.</li>
+                    </ul>
+                </li>
+                <li><code>modules/kullanici-yoneticisi.js</code>:
+                    <ul>
+                        <li>Kullanıcı CRUD işlemleri (<code>handleNew</code>, <code>handleEdit</code>, <code>handleDelete</code>).</li>
+                        <li><code>handleToggleBanUser</code>: Kullanıcının <code>users</code> koleksiyonundaki <code>is_banned</code> (Hesap Kilidi) bayrağını değiştirir.</li>
+                        <li><code>handleToggleLockDevice</code>: <code>user_devices</code> koleksiyonundaki bir cihazın <code>is_locked</code> (Cihaz Kilidi) bayrağını değiştirir.</li>
+                        <li>Form, kullanıcının rolü "client" ise bireysel <code>device_limit</code> (cihaz limiti) ayarını gösterir.</li>
+                    </ul>
+                </li>
+                <li><code>modules/soru-yoneticisi.js</code>:
+                    <ul>
+                        <li><code>renderQuestionManager</code>: <code>fideQuestions</code> dizisine göre soru yönetim arayüzünü oluşturur.</li>
+                        <li><code>saveQuestions</code>: <strong>Çekirdek fonksiyondur.</strong> Arayüzdeki tüm değişiklikleri toplar (yeni sorular, ürün listeleri, styling hiyerarşisi dahil) ve tek bir JSON nesnesi olarak <code>ayarlar</code> koleksiyonundaki <code>fideQuestionsData</code> anahtarına kaydeder.</li>
+                        <li><code>render...ManagerUI</code>: Soru tiplerine özel (<code>product_list</code>, <code>pop_system</code>, <code>styling_list</code>) alt yönetim panellerini çizer.</li>
+                        <li><code>parseStylingBulkData</code>: "Styling Listesi" yöneticisindeki Excel sihirbazını çalıştırır, eşleştirilen sütunlara göre hiyerarşik (Ana Kategori -> Alt Kategori -> Ürün) yapıyı oluşturur.</li>
+                        <li><code>applyIdChangeScenario</code> / <code>applyDeleteQuestionScenario</code>: <strong>Hazır Senaryo Sistemi.</strong> Bu fonksiyonlar <code>updateAllReports</code>'u çağırarak <strong>TÜM</strong> <code>denetim_raporlari</code> kayıtlarını gezer ve <code>soruDurumlari</code> JSON'u içinde ID değişikliği veya silme işlemi yapar.</li>
+                    </ul>
+                </li>
+                <li><code>modules/eposta-taslagi.js</code>: Quill.js editörünü (<code>initializeQuillEditor</code>) başlatır. <code>saveTemplateData</code> fonksiyonu, editördeki HTML içeriğini <code>ayarlar</code> koleksiyonundaki <code>emailTemplate</code> anahtarına kaydeder.</li>
+                <li><code>modules/veritabani-yonetim.js</code>:
+                    <ul>
+                        <li>"Güvenli" ve "Yıkıcı" eylemler sunar.</li>
+                        <li><code>handleDeleteUserAndData_Modal</code> (Güvenli): Bir kullanıcıyı, raporlarını (<code>denetim_raporlari</code>) siler VE bayilerini (<code>bayiler</code>) "Atanmamış" (null) olarak günceller.</li>
+                        <li><code>handleDeleteUnassignedBayis_Modal</code> (Yıkıcı): "Atanmamış" (<code>sorumlu_kullanici</code> alanı null olan) tüm bayileri <code>bayiler</code> koleksiyonundan siler VE bu bayilere ait TÜM raporları (<code>denetim_raporlari</code>) siler.</li>
+                        <li><code>deleteTable</code>: Bir koleksiyondaki tüm kayıtları toplu olarak siler.</li>
+                    </ul>
+                </li>
+            </ul>
+        </section>
+
+        <section id="update-guide" class="update-guide">
+            <h2><i class="fas fa-wrench"></i> Güncelleme ve Bakım Rehberi</h2>
+            <p>Projeye gelecekte bir özellik eklerken veya güncelleme yaparken bu rehber, hangi dosyaların etkileneceğini anlamanıza yardımcı olacaktır.</p>
+
+            <div class="info-box">
+                <p><strong>Temel Kurallar (Kullanıcı Talimatları):</strong></p>
+                <ul>
+                    <li><strong>Kod Tekrarı Yapma:</strong> Yeni bir özellik eklerken, mevcut CSS sınıflarını (<code>style.css</code>) veya JavaScript fonksiyonlarını (<code>utils.js</code>, <code>api.js</code>) mümkün olduğunca tekrar kullan.</li>
+                    <li><strong>Ölü Kodu Temizle:</strong> Bir özellik güncellendiğinde, eski (kullanımdan kalkan) fonksiyonları veya CSS sınıflarını analiz edip sil.</li>
+                    <li><strong>Sıralı Güncelleme:</strong> Birden fazla dosya güncelleniyorsa, dosyaları tek tek (ilk dosyayı güncelle, "devam et" komutunu bekle, sonra diğer dosyayı güncelle) sağla.</li>
+                </ul>
+            </div>
+
+            <h3>Senaryo 1: Yeni Bir Soru Tipi Ekleme (Örn: 'anket_tipi')</h3>
+            <p>Yeni bir soru tipi eklemek, sistemin 6 farklı noktasını etkiler:</p>
+            <ol>
+                <li><strong>Soru Yöneticisi (Oluşturma):</strong>
+                    <ul>
+                        <li><code>modules/soru-yoneticisi.js</code> &rarr; <code>renderQuestionManager</code>: <code>&lt;select&gt;</code> içine yeni <code>&lt;option value="anket_tipi"&gt;</code> eklenmeli.</li>
+                        <li><code>modules/soru-yoneticisi.js</code> &rarr; <code>toggleSpecialManagerUI</code>: Yeni tip için özel bir ayar paneli (<code>renderAnketManagerUI</code> gibi) gerekiyorsa <code>else if</code> eklenmeli.</li>
+                        <li><code>modules/soru-yoneticisi.js</code> &rarr; <code>saveQuestions</code>: Yeni tipin özel verilerini (eğer varsa) JSON'a kaydetme mantığı eklenmeli.</li>
+                    </ul>
+                </li>
+                <li><strong>Denetçi Arayüzü (Görüntüleme):</strong>
+                    <ul>
+                        <li><code>ui.js</code> &rarr; <code>generateQuestionHtml</code>: <code>else if (q.type === 'anket_tipi')</code> bloğu eklenerek bu tipin HTML'i oluşturulmalı.</li>
+                    </ul>
+                </li>
+                <li><strong>Denetçi Arayüzü (Veri Okuma):</strong>
+                    <ul>
+                        <li><code>ui.js</code> &rarr; <code>getFormDataForSaving</code>: <code>else if (q.type === 'anket_tipi')</code> bloğu eklenerek bu tipin cevaplarının <code>soruDurumlari</code> JSON'una nasıl kaydedileceği belirlenmeli.</li>
+                    </ul>
+                </li>
+                <li><strong>Denetçi Arayüzü (Veri Yükleme):</strong>
+                    <ul>
+                        <li><code>ui.js</code> &rarr; <code>loadReportUI</code>: Kayıtlı rapordan <code>anket_tipi</code> verisini okuyup forma geri yükleme mantığı eklenmeli.</li>
+                    </ul>
+                </li>
+                <li><strong>E-posta Taslağı:</strong>
+                    <ul>
+                        <li><code>ui.js</code> &rarr; <code>generateEmail</code>: <code>else if (q.type === 'anket_tipi')</code> bloğu eklenerek, <code>anket_tipi</code> sorusunun cevabının e-posta taslağında nasıl görüneceği belirlenmeli.</li>
+                    </ul>
+                </li>
+            </ol>
+            
+            <h3>Senaryo 2: Yeni Bir Admin Modülü Ekleme (Örn: 'raporlama')</h3>
+            <ol>
+                <li><code>/modules/</code> dizini altına <code>raporlama/</code> adında yeni bir klasör oluşturulur.</li>
+                <li>Bu klasörün içine <code>raporlama.html</code>, <code>raporlama.css</code> ve <code>raporlama.js</code> dosyaları eklenir.</li>
+                <li><code>raporlama.js</code> dosyasının dışarıya <code>export function initializeRaporlamaModule(pb) { ... }</code> adında bir ana fonksiyon sunması gerekir.</li>
+                <li><code>admin/admin.js</code> dosyası açılır ve <code>const modules</code> dizisinin içine yeni modül nesnesi eklenir:
+<pre>
+{
+    id: 'raporlama',
+    name: 'Raporlama Modülü',
+    icon: 'fas fa-chart-bar',
+    path: '../modules/raporlama/'
+}
+</pre>
+                </li>
+            </ol>
+            <p>Bu işlemden sonra <code>admin.js</code> (modül yükleyici) menüye yeni butonu ekler ve tıklandığında dosyaları otomatik olarak yükler.</p>
+        </section>
+    </main>
+
+</body>
+</html>
