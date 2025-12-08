@@ -145,12 +145,8 @@ export async function subscribeToRealtimeChanges() {
 }
 
 
-// --- MEVCUT FONKSİYONLAR (Bu bölümde değişiklik yok) ---
+// --- MEVCUT FONKSİYONLAR ---
 
-/**
- * O anki aya ait denetim verilerini yükler.
- * (Bu fonksiyonda değişiklik yok)
- */
 async function loadMonthlyAuditData() {
     state.setAuditedThisMonth([]);
     if (!pb || !pb.authStore.isValid) return;
@@ -187,10 +183,6 @@ async function loadMonthlyAuditData() {
     }
 }
 
-/**
- * Bulutta kayıtlı olan DiDe ve FiDe excel verilerini çeker.
- * (Bu fonksiyonda değişiklik yok)
- */
 export async function loadExcelDataFromCloud() {
     if (!pb || !pb.authStore.isValid) return;
 
@@ -219,9 +211,70 @@ export async function loadExcelDataFromCloud() {
     }
 }
 
+// --- YENİ EKLENEN: EXCEL EŞLEŞTİRME AYARLARINI YÖNETME ---
+
+/**
+ * PocketBase'deki 'ayarlar' koleksiyonundan Excel sütun eşleştirmelerini çeker.
+ * @returns {Promise<Object>} { dide: {...}, fide: {...} } formatında ayarlar.
+ */
+export async function getExcelMappings() {
+    if (!pb || !pb.authStore.isValid) return { dide: null, fide: null };
+
+    try {
+        const record = await pb.collection('ayarlar').getFirstListItem('anahtar="excel_mappings"');
+        return record.deger || { dide: null, fide: null };
+    } catch (error) {
+        // Eğer ayar hiç yoksa (ilk kurulum), boş dön.
+        if (error.status === 404) return { dide: null, fide: null };
+        console.error("Excel mapping ayarları çekilemedi:", error);
+        return { dide: null, fide: null };
+    }
+}
+
+/**
+ * Kullanıcının Excel Sihirbazında yaptığı seçimi PocketBase'e kaydeder.
+ * @param {string} type 'dide' veya 'fide'
+ * @param {Object} mappingConfig { bayiColIndex: 0, firstMonthColIndex: 3, headerRowIndex: 0 }
+ */
+export async function saveExcelMapping(type, mappingConfig) {
+    if (!pb || !pb.authStore.isValid) return false;
+
+    try {
+        // Mevcut ayarları çek
+        let currentSettings = { dide: null, fide: null };
+        let recordId = null;
+
+        try {
+            const record = await pb.collection('ayarlar').getFirstListItem('anahtar="excel_mappings"');
+            currentSettings = record.deger;
+            recordId = record.id;
+        } catch (e) {
+            // Kayıt yoksa devam et (create yapılacak)
+        }
+
+        // İlgili tipi güncelle
+        currentSettings[type] = mappingConfig;
+
+        if (recordId) {
+            await pb.collection('ayarlar').update(recordId, { deger: currentSettings });
+        } else {
+            await pb.collection('ayarlar').create({
+                anahtar: 'excel_mappings',
+                deger: currentSettings
+            });
+        }
+        return true;
+    } catch (error) {
+        console.error("Excel mapping ayarları kaydedilemedi:", error);
+        alert("Sütun ayarları buluta kaydedilemedi. Lütfen internet bağlantınızı kontrol edin.");
+        return false;
+    }
+}
+
+
 /**
  * Uygulama için gerekli tüm başlangıç verilerini yükler.
- * (Bu fonksiyonda değişiklik yok)
+ * --- GÜNCELLENDİ: Excel Mappings'i de state'e atar ---
  */
 export async function loadInitialData() {
     if (!pb || !pb.authStore.isValid) {
@@ -233,9 +286,11 @@ export async function loadInitialData() {
     try {
         await loadMonthlyAuditData();
 
+        // Ayarları Toplu Çek
         const ayarlarRecords = await pb.collection('ayarlar').getFullList();
+        
+        // 1. Sorular
         const fideQuestionsDataRecord = ayarlarRecords.find(r => r.anahtar === 'fideQuestionsData');
-
         if (fideQuestionsDataRecord) {
             const cloudData = fideQuestionsDataRecord.deger;
             state.setFideQuestions(cloudData.questions || []);
@@ -244,10 +299,22 @@ export async function loadInitialData() {
             throw new Error("fideQuestionsData bulunamadı");
         }
 
+        // 2. Pop Sistemi
         const popSystemQuestion = state.fideQuestions.find(q => q.type === 'pop_system');
         if (popSystemQuestion) {
             state.setPopCodes(popSystemQuestion.popCodes || []);
             state.setExpiredCodes(popSystemQuestion.expiredCodes || []);
+        }
+
+        // 3. (YENİ) Excel Eşleştirmeleri
+        const mappingRecord = ayarlarRecords.find(r => r.anahtar === 'excel_mappings');
+        if (mappingRecord && mappingRecord.deger) {
+            // State.js'de bu alanı tutacak bir yerimiz yoksa bile
+            // Excel.js her seferinde api.getExcelMappings ile de çekebilir.
+            // Ancak performans için state nesnesine "temp" olarak ekliyoruz.
+            state.appState.excelMappings = mappingRecord.deger; 
+        } else {
+            state.appState.excelMappings = { dide: null, fide: null };
         }
 
         const allStoresData = await pb.collection('bayiler').getFullList({ sort: 'bayiAdi' });
@@ -274,7 +341,6 @@ export async function loadInitialData() {
 
 /**
  * Formun mevcut durumunu veritabanına kaydeder veya günceller.
- * --- GÜNCELLENDİ ---
  */
 export async function saveFormState(reportData, isFinalizing = false) {
     if (!state.selectedStore || !pb || !pb.authStore.isValid) return;
