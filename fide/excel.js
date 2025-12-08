@@ -69,13 +69,36 @@ function openMappingModal(dataAsArray, type) {
             stepColumn.style.display = 'block';
             saveBtn.disabled = false;
 
+            // --- GÜNCELLEME BURADA ---
+            // Eğer tip 'fide' ise, kullanıcı YIL satırını seçmiştir.
+            // Başlıklar (Bayi Kodu vb.) genellikle bir alt satırdadır.
+            // Bu yüzden etiketleri okumak için bir alt satıra bakacağız.
+            let labelRowData = rowData; // Varsayılan (DiDe için)
+            
+            if (type === 'fide') {
+                // Bir alt satır var mı diye kontrol et
+                if (rowIndex + 1 < dataAsArray.length) {
+                    labelRowData = dataAsArray[rowIndex + 1];
+                }
+            }
+            // ------------------------
+
             // Sütun seçim kutularını doldur
             const fillSelect = (selectEl) => {
                 selectEl.innerHTML = '<option value="">-- Sütun Seçin --</option>';
-                rowData.forEach((cell, index) => {
-                    const cellText = (cell !== null && cell !== undefined) ? String(cell).substring(0, 30) : "(Boş)";
-                    selectEl.innerHTML += `<option value="${index}">Sütun ${index + 1}: ${cellText}</option>`;
-                });
+                // Sütun sayısı olarak en uzun satırı baz almak daha güvenli ama şimdilik labelRowData uzunluğunu kullanıyoruz.
+                // labelRowData boş olabilir, bu yüzden rowData uzunluğunu da kontrol edelim.
+                const columnCount = Math.max(rowData.length, labelRowData.length);
+
+                for (let i = 0; i < columnCount; i++) {
+                    const cell = labelRowData[i];
+                    // Hücre içeriğini al, yoksa (Boş) yaz
+                    const cellText = (cell !== null && cell !== undefined && String(cell).trim() !== "") 
+                                     ? String(cell).substring(0, 40) 
+                                     : "(Boş)";
+                    
+                    selectEl.innerHTML += `<option value="${i}">Sütun ${i + 1}: ${cellText}</option>`;
+                }
             };
 
             fillSelect(mapBayiKodu);
