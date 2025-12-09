@@ -370,6 +370,7 @@ async function handleDeleteUnassignedBayis_Modal(unassignedBayiler) {
     }
 
     let totalReportsDeleted = 0;
+    let totalRollbacksDeleted = 0;
     let totalBayisDeleted = 0;
     const totalBayiCount = unassignedBayiler.length;
     let hasError = false;
@@ -381,25 +382,36 @@ async function handleDeleteUnassignedBayis_Modal(unassignedBayiler) {
             const currentCount = i + 1;
             const progressPrefix = `(${currentCount}/${totalBayiCount})`;
 
-            const progressMsg1 = `${progressPrefix} '${bayiName}' için raporlar aranıyor...`;
+            const progressMsg1 = `${progressPrefix} '${bayiName}' için ilişkili veriler (rapor/geri alma) aranıyor...`;
             showLoading(true, progressMsg1);
             if(resultsDiv) resultsDiv.innerHTML = progressMsg1;
 
+            // 1. ADIM: Denetim Raporlarını Sil
             const reports = await pbInstance.collection('denetim_raporlari').getFullList({ 
                 filter: `bayi = "${bayi.id}"`, 
                 fields: 'id' 
             });
 
             if (reports.length > 0) {
-                const progressMsg2 = `${progressPrefix} ${reports.length} adet rapor siliniyor...`;
-                showLoading(true, progressMsg2);
-                if(resultsDiv) resultsDiv.innerHTML = progressMsg2;
-
                 const deleteReportPromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
                 await Promise.all(deleteReportPromises);
                 totalReportsDeleted += reports.length;
             }
 
+            // 2. ADIM: Geri Alınan Denetimleri (denetim_geri_alinanlar) Sil
+            // HATA BURADAN KAYNAKLANIYORDU, BU BÖLÜM EKLENDİ
+            const rollbacks = await pbInstance.collection('denetim_geri_alinanlar').getFullList({
+                filter: `bayi = "${bayi.id}"`,
+                fields: 'id'
+            });
+
+            if (rollbacks.length > 0) {
+                const deleteRollbackPromises = rollbacks.map(r => pbInstance.collection('denetim_geri_alinanlar').delete(r.id));
+                await Promise.all(deleteRollbackPromises);
+                totalRollbacksDeleted += rollbacks.length;
+            }
+
+            // 3. ADIM: Bayiyi Sil
             const progressMsg3 = `${progressPrefix} '${bayiName}' bayisi siliniyor...`;
             showLoading(true, progressMsg3);
             if(resultsDiv) resultsDiv.innerHTML = progressMsg3;
@@ -411,6 +423,7 @@ async function handleDeleteUnassignedBayis_Modal(unassignedBayiler) {
         if(resultsDiv) {
             resultsDiv.innerHTML = `<br><strong style="color: green;">YIKICI TEMİZLİK TAMAMLANDI:</strong><br>
                                     - ${totalReportsDeleted} adet ilişkili denetim raporu silindi.<br>
+                                    - ${totalRollbacksDeleted} adet geri alma geçmişi silindi.<br>
                                     - ${totalBayisDeleted} adet atanmamış bayi silindi.`;
         }
         
@@ -495,7 +508,7 @@ async function resetTamamlanmaDurumu() {
         if (reports.length === 0) { alert("Durumu sıfırlanacak rapor bulunamadı."); return; }
         const updatePromises = reports.map(report => pbInstance.collection('denetim_raporlari').update(report.id, { 'denetimTamamlanmaTarihi': null }));
         await Promise.all(updatePromises);
-        alert(`${reports.length} adet raporun tamamlanma durumu sıfırlandı.`);
+        alert(`${reports.length} adet raporun tamamlanma durumu sıfırlanlandı.`);
     } catch (error) {
         handleError(error, "Tamamlanma durumu sıfırlanırken hata oluştu.");
     } finally {
@@ -749,7 +762,7 @@ function handleError(error, userMessage) {
     console.error(userMessage, error);
     const errorMessage = (error.message || '').toLowerCase();
     if (errorMessage.includes('relation') || errorMessage.includes('reference') || errorMessage.includes('constraint')) {
-        alert(`İşlem Başarısız!\n\n${userMessage}\n\nSebep: Bu tablodaki veriler, başka bir tablo (örneğin 'denetim_raporlari') tarafından kullanılıyor. Veri bütünlüğünü korumak için bu silme işlemi engellendi.\n\nÇözüm: Önce bu tabloya bağlı olan diğer tablodaki verileri silmeniz gerekmektedir.`);
+        alert(`İşlem Başarısız!\n\n${userMessage}\n\nSebep: Bu tablodaki veriler, başka bir tablo (örneğin 'denetim_raporlari' veya 'denetim_geri_alinanlar') tarafından kullanılıyor. Veri bütünlüğünü korumak için bu silme işlemi engellendi.\n\nÇözüm: Bu modül artık bu bağlı verileri otomatik temizleyecek şekilde güncellendi. Lütfen işlemi tekrar deneyin.`);
     } else {
         alert(`${userMessage}: ${error.message || error}`);
     }
