@@ -132,7 +132,7 @@ async function handleDeleteUserAndData_Modal() {
         return;
     }
 
-    showLoading(true, `'${userName}' için 3 adımlı silme işlemi başlatıldı...`);
+    showLoading(true, `'${userName}' için 4 adımlı silme işlemi başlatıldı...`);
     deleteBtn.disabled = true;
     userSelect.disabled = true;
     onayCheck.disabled = true;
@@ -140,49 +140,57 @@ async function handleDeleteUserAndData_Modal() {
 
     try {
         // --- Adım 1: Kullanıcıya ait 'denetim_raporlari'nı sil ---
-        resultsDiv.innerHTML = `Adım 1/3: '${userName}' kullanıcısına ait denetim raporları aranıyor...`;
+        resultsDiv.innerHTML = `Adım 1/4: '${userName}' kullanıcısına ait denetim raporları aranıyor...`;
         const reports = await pbInstance.collection('denetim_raporlari').getFullList({ filter: `user = "${userId}"`, fields: 'id' });
         if (reports.length > 0) {
-            resultsDiv.innerHTML = `Adım 1/3: ${reports.length} adet denetim raporu siliniyor...`;
+            resultsDiv.innerHTML = `Adım 1/4: ${reports.length} adet denetim raporu siliniyor...`;
             const deletePromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
             await Promise.all(deletePromises);
-            resultsDiv.innerHTML = `Adım 1/3: ${reports.length} adet denetim raporu başarıyla silindi.`;
-        } else { resultsDiv.innerHTML = `Adım 1/3: Kullanıcıya ait denetim raporu bulunamadı.`; }
+            resultsDiv.innerHTML = `Adım 1/4: ${reports.length} adet denetim raporu başarıyla silindi.`;
+        } else { resultsDiv.innerHTML = `Adım 1/4: Kullanıcıya ait denetim raporu bulunamadı.`; }
 
         // --- Adım 2: Kullanıcıya atanmış 'bayiler'in 'sorumlu_kullanici' alanını null yap ---
-        resultsDiv.innerHTML += `<br>Adım 2/3: '${userName}' kullanıcısına atanmış bayiler aranıyor...`;
+        resultsDiv.innerHTML += `<br>Adım 2/4: '${userName}' kullanıcısına atanmış bayiler aranıyor...`;
         const bayiler = await pbInstance.collection('bayiler').getFullList({ filter: `sorumlu_kullanici = "${userId}"`, fields: 'id' });
         if (bayiler.length > 0) {
-            resultsDiv.innerHTML += `<br>Adım 2/3: ${bayiler.length} adet bayi ataması kaldırılıyor...`;
+            resultsDiv.innerHTML += `<br>Adım 2/4: ${bayiler.length} adet bayi ataması kaldırılıyor...`;
             const updatePromises = bayiler.map(b => pbInstance.collection('bayiler').update(b.id, { 'sorumlu_kullanici': null }));
             await Promise.all(updatePromises);
-            resultsDiv.innerHTML += `<br>Adım 2/3: ${bayiler.length} adet bayi ataması başarıyla kaldırıldı.`;
-        } else { resultsDiv.innerHTML += `<br>Adım 2/3: Kullanıcıya atanmış bayi bulunamadı.`; }
+            resultsDiv.innerHTML += `<br>Adım 2/4: ${bayiler.length} adet bayi ataması başarıyla kaldırıldı.`;
+        } else { resultsDiv.innerHTML += `<br>Adım 2/4: Kullanıcıya atanmış bayi bulunamadı.`; }
         
-        // --- Adım 3: Kullanıcıyı 'users' tablosundan sil ---
-        resultsDiv.innerHTML += `<br>Adım 3/3: '${userName}' kullanıcısı sistemden siliniyor...`;
-        
-        // GÜNCELLEME: Burada hata olursa kullanıcıya Türkçe açıklama yapıyoruz.
+        // --- Adım 3 (YENİ EKLENDİ): Kullanıcıya ait 'user_devices' kayıtlarını sil (GİZLİ İP BURASIYDI) ---
+        resultsDiv.innerHTML += `<br>Adım 3/4: '${userName}' kullanıcısına ait cihaz/oturum kayıtları aranıyor...`;
+        // Hata olmaması için try-catch içinde yapıyoruz, belki tablo boştur vs.
         try {
-            await pbInstance.collection('users').delete(userId);
-            resultsDiv.innerHTML += `<br>Adım 3/3: Kullanıcı başarıyla silindi.`;
-            resultsDiv.innerHTML += `<br><br><strong style="color: green;">GÜVENLİ SİLME TAMAMLANDI.</strong>`;
-            
-            await loadInitialData();
-            const newSelectHtml = allUsers.map(user => {
-                if (user.id === pbInstance.authStore.model.id || user.id === userId) return '';
-                return `<option value="${user.id}">${user.name || 'İsimsiz'} (${user.email})</option>`;
-            }).join('');
-            userSelect.innerHTML = '<option value="">-- Bir kullanıcı seçin --</option>' + newSelectHtml;
-
-        } catch (step3Error) {
-             const errMsg = step3Error.message.toLowerCase();
-             if(errMsg.includes('relation') || errMsg.includes('reference')) {
-                 throw new Error(`KULLANICI SİLİNEMEDİ: Bu kullanıcının sistemde Denetim Raporları ve Bayiler dışında <strong>BAŞKA BİR TABLODA</strong> daha kaydı var (Örneğin: Randevular, Görevler, Bildirimler vb.). Sistem veri kaybını önlemek için silmeyi durdurdu. Lütfen önce o tablolardaki kayıtlarını silin.`);
-             } else {
-                 throw step3Error;
-             }
+            const devices = await pbInstance.collection('user_devices').getFullList({ filter: `user = "${userId}"`, fields: 'id' });
+            if (devices.length > 0) {
+                resultsDiv.innerHTML += `<br>Adım 3/4: ${devices.length} adet cihaz kaydı siliniyor...`;
+                const devicePromises = devices.map(d => pbInstance.collection('user_devices').delete(d.id));
+                await Promise.all(devicePromises);
+                resultsDiv.innerHTML += `<br>Adım 3/4: Cihaz kayıtları temizlendi.`;
+            } else {
+                resultsDiv.innerHTML += `<br>Adım 3/4: Cihaz kaydı bulunamadı.`;
+            }
+        } catch (deviceError) {
+             console.warn("Cihaz silme uyarısı (kritik değil):", deviceError);
+             resultsDiv.innerHTML += `<br>Adım 3/4: Cihaz tablosu kontrol edilirken bir uyarı oluştu, devam ediliyor.`;
         }
+
+        // --- Adım 4: Kullanıcıyı 'users' tablosundan sil ---
+        resultsDiv.innerHTML += `<br>Adım 4/4: '${userName}' kullanıcısı sistemden siliniyor...`;
+        
+        await pbInstance.collection('users').delete(userId);
+        resultsDiv.innerHTML += `<br>Adım 4/4: Kullanıcı başarıyla silindi.`;
+        resultsDiv.innerHTML += `<br><br><strong style="color: green;">GÜVENLİ SİLME TAMAMLANDI.</strong>`;
+        
+        await loadInitialData();
+        const newSelectHtml = allUsers.map(user => {
+            if (user.id === pbInstance.authStore.model.id || user.id === userId) return '';
+            return `<option value="${user.id}">${user.name || 'İsimsiz'} (${user.email})</option>`;
+        }).join('');
+        userSelect.innerHTML = '<option value="">-- Bir kullanıcı seçin --</option>' + newSelectHtml;
+
 
     } catch (error) {
         // Genel Hata Yakalama
