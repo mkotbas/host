@@ -159,9 +159,8 @@ async function handleDeleteUserAndData_Modal() {
             resultsDiv.innerHTML += `<br>Adım 2/4: ${bayiler.length} adet bayi ataması başarıyla kaldırıldı.`;
         } else { resultsDiv.innerHTML += `<br>Adım 2/4: Kullanıcıya atanmış bayi bulunamadı.`; }
         
-        // --- Adım 3 (YENİ EKLENDİ): Kullanıcıya ait 'user_devices' kayıtlarını sil (GİZLİ İP BURASIYDI) ---
+        // --- Adım 3: Kullanıcıya ait 'user_devices' kayıtlarını sil ---
         resultsDiv.innerHTML += `<br>Adım 3/4: '${userName}' kullanıcısına ait cihaz/oturum kayıtları aranıyor...`;
-        // Hata olmaması için try-catch içinde yapıyoruz, belki tablo boştur vs.
         try {
             const devices = await pbInstance.collection('user_devices').getFullList({ filter: `user = "${userId}"`, fields: 'id' });
             if (devices.length > 0) {
@@ -193,12 +192,10 @@ async function handleDeleteUserAndData_Modal() {
 
 
     } catch (error) {
-        // Genel Hata Yakalama
         console.error("Silme Hatası:", error);
         resultsDiv.innerHTML += `<br><br><strong style="color: red;">İŞLEM DURDURULDU:</strong><br>${error.message}`;
     } finally {
         showLoading(false);
-        // Hata olsa bile butonları tekrar aktif et ki kullanıcı takılı kalmasın
         onayCheck.checked = false;
         userSelect.value = '';
         userSelect.disabled = false;
@@ -392,6 +389,7 @@ async function handleDeleteUnassignedBayis_Modal(unassignedBayiler) {
 
     let totalReportsDeleted = 0;
     let totalBayisDeleted = 0;
+    let totalRollbacksDeleted = 0; // Geri alınan rapor silme sayacı
     const totalBayiCount = unassignedBayiler.length;
     let hasError = false;
 
@@ -402,25 +400,36 @@ async function handleDeleteUnassignedBayis_Modal(unassignedBayiler) {
             const currentCount = i + 1;
             const progressPrefix = `(${currentCount}/${totalBayiCount})`;
 
-            const progressMsg1 = `${progressPrefix} '${bayiName}' için raporlar aranıyor...`;
+            const progressMsg1 = `${progressPrefix} '${bayiName}' için ilişkili veriler temizleniyor...`;
             showLoading(true, progressMsg1);
             if(resultsDiv) resultsDiv.innerHTML = progressMsg1;
 
+            // 1. ADIM: Denetim Raporlarını Sil
             const reports = await pbInstance.collection('denetim_raporlari').getFullList({ 
                 filter: `bayi = "${bayi.id}"`, 
                 fields: 'id' 
             });
 
             if (reports.length > 0) {
-                const progressMsg2 = `${progressPrefix} ${reports.length} adet rapor siliniyor...`;
-                showLoading(true, progressMsg2);
-                if(resultsDiv) resultsDiv.innerHTML = progressMsg2;
-
                 const deleteReportPromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
                 await Promise.all(deleteReportPromises);
                 totalReportsDeleted += reports.length;
             }
 
+            // 2. ADIM (YENİ EKLENDİ): Denetim Geri Alınanlar Tablosunu Temizle (SORUNU ÇÖZEN KISIM)
+            // Bu tablo da bayiye bağlı olduğu için silinmeden bayi silinemiyordu.
+            const rollbacks = await pbInstance.collection('denetim_geri_alinanlar').getFullList({ 
+                filter: `bayi = "${bayi.id}"`, 
+                fields: 'id' 
+            });
+
+            if (rollbacks.length > 0) {
+                const deleteRollbackPromises = rollbacks.map(r => pbInstance.collection('denetim_geri_alinanlar').delete(r.id));
+                await Promise.all(deleteRollbackPromises);
+                totalRollbacksDeleted += rollbacks.length;
+            }
+
+            // 3. ADIM: Bayiyi Sil
             const progressMsg3 = `${progressPrefix} '${bayiName}' bayisi siliniyor...`;
             showLoading(true, progressMsg3);
             if(resultsDiv) resultsDiv.innerHTML = progressMsg3;
@@ -432,6 +441,7 @@ async function handleDeleteUnassignedBayis_Modal(unassignedBayiler) {
         if(resultsDiv) {
             resultsDiv.innerHTML = `<br><strong style="color: green;">YIKICI TEMİZLİK TAMAMLANDI:</strong><br>
                                     - ${totalReportsDeleted} adet ilişkili denetim raporu silindi.<br>
+                                    - ${totalRollbacksDeleted} adet geri alma kaydı silindi.<br>
                                     - ${totalBayisDeleted} adet atanmamış bayi silindi.`;
         }
         
@@ -444,7 +454,7 @@ async function handleDeleteUnassignedBayis_Modal(unassignedBayiler) {
         if(resultsDiv) {
             resultsDiv.innerHTML += `<br><br><strong style="color: red;">KRİTİK HATA:</strong><br>
                                      İşlem durduruldu.<br>
-                                     Toplam <strong>${totalBayisDeleted} bayi</strong> ve <strong>${totalReportsDeleted} rapor</strong> şimdiye kadar silindi.<br>
+                                     Toplam <strong>${totalBayisDeleted} bayi</strong> silindi.<br>
                                      Hata: ${error.message}`;
         }
     } finally {
