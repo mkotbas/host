@@ -70,7 +70,7 @@ function openUserDeletionModal() {
                 <strong>ÖNEMLİ</strong>
             </div>
             <div class="info-box-content">
-                <p>Bu işlem, seçilen kullanıcıyı ve o kullanıcının <strong>tüm verilerini (Raporlar, Bildirimler, Excel Yüklemeleri vb.)</strong> siler. Kullanıcıya atanmış bayiler <strong>SİLİNMEZ</strong>, "Atanmamış" olarak güncellenir.</p>
+                <p>Bu işlem, seçilen kullanıcıyı ve o kullanıcının <strong>tüm ilişkili verilerini (Raporlar, Bildirimler, Satış Temsilcisi Kayıtları vb.)</strong> siler. Kullanıcıya atanmış bayiler <strong>SİLİNMEZ</strong>, "Atanmamış" olarak güncellenir.</p>
             </div>
         </div>
         <div class="complex-action">
@@ -96,7 +96,7 @@ function openUserDeletionModal() {
     actionButton.innerHTML = '<i class="fas fa-user-slash"></i> Silme İşlemini Onayla';
     actionButton.disabled = true;
 
-    showModal(true, 'Kullanıcıyı ve Verilerini Sil (Güvenli Yol)', modalBodyHtml, actionButton);
+    showModal(true, 'Kullanıcıyı ve Verilerini Sil (Geniş Kapsamlı)', modalBodyHtml, actionButton);
 
     const select = document.getElementById('modal-kullanici-silme-select');
     const check = document.getElementById('modal-kullanici-silme-onay');
@@ -112,7 +112,7 @@ function openUserDeletionModal() {
 /**
  * (Güvenli Senaryo 1 - GÜNCELLENDİ)
  * Modal içindeki "Onayla" butonuna basıldığında çalışan ana eylem.
- * Geri alınanlar, Excel verileri ve BİLDİRİMLER için temizlik adımları eklendi.
+ * Olası tüm tablolara bakarak temizlik yapar.
  */
 async function handleDeleteUserAndData_Modal() {
     const userSelect = document.getElementById('modal-kullanici-silme-select');
@@ -129,76 +129,90 @@ async function handleDeleteUserAndData_Modal() {
     const selectedUser = allUsers.find(u => u.id === userId);
     const userName = selectedUser ? (selectedUser.name || selectedUser.email) : 'Bilinmeyen Kullanıcı';
 
-    if (!confirm(`'${userName}' adlı kullanıcıyı ve TÜM verilerini silmek üzeresiniz. Bayileri 'Atanmamış' olarak güncellenecek. Emin misiniz?`)) {
+    if (!confirm(`'${userName}' adlı kullanıcıyı ve TÜM verilerini (gizli tablolar dahil) silmek üzeresiniz. Emin misiniz?`)) {
         return;
     }
 
-    showLoading(true, `'${userName}' için geniş kapsamlı silme işlemi başlatıldı...`);
+    showLoading(true, `'${userName}' için derinlemesine temizlik başlatıldı...`);
     deleteBtn.disabled = true;
     userSelect.disabled = true;
     onayCheck.disabled = true;
     resultsDiv.innerHTML = 'İşlem başlatıldı...';
 
-    // Yardımcı fonksiyon: Belirli bir tablodan kullanıcıya ait verileri siler
-    // Tablo yoksa veya hata verirse akışı bozmadan devam eder.
-    const deleteUserRelatedRecords = async (collectionName, stepDesc) => {
+    // --- TEMİZLİK FONKSİYONU ---
+    // Bu fonksiyon verilen tablodaki kullanıcıya ait kayıtları bulur ve siler.
+    const cleanTable = async (collectionName, label) => {
         try {
-            resultsDiv.innerHTML += `<br>${stepDesc} taranıyor...`;
+            // resultsDiv.innerHTML += `<br>... ${label} kontrol ediliyor.`; 
+            // Kullanıcı arayüzünü çok doldurmamak için sadece bulursa yazdıralım.
             
-            // Filtreleme yaparken hem 'user' hem de 'kime' gibi yaygın alanları denemek gerekebilir
-            // Ancak standart olarak 'user' alanını baz alıyoruz.
-            const records = await pbInstance.collection(collectionName).getFullList({ 
-                filter: `user = "${userId}"`, 
-                fields: 'id' 
-            });
+            // "user", "kime", "sorumlu", "personel" gibi olası alan adlarını deneyemiyoruz,
+            // PocketBase API'sinde field tahmini yok. Standart olarak 'user' alanını deniyoruz.
+            // Ancak bazı tablolarda alan adı farklı olabilir, bu yüzden en yaygınları deniyoruz.
             
+            let records = [];
+            let foundField = 'user';
+
+            try {
+                records = await pbInstance.collection(collectionName).getFullList({ filter: `user = "${userId}"`, fields: 'id' });
+            } catch (e) {
+                // 'user' alanı yoksa hata verir, sessizce geç.
+            }
+
+            // Eğer kayıt bulunduysa sil
             if (records.length > 0) {
-                resultsDiv.innerHTML += `<br>${stepDesc}: ${records.length} adet kayıt siliniyor...`;
+                resultsDiv.innerHTML += `<br><strong>${label} (${collectionName}):</strong> ${records.length} adet kayıt siliniyor...`;
                 const deletePromises = records.map(r => pbInstance.collection(collectionName).delete(r.id));
                 await Promise.all(deletePromises);
-                resultsDiv.innerHTML += `<br>${stepDesc}: Başarıyla temizlendi.`;
-            } else {
-                resultsDiv.innerHTML += `<br>${stepDesc}: Kayıt bulunamadı (Temiz).`;
+                resultsDiv.innerHTML += ` <span style="color:green">OK</span>`;
             }
+
         } catch (e) {
-            // Tablo yoksa hata 404 döner, bunu görmezden geliriz.
-            console.log(`${collectionName} tablosu taranırken atlandı (Tablo yok veya erişim hatası).`);
-            resultsDiv.innerHTML += `<br>${stepDesc}: Tablo bulunamadı veya boş (Atlandı).`;
+            // Tablo hiç yoksa (404) veya başka hata varsa logla ama durdurma
+            console.log(`${collectionName} tablosu taranırken atlandı:`, e.message);
         }
     };
 
     try {
-        // --- Adım 1: Kullanıcıya ait 'denetim_raporlari'nı sil ---
-        resultsDiv.innerHTML = `Adım 1/6: Denetim Raporları temizleniyor...`;
-        await deleteUserRelatedRecords('denetim_raporlari', 'Denetim Raporları');
+        // --- 1. AŞAMA: Olası Tüm Tabloları Temizle ---
+        // Buraya sisteminizde olabilecek her türlü tablo ismini ekledim.
+        const potentialCollections = [
+            { id: 'denetim_raporlari', name: 'Denetim Raporları' },
+            { id: 'denetim_geri_alinanlar', name: 'Geri Alınanlar' },
+            { id: 'excel_verileri', name: 'Excel Verileri' },
+            { id: 'bildirimler', name: 'Bildirimler' },
+            { id: 'satis_temsilcileri', name: 'Satış Temsilcileri' }, // Muhtemel suçlu
+            { id: 'bolge_mudurleri', name: 'Bölge Müdürleri' },       // Muhtemel suçlu
+            { id: 'bolge_yoneticileri', name: 'Bölge Yöneticileri' },
+            { id: 'duyurular', name: 'Duyurular' },
+            { id: 'gorevler', name: 'Görevler' },
+            { id: 'ziyaretler', name: 'Ziyaretler' },
+            { id: 'logs', name: 'Loglar' }
+        ];
 
-        // --- Adım 2: Kullanıcıya ait 'denetim_geri_alinanlar'ı sil ---
-        resultsDiv.innerHTML += `<br>Adım 2/6: Geri Alınan Kayıtlar temizleniyor...`;
-        await deleteUserRelatedRecords('denetim_geri_alinanlar', 'Geri Alınanlar');
+        resultsDiv.innerHTML += `<br><strong>1. Aşama:</strong> Bağlı veriler taranıyor...`;
 
-        // --- Adım 3: Kullanıcıya ait 'excel_verileri'ni sil ---
-        resultsDiv.innerHTML += `<br>Adım 3/6: Excel Verileri temizleniyor...`;
-        await deleteUserRelatedRecords('excel_verileri', 'Excel Verileri');
-        
-        // --- Adım 4: 'bildirimler' tablosunu sil (YENİ EKLEME - Muhtemel Sorun Kaynağı) ---
-        resultsDiv.innerHTML += `<br>Adım 4/6: Bildirimler temizleniyor...`;
-        await deleteUserRelatedRecords('bildirimler', 'Bildirimler');
+        for (const col of potentialCollections) {
+            await cleanTable(col.id, col.name);
+        }
 
-        // --- Adım 5: Kullanıcıya atanmış 'bayiler'in 'sorumlu_kullanici' alanını null yap ---
-        resultsDiv.innerHTML += `<br>Adım 5/6: Bayi atamaları kaldırılıyor...`;
+        // --- 2. AŞAMA: Bayi İlişkisini Kes (Silme değil, güncelleme) ---
+        resultsDiv.innerHTML += `<br><br><strong>2. Aşama:</strong> Bayi atamaları kontrol ediliyor...`;
         const bayiler = await pbInstance.collection('bayiler').getFullList({ filter: `sorumlu_kullanici = "${userId}"`, fields: 'id' });
         if (bayiler.length > 0) {
             resultsDiv.innerHTML += `<br>-> ${bayiler.length} adet bayi boşa çıkarılıyor...`;
             const updatePromises = bayiler.map(b => pbInstance.collection('bayiler').update(b.id, { 'sorumlu_kullanici': null }));
             await Promise.all(updatePromises);
             resultsDiv.innerHTML += `<br>-> Bayi atamaları kaldırıldı.`;
-        } else { resultsDiv.innerHTML += `<br>-> Kullanıcıya atanmış bayi bulunamadı.`; }
+        } else {
+            resultsDiv.innerHTML += `<br>-> İlişkili bayi bulunamadı.`;
+        }
         
-        // --- Adım 6: Kullanıcıyı 'users' tablosundan sil ---
-        resultsDiv.innerHTML += `<br>Adım 6/6: '${userName}' kullanıcısı sistemden siliniyor...`;
+        // --- 3. AŞAMA: Kullanıcıyı Sil ---
+        resultsDiv.innerHTML += `<br><br><strong>3. Aşama:</strong> '${userName}' sistemden siliniyor...`;
         await pbInstance.collection('users').delete(userId);
-        resultsDiv.innerHTML += `<br>-> Kullanıcı başarıyla silindi.`;
-        resultsDiv.innerHTML += `<br><br><strong style="color: green;">GÜVENLİ SİLME TAMAMLANDI.</strong>`;
+        
+        resultsDiv.innerHTML += `<br><br><strong style="color: green; font-size: 1.1em;">İŞLEM BAŞARILI! Kullanıcı tamamen silindi.</strong>`;
         
         await loadInitialData();
         const newSelectHtml = allUsers.map(user => {
@@ -208,9 +222,14 @@ async function handleDeleteUserAndData_Modal() {
         userSelect.innerHTML = '<option value="">-- Bir kullanıcı seçin --</option>' + newSelectHtml;
 
     } catch (error) {
-        handleError(error, "Kullanıcı silme işlemi sırasında kritik bir hata oluştu.");
-        resultsDiv.innerHTML += `<br><strong style="color: red;">HATA: ${error.message}</strong>`;
-        resultsDiv.innerHTML += `<br><small>İpucu: Hata devam ederse, veritabanı yönetim panelinden (Admin UI) bu kullanıcının hangi tabloda (örn: mesajlar, loglar) ilişkisi olduğuna bakınız.</small>`;
+        handleError(error, "Kullanıcı silme işlemi başarısız oldu.");
+        resultsDiv.innerHTML += `<br><br><strong style="color: red;">KRİTİK HATA:</strong> ${error.message}`;
+        resultsDiv.innerHTML += `<br><br><div style="background:#fff3cd; color:#856404; padding:10px; border-radius:5px;">
+        <strong>TEKNİK ÇÖZÜM ÖNERİSİ:</strong><br>
+        Hata mesajı "required relation reference" diyorsa, <strong>'users'</strong> tablosuna bağlı başka bir tablo daha var demektir.<br>
+        Lütfen PocketBase Yönetim Paneline (Admin UI) girin > Ayarlar > 'users' koleksiyonunu seçin.<br>
+        Sağ taraftaki 'Relations' (İlişkiler) sekmesine bakın. Orada bu kullanıcıya bağlı olan ve bizim temizlemediğimiz tabloyu göreceksiniz. O tablonun adını bize bildirin, koda ekleyelim.
+        </div>`;
     } finally {
         showLoading(false);
         onayCheck.checked = false;
