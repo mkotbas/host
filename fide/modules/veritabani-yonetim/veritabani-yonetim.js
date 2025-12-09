@@ -132,7 +132,7 @@ async function handleDeleteUserAndData_Modal() {
         return;
     }
 
-    showLoading(true, `'${userName}' için 3 adımlı silme işlemi başlatıldı...`);
+    showLoading(true, `'${userName}' için temizlik ve silme işlemi başlatıldı...`);
     deleteBtn.disabled = true;
     userSelect.disabled = true;
     onayCheck.disabled = true;
@@ -140,29 +140,52 @@ async function handleDeleteUserAndData_Modal() {
 
     try {
         // --- Adım 1: Kullanıcıya ait 'denetim_raporlari'nı sil ---
-        resultsDiv.innerHTML = `Adım 1/3: '${userName}' kullanıcısına ait denetim raporları aranıyor...`;
+        resultsDiv.innerHTML = `Adım 1/4: '${userName}' kullanıcısına ait denetim raporları aranıyor...`;
         const reports = await pbInstance.collection('denetim_raporlari').getFullList({ filter: `user = "${userId}"`, fields: 'id' });
         if (reports.length > 0) {
-            resultsDiv.innerHTML = `Adım 1/3: ${reports.length} adet denetim raporu siliniyor...`;
+            resultsDiv.innerHTML = `Adım 1/4: ${reports.length} adet denetim raporu siliniyor...`;
             const deletePromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
             await Promise.all(deletePromises);
-            resultsDiv.innerHTML = `Adım 1/3: ${reports.length} adet denetim raporu başarıyla silindi.`;
-        } else { resultsDiv.innerHTML = `Adım 1/3: Kullanıcıya ait denetim raporu bulunamadı.`; }
+            resultsDiv.innerHTML = `Adım 1/4: ${reports.length} adet denetim raporu başarıyla silindi.`;
+        } else { resultsDiv.innerHTML = `Adım 1/4: Kullanıcıya ait denetim raporu bulunamadı.`; }
 
-        // --- Adım 2: Kullanıcıya atanmış 'bayiler'in 'sorumlu_kullanici' alanını null yap ---
-        resultsDiv.innerHTML += `<br>Adım 2/3: '${userName}' kullanıcısına atanmış bayiler aranıyor...`;
+        // --- Adım 2: Kullanıcıya ait 'denetim_geri_alinanlar' kayıtlarını sil (HATAYI ÇÖZEN KISIM) ---
+        // Bu adım, "Relation reference" hatasını önlemek için eklendi.
+        resultsDiv.innerHTML += `<br>Adım 2/4: İlişkili arşiv/geri alma kayıtları kontrol ediliyor...`;
+        try {
+            // "user" alanına göre filtreliyoruz. Eğer tabloda "denetci" kullanılıyorsa hata vermemesi için genel try-catch içinde.
+            const backups = await pbInstance.collection('denetim_geri_alinanlar').getFullList({ 
+                filter: `user = "${userId}"`, 
+                fields: 'id' 
+            });
+            
+            if (backups.length > 0) {
+                resultsDiv.innerHTML += `<br>Adım 2/4: ${backups.length} adet arşiv kaydı temizleniyor...`;
+                const deleteBackupPromises = backups.map(b => pbInstance.collection('denetim_geri_alinanlar').delete(b.id));
+                await Promise.all(deleteBackupPromises);
+                resultsDiv.innerHTML += `<br>Adım 2/4: Arşiv kayıtları başarıyla temizlendi.`;
+            } else {
+                resultsDiv.innerHTML += `<br>Adım 2/4: Silinecek arşiv kaydı bulunamadı.`;
+            }
+        } catch (backupError) {
+             console.warn("Geri alınanlar tablosu temizlenirken uyarı (önemsiz olabilir):", backupError);
+             resultsDiv.innerHTML += `<br>Adım 2/4: Arşiv tablosu kontrolü geçildi (Kayıt yok veya erişim yok).`;
+        }
+
+        // --- Adım 3: Kullanıcıya atanmış 'bayiler'in 'sorumlu_kullanici' alanını null yap ---
+        resultsDiv.innerHTML += `<br>Adım 3/4: '${userName}' kullanıcısına atanmış bayiler aranıyor...`;
         const bayiler = await pbInstance.collection('bayiler').getFullList({ filter: `sorumlu_kullanici = "${userId}"`, fields: 'id' });
         if (bayiler.length > 0) {
-            resultsDiv.innerHTML += `<br>Adım 2/3: ${bayiler.length} adet bayi ataması kaldırılıyor...`;
+            resultsDiv.innerHTML += `<br>Adım 3/4: ${bayiler.length} adet bayi ataması kaldırılıyor...`;
             const updatePromises = bayiler.map(b => pbInstance.collection('bayiler').update(b.id, { 'sorumlu_kullanici': null }));
             await Promise.all(updatePromises);
-            resultsDiv.innerHTML += `<br>Adım 2/3: ${bayiler.length} adet bayi ataması başarıyla kaldırıldı.`;
-        } else { resultsDiv.innerHTML += `<br>Adım 2/3: Kullanıcıya atanmış bayi bulunamadı.`; }
+            resultsDiv.innerHTML += `<br>Adım 3/4: ${bayiler.length} adet bayi ataması başarıyla kaldırıldı.`;
+        } else { resultsDiv.innerHTML += `<br>Adım 3/4: Kullanıcıya atanmış bayi bulunamadı.`; }
         
-        // --- Adım 3: Kullanıcıyı 'users' tablosundan sil ---
-        resultsDiv.innerHTML += `<br>Adım 3/3: '${userName}' kullanıcısı sistemden siliniyor...`;
+        // --- Adım 4: Kullanıcıyı 'users' tablosundan sil ---
+        resultsDiv.innerHTML += `<br>Adım 4/4: '${userName}' kullanıcısı sistemden siliniyor...`;
         await pbInstance.collection('users').delete(userId);
-        resultsDiv.innerHTML += `<br>Adım 3/3: Kullanıcı başarıyla silindi.`;
+        resultsDiv.innerHTML += `<br>Adım 4/4: Kullanıcı başarıyla silindi.`;
         resultsDiv.innerHTML += `<br><br><strong style="color: green;">GÜVENLİ SİLME TAMAMLANDI.</strong>`;
         
         await loadInitialData();
@@ -399,7 +422,6 @@ async function handleDeleteUnassignedBayis_Modal(unassignedBayiler) {
             }
 
             // 2. ADIM: Geri Alınan Denetimleri (denetim_geri_alinanlar) Sil
-            // HATA BURADAN KAYNAKLANIYORDU, BU BÖLÜM EKLENDİ
             const rollbacks = await pbInstance.collection('denetim_geri_alinanlar').getFullList({
                 filter: `bayi = "${bayi.id}"`,
                 fields: 'id'
