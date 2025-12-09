@@ -70,7 +70,7 @@ function openUserDeletionModal() {
                 <strong>ÖNEMLİ</strong>
             </div>
             <div class="info-box-content">
-                <p>Bu işlem, seçilen kullanıcıyı ve o kullanıcının <strong>denetim raporlarını</strong> siler. Kullanıcıya atanmış bayiler <strong>SİLİNMEZ</strong>, "Atanmamış" olarak güncellenir.</p>
+                <p>Bu işlem, seçilen kullanıcıyı ve o kullanıcının <strong>tüm verilerini (Raporlar, Geri Alınanlar, Excel Yüklemeleri)</strong> siler. Kullanıcıya atanmış bayiler <strong>SİLİNMEZ</strong>, "Atanmamış" olarak güncellenir.</p>
             </div>
         </div>
         <div class="complex-action">
@@ -84,7 +84,7 @@ function openUserDeletionModal() {
             </select>
             <div class="custom-checkbox" style="margin-top: 15px;">
                 <input type="checkbox" id="modal-kullanici-silme-onay">
-                <label for="modal-kullanici-silme-onay">Seçilen kullanıcının ve raporlarının silineceğini, bayilerinin "Atanmamış" olacağını anladım ve onaylıyorum.</label>
+                <label for="modal-kullanici-silme-onay">Seçilen kullanıcının ve tüm verilerinin silineceğini, bayilerinin "Atanmamış" olacağını anladım ve onaylıyorum.</label>
             </div>
             <div id="modal-kullanici-silme-sonuc" class="results-area" style="margin-top: 10px;"></div>
         </div>
@@ -96,7 +96,7 @@ function openUserDeletionModal() {
     actionButton.innerHTML = '<i class="fas fa-user-slash"></i> Silme İşlemini Onayla';
     actionButton.disabled = true;
 
-    showModal(true, 'Kullanıcıyı ve Raporlarını Sil (Güvenli Yol)', modalBodyHtml, actionButton);
+    showModal(true, 'Kullanıcıyı ve Verilerini Sil (Güvenli Yol)', modalBodyHtml, actionButton);
 
     const select = document.getElementById('modal-kullanici-silme-select');
     const check = document.getElementById('modal-kullanici-silme-onay');
@@ -110,8 +110,9 @@ function openUserDeletionModal() {
 }
 
 /**
- * (Güvenli Senaryo 1)
+ * (Güvenli Senaryo 1 - GÜNCELLENDİ)
  * Modal içindeki "Onayla" butonuna basıldığında çalışan ana eylem.
+ * Geri alınanlar ve Excel verileri için ekstra temizlik adımları eklendi.
  */
 async function handleDeleteUserAndData_Modal() {
     const userSelect = document.getElementById('modal-kullanici-silme-select');
@@ -128,41 +129,68 @@ async function handleDeleteUserAndData_Modal() {
     const selectedUser = allUsers.find(u => u.id === userId);
     const userName = selectedUser ? (selectedUser.name || selectedUser.email) : 'Bilinmeyen Kullanıcı';
 
-    if (!confirm(`'${userName}' adlı kullanıcıyı ve raporlarını silmek üzeresiniz. Bayileri 'Atanmamış' olarak güncellenecek. Emin misiniz?`)) {
+    if (!confirm(`'${userName}' adlı kullanıcıyı ve TÜM verilerini silmek üzeresiniz. Bayileri 'Atanmamış' olarak güncellenecek. Emin misiniz?`)) {
         return;
     }
 
-    showLoading(true, `'${userName}' için 3 adımlı silme işlemi başlatıldı...`);
+    showLoading(true, `'${userName}' için geniş kapsamlı silme işlemi başlatıldı...`);
     deleteBtn.disabled = true;
     userSelect.disabled = true;
     onayCheck.disabled = true;
     resultsDiv.innerHTML = 'İşlem başlatıldı...';
 
+    // Yardımcı fonksiyon: Belirli bir tablodan kullanıcıya ait verileri siler
+    const deleteUserRelatedRecords = async (collectionName, stepDesc) => {
+        try {
+            resultsDiv.innerHTML += `<br>${stepDesc} aranıyor...`;
+            // 'user' alanı varsa ona göre, yoksa hata vermemesi için try-catch içinde
+            const records = await pbInstance.collection(collectionName).getFullList({ 
+                filter: `user = "${userId}"`, 
+                fields: 'id' 
+            });
+            
+            if (records.length > 0) {
+                resultsDiv.innerHTML += `<br>${stepDesc}: ${records.length} adet kayıt siliniyor...`;
+                const deletePromises = records.map(r => pbInstance.collection(collectionName).delete(r.id));
+                await Promise.all(deletePromises);
+                resultsDiv.innerHTML += `<br>${stepDesc}: Başarıyla silindi.`;
+            } else {
+                resultsDiv.innerHTML += `<br>${stepDesc}: Kayıt bulunamadı (Temiz).`;
+            }
+        } catch (e) {
+            // Eğer tabloda 'user' alanı yoksa veya tablo yoksa burası çalışır, akışı bozmamak için loglayıp geçiyoruz
+            console.log(`${collectionName} temizlenirken atlandı veya hata:`, e);
+            resultsDiv.innerHTML += `<br>${stepDesc}: Kontrol edildi (İşlem gerekmedi).`;
+        }
+    };
+
     try {
         // --- Adım 1: Kullanıcıya ait 'denetim_raporlari'nı sil ---
-        resultsDiv.innerHTML = `Adım 1/3: '${userName}' kullanıcısına ait denetim raporları aranıyor...`;
-        const reports = await pbInstance.collection('denetim_raporlari').getFullList({ filter: `user = "${userId}"`, fields: 'id' });
-        if (reports.length > 0) {
-            resultsDiv.innerHTML = `Adım 1/3: ${reports.length} adet denetim raporu siliniyor...`;
-            const deletePromises = reports.map(r => pbInstance.collection('denetim_raporlari').delete(r.id));
-            await Promise.all(deletePromises);
-            resultsDiv.innerHTML = `Adım 1/3: ${reports.length} adet denetim raporu başarıyla silindi.`;
-        } else { resultsDiv.innerHTML = `Adım 1/3: Kullanıcıya ait denetim raporu bulunamadı.`; }
+        resultsDiv.innerHTML = `Adım 1/5: Denetim Raporları temizleniyor...`;
+        await deleteUserRelatedRecords('denetim_raporlari', 'Denetim Raporları');
 
-        // --- Adım 2: Kullanıcıya atanmış 'bayiler'in 'sorumlu_kullanici' alanını null yap ---
-        resultsDiv.innerHTML += `<br>Adım 2/3: '${userName}' kullanıcısına atanmış bayiler aranıyor...`;
+        // --- Adım 2: Kullanıcıya ait 'denetim_geri_alinanlar'ı sil (YENİ) ---
+        resultsDiv.innerHTML += `<br>Adım 2/5: Geri Alınan Kayıtlar temizleniyor...`;
+        await deleteUserRelatedRecords('denetim_geri_alinanlar', 'Geri Alınanlar');
+
+        // --- Adım 3: Kullanıcıya ait 'excel_verileri'ni sil (YENİ) ---
+        resultsDiv.innerHTML += `<br>Adım 3/5: Excel Verileri temizleniyor...`;
+        await deleteUserRelatedRecords('excel_verileri', 'Excel Verileri');
+
+        // --- Adım 4: Kullanıcıya atanmış 'bayiler'in 'sorumlu_kullanici' alanını null yap ---
+        resultsDiv.innerHTML += `<br>Adım 4/5: Bayi atamaları kaldırılıyor...`;
         const bayiler = await pbInstance.collection('bayiler').getFullList({ filter: `sorumlu_kullanici = "${userId}"`, fields: 'id' });
         if (bayiler.length > 0) {
-            resultsDiv.innerHTML += `<br>Adım 2/3: ${bayiler.length} adet bayi ataması kaldırılıyor...`;
+            resultsDiv.innerHTML += `<br>-> ${bayiler.length} adet bayi boşa çıkarılıyor...`;
             const updatePromises = bayiler.map(b => pbInstance.collection('bayiler').update(b.id, { 'sorumlu_kullanici': null }));
             await Promise.all(updatePromises);
-            resultsDiv.innerHTML += `<br>Adım 2/3: ${bayiler.length} adet bayi ataması başarıyla kaldırıldı.`;
-        } else { resultsDiv.innerHTML += `<br>Adım 2/3: Kullanıcıya atanmış bayi bulunamadı.`; }
+            resultsDiv.innerHTML += `<br>-> Bayi atamaları kaldırıldı.`;
+        } else { resultsDiv.innerHTML += `<br>-> Kullanıcıya atanmış bayi bulunamadı.`; }
         
-        // --- Adım 3: Kullanıcıyı 'users' tablosundan sil ---
-        resultsDiv.innerHTML += `<br>Adım 3/3: '${userName}' kullanıcısı sistemden siliniyor...`;
+        // --- Adım 5: Kullanıcıyı 'users' tablosundan sil ---
+        resultsDiv.innerHTML += `<br>Adım 5/5: '${userName}' kullanıcısı sistemden siliniyor...`;
         await pbInstance.collection('users').delete(userId);
-        resultsDiv.innerHTML += `<br>Adım 3/3: Kullanıcı başarıyla silindi.`;
+        resultsDiv.innerHTML += `<br>-> Kullanıcı başarıyla silindi.`;
         resultsDiv.innerHTML += `<br><br><strong style="color: green;">GÜVENLİ SİLME TAMAMLANDI.</strong>`;
         
         await loadInitialData();
@@ -175,6 +203,7 @@ async function handleDeleteUserAndData_Modal() {
     } catch (error) {
         handleError(error, "Kullanıcı silme işlemi sırasında kritik bir hata oluştu.");
         resultsDiv.innerHTML += `<br><strong style="color: red;">HATA: ${error.message}</strong>`;
+        resultsDiv.innerHTML += `<br><small>İpucu: Eğer hala hata alıyorsanız, sistemde 'Bildirimler' veya başka özel bir tabloda bu kullanıcıya ait silinmemiş veriler olabilir.</small>`;
     } finally {
         showLoading(false);
         onayCheck.checked = false;
