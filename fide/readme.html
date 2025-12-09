@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.14</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.15</strong></p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.14)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.15)</li>
                 <li><strong>KURAL: Dökümanı "Canlı" Tut:</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. Sistemin o anki çalışan son halini yansıtmalıdır.</li>
                 <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
                 <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
@@ -515,7 +515,7 @@
                     <ul>
                         <li>"Güvenli" ve "Yıkıcı" eylemler sunar.</li>
                         <li><code>handleDeleteUserAndData_Modal</code> (Güvenli): <strong>4 Adımlı Temizlik:</strong> Kullanıcıyı silmeden önce sırasıyla; raporlarını (<code>denetim_raporlari</code>) siler, bayilerini (<code>bayiler</code>) boşa çıkarır ("Atanmamış"), cihaz kayıtlarını (<code>user_devices</code>) temizler ve son olarak kullanıcıyı (<code>users</code>) siler.</li>
-                        <li><code>handleDeleteUnassignedBayis_Modal</code> (Yıkıcı): "Atanmamış" (<code>sorumlu_kullanici</code> alanı null olan) tüm bayileri <code>bayiler</code> koleksiyonundan siler VE bu bayilere ait TÜM raporları (<code>denetim_raporlari</code>) siler.</li>
+                        <li><code>handleDeleteUnassignedBayis_Modal</code> (Yıkıcı): "Atanmamış" (<code>sorumlu_kullanici</code> alanı null olan) tüm bayileri <code>bayiler</code> koleksiyonundan siler. Bunu yapmadan önce bayiye bağlı <code>denetim_raporlari</code> VE <code>denetim_geri_alinanlar</code> kayıtlarını temizleyerek veritabanı hatasını önler.</li>
                         <li><code>deleteTable</code>: Bir koleksiyondaki tüm kayıtları toplu olarak siler.</li>
                         <li><strong>Excel Ayarlarını Sıfırla (<code>resetExcelMappings</code>):</strong> <code>ayarlar</code> tablosundaki kayıtlı Excel sütun eşleştirmelerini (<code>excel_mapping_dide/fide</code>) siler. Böylece sihirbazın tekrar açılmasını sağlar.</li>
                     </ul>
