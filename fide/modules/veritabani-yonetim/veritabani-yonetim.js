@@ -161,28 +161,41 @@ async function handleDeleteUserAndData_Modal() {
         
         // --- Adım 3: Kullanıcıyı 'users' tablosundan sil ---
         resultsDiv.innerHTML += `<br>Adım 3/3: '${userName}' kullanıcısı sistemden siliniyor...`;
-        await pbInstance.collection('users').delete(userId);
-        resultsDiv.innerHTML += `<br>Adım 3/3: Kullanıcı başarıyla silindi.`;
-        resultsDiv.innerHTML += `<br><br><strong style="color: green;">GÜVENLİ SİLME TAMAMLANDI.</strong>`;
         
-        await loadInitialData();
-        const newSelectHtml = allUsers.map(user => {
-            if (user.id === pbInstance.authStore.model.id || user.id === userId) return '';
-            return `<option value="${user.id}">${user.name || 'İsimsiz'} (${user.email})</option>`;
-        }).join('');
-        userSelect.innerHTML = '<option value="">-- Bir kullanıcı seçin --</option>' + newSelectHtml;
+        // GÜNCELLEME: Burada hata olursa kullanıcıya Türkçe açıklama yapıyoruz.
+        try {
+            await pbInstance.collection('users').delete(userId);
+            resultsDiv.innerHTML += `<br>Adım 3/3: Kullanıcı başarıyla silindi.`;
+            resultsDiv.innerHTML += `<br><br><strong style="color: green;">GÜVENLİ SİLME TAMAMLANDI.</strong>`;
+            
+            await loadInitialData();
+            const newSelectHtml = allUsers.map(user => {
+                if (user.id === pbInstance.authStore.model.id || user.id === userId) return '';
+                return `<option value="${user.id}">${user.name || 'İsimsiz'} (${user.email})</option>`;
+            }).join('');
+            userSelect.innerHTML = '<option value="">-- Bir kullanıcı seçin --</option>' + newSelectHtml;
+
+        } catch (step3Error) {
+             const errMsg = step3Error.message.toLowerCase();
+             if(errMsg.includes('relation') || errMsg.includes('reference')) {
+                 throw new Error(`KULLANICI SİLİNEMEDİ: Bu kullanıcının sistemde Denetim Raporları ve Bayiler dışında <strong>BAŞKA BİR TABLODA</strong> daha kaydı var (Örneğin: Randevular, Görevler, Bildirimler vb.). Sistem veri kaybını önlemek için silmeyi durdurdu. Lütfen önce o tablolardaki kayıtlarını silin.`);
+             } else {
+                 throw step3Error;
+             }
+        }
 
     } catch (error) {
-        handleError(error, "Kullanıcı silme işlemi sırasında kritik bir hata oluştu.");
-        resultsDiv.innerHTML += `<br><strong style="color: red;">HATA: ${error.message}</strong>`;
+        // Genel Hata Yakalama
+        console.error("Silme Hatası:", error);
+        resultsDiv.innerHTML += `<br><br><strong style="color: red;">İŞLEM DURDURULDU:</strong><br>${error.message}`;
     } finally {
         showLoading(false);
+        // Hata olsa bile butonları tekrar aktif et ki kullanıcı takılı kalmasın
         onayCheck.checked = false;
         userSelect.value = '';
         userSelect.disabled = false;
         onayCheck.disabled = false;
-        const checkButtonState = () => { deleteBtn.disabled = !(userSelect.value && onayCheck.checked); };
-        checkButtonState(); 
+        deleteBtn.disabled = true;
     }
 }
 
