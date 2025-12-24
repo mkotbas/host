@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.15</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.16</strong></p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.15)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.16)</li>
                 <li><strong>KURAL: Dökümanı "Canlı" Tut:</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. Sistemin o anki çalışan son halini yansıtmalıdır.</li>
                 <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
                 <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
@@ -326,6 +326,7 @@
                             <code>bayiAdi</code> (text)<br>
                             <code>bolge</code>, <code>sehir</code>, <code>ilce</code> (text)<br>
                             <code>yonetmen</code> (text)<br>
+                            <code>email</code> (email)<br>
                             <code>sorumlu_kullanici</code> (relation &rarr; <code>users</code>)
                         </td>
                         <td>Denetlenecek tüm bayi kayıtları. <code>sorumlu_kullanici</code>, bayinin hangi denetçiye (client) atandığını belirler.</td>
@@ -346,9 +347,10 @@
                             <code>user</code> (relation &rarr; <code>users</code>)<br>
                             <code>device_key</code> (text, <i>Unique</i>)<br>
                             <code>device_info</code> (text)<br>
-                            <code>is_locked</code> (bool)
+                            <code>is_locked</code> (bool)<br>
+                            <code>last_login</code> (date)
                         </td>
-                        <td>Kullanıcıların giriş yaptığı cihazların kaydı. <code>is_locked</code> (True ise) o cihazdan girişi anlık olarak engeller (Cihaz Kilidi).</td>
+                        <td>Kullanıcıların giriş yaptığı cihazların kaydı. <code>is_locked</code> (True ise) o cihazdan girişi anlık olarak engeller. <code>last_login</code> son erişim zamanını tutar.</td>
                     </tr>
                     <tr>
                         <td><code>ayarlar</code></td>
@@ -362,9 +364,10 @@
                         <td><code>excel_verileri</code></td>
                         <td>
                             <code>tip</code> (select: 'dide' | 'fide')<br>
+                            <code>dosyaAdi</code> (text)<br>
                             <code>veri</code> (json)
                         </td>
-                        <td>Yönetim panelinden yüklenen DiDe ve FiDe Excel puanlarının JSON olarak saklandığı yer. E-posta taslağındaki puan tablosu bu veriyi çeker.</td>
+                        <td>Yönetim panelinden yüklenen DiDe ve FiDe Excel puanlarının JSON olarak saklandığı yer. <code>dosyaAdi</code> orijinal dosya adıdır.</td>
                     </tr>
                     <tr>
                         <td><code>denetim_geri_alinanlar</code></td>
