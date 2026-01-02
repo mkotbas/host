@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.16</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.19</strong></p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.16)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.19)</li>
                 <li><strong>KURAL: Dökümanı "Canlı" Tut:</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. Sistemin o anki çalışan son halini yansıtmalıdır.</li>
                 <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
                 <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
@@ -440,6 +440,7 @@
                         <li><code>openMappingModal</code>: Sihirbaz penceresini açar ve kullanıcının seçimlerini yönetir.</li>
                         <li><code>checkSavedMapping</code>: Dosyanın yapısını (imzasını) kontrol eder. Eğer dosya yapısı daha önce kaydedilmiş ayarlarla (<code>ayarlar</code> tablosunda) uyuşuyorsa, sihirbazı açmadan otomatik işler.</li>
                         <li><code>saveMappingToCloud</code>: Kullanıcının yaptığı eşleştirme ayarlarını buluta kaydeder.</li>
+                        <li><strong>Bayi Kodu Tip Güvenliği:</strong> Excel'den okunan bayi kodu değerleri, sayı/metin tip uyuşmazlığından kaynaklanan eşleşmeme sorunlarını önlemek için işleme sırasında <code>String(...)</code> ile metne sabitlenir (DiDe ve FiDe için).</li>
                         <li><code>processDideExcelData</code> / <code>processFideExcelData</code>: Eşleştirme kurallarına göre veriyi işler. FiDe için yıl (örn: 2025) satırının altındaki sütun başlıklarını okuma zekasına sahiptir.</li>
                     </ul>
                 </li>
@@ -464,7 +465,9 @@
                                 <li>Otomatik hesaplanan ürün sipariş listesi</li>
                             </ol>
                             Ürün seçilmemiş olsa dahi, statik metin veya not varsa soru e-postaya dahil edilir.
-                        </li>
+                        
+                            <p><strong>Güvenli Veri Kontrolü (Çökme Önleme):</strong> Seçilen bayi, yıl geçişi nedeniyle puanları sıfırlanmış olsa veya ilgili Excel listesinde hiç bulunmasa bile <code>generateEmail</code> akışı durmaz ve taslak e-posta her koşulda oluşturulur. Bu durumda; yönetmen adı için varsayılan <code>Yetkili</code> kullanılır ve DiDe/FiDe puan tablolarında eksik değerler otomatik olarak <code>-</code> ile doldurulur.</p>
+</li>
                     </ul>
                 </li>
                 <li><code>state.js</code> (Durum Yönetimi): <code>dideData</code>, <code>fideData</code>, <code>fideQuestions</code>, <code>selectedStore</code> gibi tüm uygulama tarafından kullanılan global değişkenleri tutar ve <code>set...</code> fonksiyonları ile güvenli bir şekilde güncellenmesini sağlar.</li>
@@ -579,6 +582,399 @@
                 <li><strong>Bulut Kaydı:</strong> <code>saveMappingToCloud</code> ve <code>checkSavedMapping</code> fonksiyonları otomatik olarak çalışır, genellikle değişiklik gerektirmez ancak yeni bir parametre eklediysen kayıt yapısına dahil olduğundan emin ol.</li>
             </ol>
         </section>
+    
+        <section id="ai-health-check">
+            <h2><i class="fas fa-heartbeat"></i> AI İçin Hızlı Sağlık Kontrolü (Health Check)</h2>
+            <p>Bu bölüm, projeyi ilk kez devralan bir geliştiricinin veya başka bir yapay zekanın, sistemin kritik güvenlik davranışlarının doğru çalışıp çalışmadığını <strong>30 saniyede</strong> doğrulaması için hazırlanmıştır. Bu liste bir "changelog" değildir; sistemin <strong>çalışan güncel davranışını</strong> kontrol etmeyi amaçlar.</p>
+
+            <h3>Kontrol Listesi (Hızlı)</h3>
+            <ul>
+                <li><strong>Excel Bayi Kodu Tip Güvenliği:</strong> DiDe ve FiDe işleme sırasında <code>'Bayi Kodu'</code> alanı her zaman <code>String(...)</code> ile metne sabitlenir. (Sayı/metin uyuşmazlığı eşleşmeyi bozmaz.)</li>
+                <li><strong>Eksik Bayi Verisi (Excel'de Yok):</strong> Seçilen bayi Excel listesinde bulunmasa bile sistem hata vermez; e-posta taslağı üretimi devam eder.</li>
+                <li><strong>Yıl Geçişi / Puanların Boş Olması:</strong> Yeni yıla geçişle puanlar sıfırlansa veya skorlar gelmese bile, puan tablosu hücreleri otomatik olarak <code>-</code> ile doldurulur.</li>
+                <li><strong>E-posta Taslağı Sürekliliği:</strong> <code>generateEmail</code> fonksiyonunda bayi verisi bulunamadığında artık <code>alert</code> + <code>return</code> ile süreç durdurulmaz.</li>
+                <li><strong>Yönetmen Adı Varsayılanı:</strong> Bayi yönetmeni bilgisi yoksa e-posta selamlamasında varsayılan isim <strong>Yetkili</strong> kullanılır.</li>
+            </ul>
+
+            <h3>Beklenen Sonuç (Hızlı)</h3>
+            <ul>
+                <li>Uygulama hiçbir senaryoda "çökmez"; kullanıcı her zaman forma devam edebilir.</li>
+                <li>Oluşturulan e-posta taslağı, veri eksik olsa dahi boş kalmaz; en azından selamlama ve puan tablosu güvenli biçimde oluşur.</li>
+            </ul>
+        </section>
+
+        <section id="test-checklist">
+            <h2><i class="fas fa-vial"></i> Gerçek Senaryolarla Test Checklisti (Güvenli Veri Kontrolü)</h2>
+            <p>Bu testler, "Güvenli Veri Kontrolü" güncellemesinin hedeflediği gerçek dünyadaki sorunları (yıl geçişi, eksik bayi, boş puan) tekrar üreterek doğrulamak içindir. Her bir testte amaç, <strong>hata vermeden</strong> ve <strong>e-posta taslağı üretebilecek şekilde</strong> sistemin devam etmesini sağlamaktır.</p>
+
+            <h3>Test 1: Yıl Geçişi (Puanların Sıfırlanması / Yeni Yıl Satırı)</h3>
+            <ol>
+                <li>DiDe/FiDe Excel verilerinde yeni yıl (örn: 2026) için puanların boş veya sıfır olduğu bir durum oluştur.</li>
+                <li>Uygulamada ilgili bayiyi seç ve e-posta taslağını üret.</li>
+                <li><strong>Beklenen:</strong> Puan tablosunda eksik değerler <code>-</code> olarak görünür; uygulama hata vermez.</li>
+            </ol>
+
+            <h3>Test 2: Eksik Bayi (Excel Listesinde Yok)</h3>
+            <ol>
+                <li>PocketBase'de kayıtlı bir bayiyi seç, ancak DiDe/FiDe Excel verilerinde bu bayi kodunun bulunmadığından emin ol.</li>
+                <li>E-posta taslağını üret.</li>
+                <li><strong>Beklenen:</strong> Sistem uyarı penceresi (<code>alert</code>) ile durmaz; e-posta taslağı oluşur.</li>
+                <li><strong>Beklenen:</strong> Selamlama satırında yönetmen adı yoksa varsayılan <strong>Yetkili</strong> kullanılır.</li>
+            </ol>
+
+            <h3>Test 3: Boş Excel / Boş Skor Dizisi</h3>
+            <ol>
+                <li>DiDe veya FiDe skorlarının hiç gelmediği bir durum oluştur (örn: ilgili tip için <code>scores</code> alanı boş/undefined).</li>
+                <li>E-posta taslağı üret ve puan tablosunu kontrol et.</li>
+                <li><strong>Beklenen:</strong> Her satırda eksik puanlar için <code>-</code görünür; tablo üretimi hata vermez.</li>
+            </ol>
+
+            <h3>Test 4: Bayi Kodu Tip Uyuşmazlığı (Sayı ↔ Metin)</h3>
+            <ol>
+                <li>Excel dosyasında bayi kodunu sayısal formatta (örn: <code>12345</code>) tut; sistemdeki bayi kodu metin gibi davranabilir.</li>
+                <li>Verileri yükle ve bayiyi seç.</li>
+                <li><strong>Beklenen:</strong> Eşleşme bozulmaz; çünkü Excel işleme sırasında bayi kodu <code>String(...)</code> ile metne çevrilir.</li>
+            </ol>
+
+            <h3>Hızlı “Geçti/Kaldı” Kriterleri</h3>
+            <ul>
+                <li><strong>Geçti:</strong> Uygulama çökmeden devam ediyor, e-posta taslağı her durumda oluşuyor, eksik puanlar <code>-</code> ile güvenli biçimde gösteriliyor.</li>
+                <li><strong>Kaldı:</strong> Herhangi bir senaryoda <code>alert</code> + <code>return</code> ile süreç duruyor, <code>undefined</code> hatası alınıyor veya puan tablosu render edilirken hata oluşuyor.</li>
+            </ul>
+        </section>
+
+
+        <section id="project-contract">
+            <h2><i class="fas fa-file-signature"></i> Proje Sözleşmesi (AI/Geliştirici İçin Bağlayıcı Kurallar)</h2>
+            <p>
+                Bu bölüm, projeyi ilk kez devralan bir geliştiricinin veya başka bir yapay zekanın, güncelleme yaparken
+                <strong>hangi davranışların “sözleşme” olduğunu</strong> ve <strong>README’nin nasıl canlı tutulacağını</strong> netleştirmek için yazılmıştır.
+            </p>
+            <ul>
+                <li><strong>Tek Kaynak:</strong> Bu doküman, çalışan sistemin son halini yansıtır. Kod değiştiyse, ilgili başlık da güncellenmelidir.</li>
+                <li><strong>Changelog Yok:</strong> “Yeni özellik eklendi / hata düzeltildi” notu düşülmez. Doğru çalışma mantığı ilgili bölüme işlenir.</li>
+                <li><strong>Dosya Disiplini:</strong> CSS değişikliği, ilgili <code>.css</code> dosyasına yazılır. HTML içine stil gömme yapılmaz.</li>
+                <li><strong>Mevcut Dosyalar:</strong> Yeni dosya oluşturulmaz. Sadece var olan dosyalar üzerinde çalışılır.</li>
+                <li><strong>Modül Sözleşmesi:</strong> Admin modülleri “Modül Sözleşmesi”ne uymak zorundadır (bkz. Admin Panel Mimarisi).</li>
+            </ul>
+
+            <h3>Güncelleme → README Eşleştirme Kuralları</h3>
+            <table>
+                <thead>
+                    <tr><th>Yapılan Değişiklik</th><th>README’de Güncellenecek Bölüm</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Yeni modül eklendi / kaldırıldı</td><td><a href="#file-structure">Klasör ve Dosya Yapısı</a> + <a href="#module-analysis">Modül ve Dosya Analizi</a></td></tr>
+                    <tr><td>Admin yükleyici / rol / ban mantığı değişti</td><td><a href="#architecture">Proje Mimarisi</a> (Admin) + <a href="#admin-deep">Admin Panel Mimarisi (Detay)</a></td></tr>
+                    <tr><td>Excel işleme / eşleştirme / yıl okuma değişti</td><td><a href="#excel-deep">Excel Sistemi (Detay)</a></td></tr>
+                    <tr><td>E-posta şablonu / placeholder / puan tablosu değişti</td><td><a href="#email-deep">E-posta Şablon Motoru</a> + <a href="#module-analysis">ui.js / eposta-taslagi</a></td></tr>
+                    <tr><td>Güvenlik / cihaz / ban / mobil erişim</td><td><a href="#security-deep">Güvenlik Modeli (Detay)</a></td></tr>
+                    <tr><td>FiDe soru yapısı / ID / migration senaryosu</td><td><a href="#questions-deep">Soru Sistemi & Migration</a></td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="client-deep">
+            <h2><i class="fas fa-desktop"></i> Client (Ana Form) – Kritik Bağımlılıklar ve Sık Hatalar</h2>
+            <h3>Inline <code>onclick</code> Bağımlılığı</h3>
+            <p>
+                <code>index.html</code> içinde bazı butonlar inline <code>onclick="..."</code> ile tetiklenir. Bu yüzden
+                <code>main.js</code> içinde UI fonksiyonlarının <code>window</code>’a bağlandığı adım <strong>kritiktir</strong>.
+                Bu adım çalışmazsa, butonlar “hiç çalışmıyor” gibi görünür.
+            </p>
+
+            <h3>Script Yükleme Sırası ve <code>POCKETBASE_URL</code></h3>
+            <p>
+                Client başlatma sürecinde <code>db-config.js</code> tarafından sağlanan PocketBase URL bilgisi global olarak okunur.
+                Bu nedenle <code>index.html</code> içindeki script sırası yanlışsa uygulama başlangıçta bağlantı kuramaz.
+            </p>
+
+            <h3>Loading/Kilit Overlay Yapısı</h3>
+            <p>
+                <code>utils.js</code> içindeki <code>showLoadingOverlay</code> / <code>showLockoutOverlay</code> fonksiyonları, DOM’da belirli bir
+                overlay yapısı bekler (başlık/metin alanları). Overlay görünmüyorsa veya yazı güncellenmiyorsa, önce
+                <code>index.html</code> içindeki overlay element ID’lerini ve içerik alanlarını kontrol et.
+            </p>
+        </section>
+
+        <section id="admin-deep">
+            <h2><i class="fas fa-shield-halved"></i> Admin Panel Mimarisi (Detay)</h2>
+            <h3>Admin Panel = Ayrı Uygulama</h3>
+            <ul>
+                <li>Admin panel, client uygulamasından bağımsız bir giriş noktasıdır (<code>admin/admin.html</code>).</li>
+                <li>Admin tarafı client’taki <code>api.js</code> katmanını kullanmaz; PocketBase SDK üzerinden doğrudan işlem yapar.</li>
+            </ul>
+
+            <h3>Rol Bazlı Gerçek Yetkilendirme</h3>
+            <p>
+                Rol bazlı kontrol sadece menü gizleme değildir: <strong>client rolü için modüller yüklenmez, import edilmez</strong>.
+                Bu nedenle “client rolü yalnızca <code>denetim-takip</code> modülünü görür” ifadesi güvenlik açısından da geçerlidir.
+            </p>
+
+            <h3>Modül Sözleşmesi (Zorunlu)</h3>
+            <p>Her modül şu sözleşmeye uymak zorundadır:</p>
+            <ul>
+                <li>Klasör adı = modül ID’si (örn: <code>modules/denetim-takip/</code>)</li>
+                <li>Dosyalar: <code>{id}.html</code>, <code>{id}.css</code>, <code>{id}.js</code></li>
+                <li>JS içinde zorunlu export: <code>initialize{FormattedId}Module(pb)</code></li>
+            </ul>
+            <p>Bu sözleşmeye uyulmazsa modül yüklenmez (genellikle “sessiz” başarısız olur).</p>
+
+            <h3>Anlık Ban (Kill Switch)</h3>
+            <p>
+                Admin paneli de ban sistemine dahildir. Kullanıcının <code>users.is_banned</code> alanı anlık değişirse,
+                aktif oturum derhal düşer. Bu özellik, “yönetici paneli de dahil tüm oturumların güvenli biçimde kesilmesi” için tasarlanmıştır.
+            </p>
+
+            <h3>Admin CSS Felsefesi</h3>
+            <p>
+                <code>admin.css</code> bilinçli olarak “nötr kabuk” mantığındadır. Modüllerin kendi CSS’lerini özgürce tanımlayabilmesi için
+                admin kabuğu minimum stil uygular.
+            </p>
+        </section>
+
+        <section id="excel-deep">
+            <h2><i class="fas fa-file-excel"></i> Excel Sistemi (Detay)</h2>
+            <h3>Bulut Eşleştirme Anahtarları</h3>
+            <ul>
+                <li><code>ayarlar.anahtar = excel_mapping_dide</code></li>
+                <li><code>ayarlar.anahtar = excel_mapping_fide</code></li>
+            </ul>
+
+            <h3>Bayi Kodu Tip Güvenliği (String Sabitleme)</h3>
+            <p>
+                Excel’de bayi kodu bazen sayı, bazen metin gelir. Eşleşme hatalarını engellemek için DiDe/FiDe işleme sırasında
+                bayi kodu <code>String(...)</code> ile metne sabitlenir.
+            </p>
+
+            <h3>Yıl Geçişi ve Boş Skorlar</h3>
+            <p>
+                Yeni yıla geçişte skorlar boş gelebilir veya Excel’de ilgili bayi bulunmayabilir. Sistem “Güvenli Veri Kontrolü” ile
+                bu durumda çökmeyecek şekilde tasarlanmıştır (bkz: <a href="#ai-health-check">AI Sağlık Kontrolü</a> ve <a href="#test-checklist">Test Checklisti</a>).
+            </p>
+        </section>
+
+        <section id="email-deep">
+            <h2><i class="fas fa-envelope-open-text"></i> E-posta Şablon Motoru</h2>
+            <h3>Tek Kayıt – Global Şablon</h3>
+            <p>E-posta şablonu, <code>ayarlar</code> tablosunda <code>emailTemplate</code> anahtarı ile sistem genelinde tek bir kayıt olarak tutulur.</p>
+
+            <h3>HTML Saklama</h3>
+            <p>
+                Şablon düz metin değil, Quill editörünün ürettiği <strong>HTML</strong> olarak saklanır.
+                Bu, biçimlendirme (kalın, liste, başlık vb.) korunması için bilinçli bir tercihtir.
+            </p>
+
+            <h3>Placeholder Sözleşmesi (Birebir Yazım)</h3>
+            <p>Client tarafı aşağıdaki placeholder’ları birebir arar (büyük/küçük harf duyarlıdır):</p>
+            <pre>
+{YONETMEN_ADI}
+{BAYI_BILGISI}
+{DENETIM_ICERIGI}
+{PUAN_TABLOSU}
+            </pre>
+            <p>Placeholder yazımı bozulursa ilgili alan e-postada boş kalır.</p>
+        </section>
+
+        <section id="questions-deep">
+            <h2><i class="fas fa-code-branch"></i> Soru Sistemi & Migration (FiDe)</h2>
+            <h3>Tek Kaynak (Single Source of Truth)</h3>
+            <p>
+                FiDe soru yapısı bir koleksiyon halinde parça parça değil; <code>ayarlar</code> tablosunda tek bir JSON olarak saklanır:
+                <code>ayarlar.anahtar = fideQuestionsData</code>.
+                Bu JSON içinde hem <code>questions</code> hem de ilgili listeler (örn: <code>productList</code>) bulunur.
+            </p>
+
+            <h3>Soru ID’leri = Gerçek Anahtar</h3>
+            <p>
+                Raporlar <code>soruDurumlari</code> JSON’unda cevapları soru ID’si ile tutar. Başlık (title) değişebilir; ancak ID değişimi
+                geçmiş raporları etkiler. Bu yüzden ID değişimi “senaryo” ile kontrollü yapılır.
+            </p>
+
+            <h3>Hazır Senaryo Sistemi (Mini Migration Engine)</h3>
+            <ul>
+                <li><strong>ID Değişimi:</strong> Tüm raporlar taranır, eski ID anahtarları yeni ID’ye taşınır.</li>
+                <li><strong>Soru Silme:</strong> Soru ve raporlardaki ilgili cevap anahtarları kontrollü biçimde kaldırılır.</li>
+            </ul>
+
+            <h3>migrationMap (Geriye Dönük Uyumluluk)</h3>
+            <p>
+                ID değişimlerinin izlenmesi için <code>ayarlar.anahtar = migrationMap</code> kullanılır.
+                Bu katman, geçmiş verilerin okunabilir kalmasına yardımcı olur.
+            </p>
+        </section>
+
+        <section id="security-deep">
+            <h2><i class="fas fa-user-lock"></i> Güvenlik Modeli (Detay)</h2>
+            <h3>Ban = Anlık Oturum Kesme</h3>
+            <p>
+                <code>users.is_banned</code> alanı, hem client hem admin tarafında anlık dinlenir. Yönetici ban attığı anda aktif oturumlar düşer.
+            </p>
+
+            <h3>Cihaz Bazlı Güvenlik: <code>user_devices</code></h3>
+            <p>
+                Cihazlar kullanıcı kaydı içinde JSON olarak değil, ayrı koleksiyonda tutulur. Bu koleksiyon üzerinden:
+                <code>is_locked</code> ile cihaz kilidi, <code>last_login</code> ile son erişim izlenir.
+            </p>
+
+            <h3>Bireysel Cihaz Limiti</h3>
+            <p>
+                Cihaz limiti global değil, kullanıcı bazlıdır (<code>users.device_limit</code>). Özellikle <code>client</code> kullanıcılar için uygulanır.
+            </p>
+
+            <h3>Mobil Erişim</h3>
+            <p>
+                <code>users.mobile_access</code>, rol dışında ek bir izin katmanıdır. Mobil istemci erişimi bu bayrak ile yönetilir.
+            </p>
+        </section>
+
+        <section id="ops-deep">
+            <h2><i class="fas fa-triangle-exclamation"></i> Operasyonel Kurtarma & Riskli İşlemler</h2>
+            <h3>Geri Alma Mantığı (Silme Değil)</h3>
+            <p>
+                <code>denetim-takip</code> modülündeki “Geri Al” işlemi, raporu silmez. Denetimi sayaçlardan düşürmek için
+                <code>denetim_geri_alinanlar</code> koleksiyonuna kayıt atar. Bu yaklaşım veri kaybını önler ve audit izini güçlendirir.
+            </p>
+
+            <h3>Yıllık Sıfırlama</h3>
+            <p>
+                Yeni yıla geçiş gibi durumlarda, “Genel Bakış” görünümünde admin tarafından tetiklenen yıllık sıfırlama,
+                yıl boyunca işlenen denetimleri mantıksal olarak geri alır (ay bazlı kayıtlar).
+            </p>
+
+            <h3>Veritabanı Yönetim Modülü: Güvenli vs Yıkıcı</h3>
+            <ul>
+                <li><strong>Güvenli Senaryolar:</strong> Kullanıcı+veri temizliği gibi kontrollü adımlar (önce raporlar, sonra cihazlar, sonra kullanıcı).</li>
+                <li><strong>Yıkıcı Senaryolar:</strong> Atanmamış bayileri silme / tablo boşaltma gibi geri dönüşsüz işlemler. Çok katmanlı onay kasıtlıdır.</li>
+                <li><strong>Önemli:</strong> Atanmamış bayiler silinirken bağlı <code>denetim_raporlari</code> ve <code>denetim_geri_alinanlar</code> da temizlenir.</li>
+            </ul>
+        </section>
+
+        <section id="troubleshooting">
+            <h2><i class="fas fa-bug"></i> Sorun Giderme: Nereye Bakmalıyım?</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Belirti</th>
+                        <th>Muhtemel Sebep</th>
+                        <th>Bakılacak Dosya/Bölüm</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Admin’de bir modül açılmıyor</td>
+                        <td>Modül sözleşmesi / export adı uyuşmuyor</td>
+                        <td><code>admin/admin.js</code> (loadModule), modül <code>{id}.js</code> export adı</td>
+                    </tr>
+                    <tr>
+                        <td>Butonlar çalışmıyor (client)</td>
+                        <td>Inline onclick, window binding eksik</td>
+                        <td><code>main.js</code> (UI fonksiyonlarının window’a bağlanması), <code>index.html</code></td>
+                    </tr>
+                    <tr>
+                        <td>E-posta boş / placeholder görünmüyor</td>
+                        <td>Placeholder yazımı bozuk / şablon kaydı yok</td>
+                        <td><code>modules/eposta-taslagi.js</code>, <a href="#email-deep">Placeholder Sözleşmesi</a>, <code>ui.js -> generateEmail</code></td>
+                    </tr>
+                    <tr>
+                        <td>Puan tablosu hata veriyor</td>
+                        <td>Excel skoru yok / bayi Excel’de yok</td>
+                        <td><code>ui.js -> generateEmail</code>, <code>excel.js</code>, <a href="#excel-deep">Excel Sistemi</a></td>
+                    </tr>
+                    <tr>
+                        <td>Kullanıcı aniden atılıyor</td>
+                        <td>Ban veya cihaz kilidi</td>
+                        <td><code>api.js -> subscribeToRealtimeChanges</code>, <code>users.is_banned</code>, <code>user_devices.is_locked</code></td>
+                    </tr>
+                    <tr>
+                        <td>Soru ID değişince eski raporlar bozuldu</td>
+                        <td>Migration senaryosu uygulanmadı</td>
+                        <td><code>modules/soru-yoneticisi.js</code> (Senaryo Sistemi), <a href="#questions-deep">Migration</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+
+<section id="modules-reference">
+  <h2><i class="fas fa-cubes"></i> Modül Referansı (Uçtan Uca Çalışma, Seçenekler ve Etkiler)</h2>
+  <p>
+    Bu bölüm, <strong>klasör yapısındaki tüm modüllerin</strong> nasıl çalıştığını, hangi ayar ve seçeneklere sahip olduğunu,
+    hangi verileri etkilediğini ve bir sorun durumunda <em>nereden başlanacağını</em> tek yerde toplar.
+    Amaç; projeyi ilk kez açan bir yapay zekânın veya geliştiricinin, <strong>başka kaynağa bakmadan</strong> sistemi doğru anlamasıdır.
+  </p>
+
+  <h3>Genel Kurallar (Tüm Modüller İçin Geçerli)</h3>
+  <ul>
+    <li>Her modül <strong>admin modül sözleşmesine</strong> uyar (id = klasör adı, zorunlu export).</li>
+    <li>Her modül kendi <code>.html / .css / .js</code> dosyalarıyla <strong>izole</strong> çalışır.</li>
+    <li>Event listener’lar, tekrar yüklemeyi önleyen <strong>guard</strong> mekanizmasına sahiptir.</li>
+    <li>Admin kabuğu nötrdür; modül CSS’i kendi görsel dünyasını kurabilir.</li>
+  </ul>
+
+  <hr>
+
+  <h3 id="mod-denetim-takip">denetim-takip</h3>
+  <p><strong>Rol:</strong> Operasyonel kalp. İlerleme, hedefler ve geri alma burada yönetilir.</p>
+  <ul>
+    <li><strong>Nasıl Çalışır:</strong> Master veriler (tüm raporlar/bayiler) çekilir; rol ve filtrelere göre view veriler türetilir.</li>
+    <li><strong>Seçenekler:</strong> Aylık hedef (global), filtreler (bölge/şehir/yönetmen), geri alma, yıllık sıfırlama.</li>
+    <li><strong>Etkiler:</strong> Sayaçlar, dashboard, performans ölçümü.</li>
+    <li><strong>Önemli:</strong> Geri alma <em>silme değildir</em>; <code>denetim_geri_alinanlar</code> kullanılır.</li>
+    <li><strong>Sorun Giderme:</strong> Sayaçlar tutarsızsa geri alınanlar tablosu ve filtreler kontrol edilir.</li>
+  </ul>
+
+  <h3 id="mod-bayi-yoneticisi">bayi-yoneticisi</h3>
+  <p><strong>Rol:</strong> Veri sağlığı ve doğruluk kapısı.</p>
+  <ul>
+    <li><strong>Nasıl Çalışır:</strong> Bayi CRUD + Excel upsert (anahtar: bayiKodu).</li>
+    <li><strong>Seçenekler:</strong> Excel içe/dışa aktarma, sorumlu atama, veri temizlik filtreleri.</li>
+    <li><strong>Etkiler:</strong> Denetim listeleri, Excel eşleşmeleri.</li>
+    <li><strong>Önemli:</strong> Akıllı otomatik eşleştirme yok; kullanıcı kontrolü esastır.</li>
+    <li><strong>Sorun Giderme:</strong> Denetimler görünmüyorsa bayi atamaları ve bayiKodu tipleri kontrol edilir.</li>
+  </ul>
+
+  <h3 id="mod-soru-yoneticisi">soru-yoneticisi</h3>
+  <p><strong>Rol:</strong> Şema ve migration yöneticisi (FiDe).</p>
+  <ul>
+    <li><strong>Nasıl Çalışır:</strong> Sorular tek JSON (<code>fideQuestionsData</code>) olarak yönetilir.</li>
+    <li><strong>Seçenekler:</strong> Soru tipleri, ID değişim senaryoları, soru silme.</li>
+    <li><strong>Etkiler:</strong> Tüm raporların veri şeması.</li>
+    <li><strong>Önemli:</strong> ID = anahtar. ID değişimi senaryo ile yapılır (<code>migrationMap</code>).</li>
+    <li><strong>Sorun Giderme:</strong> Eski raporlar bozulduysa migration uygulanıp uygulanmadığına bakılır.</li>
+  </ul>
+
+  <h3 id="mod-eposta-taslagi">eposta-taslagi</h3>
+  <p><strong>Rol:</strong> Bildirim içerik motoru (gönderim yapmaz).</p>
+  <ul>
+    <li><strong>Nasıl Çalışır:</strong> Admin HTML şablonu düzenler; client <code>ui.js</code> ile placeholder’ları doldurur.</li>
+    <li><strong>Seçenekler:</strong> HTML içerik, placeholder’lar.</li>
+    <li><strong>Etkiler:</strong> Kullanıcıya gösterilen e-posta içeriği.</li>
+    <li><strong>Önemli:</strong> Fail-safe: şablon/veri yoksa varsayılanlar kullanılır.</li>
+    <li><strong>Sorun Giderme:</strong> Boş alanlar için placeholder yazımı ve <code>generateEmail</code> kontrol edilir.</li>
+  </ul>
+
+  <h3 id="mod-kullanici-yoneticisi">kullanici-yoneticisi</h3>
+  <p><strong>Rol:</strong> Güvenlik merkezi.</p>
+  <ul>
+    <li><strong>Nasıl Çalışır:</strong> Kullanıcı CRUD, rol, ban, cihaz yönetimi.</li>
+    <li><strong>Seçenekler:</strong> Bireysel cihaz limiti, mobil erişim, anlık ban.</li>
+    <li><strong>Etkiler:</strong> Tüm erişimler ve aktif oturumlar.</li>
+    <li><strong>Önemli:</strong> Ban anlıktır (kill switch).</li>
+    <li><strong>Sorun Giderme:</strong> Ani atılmalar için <code>is_banned</code> ve <code>user_devices</code> kontrol edilir.</li>
+  </ul>
+
+  <h3 id="mod-veritabani-yonetim">veritabani-yonetim</h3>
+  <p><strong>Rol:</strong> Kurtarma ve yıkıcı işlemler.</p>
+  <ul>
+    <li><strong>Nasıl Çalışır:</strong> Çok adımlı onaylarla temizlik/sıfırlama.</li>
+    <li><strong>Seçenekler:</strong> Güvenli senaryolar, yıkıcı senaryolar, tablo işlemleri.</li>
+    <li><strong>Etkiler:</strong> Doğrudan veritabanı.</li>
+    <li><strong>Önemli:</strong> Atanmamış bayiler en riskli durumdur.</li>
+    <li><strong>Sorun Giderme:</strong> İlişkisel temizlik sırası kontrol edilir.</li>
+  </ul>
+</section>
+
     </main>
 
 </body>
