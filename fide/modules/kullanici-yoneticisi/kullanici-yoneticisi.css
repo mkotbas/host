@@ -155,6 +155,39 @@
     font-size: 0.95em;
 }
 
+/* --- GÜNCELLEME: Modern Input ve Select Stilleri --- */
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="number"],
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: #333;
+    background-color: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box; /* Padding'in kutu genişliğini bozmasını engeller */
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); /* Modern mavi odaklanma efekti */
+}
+
+/* Salt okunur (readonly) alanlar için hafif gri arka plan */
+.form-group input:disabled,
+.form-group input[readonly] {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+    cursor: not-allowed;
+}
+/* ---------------------------------------------------- */
+
 /* Güvenlik Ayarları başlığı */
 #user-form-view h4 {
     font-size: 1.2em;
