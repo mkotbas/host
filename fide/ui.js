@@ -144,8 +144,19 @@ function getFormDataForSaving() {
 export function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
-    const isOnline = state.isPocketBaseConnected && (pb && pb.authStore.isValid);
+
+    // pb global olabilir; tanımlı değilse ReferenceError almamak için güvenli kontrol
+    let isAuthValid = false;
+    if (typeof pb !== 'undefined' && pb && pb.authStore) {
+        isAuthValid = pb.authStore.isValid === true;
+    }
+
+    const isOnline = state.isPocketBaseConnected === true && isAuthValid;
+
+    // KRİTİK: 'disconnected' sınıfını da yönet (aksi halde CSS çakışır ve kırmızı kalır)
     statusSwitch.classList.toggle('connected', isOnline);
+    statusSwitch.classList.toggle('disconnected', !isOnline);
+
     statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
 }
 
