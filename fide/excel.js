@@ -17,20 +17,17 @@ export function initExcel(pbInstance) {
 async function saveMappingToCloud(type, mapping) {
     if (!pb || !pb.authStore.isValid) return;
     
-    const key = `excel_mapping_${type}`; // Anahtar örn: excel_mapping_dide
+    const key = `excel_mapping_${type}`; 
     const dataToSave = {
         anahtar: key,
         deger: mapping
     };
 
     try {
-        // Önce var mı diye kontrol et
         try {
             const record = await pb.collection('ayarlar').getFirstListItem(`anahtar="${key}"`);
-            // Varsa güncelle
             await pb.collection('ayarlar').update(record.id, { deger: mapping });
         } catch (err) {
-            // Yoksa (404) yeni oluştur
             if (err.status === 404) {
                 await pb.collection('ayarlar').create(dataToSave);
             } else {
@@ -45,7 +42,6 @@ async function saveMappingToCloud(type, mapping) {
 
 /**
  * Buluttaki kayıtlı ayarları kontrol eder.
- * Dosya yapısı (imzası) tutuyorsa kayıtlı ayarları döndürür.
  */
 async function checkSavedMapping(dataAsArray, type) {
     if (!pb || !pb.authStore.isValid) return null;
@@ -59,22 +55,16 @@ async function checkSavedMapping(dataAsArray, type) {
 
         const rowIndex = savedConfig.headerRowIndex;
 
-        // Dosya o satıra sahip mi?
         if (rowIndex >= dataAsArray.length) return null;
 
         const currentRow = dataAsArray[rowIndex];
-        // Basit bir imza oluştur: Satırdaki dolu hücreleri birleştir
         const currentSignature = currentRow.map(c => String(c || "").trim()).join("|");
 
-        // İmzalar eşleşiyor mu? (Yani dosya yapısı aynı mı?)
         if (currentSignature === savedConfig.signature) {
             console.log(`${type.toUpperCase()} için BULUTTAKİ ayarlar kullanılıyor.`);
             return savedConfig;
-        } else {
-            console.log(`${type.toUpperCase()} dosya yapısı değişmiş. Yeni ayar isteniyor.`);
         }
     } catch (e) {
-        // Kayıt bulunamazsa (404) veya hata olursa null dön, sihirbazı aç
         if (e.status !== 404) console.error("Bulut ayar okuma hatası:", e);
     }
     return null;
@@ -82,9 +72,6 @@ async function checkSavedMapping(dataAsArray, type) {
 
 /**
  * Kullanıcıdan Excel sütun eşleştirmesi yapmasını isteyen sihirbazı yönetir.
- * @param {Array} dataAsArray Tüm Excel verisi
- * @param {'dide'|'fide'} type İşlem tipi
- * @returns {Promise<object>} Kullanıcının seçtiği ayarlar (satır indeksi ve sütun indeksleri)
  */
 function openMappingModal(dataAsArray, type) {
     return new Promise((resolve, reject) => {
@@ -100,12 +87,10 @@ function openMappingModal(dataAsArray, type) {
         const saveBtn = document.getElementById('mapping-save-btn');
         const cancelBtn = document.getElementById('mapping-cancel-btn');
 
-        // Modalı göster
         modal.style.display = 'flex';
         stepColumn.style.display = 'none';
         saveBtn.disabled = true;
 
-        // Tipe göre arayüzü ayarla
         if (type === 'fide') {
             dideExtraFields.style.display = 'none';
             document.querySelector('#step-row-selection p').textContent = "1. Yıl Bilgisi (Örn: 2025) Hangi Satırda?";
@@ -114,17 +99,14 @@ function openMappingModal(dataAsArray, type) {
             document.querySelector('#step-row-selection p').textContent = "1. Başlıklar (Bayi Kodu vb.) Hangi Satırda?";
         }
 
-        // İlk 20 satırı (veya daha azsa hepsini) satır seçim kutusuna doldur
         rowSelect.innerHTML = '<option value="">-- Satır Seçin --</option>';
         const limit = Math.min(dataAsArray.length, 20);
         for (let i = 0; i < limit; i++) {
-            // Satırın ilk 3 dolu hücresini önizleme olarak göster
             const preview = dataAsArray[i].filter(c => c !== null && c !== undefined && String(c).trim() !== "").slice(0, 3).join(" | ");
             const label = `Satır ${i + 1}: ${preview ? preview : '(Boş)'}`;
             rowSelect.innerHTML += `<option value="${i}">${label}</option>`;
         }
 
-        // Satır değiştiğinde sütunları doldur
         rowSelect.onchange = () => {
             const rowIndex = parseInt(rowSelect.value);
             if (isNaN(rowIndex)) {
@@ -138,7 +120,6 @@ function openMappingModal(dataAsArray, type) {
             stepColumn.style.display = 'block';
             saveBtn.disabled = false;
 
-            // --- FİDE İÇİN ALT SATIR OKUMA ---
             let labelRowData = rowData; 
             if (type === 'fide') {
                 if (rowIndex + 1 < dataAsArray.length) {
@@ -146,7 +127,6 @@ function openMappingModal(dataAsArray, type) {
                 }
             }
 
-            // Sütun seçim kutularını doldur
             const fillSelect = (selectEl) => {
                 selectEl.innerHTML = '<option value="">-- Sütun Seçin --</option>';
                 const columnCount = Math.max(rowData.length, labelRowData.length);
@@ -167,7 +147,6 @@ function openMappingModal(dataAsArray, type) {
             }
         };
 
-        // Kaydet butonu
         saveBtn.onclick = async () => {
             const rowIndex = parseInt(rowSelect.value);
             const selectedMapping = {
@@ -175,7 +154,6 @@ function openMappingModal(dataAsArray, type) {
                 bayiKoduIndex: parseInt(mapBayiKodu.value),
                 bayiAdiIndex: type === 'dide' ? parseInt(mapBayiAdi.value) : -1,
                 yonetmenIndex: type === 'dide' ? parseInt(mapYonetmen.value) : -1,
-                // İMZA OLUŞTURMA: Bu dosyanın yapısını hatırlamak için
                 signature: dataAsArray[rowIndex].map(c => String(c || "").trim()).join("|")
             };
 
@@ -184,16 +162,11 @@ function openMappingModal(dataAsArray, type) {
                 return;
             }
 
-            // --- AYARLARI BULUTA KAYDET ---
-            // Bu işlem asenkron olduğu için kullanıcıyı bekletmemek adına arka planda başlatıyoruz
-            // ancak hata alırsak kullanıcıyı uyarmayacağız, sessizce devam edecek.
             saveMappingToCloud(type, selectedMapping);
-
             modal.style.display = 'none';
             resolve(selectedMapping);
         };
 
-        // İptal butonu
         cancelBtn.onclick = () => {
             modal.style.display = 'none';
             reject("Kullanıcı iptal etti.");
@@ -201,22 +174,15 @@ function openMappingModal(dataAsArray, type) {
     });
 }
 
-
 /**
- * DiDe Excel verisini işler ve buluta kaydeder.
+ * DiDe Excel verisini işler.
  */
-async function processDideExcelData(dataAsArray, filename) {
-    if (dataAsArray.length < 2) {
-        alert('Dosya çok boş görünüyor.');
-        return null;
-    }
+export async function processDideExcelData(dataAsArray, filename) {
+    if (dataAsArray.length < 2) return null;
 
     try {
-        // Önce BULUTU kontrol et, yoksa kullanıcıya sor
         let mapping = await checkSavedMapping(dataAsArray, 'dide');
-        if (!mapping) {
-            mapping = await openMappingModal(dataAsArray, 'dide');
-        }
+        if (!mapping) mapping = await openMappingModal(dataAsArray, 'dide');
         
         showLoadingOverlay("Veriler işleniyor...");
 
@@ -230,12 +196,12 @@ async function processDideExcelData(dataAsArray, filename) {
             headerRow.forEach((header, index) => {
                 const monthNumber = parseInt(header);
                 if (!isNaN(monthNumber) && monthNumber >= 1 && monthNumber <= 12) {
-                    if(row[index] !== null && row[index] !== undefined) scores[monthNumber] = row[index];
+                    if(row[index] !== null && row[index] !== undefined && row[index] !== "") scores[monthNumber] = row[index];
                 }
             });
 
             return { 
-                'Bayi Kodu': row[mapping.bayiKoduIndex], 
+                'Bayi Kodu': String(row[mapping.bayiKoduIndex]), 
                 'Bayi': mapping.bayiAdiIndex > -1 ? row[mapping.bayiAdiIndex] : '', 
                 'Bayi Yönetmeni': mapping.yonetmenIndex > -1 ? row[mapping.yonetmenIndex] : '', 
                 'scores': scores 
@@ -248,39 +214,26 @@ async function processDideExcelData(dataAsArray, filename) {
                 const record = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
                 await pb.collection('excel_verileri').update(record.id, dataToSave);
             } catch (error) {
-                if (error.status === 404) {
-                    await pb.collection('excel_verileri').create(dataToSave);
-                } else {
-                    console.error("Hata:", error);
-                    alert("Buluta kaydetme hatası.");
-                    return null;
-                }
+                if (error.status === 404) await pb.collection('excel_verileri').create(dataToSave);
             }
-            alert('DiDe puan dosyası başarıyla işlendi ve kaydedildi.');
+            alert('DiDe puan dosyası başarıyla işlendi.');
         }
         return processedData;
-
     } catch (e) {
-        console.log(e);
+        console.error(e);
         return null;
     }
 }
 
 /**
- * FiDe Excel verisini işler ve buluta kaydeder.
+ * FiDe Excel verisini işler.
  */
-async function processFideExcelData(dataAsArray, filename) {
-    if (dataAsArray.length < 3) {
-        alert('Dosya çok boş görünüyor.');
-        return null;
-    }
+export async function processFideExcelData(dataAsArray, filename) {
+    if (dataAsArray.length < 3) return null;
 
     try {
-        // Önce BULUTU kontrol et, yoksa kullanıcıya sor
         let mapping = await checkSavedMapping(dataAsArray, 'fide');
-        if (!mapping) {
-            mapping = await openMappingModal(dataAsArray, 'fide');
-        }
+        if (!mapping) mapping = await openMappingModal(dataAsArray, 'fide');
 
         showLoadingOverlay("Veriler işleniyor...");
 
@@ -288,11 +241,6 @@ async function processFideExcelData(dataAsArray, filename) {
         const yearRow = dataAsArray[yearRowIndex];
         const monthRow = dataAsArray[yearRowIndex + 1]; 
         
-        if (!monthRow) {
-            alert("Seçilen yıl satırının altında ay bilgileri bulunamadı.");
-            return null;
-        }
-
         const filledYearRow = yearRow.reduce((acc, cell) => {
             acc.lastKnown = (cell !== null && cell !== undefined && String(cell).trim() !== "") ? String(cell).trim() : acc.lastKnown;
             acc.result.push(acc.lastKnown);
@@ -314,7 +262,7 @@ async function processFideExcelData(dataAsArray, filename) {
                     }
                 }
             }
-            return { 'Bayi Kodu': row[mapping.bayiKoduIndex], 'scores': scores };
+            return { 'Bayi Kodu': String(row[mapping.bayiKoduIndex]), 'scores': scores };
         }).filter(d => d);
 
         if (pb && pb.authStore.isValid) {
@@ -323,30 +271,17 @@ async function processFideExcelData(dataAsArray, filename) {
                 const record = await pb.collection('excel_verileri').getFirstListItem('tip="fide"');
                 await pb.collection('excel_verileri').update(record.id, dataToSave);
             } catch (error) {
-                if (error.status === 404) {
-                    await pb.collection('excel_verileri').create(dataToSave);
-                } else {
-                    console.error("Hata:", error);
-                    alert("Buluta kaydetme hatası.");
-                    return null;
-                }
+                if (error.status === 404) await pb.collection('excel_verileri').create(dataToSave);
             }
-            alert('FiDe puan dosyası başarıyla işlendi ve kaydedildi.');
+            alert('FiDe puan dosyası başarıyla işlendi.');
         }
         return processedData;
-
     } catch (e) {
-        console.log(e);
+        console.error(e);
         return null;
     }
 }
 
-/**
- * Dosya seçme olayını yönetir ve ilgili işlemciyi çağırır.
- * @param {Event} event Dosya input'undan gelen olay.
- * @param {'dide' | 'fide'} type Dosya tipi.
- * @returns {Promise<boolean>} İşlem başarılıysa true döner.
- */
 export async function handleFileSelect(event, type) {
     const file = event.target.files[0];
     if (!file) return false;
@@ -362,8 +297,7 @@ export async function handleFileSelect(event, type) {
             try {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 const dataAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
                 
                 let processedData;
@@ -374,20 +308,14 @@ export async function handleFileSelect(event, type) {
                     processedData = await processFideExcelData(dataAsArray, filename);
                     if (processedData) state.setFideData(processedData);
                 }
-                
                 resolve(!!processedData); 
-
             } catch (error) { 
-                alert("Excel dosyası okunurken bir hata oluştu."); 
-                console.error("Excel okuma hatası:", error); 
+                alert("Excel okuma hatası."); 
                 resolve(false);
             } finally {
                 hideLoadingOverlay();
             }
         };
-        reader.onerror = () => {
-             alert("Dosya okunamadı.");
-             resolve(false);
-        }
+        reader.onerror = () => resolve(false);
     });
 }
