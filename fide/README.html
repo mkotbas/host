@@ -194,12 +194,12 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.19</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.20</strong></p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
                 <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.19)</li>
-                <li><strong>KURAL: Dökümanı "Canlı" Tut:</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. Sistemin o anki çalışan son halini yansıtmalıdır.</li>
+                <li><strong>KURAL: Dökümanı "Canlı" Tut (BAĞLAYICI):</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. <strong>Sistemin o anki çalışan son halini</strong> tek doğru kaynak olarak yansıtır. Herhangi bir özellik eklendiğinde, çıkarıldığında veya davranışı değiştiğinde <strong>yeni madde, not veya başlık eklenmez</strong>; ilgili mevcut madde <strong>güncel ve doğru çalışma mantığını</strong> yansıtacak şekilde yerinde güncellenir. README her zaman sistemin o anki tek doğru tarifidir.</li>
                 <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
                 <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
                 <li>Herhangi bir şey güncellendiğinde veya çıkartıldığında dosyadaki kodların tamamı güncellenerek yazılsın.</li>
@@ -532,6 +532,58 @@
         <section id="update-guide" class="update-guide">
             <h2><i class="fas fa-wrench"></i> Güncelleme ve Bakım Rehberi</h2>
             <p>Projeye gelecekte bir özellik eklerken veya güncelleme yaparken bu rehber, hangi dosyaların etkileneceğini anlamanıza yardımcı olacaktır.</p>
+            <section id="auto-checklist">
+                <h2><i class="fas fa-clipboard-check"></i> Otomatik Kontrol Checklisti (Değişiklik Sonrası)</h2>
+                <p>
+                    Bu bölüm bir changelog değildir. Amaç; bir değişiklikten sonra README’nin hâlâ <strong>tek doğru tarif</strong> olup olmadığını
+                    hızlıca doğrulamaktır. Kural: <strong>Yeni madde ekleme</strong>; ilgili mevcut maddeyi <strong>yerinde düzelt</strong>.
+                </p>
+
+                <h3>1) Arayüz / UI Değiştiyse</h3>
+                <ul>
+                    <li>Bağlantı göstergesi, butonlar, metinler: README’de anlatım hâlâ birebir doğru mu?</li>
+                    <li>CSS sınıf/ID değiştiyse: ilgili UI bölümündeki isimler güncel mi?</li>
+                </ul>
+
+                <h3>2) Bulut / PocketBase / Auth Değiştiyse</h3>
+                <ul>
+                    <li>Bağlantı durumu göstergesi (connected/disconnected) anlatımı doğru mu?</li>
+                    <li>Auth kontrolleri ve “bağlı” kriteri (authStore.isValid vb.) hâlâ aynı mı?</li>
+                    <li>Realtime abonelik/yenileme davranışı değiştiyse ilgili bölüm güncel mi?</li>
+                </ul>
+
+                <h3>3) Excel İşleme / Eşleştirme Değiştiyse</h3>
+                <ul>
+                    <li>Bayi kodu tip güvenliği (String sabitleme) hâlâ uygulanıyor mu?</li>
+                    <li>Eksik bayi / boş skor / yıl geçişi senaryolarında beklenen davranış doğru mu?</li>
+                    <li>Excel mapping anahtarları ve sihirbaz akışı değiştiyse Excel bölümü güncel mi?</li>
+                </ul>
+
+                <h3>4) Soru Yapısı / Migration / Rapor Güncelleme Değiştiyse</h3>
+                <ul>
+                    <li>Question ID değişimi/silme akışı aynı mı? Kullanılan map/işlev isimleri değişti mi?</li>
+                    <li>Toplu rapor güncelleme mantığı (denetim_raporlari JSON güncelleme) hâlâ doğru mu?</li>
+                </ul>
+
+                <h3>5) E-posta Şablonu / Placeholder’lar Değiştiyse</h3>
+                <ul>
+                    <li>Placeholder sözleşmesi birebir aynı mı (yazım/hassasiyet)?</li>
+                    <li>Şablonun tek kayıt (global) mantığı ve saklama formatı (HTML) değişti mi?</li>
+                </ul>
+
+                <h3>6) Admin Modülleri / Veritabanı Yönetimi Değiştiyse</h3>
+                <ul>
+                    <li>“Güvenli” ve “yıkıcı” eylemler ayrımı hâlâ aynı mı?</li>
+                    <li>Silme/sıfırlama akışları ve bağımlı tablolar doğru anlatılıyor mu?</li>
+                </ul>
+
+                <h3>Bitiriş Kuralı</h3>
+                <ul>
+                    <li>Bir madde yanlışsa: <strong>Yeni başlık ekleme</strong> — mevcut maddeyi düzelt.</li>
+                    <li>Yeni bir kavram/modül geldiyse: sadece o zaman yeni bölüm aç.</li>
+                </ul>
+            </section>
+
 
             <div class="info-box">
                 <p><strong>Temel Kurallar (Kullanıcı Talimatları):</strong></p>
