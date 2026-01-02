@@ -13,8 +13,6 @@ function debouncedSaveFormState() {
         }
     }, 800); 
 }
-// --- DEBOUNCE MEKANİZMASI BİTTİ ---
-
 
 /**
  * UI modülünü PocketBase instance ile başlatır.
@@ -22,8 +20,6 @@ function debouncedSaveFormState() {
 export function initUi(pbInstance) {
     pb = pbInstance;
 }
-
-// --- Form ve Arayüz Yönetimi Fonksiyonları ---
 
 function getUnitForProduct(productName) {
     return 'Adet';
@@ -35,12 +31,12 @@ function generateQuestionHtml(q) {
     let isArchivedClass = q.isArchived ? 'archived-item' : ''; 
 
     if (q.type === 'standard') {
-        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')" title="Bu maddeyle ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-        let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın. 4 saniye içinde geri alınabilir."><i class="fas fa-trash"></i></button></div>`).join('');
+        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join('');
         questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
     
     } else if (q.type === 'product_list') {
-        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')" title="Pleksi kullanımıyla ilgili yeni bir eksiklik satırı ekler."><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')"><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         let productOptions = '';
         let currentOptgroup = false;
         state.productList.forEach(p => {
@@ -53,16 +49,14 @@ function generateQuestionHtml(q) {
             }
         });
         if (currentOptgroup) productOptions += `</optgroup>`;
-        questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()" title="Seçili malzemeyi ve adedini aşağıdaki sipariş listesine ekler."><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b class="plexi-header"><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
+        questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b class="plexi-header"><i>Pleksiyle sergilenmesi gerekenler:</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
     
     } else if (q.type === 'pop_system') {
-        questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
-        questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()" title="Seçili olan geçerli POP kodlarını panoya kopyalar.">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()" title="Tüm POP kodu seçimlerini temizler.">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()" title="Süresi dolmuş olan tüm POP kodlarını otomatik olarak seçer.">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()" title="Seçili POP kodları için bir e-posta taslağı penceresi açar.">E-Posta</button></div></div>`;
+        questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()">E-Posta</button></div></div>`;
     
-    // --- GÜNCELLENDİ: Styling Listesi (Not Ekleme Özelliği Eklendi) ---
     } else if (q.type === 'styling_list') {
-        // Actions kısmına "Yeni Eksik Ekle" butonu eklendi (fideID_notes container'ına ekleyecek)
-        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_notes')" title="Bu konuyla ilgili serbest not/eksiklik ekler."><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})" title="Bu soruyu 'Tamamlandı' olarak işaretler. Geri alınabilir."><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})" title="Bu soruyu e-posta raporundan tamamen çıkarır. Geri alınabilir."><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_notes')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         
         let mainCategoryOptions = '<option value="">-- Ana Kategori Seçin --</option>';
         if (q.stylingData && Array.isArray(q.stylingData)) {
@@ -71,59 +65,11 @@ function generateQuestionHtml(q) {
             });
         }
 
-        let standardViewHTML = '';
-        if (q.staticItems && q.staticItems.length > 0) {
-             standardViewHTML = (q.staticItems || []).map(item => 
-                `<div class="static-item">
-                    <div class="content">${item}</div>
-                    <button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)" title="Bu satırı silmek için tıklayın."><i class="fas fa-trash"></i></button>
-                 </div>`
-            ).join('');
-        }
-        standardViewHTML = `<div id="standard-view-container-${q.id}" style="display: block;">${standardViewHTML}</div>`;
+        let standardViewHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join('');
+        standardViewHTML = `<div id="standard-view-container-${q.id}">${standardViewHTML}</div>`;
 
-        // YENİ: Notların görüneceği container en üstte
-        const notesContainerHTML = `<div id="sub-items-container-fide${q.id}_notes" style="margin-bottom: 15px;"></div>`;
-
-        questionContentHTML = `
-            ${notesContainerHTML}
-            <div class="mode-toggle-container">
-                <span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span>
-                <label class="switch">
-                    <input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-
-            ${standardViewHTML}
-
-            <div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;">
-                
-                <div class="styling-row">
-                    <div class="styling-label">Ana Kategori</div>
-                    <div class="styling-content">
-                        <select class="styling-main-category-select">${mainCategoryOptions}</select>
-                    </div>
-                </div>
-
-                <div class="styling-row" id="styling-sub-container-${q.id}" style="display: none;">
-                    <div class="styling-label">Alt Kategori</div>
-                    <div class="styling-content">
-                        <select class="styling-sub-category-select"></select>
-                        <input type="number" class="sub-category-qty-input" min="1" value="1" title="Alt Kategori Adedi">
-                    </div>
-                </div>
-
-                <div class="styling-row">
-                    <div class="styling-label">Sipariş Listesi</div>
-                    <div class="styling-content" style="display: block;">
-                        <div class="styling-selected-products-list"></div>
-                    </div>
-                </div>
-
-            </div>`;
+        questionContentHTML = `<div id="sub-items-container-fide${q.id}_notes" style="margin-bottom: 15px;"></div><div class="mode-toggle-container"><span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span><label class="switch"><input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})"><span class="slider round"></span></label></div>${standardViewHTML}<div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;"><div class="styling-row"><div class="styling-label">Ana Kategori</div><div class="styling-content"><select class="styling-main-category-select">${mainCategoryOptions}</select></div></div><div class="styling-row" id="styling-sub-container-${q.id}" style="display: none;"><div class="styling-label">Alt Kategori</div><div class="styling-content"><select class="styling-sub-category-select"></select><input type="number" class="sub-category-qty-input" min="1" value="1"></div></div><div class="styling-row"><div class="styling-label">Sipariş Listesi</div><div class="styling-content" style="display: block;"><div class="styling-selected-products-list"></div></div></div></div>`;
     }
-    // --- GÜNCELLEME SONU ---
 
     return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
 }
@@ -146,89 +92,60 @@ function getFormDataForSaving() {
                 Array.from(container.childNodes).reverse().forEach(node => {
                     if (node.classList && node.classList.contains('dynamic-input-item')) {
                         const input = node.querySelector('input[type="text"]');
-                        const text = input.value.trim();
-                        if (text) questionData.dynamicInputs.push({ text: text, completed: input.classList.contains('completed') });
+                        if (input.value.trim()) questionData.dynamicInputs.push({ text: input.value.trim(), completed: input.classList.contains('completed') });
                     }
                 });
             }
         } else if (q.type === 'product_list') {
             document.querySelectorAll(`#fide-item-${q.id} #selected-products-list .selected-product-item`).forEach(item => {
-                questionData.selectedProducts.push({ 
-                    code: item.dataset.code, 
-                    name: item.dataset.name, 
-                    qty: item.dataset.qty 
-                });
+                questionData.selectedProducts.push({ code: item.dataset.code, name: item.dataset.name, qty: item.dataset.qty });
             });
             const pleksiContainer = document.getElementById(`sub-items-container-fide${q.id}_pleksi`);
              if (pleksiContainer) {
                 Array.from(pleksiContainer.childNodes).reverse().forEach(node => {
                     if (node.classList && node.classList.contains('dynamic-input-item')) {
                         const input = node.querySelector('input[type="text"]');
-                        const text = input.value.trim();
-                        if (text) questionData.dynamicInputs.push({ text: text, completed: input.classList.contains('completed') });
+                        if (input.value.trim()) questionData.dynamicInputs.push({ text: input.value.trim(), completed: input.classList.contains('completed') });
                     }
                 });
             }
         } else if (q.type === 'pop_system') {
             questionData.selectedPops = Array.from(document.querySelectorAll(`#fide-item-${q.id} .pop-checkbox:checked`)).map(cb => cb.value);
-        
-        // --- GÜNCELLENDİ: Styling Listesi Veri Okuma ---
         } else if (q.type === 'styling_list') {
             const container = itemDiv.querySelector('.styling-list-container');
-            const mainCategorySelect = container.querySelector('.styling-main-category-select');
-            const subCategorySelect = container.querySelector('.styling-sub-category-select');
-            const subCategoryQtyInput = container.querySelector('.sub-category-qty-input');
+            const mainSelect = container.querySelector('.styling-main-category-select');
+            const subSelect = container.querySelector('.styling-sub-category-select');
+            const subQty = container.querySelector('.sub-category-qty-input');
 
-            // 1. Ürünleri Kaydet
             document.querySelectorAll(`#fide-item-${q.id} .styling-selected-products-list .selected-product-item`).forEach(item => {
                 const qtyInput = item.querySelector('.qty-edit-input');
-                const currentQty = qtyInput ? qtyInput.value : item.dataset.qty;
-
-                questionData.selectedProducts.push({ 
-                    code: item.dataset.code, 
-                    name: item.dataset.name, 
-                    qty: currentQty 
-                });
+                questionData.selectedProducts.push({ code: item.dataset.code, name: item.dataset.name, qty: qtyInput ? qtyInput.value : item.dataset.qty });
             });
 
-            // 2. Kategori Seçimini Kaydet
-            if (mainCategorySelect.value || subCategorySelect.value) {
-                 questionData.stylingCategorySelections = {
-                    mainCategory: mainCategorySelect.value,
-                    subCategory: subCategorySelect.value,
-                    subCategoryQty: subCategoryQtyInput ? subCategoryQtyInput.value : '1'
-                };
+            if (mainSelect.value || subSelect.value) {
+                 questionData.stylingCategorySelections = { mainCategory: mainSelect.value, subCategory: subSelect.value, subCategoryQty: subQty ? subQty.value : '1' };
             }
 
-            // 3. YENİ: Serbest Notları (dynamicInputs) Kaydet
             const notesContainer = document.getElementById(`sub-items-container-fide${q.id}_notes`);
             if (notesContainer) {
                 Array.from(notesContainer.childNodes).reverse().forEach(node => {
                     if (node.classList && node.classList.contains('dynamic-input-item')) {
                         const input = node.querySelector('input[type="text"]');
-                        const text = input.value.trim();
-                        if (text) questionData.dynamicInputs.push({ text: text, completed: input.classList.contains('completed') });
+                        if (input.value.trim()) questionData.dynamicInputs.push({ text: input.value.trim(), completed: input.classList.contains('completed') });
                     }
                 });
             }
         }
-        // --- GÜNCELLEME SONU ---
-
         reportData.questions_status[q.id] = questionData;
     });
     return reportData;
 }
 
-
-// --- Dışarıya Açılacak Ana Fonksiyonlar ---
-
 export function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
-    const isOnline = state.isPocketBaseConnected && (typeof pb !== 'undefined' && pb && pb.authStore.isValid);
-    
+    const isOnline = state.isPocketBaseConnected && (pb && pb.authStore.isValid);
     statusSwitch.classList.toggle('connected', isOnline);
-    statusSwitch.classList.toggle('disconnected', !isOnline);
     statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
 }
 
@@ -242,26 +159,16 @@ export function returnToMainPage() {
 
 export function resetForm() { 
     state.setCurrentReportId(null);
-    const formContainer = document.getElementById('form-content');
-    if(formContainer) formContainer.innerHTML = ''; 
     buildForm(); 
 }
 
 export function buildForm() {
     const formContainer = document.getElementById('form-content');
     if (!formContainer) return;
-    formContainer.innerHTML = '';
-    let html = '';
-    state.fideQuestions.forEach(q => {
-        if (q.isArchived) { return; }
-        html += generateQuestionHtml(q);
-    });
-    formContainer.innerHTML = html;
+    formContainer.innerHTML = state.fideQuestions.filter(q => !q.isArchived).map(q => generateQuestionHtml(q)).join('');
     
     const popContainer = document.getElementById('popCodesContainer');
-    if (popContainer) {
-        initializePopSystem(popContainer);
-    }
+    if (popContainer) initializePopSystem(popContainer);
     
     document.querySelectorAll('.styling-main-category-select').forEach(select => {
         select.addEventListener('change', handleStylingMainCatChange);
@@ -277,6 +184,7 @@ export function startNewReport() {
     updateFormInteractivity(false);
 }
 
+// --- GÜNCELLENMİŞ E-POSTA OLUŞTURMA FONKSİYONU (v1.0.17) ---
 export async function generateEmail() {
     if (!state.selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -287,136 +195,85 @@ export async function generateEmail() {
     if (pb && pb.authStore.isValid) {
         try {
             const templateRecord = await pb.collection('ayarlar').getFirstListItem('anahtar="emailTemplate"');
-            if (templateRecord && templateRecord.deger) emailTemplate = templateRecord.deger;
-        } catch (error) {
-             if (error.status !== 404) console.error("E-posta şablonu buluttan yüklenemedi.", error);
-        }
+            if (templateRecord?.deger) emailTemplate = templateRecord.deger;
+        } catch (e) { console.warn("E-posta şablonu yüklenemedi."); }
     }
 
     const reportData = getFormDataForSaving();
     await saveFormState(reportData, true);
 
-    const storeInfo = state.dideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu));
-    const fideStoreInfo = state.fideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu));
-    if (!storeInfo) {
-        alert("Seçilen bayi için DiDe verisi bulunamadı. Lütfen DiDe Excel dosyasını yükleyin.");
-        return;
-    }
+    // Veri güvenliği: Bayi Excel'de yoksa bile hata verme, null döndür
+    const storeInfo = state.dideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu)) || null;
+    const fideStoreInfo = state.fideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu)) || null;
     
     const storeEmail = state.storeEmails[state.selectedStore.bayiKodu] || null;
     const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
-    const yonetmenFirstName = (storeInfo['Bayi Yönetmeni'] || '').split(' ')[0];
+    
+    // Veri yoksa "Yetkili" ismini kullan
+    const yonetmenFirstName = (storeInfo && storeInfo['Bayi Yönetmeni']) ? storeInfo['Bayi Yönetmeni'].split(' ')[0] : 'Yetkili';
     const shortBayiAdi = state.selectedStore.bayiAdi.length > 20 ? state.selectedStore.bayiAdi.substring(0, 20) + '...' : state.selectedStore.bayiAdi;
     
     let fideReportHtml = "";
     state.fideQuestions.forEach(q => {
         const itemDiv = document.getElementById(`fide-item-${q.id}`);
         if (!itemDiv || itemDiv.classList.contains('question-removed')) return;
+        const qStatus = reportData.questions_status[q.id];
+        if (!qStatus) return;
         
-        const questionStatus = reportData.questions_status[q.id];
-        if (!questionStatus) return;
-        
-        const isQuestionCompleted = questionStatus.completed;
         let contentHtml = '';
-        
         if (q.type === 'standard') {
             const container = document.getElementById(`sub-items-container-fide${q.id}`);
             if (container) {
-                const allItems = [];
-                Array.from(container.childNodes).reverse().forEach(node => {
-                    if (node.classList && (node.classList.contains('static-item') || node.classList.contains('dynamic-input-item'))) {
-                        if(node.classList.contains('is-deleting')) return;
-                        let text, completed = false, type = '';
-                        if (node.classList.contains('static-item')) {
-                            text = node.querySelector('.content').innerHTML; type = 'static';
-                        } else {
-                            const input = node.querySelector('input[type="text"]');
-                            text = input.value.trim(); completed = input.classList.contains('completed'); type = 'dynamic';
-                        }
-                        if (text) allItems.push({ text, completed, type });
-                    }
-                });
-                 const hasDynamicItems = allItems.some(item => item.type === 'dynamic');
-                 let itemsForEmail = hasDynamicItems ? allItems.filter(item => item.type === 'dynamic' || (item.type === 'static' && item.text.includes('<a href'))) : allItems.filter(item => item.type === 'static');
-                 if (itemsForEmail.length > 0) {
-                     itemsForEmail.sort((a,b) => (a.text.includes('<a href') ? 1 : -1) - (b.text.includes('<a href') ? 1 : -1));
-                     contentHtml = `<ul>${itemsForEmail.map(item => item.completed ? `<li>${item.text} <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span></li>` : `<li>${item.text}</li>`).join('')}</ul>`;
-                 }
+                const items = Array.from(container.childNodes).reverse().filter(n => n.classList && !n.classList.contains('is-deleting')).map(node => {
+                    if (node.classList.contains('static-item')) return { text: node.querySelector('.content').innerHTML, type: 'static', comp: false };
+                    const input = node.querySelector('input[type="text"]');
+                    return { text: input.value.trim(), type: 'dynamic', comp: input.classList.contains('completed') };
+                }).filter(i => i.text);
+                
+                const hasDyn = items.some(i => i.type === 'dynamic');
+                let emailItems = hasDyn ? items.filter(i => i.type === 'dynamic' || (i.type === 'static' && i.text.includes('<a href'))) : items.filter(i => i.type === 'static');
+                if (emailItems.length > 0) {
+                    emailItems.sort((a,b) => (a.text.includes('<a href') ? 1 : -1) - (b.text.includes('<a href') ? 1 : -1));
+                    contentHtml = `<ul>${emailItems.map(i => i.comp ? `<li>${i.text} <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span></li>` : `<li>${i.text}</li>`).join('')}</ul>`;
+                }
             }
         } else if (q.type === 'product_list' || q.type === 'styling_list') {
-            const productItemsHtml = (questionStatus.selectedProducts || []).map(prod => {
-                const unit = getUnitForProduct(prod.name); 
-                return `<li>${prod.code} ${prod.name}: <b>${prod.qty} ${unit}</b></li>`;
-            });
-            
+            const prods = (qStatus.selectedProducts || []).map(p => `<li>${p.code} ${p.name}: <b>${p.qty} ${getUnitForProduct(p.name)}</b></li>`).join('');
             if (q.type === 'product_list') {
-                const pleksiContainer = document.getElementById(`sub-items-container-fide${q.id}_pleksi`);
-                const pleksiItemsHtml = pleksiContainer ? Array.from(pleksiContainer.querySelectorAll('input[type="text"]')).filter(i => !i.classList.contains('completed')).map(i => `<li>${i.value}</li>`) : [];
-                
-                if (productItemsHtml.length > 0) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${productItemsHtml.join('')}</ul>`;
-                if (pleksiItemsHtml.length > 0) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya Yanlış Pleksi malzeme ile kullanılanlar:</i></b><ul>${pleksiItemsHtml.join('')}</ul>`;
-            
-            } else if (q.type === 'styling_list') {
-                // --- GÜNCELLENDİ: Styling Listesi E-posta İçeriği ---
-                
-                // 1. Statik Metinleri Al
-                const standardContainer = document.getElementById(`standard-view-container-${q.id}`);
-                let staticHtml = '';
-                if (standardContainer) {
-                    const staticItems = Array.from(standardContainer.querySelectorAll('.static-item .content'));
-                    if (staticItems.length > 0) {
-                        staticHtml = `<ul>${staticItems.map(div => `<li>${div.innerHTML}</li>`).join('')}</ul>`;
-                    }
-                }
-                contentHtml = staticHtml; 
-
-                // 2. YENİ: Kullanıcının Eklediği Notları Al (En üste ekle)
-                const notesContainer = document.getElementById(`sub-items-container-fide${q.id}_notes`);
-                if (notesContainer) {
-                    const dynamicItems = Array.from(notesContainer.querySelectorAll('input[type="text"]')).filter(i => !i.classList.contains('completed')).map(i => `<li>${i.value}</li>`);
-                    if (dynamicItems.length > 0) {
-                        contentHtml += `<ul>${dynamicItems.join('')}</ul>`;
-                    }
-                }
-
-                // 3. Ürünler varsa onları ekle
-                if (productItemsHtml.length > 0) {
-                    contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b>`;
-                    contentHtml += `<ul>${productItemsHtml.join('')}</ul>`;
-                }
-                // --- GÜNCELLEME SONU ---
+                const pleksi = Array.from(document.querySelectorAll(`#sub-items-container-fide${q.id}_pleksi input[type="text"]`)).filter(i => !i.classList.contains('completed') && i.value.trim()).map(i => `<li>${i.value}</li>`).join('');
+                if (prods) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${prods}</ul>`;
+                if (pleksi) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler:</i></b><ul>${pleksi}</ul>`;
+            } else {
+                const staticBox = document.getElementById(`standard-view-container-${q.id}`);
+                if (staticBox) contentHtml += `<ul>${Array.from(staticBox.querySelectorAll('.static-item .content')).map(d => `<li>${d.innerHTML}</li>`).join('')}</ul>`;
+                const notes = Array.from(document.querySelectorAll(`#sub-items-container-fide${q.id}_notes input[type="text"]`)).filter(i => !i.classList.contains('completed') && i.value.trim()).map(i => `<li>${i.value}</li>`).join('');
+                if (notes) contentHtml += `<ul>${notes}</ul>`;
+                if (prods) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${prods}</ul>`;
             }
-            
         } else if (q.type === 'pop_system') {
-            const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !state.expiredCodes.includes(code));
-            if (nonExpiredCodes.length > 0) contentHtml = `<ul><li>${nonExpiredCodes.join(', ')}</li></ul>`;
+            const pops = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(c => !state.expiredCodes.includes(c));
+            if (pops.length > 0) contentHtml = `<ul><li>${pops.join(', ')}</li></ul>`;
         }
 
-        if (contentHtml !== '' || isQuestionCompleted) {
-            const completedSpan = isQuestionCompleted ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
-            let emailTag = (q.wantsStoreEmail && q.type !== 'pop_system') ? storeEmailTag : '';
-            if (q.type === 'pop_system' && q.popEmailTo && q.popEmailTo.length > 0) {
-                emailTag = ` <a href="mailto:${q.popEmailTo.join(',')}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${q.popEmailTo.join(', ')}</a>`;
-            }
-            fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${completedSpan}${emailTag}</p>`;
-            if (!isQuestionCompleted || q.type === 'product_list' || (isQuestionCompleted && q.type === 'standard' && contentHtml !== '') || q.type === 'styling_list') {
-                 fideReportHtml += contentHtml;
-            }
+        if (contentHtml !== '' || qStatus.completed) {
+            const compSpan = qStatus.completed ? ` <span style="background-color:#dcfce7; color:#166534; font-weight:bold; padding: 1px 6px; border-radius: 4px;">Tamamlandı</span>` : "";
+            let tag = (q.wantsStoreEmail && q.type !== 'pop_system') ? storeEmailTag : (q.type === 'pop_system' && q.popEmailTo?.length > 0 ? ` <a href="mailto:${q.popEmailTo.join(',')}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${q.popEmailTo.join(', ')}</a>` : '');
+            fideReportHtml += `<p><b>FiDe ${q.id}. ${q.title}</b>${compSpan}${tag}</p>${contentHtml}`;
         }
     });
 
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1;
-    let monthHeaders = Array.from({length: currentMonth}, (_, i) => `<th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold; white-space: nowrap;">${state.monthNames[i + 1] || i + 1}</th>`).join('');
-    let dideScores = Array.from({length: currentMonth}, (_, i) => `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;">${storeInfo.scores[i + 1] || '-'}</td>`).join('');
-    let fideScores = Array.from({length: currentMonth}, (_, i) => {
-         const score = (fideStoreInfo && fideStoreInfo.scores && fideStoreInfo.scores[i+1] !== undefined) ? fideStoreInfo.scores[i+1] : '-';
-         return `<td style="border: 1px solid #dddddd; text-align: center; padding: 6px; white-space: nowrap;">${score}</td>`;
-    }).join('');
-    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #dddddd;"><thead><tr><th style="border: 1px solid #dddddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${currentYear}</th>${monthHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold;">DiDe</td>${dideScores}</tr><tr><td style="border: 1px solid #dddddd; text-align: left; padding: 6px; font-weight: bold;">FiDe</td>${fideScores}</tr></tbody></table></div>`;
+    const cYear = new Date().getFullYear();
+    const cMonth = new Date().getMonth() + 1;
+    let mHeaders = Array.from({length: cMonth}, (_, i) => `<th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${state.monthNames[i + 1] || i + 1}</th>`).join('');
+    
+    // Veri olmayan bayi için otomatik "-" (çizgi) ekleme mantığı
+    let dScores = Array.from({length: cMonth}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(storeInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
+    let fScores = Array.from({length: cMonth}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(fideStoreInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
+    
+    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #ddd;"><thead><tr><th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #ddd; font-weight: bold; padding: 6px;">DiDe</td>${dScores}</tr><tr><td style="border: 1px solid #ddd; font-weight: bold; padding: 6px;">FiDe</td>${fScores}</tr></tbody></table></div>`;
 
-    let finalEmailBody = emailTemplate
-        .replace(/{YONETMEN_ADI}/g, yonetmenFirstName || 'Yetkili')
+    let finalBody = emailTemplate
+        .replace(/{YONETMEN_ADI}/g, yonetmenFirstName)
         .replace(/{BAYI_BILGISI}/g, `${state.selectedStore.bayiKodu} ${shortBayiAdi}`)
         .replace(/{DENETIM_ICERIGI}/g, fideReportHtml)
         .replace(/{PUAN_TABLOSU}/g, tableHtml);
@@ -425,11 +282,11 @@ export async function generateEmail() {
     document.getElementById('form-content').style.display = 'none';
     document.querySelector('.action-button').style.display = 'none';
 
-    const draftContainer = document.createElement('div');
-    draftContainer.id = 'email-draft-container';
-    draftContainer.className = 'card';
-    draftContainer.innerHTML = `<h2><a href="#" onclick="event.preventDefault(); returnToMainPage();" style="text-decoration: none; color: inherit;" title="Ana Sayfaya Dön"><i class="fas fa-arrow-left" style="margin-right: 10px;"></i></a><i class="fas fa-envelope-open-text"></i> Kopyalanacak E-posta Taslağı</h2><div id="email-draft-area" contenteditable="true" style="min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalEmailBody}</div>`;
-    document.querySelector('.container').appendChild(draftContainer);
+    const draft = document.createElement('div');
+    draft.id = 'email-draft-container';
+    draft.className = 'card';
+    draft.innerHTML = `<h2><a href="#" onclick="event.preventDefault(); returnToMainPage();"><i class="fas fa-arrow-left"></i></a> Kopyalanacak E-posta Taslağı</h2><div id="email-draft-area" contenteditable="true" style="min-height: 500px; border: 1px solid #ccc; padding: 10px; margin-top: 10px; font-family: Aptos, sans-serif; font-size: 11pt;">${finalBody}</div>`;
+    document.querySelector('.container').appendChild(draft);
 }
 
 export function loadReportUI(reportData) {
@@ -437,300 +294,177 @@ export function loadReportUI(reportData) {
     try {
         resetForm(); 
         for (const qId in reportData) {
-            let questionItem = document.getElementById(`fide-item-${qId}`);
-            if (!questionItem) continue;
-
+            let item = document.getElementById(`fide-item-${qId}`);
+            if (!item) continue;
             const data = reportData[qId];
-            if (data.removed) toggleQuestionRemoved(questionItem.querySelector('.remove-btn'), qId, false);
-            else if (data.completed) toggleQuestionCompleted(questionItem.querySelector('.status-btn'), qId, false);
+            if (data.removed) toggleQuestionRemoved(item.querySelector('.remove-btn'), qId, false);
+            else if (data.completed) toggleQuestionCompleted(item.querySelector('.status-btn'), qId, false);
             
             if (data.dynamicInputs) {
                 const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
-                data.dynamicInputs.forEach(input => {
-                    // GÜNCELLENDİ: Container ID belirleme mantığına 'notes' eklendi
-                    let containerId = `fide${qId}`;
-                    if (qInfo.type === 'product_list') containerId = `fide${qId}_pleksi`;
-                    else if (qInfo.type === 'styling_list') containerId = `fide${qId}_notes`;
-
-                    addDynamicInput(containerId, input.text, input.completed, false);
+                data.dynamicInputs.forEach(inp => {
+                    let cid = `fide${qId}`;
+                    if (qInfo.type === 'product_list') cid = `fide${qId}_pleksi`;
+                    else if (qInfo.type === 'styling_list') cid = `fide${qId}_notes`;
+                    addDynamicInput(cid, inp.text, inp.completed, false);
                 });
             }
             if (data.selectedProducts) {
                 const qInfo = state.fideQuestions.find(q => String(q.id) === qId);
-                
                 if (qInfo.type === 'styling_list' && data.selectedProducts.length > 0) {
-                    const toggleBtn = questionItem.querySelector('.styling-mode-toggle');
-                    const stylingContainer = questionItem.querySelector('.styling-list-container');
-                    const standardContainer = document.getElementById(`standard-view-container-${qId}`);
-                    
-                    if (toggleBtn && stylingContainer) { 
-                        toggleBtn.checked = true;
-                        stylingContainer.style.display = 'block';
-                        if (standardContainer) standardContainer.style.display = 'none';
-                    }
+                    item.querySelector('.styling-mode-toggle').checked = true;
+                    item.querySelector('.styling-list-container').style.display = 'block';
+                    document.getElementById(`standard-view-container-${qId}`).style.display = 'none';
                 }
-
-                data.selectedProducts.forEach(prod => {
-                    if (qInfo.type === 'product_list') {
-                        addProductToList(prod.code, prod.qty, false, prod.name);
-                    } else if (qInfo.type === 'styling_list') {
-                        addStylingProductToList(qId, prod.code, prod.qty, prod.name, false);
-                    }
+                data.selectedProducts.forEach(p => {
+                    if (qInfo.type === 'product_list') addProductToList(p.code, p.qty, false, p.name);
+                    else if (qInfo.type === 'styling_list') addStylingProductToList(qId, p.code, p.qty, p.name, false);
                 });
             }
             if (data.selectedPops) {
-                data.selectedPops.forEach(popCode => { const cb = document.querySelector(`.pop-checkbox[value="${popCode}"]`); if(cb) cb.checked = true; });
+                data.selectedPops.forEach(pc => { const cb = document.querySelector(`.pop-checkbox[value="${pc}"]`); if(cb) cb.checked = true; });
                 checkExpiredPopCodes();
             }
-            
             if (data.stylingCategorySelections) {
-                const selections = data.stylingCategorySelections;
-                const mainSelect = questionItem.querySelector('.styling-main-category-select');
-                if (mainSelect && selections.mainCategory) {
-                    mainSelect.value = selections.mainCategory;
-                    mainSelect.dispatchEvent(new Event('change')); 
-                    
-                    const subSelect = questionItem.querySelector('.styling-sub-category-select');
-                    const subCategoryQtyInput = questionItem.querySelector('.sub-category-qty-input');
-                    
-                    if (subCategoryQtyInput && selections.subCategoryQty) {
-                        subCategoryQtyInput.value = selections.subCategoryQty;
-                    }
-                    
-                    if (subSelect && selections.subCategory) {
-                        subSelect.value = selections.subCategory;
-                        subSelect.dispatchEvent(new Event('change'));
-                    }
-
-                    const toggleBtn = questionItem.querySelector('.styling-mode-toggle');
-                    const stylingContainer = questionItem.querySelector('.styling-list-container');
-                    const standardContainer = document.getElementById(`standard-view-container-${qId}`);
-
-                    if (toggleBtn && stylingContainer && !toggleBtn.checked) {
-                        toggleBtn.checked = true;
-                        stylingContainer.style.display = 'block';
-                        if (standardContainer) standardContainer.style.display = 'none';
-                    }
+                const sel = data.stylingCategorySelections;
+                const mSel = item.querySelector('.styling-main-category-select');
+                if (mSel && sel.mainCategory) {
+                    mSel.value = sel.mainCategory;
+                    mSel.dispatchEvent(new Event('change')); 
+                    const sSel = item.querySelector('.styling-sub-category-select');
+                    const sQty = item.querySelector('.sub-category-qty-input');
+                    if (sQty && sel.subCategoryQty) sQty.value = sel.subCategoryQty;
+                    if (sSel && sel.subCategory) { sSel.value = sel.subCategory; sSel.dispatchEvent(new Event('change')); }
                 }
             }
         }
         updateFormInteractivity(true);
-    } catch (error) { alert('Geçersiz rapor verisi!'); console.error("Rapor yükleme hatası:", error); }
+    } catch (e) { console.error("Rapor yükleme hatası:", e); }
 }
 
 export function updateFormInteractivity(enable) {
-    const formContent = document.getElementById('form-content');
-    if (!formContent) return;
-    formContent.querySelectorAll('button, input, select').forEach(el => { el.disabled = !enable; });
+    const fc = document.getElementById('form-content');
+    if (fc) fc.querySelectorAll('button, input, select').forEach(el => { el.disabled = !enable; });
 }
-
-// --- HTML Onclick için Window'a Atanacak Fonksiyonlar ---
 
 function initializePopSystem(container) {
     container.innerHTML = '';
     state.popCodes.forEach(code => {
-        const label = document.createElement('label');
-        label.className = 'checkbox-label';
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = code;
-        checkbox.className = 'pop-checkbox';
-        checkbox.addEventListener('change', () => {
-            checkExpiredPopCodes();
-            debouncedSaveFormState();
-        });
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(code));
-        container.appendChild(label);
+        const lbl = document.createElement('label');
+        lbl.className = 'checkbox-label';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = code;
+        cb.className = 'pop-checkbox';
+        cb.addEventListener('change', () => { checkExpiredPopCodes(); debouncedSaveFormState(); });
+        lbl.appendChild(cb);
+        lbl.appendChild(document.createTextNode(code));
+        container.appendChild(lbl);
     });
 }
 
-function initiateDeleteItem(buttonEl) {
-    const itemEl = buttonEl.parentElement;
-    if (itemEl.classList.contains('is-deleting')) {
-        clearTimeout(itemEl.dataset.deleteTimer);
-        itemEl.removeAttribute('data-delete-timer');
-        itemEl.classList.remove('is-deleting');
-        buttonEl.querySelector('i').className = 'fas fa-trash';
-        buttonEl.classList.remove('btn-warning');
-        buttonEl.classList.add('btn-danger');
+function initiateDeleteItem(btn) {
+    const item = btn.parentElement;
+    if (item.classList.contains('is-deleting')) {
+        clearTimeout(item.dataset.deleteTimer);
+        item.classList.remove('is-deleting');
+        btn.querySelector('i').className = 'fas fa-trash';
+        btn.classList.replace('btn-warning', 'btn-danger');
     } else {
-        itemEl.classList.add('is-deleting');
-        buttonEl.querySelector('i').className = 'fas fa-undo';
-        buttonEl.classList.remove('btn-danger');
-        buttonEl.classList.add('btn-warning');
-        const timerId = setTimeout(() => { 
-            itemEl.remove(); 
-            debouncedSaveFormState(); 
-        }, 4000);
-        itemEl.dataset.deleteTimer = timerId;
+        item.classList.add('is-deleting');
+        btn.querySelector('i').className = 'fas fa-undo';
+        btn.classList.replace('btn-danger', 'btn-warning');
+        item.dataset.deleteTimer = setTimeout(() => { item.remove(); debouncedSaveFormState(); }, 4000);
     }
     debouncedSaveFormState();
 }
 
-function addProductToList(productCode, quantity, shouldSave = true, productName = null) {
-    const select = document.getElementById('product-selector');
-    const qtyInput = document.getElementById('product-qty');
-    const selectedProductCode = productCode || select.value;
-    const selectedQty = quantity || qtyInput.value;
-    if (!selectedProductCode || !selectedQty || selectedQty < 1) return alert('Lütfen malzeme ve geçerli bir miktar girin.');
-    
-    let product;
-    if (productName) {
-        product = { code: selectedProductCode, name: productName };
-    } else {
-        product = state.productList.find(p => p.code === selectedProductCode);
-    }
-    
-    if (!product) { console.error("Ürün bulunamadı: ", selectedProductCode); return; }
-
-    const listContainer = document.getElementById('selected-products-list');
-    if (document.querySelector(`#selected-products-list .selected-product-item[data-code="${product.code}"]`)) return alert('Bu ürün zaten listede.');
-    
-    const unit = getUnitForProduct(product.name);
-    const newItem = document.createElement('div');
-    newItem.className = 'selected-product-item'; 
-    newItem.dataset.code = product.code;
-    newItem.dataset.qty = selectedQty;
-    newItem.dataset.name = product.name; 
-    
-    newItem.innerHTML = `<span>${product.code} ${product.name} - <span class="product-quantity"><b>${selectedQty} ${unit}</b></span></span><button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler."><i class="fas fa-trash"></i></button>`;
-    
-    newItem.querySelector('.delete-item-btn').addEventListener('click', function() {
-        this.parentElement.remove(); 
-        debouncedSaveFormState(); 
-    });
-    
-    listContainer.appendChild(newItem);
-    
-    if (!productCode) { select.value = ''; qtyInput.value = '1'; }
-    if (shouldSave) debouncedSaveFormState();
+function addProductToList(code, qty, save = true, name = null) {
+    const sel = document.getElementById('product-selector');
+    const qInp = document.getElementById('product-qty');
+    const pCode = code || sel.value;
+    const pQty = qty || qInp.value;
+    if (!pCode || pQty < 1) return;
+    const prod = name ? { code: pCode, name } : state.productList.find(p => p.code === pCode);
+    if (!prod || document.querySelector(`#selected-products-list .selected-product-item[data-code="${prod.code}"]`)) return;
+    const div = document.createElement('div');
+    div.className = 'selected-product-item'; 
+    div.dataset.code = prod.code; div.dataset.qty = pQty; div.dataset.name = prod.name; 
+    div.innerHTML = `<span>${prod.code} ${prod.name} - <b>${pQty} Adet</b></span><button class="delete-item-btn btn-sm"><i class="fas fa-trash"></i></button>`;
+    div.querySelector('.delete-item-btn').onclick = () => { div.remove(); debouncedSaveFormState(); };
+    document.getElementById('selected-products-list').appendChild(div);
+    if (!code) { sel.value = ''; qInp.value = '1'; }
+    if (save) debouncedSaveFormState();
 }
 
-function toggleCompleted(button) {
-    const input = button.parentElement.querySelector('input[type="text"]');
-    const isCompleted = input.classList.toggle('completed');
-    input.readOnly = isCompleted;
-    button.innerHTML = isCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
-    button.classList.toggle('undo', isCompleted);
+function toggleCompleted(btn) {
+    const inp = btn.parentElement.querySelector('input[type="text"]');
+    const comp = inp.classList.toggle('completed');
+    inp.readOnly = comp;
+    btn.innerHTML = comp ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
+    btn.classList.toggle('undo', comp);
     debouncedSaveFormState();
 }
 
-function toggleQuestionCompleted(button, id, shouldSave = true) {
-    const itemDiv = document.getElementById(`fide-item-${id}`);
-    const titleContainer = itemDiv.querySelector('.fide-title-container');
-    const isQuestionCompleted = titleContainer.classList.toggle('question-completed');
-    button.innerHTML = isQuestionCompleted ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
-    button.classList.toggle('undo', isQuestionCompleted);
-    const inputArea = itemDiv.querySelector('.input-area');
-    
-    const isStyling = itemDiv.querySelector('.styling-mode-toggle');
-    if (inputArea && !isStyling) inputArea.style.display = isQuestionCompleted ? 'none' : 'block';
-    
-    if (isStyling) {
-        const stylingContainer = itemDiv.querySelector('.styling-list-container');
-        const standardContainer = document.getElementById(`standard-view-container-${id}`);
-        const toggleContainer = itemDiv.querySelector('.mode-toggle-container');
-        // YENİ: Notları da gizle
-        const notesContainer = document.getElementById(`sub-items-container-fide${id}_notes`);
-
-        if (isQuestionCompleted) {
-            if (stylingContainer) stylingContainer.style.display = 'none';
-            if (standardContainer) standardContainer.style.display = 'none';
-            if (toggleContainer) toggleContainer.style.display = 'none';
-            if (notesContainer) notesContainer.style.display = 'none';
-        } else {
-            if (toggleContainer) toggleContainer.style.display = 'flex';
-            if (notesContainer) notesContainer.style.display = 'block';
-            
-            const toggleBtn = itemDiv.querySelector('.styling-mode-toggle');
-            if (toggleBtn && toggleBtn.checked) {
-                 if (stylingContainer) stylingContainer.style.display = 'block';
-            } else {
-                 if (standardContainer) standardContainer.style.display = 'block';
-            }
-        }
+function toggleQuestionCompleted(btn, id, save = true) {
+    const div = document.getElementById(`fide-item-${id}`);
+    const comp = div.querySelector('.fide-title-container').classList.toggle('question-completed');
+    btn.innerHTML = comp ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
+    btn.classList.toggle('undo', comp);
+    const area = div.querySelector('.input-area');
+    const styl = div.querySelector('.styling-mode-toggle');
+    if (area && !styl) area.style.display = comp ? 'none' : 'block';
+    if (styl) {
+        const sCont = div.querySelector('.styling-list-container');
+        const vCont = document.getElementById(`standard-view-container-${id}`);
+        const tCont = div.querySelector('.mode-toggle-container');
+        const nCont = document.getElementById(`sub-items-container-fide${id}_notes`);
+        [sCont, vCont, tCont, nCont].forEach(el => el && (el.style.display = comp ? 'none' : (el === sCont && !styl.checked ? 'none' : (el === vCont && styl.checked ? 'none' : 'block'))));
     }
-
-    if (shouldSave) debouncedSaveFormState();
+    if (save) debouncedSaveFormState();
 }
 
-function toggleQuestionRemoved(button, id, shouldSave = true) {
-    const itemDiv = document.getElementById(`fide-item-${id}`);
-    const isRemoved = itemDiv.classList.toggle('question-removed');
-    const inputArea = itemDiv.querySelector('.input-area');
-    const actionsContainer = button.closest('.fide-actions');
-    
-    const toggleContainer = itemDiv.querySelector('.mode-toggle-container');
-    if (toggleContainer) toggleContainer.style.display = isRemoved ? 'none' : 'flex';
-
-    if(inputArea) inputArea.style.display = isRemoved ? 'none' : 'block';
-    
-    const toggleBtn = itemDiv.querySelector('.styling-mode-toggle');
-    if (!isRemoved && toggleBtn) {
-        const stylingContainer = itemDiv.querySelector('.styling-list-container');
-        const standardContainer = document.getElementById(`standard-view-container-${id}`);
-        // YENİ: Not container'ını da geri getir
-        const notesContainer = document.getElementById(`sub-items-container-fide${id}_notes`);
-        if(notesContainer) notesContainer.style.display = 'block';
-        
-        if (toggleBtn.checked) {
-             if (stylingContainer) stylingContainer.style.display = 'block';
-             if (standardContainer) standardContainer.style.display = 'none';
-        } else {
-             if (stylingContainer) stylingContainer.style.display = 'none';
-             if (standardContainer) standardContainer.style.display = 'block';
-        }
-    } else if (isRemoved) {
-        // Çıkarıldıysa notları da gizle
-        const notesContainer = document.getElementById(`sub-items-container-fide${id}_notes`);
-        if(notesContainer) notesContainer.style.display = 'none';
-    }
-
-    button.innerHTML = isRemoved ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar';
-    button.classList.toggle('btn-danger', !isRemoved);
-    button.classList.toggle('btn-primary', isRemoved);
-    if(actionsContainer) actionsContainer.querySelectorAll('.add-item-btn, .status-btn').forEach(btn => btn.disabled = isRemoved);
-    if (shouldSave) debouncedSaveFormState();
+function toggleQuestionRemoved(btn, id, save = true) {
+    const div = document.getElementById(`fide-item-${id}`);
+    const rem = div.classList.toggle('question-removed');
+    const area = div.querySelector('.input-area');
+    const tCont = div.querySelector('.mode-toggle-container');
+    const nCont = document.getElementById(`sub-items-container-fide${id}_notes`);
+    if (tCont) tCont.style.display = rem ? 'none' : 'flex';
+    if (area) area.style.display = rem ? 'none' : 'block';
+    if (nCont) nCont.style.display = rem ? 'none' : 'block';
+    btn.innerHTML = rem ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar';
+    btn.classList.toggle('btn-danger', !rem);
+    btn.classList.toggle('btn-primary', rem);
+    div.querySelectorAll('.add-item-btn, .status-btn').forEach(b => b.disabled = rem);
+    if (save) debouncedSaveFormState();
 }
 
-function addDynamicInput(id, value = '', isCompleted = false, shouldSave = true) {
-    const container = document.getElementById(`sub-items-container-${id}`);
-    if (!container) return;
-
-    const newItem = document.createElement('div');
-    newItem.className = 'dynamic-input-item';
-    newItem.innerHTML = `<input type="text" placeholder="Eksikliği yazın..." value="${value}"><button class="status-btn btn-sm" title="Bu eksikliği 'Tamamlandı' olarak işaretler."><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger" title="Bu satırı silmek için tıklayın."><i class="fas fa-trash"></i></button>`;
-    
-    const input = newItem.querySelector('input');
-    const completeButton = newItem.querySelector('.status-btn');
-    const deleteButton = newItem.querySelector('.delete-bar');
-    
-    input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); addDynamicInput(id); } });
-    
-    input.addEventListener('input', () => debouncedSaveFormState());
-    
-    completeButton.onclick = () => toggleCompleted(completeButton);
-    deleteButton.onclick = () => initiateDeleteItem(deleteButton);
-    
-    if(isCompleted) toggleCompleted(completeButton);
-    container.prepend(newItem); // En üste ekle (En yeni en üstte)
-    if (value === '') input.focus();
-    
-    if (shouldSave) debouncedSaveFormState();
+function addDynamicInput(id, val = '', comp = false, save = true) {
+    const cont = document.getElementById(`sub-items-container-${id}`);
+    if (!cont) return;
+    const div = document.createElement('div');
+    div.className = 'dynamic-input-item';
+    div.innerHTML = `<input type="text" value="${val}"><button class="status-btn btn-sm"><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger"><i class="fas fa-trash"></i></button>`;
+    const inp = div.querySelector('input');
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); addDynamicInput(id); } };
+    inp.oninput = () => debouncedSaveFormState();
+    div.querySelector('.status-btn').onclick = () => toggleCompleted(div.querySelector('.status-btn'));
+    div.querySelector('.delete-bar').onclick = () => initiateDeleteItem(div.querySelector('.delete-bar'));
+    if (comp) toggleCompleted(div.querySelector('.status-btn'));
+    cont.prepend(div);
+    if (!val) inp.focus();
+    if (save) debouncedSaveFormState();
 }
 
 function checkExpiredPopCodes() {
-    const warningMessage = document.getElementById('expiredWarning');
-    if (!warningMessage) return;
-    const hasExpired = Array.from(document.querySelectorAll('.pop-checkbox:checked')).some(cb => state.expiredCodes.includes(cb.value));
-    warningMessage.style.display = hasExpired ? 'block' : 'none';
+    const warn = document.getElementById('expiredWarning');
+    if (warn) warn.style.display = Array.from(document.querySelectorAll('.pop-checkbox:checked')).some(cb => state.expiredCodes.includes(cb.value)) ? 'block' : 'none';
 }
 
 function copySelectedCodes() {
-    const nonExpiredCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(code => !state.expiredCodes.includes(code));
-    if (nonExpiredCodes.length === 0) return alert("Kopyalamak için geçerli kod seçin.");
-    navigator.clipboard.writeText(nonExpiredCodes.join(', ')).then(() => alert("Seçilen geçerli kodlar kopyalandı!"));
+    const codes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(c => !state.expiredCodes.includes(c));
+    if (codes.length) navigator.clipboard.writeText(codes.join(', ')).then(() => alert("Kodlar kopyalandı!"));
 }
 
 function clearSelectedCodes() {
@@ -740,169 +474,79 @@ function clearSelectedCodes() {
 }
 
 function selectExpiredCodes() {
-    document.querySelectorAll('.pop-checkbox').forEach(cb => { cb.checked = state.expiredCodes.includes(cb.value); });
+    document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = state.expiredCodes.includes(cb.value));
     checkExpiredPopCodes();
     debouncedSaveFormState();
 }
 
 function openEmailDraft() {
-    const selectedCodes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
-    const nonExpiredCodes = selectedCodes.filter(code => !state.expiredCodes.includes(code));
-    if (nonExpiredCodes.length === 0) { alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin."); return; }
-    
-    const popQuestion = state.fideQuestions.find(q => q.type === 'pop_system') || {};
-    const emailTo = (popQuestion.popEmailTo || []).join(',');
-    const emailCc = (popQuestion.popEmailCc || []).join(',');
-    const emailHTML = `<!DOCTYPE html><html><head><title>E-Posta Taslağı</title></head><body><div>Kime: ${emailTo}</div><div>CC: ${emailCc}</div><div>Konu: (Boş)</div><div>İçerik:<br>${nonExpiredCodes.join(', ')}</div></body></html>`;
-    const emailWindow = window.open('', '_blank');
-    emailWindow.document.write(emailHTML);
-    emailWindow.document.close();
+    const codes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(c => !state.expiredCodes.includes(c));
+    if (!codes.length) return;
+    const q = state.fideQuestions.find(f => f.type === 'pop_system') || {};
+    window.open('', '_blank').document.write(`Kime: ${q.popEmailTo?.join(',')}<br>İçerik:<br>${codes.join(', ')}`);
 }
 
-// --- GÜNCELLENDİ: Styling Listesi Arayüz Fonksiyonları ---
-
-function toggleStylingView(checkbox, qId) {
-    const stylingContainer = document.getElementById(`styling-container-${qId}`);
-    const standardContainer = document.getElementById(`standard-view-container-${qId}`);
-    
-    if (checkbox.checked) {
-        if (stylingContainer) stylingContainer.style.display = 'block';
-        if (standardContainer) standardContainer.style.display = 'none';
-    } else {
-        if (stylingContainer) stylingContainer.style.display = 'none';
-        if (standardContainer) standardContainer.style.display = 'block';
-    }
+function toggleStylingView(cb, id) {
+    const s = document.getElementById(`styling-container-${id}`);
+    const v = document.getElementById(`standard-view-container-${id}`);
+    s.style.display = cb.checked ? 'block' : 'none';
+    v.style.display = cb.checked ? 'none' : 'block';
 }
 
-function handleStylingMainCatChange(event) {
-    const mainSelect = event.target;
-    const container = mainSelect.closest('.styling-list-container');
-    const questionId = container.dataset.questionId;
-    const question = state.fideQuestions.find(q => String(q.id) === questionId);
-    
-    const subContainer = document.getElementById(`styling-sub-container-${questionId}`);
-    const listContainer = container.querySelector('.styling-selected-products-list');
-    const subSelect = subContainer.querySelector('.styling-sub-category-select');
-    const subCategoryQtyInput = subContainer.querySelector('.sub-category-qty-input');
-
-    subSelect.innerHTML = '<option value="">-- Alt Kategori Seçin --</option>';
-    if (subCategoryQtyInput) subCategoryQtyInput.value = '1'; 
-    listContainer.innerHTML = ''; 
-
-    if (mainSelect.value && question && question.stylingData) {
-        const selectedMainCat = question.stylingData.find(mc => mc.name === mainSelect.value);
-        if (selectedMainCat && selectedMainCat.subCategories) {
-            selectedMainCat.subCategories.forEach(subCat => {
-                const option = new Option(subCat.name, subCat.name);
-                subSelect.add(option);
-            });
-            subContainer.style.display = 'flex'; 
-            
-            subSelect.removeEventListener('change', handleStylingSubCatChange);
-            subSelect.addEventListener('change', handleStylingSubCatChange); 
-            
-            if (subCategoryQtyInput) {
-                subCategoryQtyInput.removeEventListener('change', handleStylingSubQtyChange);
-                subCategoryQtyInput.addEventListener('change', handleStylingSubQtyChange);
-            }
-        }
-    } else {
-        subContainer.style.display = 'none';
-    }
-    
+function handleStylingMainCatChange(e) {
+    const sel = e.target;
+    const cont = sel.closest('.styling-list-container');
+    const qId = cont.dataset.questionId;
+    const q = state.fideQuestions.find(f => String(f.id) === qId);
+    const sub = document.getElementById(`styling-sub-container-${qId}`);
+    const list = cont.querySelector('.styling-selected-products-list');
+    const sSel = sub.querySelector('.styling-sub-category-select');
+    sSel.innerHTML = '<option value="">-- Alt Kategori Seçin --</option>';
+    list.innerHTML = ''; 
+    if (sel.value && q?.stylingData) {
+        q.stylingData.find(mc => mc.name === sel.value)?.subCategories.forEach(sc => sSel.add(new Option(sc.name, sc.name)));
+        sub.style.display = 'flex'; 
+        sSel.onchange = handleStylingSubCatChange;
+        sub.querySelector('.sub-category-qty-input').onchange = (ev) => sSel.dispatchEvent(new Event('change'));
+    } else { sub.style.display = 'none'; }
     debouncedSaveFormState(); 
 }
 
-function handleStylingSubCatChange(event) {
-    const subSelect = event.target;
-    const container = subSelect.closest('.styling-list-container');
-    const questionId = container.dataset.questionId;
-    const question = state.fideQuestions.find(q => String(q.id) === questionId);
-    const mainSelect = container.querySelector('.styling-main-category-select');
-    const subCategoryQtyInput = container.querySelector('.sub-category-qty-input');
-    const subCategoryMultiplier = parseInt(subCategoryQtyInput.value, 10) || 1;
-    
-    const listContainer = container.querySelector('.styling-selected-products-list');
-    listContainer.innerHTML = ''; 
-
-    if (subSelect.value && mainSelect.value && question && question.stylingData) {
-        const selectedMainCat = question.stylingData.find(mc => mc.name === mainSelect.value);
-        if (!selectedMainCat) return;
-        
-        const selectedSubCat = selectedMainCat.subCategories.find(sc => sc.name === subSelect.value);
-        if (selectedSubCat && selectedSubCat.products) {
-            selectedSubCat.products.forEach(product => {
-                const defaultQty = parseInt(product.qty || '1', 10);
-                const finalQty = defaultQty * subCategoryMultiplier;
-                addStylingProductToList(questionId, product.code, finalQty, product.name, false);
-            });
-        }
+function handleStylingSubCatChange(e) {
+    const sel = e.target;
+    const cont = sel.closest('.styling-list-container');
+    const qId = cont.dataset.questionId;
+    const q = state.fideQuestions.find(f => String(f.id) === qId);
+    const main = cont.querySelector('.styling-main-category-select');
+    const mult = parseInt(cont.querySelector('.sub-category-qty-input').value) || 1;
+    const list = cont.querySelector('.styling-selected-products-list');
+    list.innerHTML = ''; 
+    if (sel.value && q?.stylingData) {
+        q.stylingData.find(m => m.name === main.value)?.subCategories.find(s => s.name === sel.value)?.products.forEach(p => {
+            addStylingProductToList(qId, p.code, (parseInt(p.qty) || 1) * mult, p.name, false);
+        });
     }
     debouncedSaveFormState(); 
 }
 
-function handleStylingSubQtyChange(event) {
-    const qtyInput = event.target;
-    const container = qtyInput.closest('.styling-list-container');
-    const subSelect = container.querySelector('.styling-sub-category-select');
-    
-    if (subSelect && subSelect.value) {
-        subSelect.dispatchEvent(new Event('change'));
-    } else {
-        debouncedSaveFormState();
-    }
+function addStylingProductToList(qId, code, qty, name, save = true) {
+    const list = document.getElementById(`fide-item-${qId}`).querySelector('.styling-selected-products-list');
+    if (list.querySelector(`[data-code="${code}"]`)) return;
+    const div = document.createElement('div');
+    div.className = 'selected-product-item'; 
+    div.dataset.code = code; div.dataset.qty = qty; div.dataset.name = name;
+    div.innerHTML = `<span>${code} ${name} <input type="number" class="qty-edit-input" value="${qty}"> Adet</span><button class="delete-item-btn btn-sm"><i class="fas fa-trash"></i></button>`;
+    div.querySelector('.qty-edit-input').onchange = () => debouncedSaveFormState();
+    div.querySelector('.delete-item-btn').onclick = () => { div.remove(); debouncedSaveFormState(); };
+    list.appendChild(div);
+    if (save) debouncedSaveFormState();
 }
 
-function addStylingProductToList(qId, productCode, quantity, productName, shouldSave = true) {
-    const itemDiv = document.getElementById(`fide-item-${qId}`);
-    const listContainer = itemDiv.querySelector(`.styling-selected-products-list`);
-    
-    if (listContainer.querySelector(`.selected-product-item[data-code="${productCode}"]`)) {
-        return; 
-    }
-
-    const unit = getUnitForProduct(productName); 
-    const newItem = document.createElement('div');
-    
-    newItem.className = 'selected-product-item'; 
-    newItem.dataset.code = productCode;
-    newItem.dataset.qty = quantity; 
-    newItem.dataset.name = productName;
-    
-    newItem.innerHTML = `
-        <span>${productCode} ${productName} 
-            <span class="product-quantity">
-                <input type="number" class="qty-edit-input" value="${quantity}" min="0"> 
-                ${unit}
-            </span>
-        </span>
-        <button class="delete-item-btn btn-sm" title="Bu malzemeyi sipariş listesinden siler."><i class="fas fa-trash"></i></button>
-    `;
-    
-    const qtyInput = newItem.querySelector('.qty-edit-input');
-    qtyInput.addEventListener('change', function() {
-        debouncedSaveFormState();
-    });
-
-    newItem.querySelector('.delete-item-btn').addEventListener('click', function() {
-        this.parentElement.remove();
-        debouncedSaveFormState(); 
-    });
-    
-    listContainer.appendChild(newItem);
-    
-    if (shouldSave) debouncedSaveFormState();
-}
-
-/**
- * HTML'deki onclick="" özelliklerinin çalışabilmesi için fonksiyonları window nesnesine atar.
- */
 export function attachUiFunctionsToWindow() {
     window.generateEmail = generateEmail;
     window.returnToMainPage = returnToMainPage;
     window.initiateDeleteItem = initiateDeleteItem;
     window.addProductToList = addProductToList;
-    window.addStylingProductToList = addStylingProductToList; 
     window.toggleQuestionCompleted = toggleQuestionCompleted;
     window.toggleQuestionRemoved = toggleQuestionRemoved;
     window.addDynamicInput = addDynamicInput;
