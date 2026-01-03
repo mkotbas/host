@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.20</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.21</strong></p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.19)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.21)</li>
                 <li><strong>KURAL: Dökümanı "Canlı" Tut (BAĞLAYICI):</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. <strong>Sistemin o anki çalışan son halini</strong> tek doğru kaynak olarak yansıtır. Herhangi bir özellik eklendiğinde, çıkarıldığında veya davranışı değiştiğinde <strong>yeni madde, not veya başlık eklenmez</strong>; ilgili mevcut madde <strong>güncel ve doğru çalışma mantığını</strong> yansıtacak şekilde yerinde güncellenir. README her zaman sistemin o anki tek doğru tarifidir.</li>
                 <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
                 <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
@@ -508,7 +508,9 @@
                         <li><code>handleToggleLockDevice</code>: <code>user_devices</code> koleksiyonundaki bir cihazın <code>is_locked</code> (Cihaz Kilidi) bayrağını değiştirir.</li>
                         <li>Form, kullanıcının rolü "client" ise bireysel <code>device_limit</code> (cihaz limiti) ayarını gösterir.</li>
                     </ul>
+                    <p><strong>Stil Notu:</strong> “Kullanıcı Düzenle” ekranındaki <code>input</code> ve <code>select</code> alanlarının modern görünümü, modülün kendi CSS dosyasında (<code>modules/kullanici-yoneticisi/kullanici-yoneticisi.css</code>) <code>#user-form-view</code> scope’u ile tanımlanır. <code>admin.css</code> modül formları için genel bir form stili vermez (sadece giriş popup’ı için özel input stilleri içerir); bu nedenle bu modül, <code>style.css</code>’e bağımlı olmadan kendi form kontrollerini stillendirir.</p>
                 </li>
+
                 <li><code>modules/soru-yoneticisi.js</code>:
                     <ul>
                         <li><code>renderQuestionManager</code>: <code>fideQuestions</code> dizisine göre soru yönetim arayüzünü oluşturur.</li>
