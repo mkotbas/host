@@ -1,4 +1,110 @@
 <div class="card">
+    <style>
+        /* Modern Kart Yapısı */
+        .permission-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f8f9fa; /* Hafif gri arka plan */
+            border: 1px solid #e9ecef;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .permission-card:hover {
+            border-color: #b1b7c1;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .permission-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .permission-icon {
+            width: 45px;
+            height: 45px;
+            background-color: #e0e7ff; /* Açık mavi ikon arka planı */
+            color: #4f46e5; /* İkon rengi */
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .permission-text h5 {
+            margin: 0;
+            font-size: 1rem;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .permission-text p {
+            margin: 2px 0 0 0;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        /* Modern Toggle Switch (Aç/Kapa Anahtarı) */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1; /* Kapalı renk (Gri) */
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background-color: #10b981; /* Açık renk (Yeşil) */
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #10b981;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(24px);
+            -ms-transform: translateX(24px);
+            transform: translateX(24px);
+        }
+    </style>
+
     <div id="user-list-view">
         <div class="module-header">
             <h3 class="module-title">Sistem Kullanıcıları</h3>
@@ -65,20 +171,32 @@
 
             <div class="form-row">
                 
-                <div class="form-group form-group-checkbox-modern" id="mobile-access-box">
-                    <label>Mobil Erişim İzni</label>
-                    <div class="checkbox-wrapper">
-                        <input type="checkbox" id="user-mobile-access-checkbox">
-                        <label for="user-mobile-access-checkbox" class="checkbox-label">Mobil Cihazlardan Erişime İzin Ver</label>
+                <div class="permission-card" id="mobile-access-box">
+                    <div class="permission-info">
+                        <div class="permission-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="permission-text">
+                            <h5>Mobil Erişim İzni</h5>
+                            <p>Kullanıcının telefon veya tablet üzerinden sisteme giriş yapmasına izin ver.</p>
+                        </div>
+                    </div>
+                    <div class="permission-action">
+                        <label class="switch">
+                            <input type="checkbox" id="user-mobile-access-checkbox">
+                            <span class="slider"></span>
+                        </label>
                     </div>
                 </div>
 
-                <div class="form-group" id="user-device-limit-section" style="display: none;">
+                <div class="form-group" id="user-device-limit-section" style="display: none; width: 100%;">
                     <label for="user-device-limit-input">Bireysel Cihaz Limiti (Max: 5)</label>
-                    <input type="number" id="user-device-limit-input" min="1" max="5" value="1">
+                    <input type="number" id="user-device-limit-input" min="1" max="5" value="1" style="width: 100%;">
                     <small>Bu standart kullanıcının kaç farklı cihazdan giriş yapabileceğini belirler.</small>
                 </div>
-            </div> <div class="form-group" id="user-ban-section" style="display: none;">
+            </div> 
+            
+            <div class="form-group" id="user-ban-section" style="display: none;">
                 <label>Hesap Durumu (Anlık Kilitleme)</label>
                 <button type="button" id="toggle-ban-user-btn" class="btn-danger" style="width: 100%;">
                     <i class="fas fa-ban"></i> Bu Kullanıcının Hesabını Kilitle (BAN)
