@@ -155,6 +155,42 @@
     font-size: 0.95em;
 }
 
+/* Modern input/select (admin modül içinde) */
+#user-form-view input[type="text"],
+#user-form-view input[type="email"],
+#user-form-view input[type="password"],
+#user-form-view input[type="number"],
+#user-form-view select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #111827;
+    font-size: 14px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#user-form-view select {
+    cursor: pointer;
+}
+
+#user-form-view input:focus,
+#user-form-view select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+#user-form-view input:disabled,
+#user-form-view select:disabled {
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+
 /* Güvenlik Ayarları başlığı */
 #user-form-view h4 {
     font-size: 1.2em;
