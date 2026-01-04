@@ -68,7 +68,8 @@ function generateQuestionHtml(q) {
         let standardViewHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join('');
         standardViewHTML = `<div id="standard-view-container-${q.id}">${standardViewHTML}</div>`;
 
-        questionContentHTML = `<div id="sub-items-container-fide${q.id}_notes" style="margin-bottom: 15px;"></div><div class="mode-toggle-container"><span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span><label class="switch"><input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})"><span class="slider round"></span></label></div>${standardViewHTML}<div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;"><div class="styling-row"><div class="styling-label">Ana Kategori</div><div class="styling-content"><select class="styling-main-category-select">${mainCategoryOptions}</select></div></div><div class="styling-row" id="styling-sub-container-${qId}" style="display: none;"><div class="styling-label">Alt Kategori</div><div class="styling-content"><select class="styling-sub-category-select"></select><input type="number" class="sub-category-qty-input" min="1" value="1"></div></div><div class="styling-row"><div class="styling-label">Sipariş Listesi</div><div class="styling-content" style="display: block;"><div class="styling-selected-products-list"></div></div></div></div>`;
+        // HATA DÜZELTİLDİ: qId yerine q.id kullanıldı
+        questionContentHTML = `<div id="sub-items-container-fide${q.id}_notes" style="margin-bottom: 15px;"></div><div class="mode-toggle-container"><span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span><label class="switch"><input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})"><span class="slider round"></span></label></div>${standardViewHTML}<div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;"><div class="styling-row"><div class="styling-label">Ana Kategori</div><div class="styling-content"><select class="styling-main-category-select">${mainCategoryOptions}</select></div></div><div class="styling-row" id="styling-sub-container-${q.id}" style="display: none;"><div class="styling-label">Alt Kategori</div><div class="styling-content"><select class="styling-sub-category-select"></select><input type="number" class="sub-category-qty-input" min="1" value="1"></div></div><div class="styling-row"><div class="styling-label">Sipariş Listesi</div><div class="styling-content" style="display: block;"><div class="styling-selected-products-list"></div></div></div></div>`;
     }
 
     return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
@@ -193,7 +194,6 @@ export function startNewReport() {
     updateFormInteractivity(false);
 }
 
-// --- GÜNCELLENMİŞ E-POSTA OLUŞTURMA FONKSİYONU (v1.0.22) ---
 export async function generateEmail() {
     if (!state.selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -217,10 +217,6 @@ export async function generateEmail() {
     const storeEmail = state.storeEmails[state.selectedStore.bayiKodu] || null;
     const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
     
-    // YONETMEN ADI BELIRLEME HIYERARSISI (GÜNCELLENDİ v1.0.22)
-    // 1. Adım: Veritabanındaki yönetmen bilgisi (state.selectedStore.yonetmen)
-    // 2. Adım: Excel'deki yönetmen bilgisi (storeInfo['Bayi Yönetmeni'])
-    // 3. Adım: Varsayılan "Yetkili" ismi
     const rawYonetmenName = state.selectedStore.yonetmen || (storeInfo ? storeInfo['Bayi Yönetmeni'] : null);
     const yonetmenFirstName = rawYonetmenName ? rawYonetmenName.split(' ')[0] : 'Yetkili';
     
