@@ -68,7 +68,7 @@ function generateQuestionHtml(q) {
         let standardViewHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join('');
         standardViewHTML = `<div id="standard-view-container-${q.id}">${standardViewHTML}</div>`;
 
-        questionContentHTML = `<div id="sub-items-container-fide${q.id}_notes" style="margin-bottom: 15px;"></div><div class="mode-toggle-container"><span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span><label class="switch"><input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})"><span class="slider round"></span></label></div>${standardViewHTML}<div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;"><div class="styling-row"><div class="styling-label">Ana Kategori</div><div class="styling-content"><select class="styling-main-category-select">${mainCategoryOptions}</select></div></div><div class="styling-row" id="styling-sub-container-${q.id}" style="display: none;"><div class="styling-label">Alt Kategori</div><div class="styling-content"><select class="styling-sub-category-select"></select><input type="number" class="sub-category-qty-input" min="1" value="1"></div></div><div class="styling-row"><div class="styling-label">Sipariş Listesi</div><div class="styling-content" style="display: block;"><div class="styling-selected-products-list"></div></div></div></div>`;
+        questionContentHTML = `<div id="sub-items-container-fide${q.id}_notes" style="margin-bottom: 15px;"></div><div class="mode-toggle-container"><span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span><label class="switch"><input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})"><span class="slider round"></span></label></div>${standardViewHTML}<div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;"><div class="styling-row"><div class="styling-label">Ana Kategori</div><div class="styling-content"><select class="styling-main-category-select">${mainCategoryOptions}</select></div></div><div class="styling-row" id="styling-sub-container-${qId}" style="display: none;"><div class="styling-label">Alt Kategori</div><div class="styling-content"><select class="styling-sub-category-select"></select><input type="number" class="sub-category-qty-input" min="1" value="1"></div></div><div class="styling-row"><div class="styling-label">Sipariş Listesi</div><div class="styling-content" style="display: block;"><div class="styling-selected-products-list"></div></div></div></div>`;
     }
 
     return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
@@ -145,7 +145,6 @@ export function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
 
-    // pb global olabilir; tanımlı değilse ReferenceError almamak için güvenli kontrol
     let isAuthValid = false;
     if (typeof pb !== 'undefined' && pb && pb.authStore) {
         isAuthValid = pb.authStore.isValid === true;
@@ -153,7 +152,6 @@ export function updateConnectionIndicator() {
 
     const isOnline = state.isPocketBaseConnected === true && isAuthValid;
 
-    // KRİTİK: 'disconnected' sınıfını da yönet (aksi halde CSS çakışır ve kırmızı kalır)
     statusSwitch.classList.toggle('connected', isOnline);
     statusSwitch.classList.toggle('disconnected', !isOnline);
 
@@ -195,7 +193,7 @@ export function startNewReport() {
     updateFormInteractivity(false);
 }
 
-// --- GÜNCELLENMİŞ E-POSTA OLUŞTURMA FONKSİYONU (v1.0.17) ---
+// --- GÜNCELLENMİŞ E-POSTA OLUŞTURMA FONKSİYONU (v1.0.22) ---
 export async function generateEmail() {
     if (!state.selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -213,15 +211,19 @@ export async function generateEmail() {
     const reportData = getFormDataForSaving();
     await saveFormState(reportData, true);
 
-    // Veri güvenliği: Bayi Excel'de yoksa bile hata verme, null döndür
     const storeInfo = state.dideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu)) || null;
     const fideStoreInfo = state.fideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu)) || null;
     
     const storeEmail = state.storeEmails[state.selectedStore.bayiKodu] || null;
     const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
     
-    // Veri yoksa "Yetkili" ismini kullan
-    const yonetmenFirstName = (storeInfo && storeInfo['Bayi Yönetmeni']) ? storeInfo['Bayi Yönetmeni'].split(' ')[0] : 'Yetkili';
+    // YONETMEN ADI BELIRLEME HIYERARSISI (GÜNCELLENDİ v1.0.22)
+    // 1. Adım: Veritabanındaki yönetmen bilgisi (state.selectedStore.yonetmen)
+    // 2. Adım: Excel'deki yönetmen bilgisi (storeInfo['Bayi Yönetmeni'])
+    // 3. Adım: Varsayılan "Yetkili" ismi
+    const rawYonetmenName = state.selectedStore.yonetmen || (storeInfo ? storeInfo['Bayi Yönetmeni'] : null);
+    const yonetmenFirstName = rawYonetmenName ? rawYonetmenName.split(' ')[0] : 'Yetkili';
+    
     const shortBayiAdi = state.selectedStore.bayiAdi.length > 20 ? state.selectedStore.bayiAdi.substring(0, 20) + '...' : state.selectedStore.bayiAdi;
     
     let fideReportHtml = "";
@@ -277,7 +279,6 @@ export async function generateEmail() {
     const cMonth = new Date().getMonth() + 1;
     let mHeaders = Array.from({length: cMonth}, (_, i) => `<th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${state.monthNames[i + 1] || i + 1}</th>`).join('');
     
-    // Veri olmayan bayi için otomatik "-" (çizgi) ekleme mantığı
     let dScores = Array.from({length: cMonth}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(storeInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
     let fScores = Array.from({length: cMonth}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(fideStoreInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
     

@@ -49,8 +49,12 @@ export async function selectStore(store, loadSavedData = true) {
     const storeItem = document.querySelector(`.store-item[data-bayi-kodu="${store.bayiKodu}"]`);
     if (storeItem) storeItem.classList.add('selected');
     
-    // State'i güncelle
-    state.setSelectedStore({ bayiKodu: store.bayiKodu, bayiAdi: store.bayiAdi });
+    // State'i güncelle - Yönetmen bilgisi eklendi
+    state.setSelectedStore({ 
+        bayiKodu: store.bayiKodu, 
+        bayiAdi: store.bayiAdi,
+        yonetmen: store.yonetmen // PocketBase'den gelen asıl yönetmen verisi eklendi
+    });
     
     const searchInput = document.getElementById('store-search-input');
     let shortBayiAdi = store.bayiAdi.length > 20 ? store.bayiAdi.substring(0, 20) + '...' : store.bayiAdi;
