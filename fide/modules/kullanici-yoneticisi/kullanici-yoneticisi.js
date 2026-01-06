@@ -1,23 +1,15 @@
 /**
  * Kullanıcı Yönetimi Modülü
- * GÜNCELLEME 2.29: Modül Erişim Yetkileri eklendi (RBAC).
- * Kullanıcı 'client' ise hangi modülleri görebileceği 'allowed_modules' alanına kaydedilir.
+ * YENİ: Global cihaz limiti kaldırıldı, BİREYSEL cihaz limiti eklendi.
+ * GÜNCELLEME 2.28: Kaydetme sonrası listeye dönme iptal edildi, formda kalınması sağlandı.
+ * GÜNCELLEME 2.29: Cihaz listesi (Sil/Kilitle) butonlarının formu submit etmesi engellendi (type="button" eklendi).
+ * GÜNCELLEME (SİZİN İSTEĞİNİZ): 'is_banned' (Hesap Kilitleme) özelliği tekrar aktifleştirildi.
  */
 export function initializeKullaniciYoneticisiModule(pbInstance) {
     
     // --- Global Değişkenler ve DOM Elementleri ---
     const pb = pbInstance;
     let allUsersCache = []; 
-
-    // SİSTEMDEKİ KULLANILABİLİR MODÜLLER LİSTESİ
-    const SYSTEM_MODULES = [
-        { id: 'denetim-takip', label: 'Denetim Takip (Dashboard)' },
-        { id: 'bayi-yoneticisi', label: 'Bayi Yöneticisi' },
-        { id: 'soru-yoneticisi', label: 'Soru Yöneticisi' },
-        { id: 'eposta-taslagi', label: 'E-posta Taslağı' },
-        { id: 'veritabani-yonetim', label: 'Veritabanı Yönetimi' },
-        { id: 'kullanici-yoneticisi', label: 'Kullanıcı Yöneticisi' }
-    ];
 
     // Ana Görünümler
     const listView = document.getElementById('user-list-view');
@@ -42,11 +34,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     const userRoleSelect = document.getElementById('user-role-select');
     const mobileAccessCheckbox = document.getElementById('user-mobile-access-checkbox');
 
-    // Modül İzinleri Elemanları
-    const modulePermissionsWrapper = document.getElementById('module-permissions-wrapper');
-    const modulesCheckboxContainer = document.getElementById('modules-checkbox-container');
-
-    // Bireysel Cihaz Limiti Elemanları
+    // YENİ: Bireysel Cihaz Limiti Elemanları
     const userDeviceLimitSection = document.getElementById('user-device-limit-section');
     const userDeviceLimitInput = document.getElementById('user-device-limit-input');
     
@@ -67,39 +55,13 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     const saveUserBtn = document.getElementById('save-user-btn');
     const cancelUserFormBtn = document.getElementById('cancel-user-form-btn');
 
-    // --- Başlangıç Ayarları ---
-    
-    // Modül listesini checkbox olarak oluştur
-    renderModuleCheckboxes();
-
-    function renderModuleCheckboxes() {
-        modulesCheckboxContainer.innerHTML = '';
-        SYSTEM_MODULES.forEach(mod => {
-            const div = document.createElement('div');
-            div.className = 'module-checkbox-item';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `perm_${mod.id}`;
-            checkbox.value = mod.id;
-            checkbox.name = 'allowed_modules';
-            
-            const label = document.createElement('label');
-            label.htmlFor = `perm_${mod.id}`;
-            label.textContent = mod.label;
-            
-            div.appendChild(checkbox);
-            div.appendChild(label);
-            modulesCheckboxContainer.appendChild(div);
-        });
-    }
-
     // --- 1. Ana Veri Yükleme Fonksiyonları ---
     
     /**
      * Tüm kullanıcıları PocketBase'den çeker ve tabloyu doldurur.
      */
     async function loadUsers() {
+        // GÜNCELLEME 2.28: Eğer tablo görünmüyorsa (formdaysak) 'Yükleniyor' yazısı koyma.
         if (listView.style.display !== 'none') {
              tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Kullanıcılar yükleniyor...</td></tr>';
         }
@@ -108,6 +70,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             allUsersCache = await pb.collection('users').getFullList({
                 sort: 'name',
             });
+            // GÜNCELLEME 2.28: Sadece liste görünümündeysek tabloyu yeniden çiz.
             if (listView.style.display !== 'none') {
                  renderUsersTable(allUsersCache);
             }
@@ -120,7 +83,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
 
     /**
-     * Belirli bir kullanıcının kayıtlı cihazlarını çeker.
+     * Belirli bir kullanıcının kayıtlı cihazlarını çeker. (Değişiklik yok)
      */
     async function loadUserDevices(userId) {
         devicesListLoading.style.display = 'block';
@@ -128,6 +91,10 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         userDevicesTableBody.innerHTML = '';
 
         try {
+            // DOKÜMANTASYON GÜNCELLEMESİ: 'user_devices' tablosu dokümanda eksik, 
+            // ancak koda göre 'device_keys' (JSON) yerine bu tablo kullanılıyor.
+            // Bu JS dosyası dokümandaki 'device_keys' mantığından (v2.25) FARKLI çalışıyor.
+            // Mevcut JS kodunun mantığına (user_devices tablosu) göre devam ediyorum.
             const devices = await pb.collection('user_devices').getFullList({
                 filter: `user = "${userId}"`,
                 sort: '-last_login'
@@ -135,6 +102,10 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             renderUserDevicesTable(devices);
         } catch (error) {
             console.error('Kullanıcı cihazları yüklenirken hata:', error);
+            // Hata PocketBase'de 'user_devices' tablosu yoksa da olabilir.
+            // Dokümandaki (v2.25) 'users' tablosundaki 'device_keys' (JSON) alanı 
+            // ile bu JS'deki 'user_devices' koleksiyonu birbiriyle çelişiyor.
+            // Şimdilik JS'nin mevcut mantığına dokunmuyorum.
             userDevicesTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Cihazlar yüklenemedi. (user_devices koleksiyonu eksik olabilir)</td></tr>';
         } finally {
             devicesListLoading.style.display = 'none';
@@ -147,6 +118,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
     /**
      * Kullanıcı listesini HTML tablosuna çizer.
+     * DÜZELTME: 'is_banned' alanı artık okunuyor.
      */
     function renderUsersTable(users) {
         tableBody.innerHTML = '';
@@ -165,6 +137,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             const roleText = user.role === 'admin' ? 'Yönetici' : 'Standart Kullanıcı';
             const roleClass = user.role === 'admin' ? 'role-admin' : 'role-client';
             
+            // DÜZELTME: is_banned alanı artık veritabanından (varsayılan olarak) okunuyor.
             const banStatusText = user.is_banned ? 'Kilitli (Ban)' : 'Aktif';
             const banStatusClass = user.is_banned ? 'status-banned' : 'status-active';
 
@@ -194,7 +167,8 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
 
     /**
-     * Cihaz listesini HTML tablosuna çizer.
+     * Cihaz listesini HTML tablosuna çizer. 
+     * GÜNCELLEME 2.29: Butonlara type="button" eklendi. (Değişiklik yok)
      */
     function renderUserDevicesTable(devices) {
         userDevicesTableBody.innerHTML = '';
@@ -242,7 +216,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         });
     }
 
-    // --- 3. Görünüm (View) Değiştirme Fonksiyonları ---
+    // --- 3. Görünüm (View) Değiştirme Fonksiyonları (Değişiklik yok) ---
 
     function showFormView() {
         listView.style.display = 'none';
@@ -255,13 +229,14 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         form.reset();
         userIdInput.value = '';
         userEmailInput.disabled = false;
+        // GÜNCELLEME 2.28: Listeye dönerken tabloyu yenile
         renderUsersTable(allUsersCache);
     }
 
     // --- 4. CRUD ve Diğer İşleyici Fonksiyonlar ---
     
     /**
-     * "Yeni Kullanıcı Ekle" formunu hazırlar.
+     * "Yeni Kullanıcı Ekle" formunu hazırlar ve gösterir.
      */
     function handleNew() {
         form.reset();
@@ -274,13 +249,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         
         userEmailInput.disabled = false; 
 
-        // Varsayılan rol client, izinleri göster
-        userRoleSelect.value = 'client';
-        modulePermissionsWrapper.style.display = 'block';
-        userDeviceLimitSection.style.display = 'block';
-        userDeviceLimitInput.value = 1;
-
-        // Ban ve Cihaz listesini gizle
+        // Ban/cihaz bölümlerini gizle (Yeni kullanıcı banlı olamaz)
         userBanSection.style.display = 'none';
         devicesHr.style.display = 'none';
         devicesTitle.style.display = 'none';
@@ -288,15 +257,16 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         devicesListLoading.style.display = 'none';
         userDevicesTableWrapper.style.display = 'none';
         
-        // Checkboxları temizle
-        const allCheckboxes = modulesCheckboxContainer.querySelectorAll('input[type="checkbox"]');
-        allCheckboxes.forEach(cb => cb.checked = false);
+        // YENİ: Rol 'client' olarak varsayılan seçili olduğu için cihaz limitini göster
+        userDeviceLimitSection.style.display = 'block';
+        userDeviceLimitInput.value = 1; // Varsayılan
 
         showFormView();
     }
 
     /**
-     * "Düzenle" butonuna basıldığında formu doldurur.
+     * "Düzenle" butonuna basıldığında formu doldurur ve gösterir.
+     * DÜZELTME: 'is_banned' bölümü aktifleştirildi.
      */
     function handleEdit(userId) {
         const user = allUsersCache.find(u => u.id === userId);
@@ -316,47 +286,41 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         userPasswordInput.required = false;
         userPasswordConfirmInput.required = false;
         
-        // Ban bölümünü ayarla
+        // --- DÜZELTME BAŞLANGICI ---
+        // Ban bölümünü ayarla ve GÖSTER
         userBanSection.style.display = 'block';
-        updateBanButton(user.is_banned || false); 
-
-        // YENİ: Modül Yetkilerini Doldur
-        const allowed = user.allowed_modules || []; // PocketBase'den gelen dizi
-        const allCheckboxes = modulesCheckboxContainer.querySelectorAll('input[type="checkbox"]');
         
-        allCheckboxes.forEach(cb => {
-            cb.checked = allowed.includes(cb.value);
-        });
+        // 'is_banned' alanını (Bool) okuyup butonu ayarla
+        // (eğer veri undefined ise 'false' varsay)
+        updateBanButton(user.is_banned || false); 
+        // --- DÜZELTME BİTTİ ---
 
-        // Role göre görünüm ayarla
+
+        // Cihaz listesi bölümünü göster
+        devicesHr.style.display = 'block';
+        devicesTitle.style.display = 'block';
+        devicesDescription.style.display = 'block';
+        
         if (user.role === 'admin') {
+            // Admin ise: Cihaz yönetimi ve limiti gerekmez
             devicesDescription.textContent = 'Yönetici (Admin) kullanıcıları için cihaz kilidi/limiti uygulanmaz.';
             devicesListLoading.style.display = 'none';
             userDevicesTableWrapper.style.display = 'none';
-            userDeviceLimitSection.style.display = 'none'; 
-            
-            // Admin için izinleri gizle (Varsayılan tümü açık)
-            modulePermissionsWrapper.style.display = 'none';
+            userDeviceLimitSection.style.display = 'none'; // Bireysel limiti gizle
         } else {
+            // Client ise: Cihaz yönetimi ve limiti göster
             devicesDescription.textContent = 'Kullanıcının giriş yaptığı ve kayıtlı olan cihazları. Buradan tek tek cihazları silebilir (sıfırlayabilir) veya kilitleyebilirsiniz.';
-            userDeviceLimitSection.style.display = 'block'; 
+            userDeviceLimitSection.style.display = 'block'; // Bireysel limiti göster
+            // 'device_limit' alanı dokümanda (v2.25) var. Bu kod doğru.
             userDeviceLimitInput.value = user.device_limit || 1; 
-            
-            // Client için izinleri göster
-            modulePermissionsWrapper.style.display = 'block';
-            
-            // Cihazları yükle
-            devicesHr.style.display = 'block';
-            devicesTitle.style.display = 'block';
-            devicesDescription.style.display = 'block';
-            loadUserDevices(user.id); 
+            loadUserDevices(user.id); // Cihazları yükle (user_devices tablosundan)
         }
         
         showFormView();
     }
 
     /**
-     * "Sil" işlemini yapar.
+     * "Sil" butonuna basıldığında kullanıcıyı siler. (Değişiklik yok)
      */
     async function handleDelete(userId) {
         const user = allUsersCache.find(u => u.id === userId);
@@ -368,13 +332,19 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
 
         try {
+            // 'user_devices' tablosu (JS'nin kullandığı)
             const devices = await pb.collection('user_devices').getFullList({ filter: `user = "${userId}"` });
             for (const device of devices) {
                 await pb.collection('user_devices').delete(device.id);
             }
             
+            // 'users' tablosu
             await pb.collection('users').delete(userId);
+            
+            // Cache'i güncelle
             allUsersCache = allUsersCache.filter(u => u.id !== userId);
+            
+            // Listeyi yeniden çiz
             renderUsersTable(allUsersCache); 
         } catch (error) {
             console.error('Kullanıcı silinirken hata:', error);
@@ -383,7 +353,8 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
 
     /**
-     * Form "Kaydet" işlemini yapar.
+     * Form "Kaydet" butonuna basıldığında (submit) tetiklenir.
+     * GÜNCELLEME 2.28: Artık güncelleme sonrası formda kalıyor. (Değişiklik yok)
      */
     async function handleFormSubmit(event) {
         event.preventDefault();
@@ -392,37 +363,36 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
         const userId = userIdInput.value;
         
+        // YENİ: Bireysel cihaz limiti veriye eklendi
         const data = {
             name: userNameInput.value,
             email: userEmailInput.value,
             role: userRoleSelect.value,
             mobile_access: mobileAccessCheckbox.checked,
-            device_limit: 1 // Varsayılan
+            device_limit: 1 // Varsayılan (eğer admin ise)
         };
 
-        // Eğer rol client ise, bireysel limiti ve İZİNLERİ al
+        // Eğer rol client ise, bireysel limiti al
         if (data.role === 'client') {
             let limit = parseInt(userDeviceLimitInput.value);
             if (isNaN(limit) || limit < 1) limit = 1;
-            if (limit > 5) limit = 5; 
+            if (limit > 5) limit = 5; // Veritabanı kuralına ek olarak JS'de de kontrol edelim
             data.device_limit = limit;
-
-            // YENİ: Seçili modülleri topla
-            const checkedModules = Array.from(modulesCheckboxContainer.querySelectorAll('input[type="checkbox"]:checked'))
-                                       .map(cb => cb.value);
-            data.allowed_modules = checkedModules;
-        } else {
-            // Admins için allowed_modules boş veya null olabilir, sistem admin'e her zaman full yetki verir.
-            // Ama temizlik için boş dizi atabiliriz.
-            data.allowed_modules = [];
         }
 
         try {
             if (userId) { 
+                // --- GÜNCELLEME (GÜNCELLEME 2.28) ---
                 await pb.collection('users').update(userId, data);
+                
+                // Arka plandaki veriyi (cache) güncelle
                 await loadUsers(); 
+                
+                // Başarı mesajı ver ve formda kal
                 alert('Değişiklikler kaydedildi.');
+
             } else { 
+                // --- YENİ KAYIT (DAVRANIŞ DEĞİŞMEDİ) ---
                 if (!userPasswordInput.value || !userPasswordConfirmInput.value) {
                     throw new Error('Yeni kullanıcı için parola zorunludur.');
                 }
@@ -433,7 +403,10 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 data.passwordConfirm = userPasswordConfirmInput.value;
                 
                 await pb.collection('users').create(data);
+                
+                // Arka plandaki veriyi (cache) güncelle
                 await loadUsers(); 
+                // Yeni kayıtta listeye dön
                 showListView(); 
             }
             
@@ -448,6 +421,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     
     /**
      * "Hesabı Kilitle / Kilidi Aç" butonu
+     * DÜZELTME: Hata mesajı basitleştirildi.
      */
     async function handleToggleBanUser() {
         const userId = userIdInput.value;
@@ -456,6 +430,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         const user = allUsersCache.find(u => u.id === userId);
         if (!user) return;
 
+        // 'is_banned' alanı 'user' nesnesinde yoksa hata vermemesi için kontrol
         const currentBanStatus = user.is_banned || false;
         const newBanStatus = !currentBanStatus;
         const actionText = newBanStatus ? 'kilitlemek (BAN)' : 'kilidini açmak';
@@ -469,13 +444,16 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
         try {
             await pb.collection('users').update(userId, { 'is_banned': newBanStatus });
-            user.is_banned = newBanStatus;
+            user.is_banned = newBanStatus; // Cache'deki kullanıcıyı güncelle
             updateBanButton(newBanStatus);
+            // loadUsers() çağrısı cache'i günceller ama tabloyu da çizer, gerek yok.
+            // Ana listedeki cache'i de güncelleyelim:
             const userInCache = allUsersCache.find(u => u.id === userId);
             if(userInCache) userInCache.is_banned = newBanStatus;
             
         } catch (error) {
             console.error('Kullanıcı kilitlenirken hata:', error);
+            // DÜZELTME: Hata mesajı basitleştirildi.
             alert('Hata: ' + error.message);
             updateBanButton(user.is_banned); 
         } finally {
@@ -483,6 +461,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
     }
     
+    /**
+     * Ban butonunu günceller (Değişiklik yok)
+     */
     function updateBanButton(isBanned) {
         if (isBanned) {
             toggleBanUserBtn.innerHTML = '<i class="fas fa-lock-open"></i> Bu Kullanıcının Kilidini Aç';
@@ -495,6 +476,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
     }
     
+    /**
+     * Cihazı siler (Değişiklik yok)
+     */
     async function handleDeleteDevice(deviceId) {
         if (!confirm("Bu cihaz kaydını silmek istediğinizden emin misiniz?")) {
             return;
@@ -509,6 +493,9 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         }
     }
     
+    /**
+     * Cihazı kilitler (Değişiklik yok)
+     */
     async function handleToggleLockDevice(deviceId, currentLockStatus) {
         const newLockStatus = !currentLockStatus;
         const actionText = newLockStatus ? 'kilitlemek' : 'kilidini açmak';
@@ -526,15 +513,13 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
 
     /**
-     * Kullanıcı rolü değiştikçe cihaz limiti ve modül izinlerini göster/gizle.
+     * YENİ: Kullanıcı rolü değiştikçe cihaz limiti alanını göster/gizle. (Değişiklik yok)
      */
     function handleRoleChange() {
         if (userRoleSelect.value === 'admin') {
             userDeviceLimitSection.style.display = 'none';
-            modulePermissionsWrapper.style.display = 'none';
         } else {
             userDeviceLimitSection.style.display = 'block';
-            modulePermissionsWrapper.style.display = 'block';
         }
     }
 
@@ -544,11 +529,14 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         if (addNewUserBtn) addNewUserBtn.addEventListener('click', handleNew);
         if (cancelUserFormBtn) cancelUserFormBtn.addEventListener('click', showListView);
         if (form) form.addEventListener('submit', handleFormSubmit);
+        
         if (toggleBanUserBtn) toggleBanUserBtn.addEventListener('click', handleToggleBanUser);
+        
+        // YENİ Dinleyici
         if (userRoleSelect) userRoleSelect.addEventListener('change', handleRoleChange);
     }
 
     // --- 6. Modülü Başlat ---
     setupEventListeners();
-    loadUsers(); 
+    loadUsers(); // Ana kullanıcı listesini yükle
 }
