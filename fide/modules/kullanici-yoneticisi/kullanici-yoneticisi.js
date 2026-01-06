@@ -1,9 +1,3 @@
-/**
- * Kullanıcı Yönetimi Modülü
- * GÜNCELLEME: Modül & Yetkiler alanı için 'Inline Style' koruması eklendi.
- * Sayfa ilk açılışında stil kaymasını önlemek için JS tarafında stil zorlaması yapıldı.
- * Tablo yükleme ve boş veri kontrolleri de dahildir.
- */
 export function initializeKullaniciYoneticisiModule(pbInstance) {
 
     // --- Global Değişkenler ve DOM Elementleri ---
@@ -92,7 +86,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         rbacSectionEl = document.createElement('div');
         rbacSectionEl.id = 'user-permissions-section';
         
-        // CSS yüklenmese bile düzgün görünsün diye JS ile stilleri zorluyoruz (Inline Style)
+        // Inline stiller ile CSS yüklenmese bile düzgün görünüm sağla
         rbacSectionEl.className = 'modern-card'; 
         rbacSectionEl.style.backgroundColor = '#ffffff';
         rbacSectionEl.style.border = '1px solid #e5e7eb';
@@ -139,12 +133,10 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         const modulesGrid = rbacSectionEl.querySelector('#rbac-modules-box .rbac-grid');
         const featuresGrid = rbacSectionEl.querySelector('#rbac-features-box .rbac-grid');
 
-        // Grid stili
         const gridStyle = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;';
         modulesGrid.style.cssText = gridStyle;
         featuresGrid.style.cssText = gridStyle;
 
-        // Label Stili (Kutu Görünümü)
         const labelStyle = 'display: flex; align-items: center; gap: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 15px; cursor: pointer; user-select: none; transition: all 0.2s;';
 
         RBAC_MODULE_DEFS.forEach(m => {
@@ -156,7 +148,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 <span style="font-size:0.9em; color:#374151; font-weight:500;">${m.label}</span>
             `;
             
-            // Hover efekti (JS ile)
             wrap.onmouseenter = () => { wrap.style.borderColor = '#93c5fd'; wrap.style.backgroundColor = '#fff'; };
             wrap.onmouseleave = () => { wrap.style.borderColor = '#e5e7eb'; wrap.style.backgroundColor = '#f9fafb'; };
 
@@ -228,7 +219,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         const isBayiEnabled = bayiModule ? bayiModule.checked : false;
         rbacSectionEl.querySelectorAll('.rbac-feature-checkbox').forEach(cb => {
             cb.disabled = !isBayiEnabled;
-            // Görsel durumu güncelle
             if(!isBayiEnabled) {
                 cb.parentElement.style.opacity = '0.5';
                 cb.parentElement.style.cursor = 'not-allowed';
@@ -265,13 +255,8 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         return perms;
     }
 
-    // --- 1. Ana Veri Yükleme (GÜÇLENDİRİLMİŞ) ---
-
     async function loadUsers() {
-        if (!tableBody) {
-            console.error("HATA: Tablo gövdesi (users-table-body) bulunamadı!");
-            return;
-        }
+        if (!tableBody) return;
 
         // 1. Yükleniyor Göstergesi
         tableBody.innerHTML = `
@@ -283,20 +268,14 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         `;
 
         try {
-            // 2. Veriyi Çek
             allUsersCache = await pb.collection('users').getFullList({ sort: '-created' });
-            
-            // 3. Tabloyu Çiz
             renderUserTable(allUsersCache);
-
         } catch (error) {
             console.error("Kullanıcılar yüklenemedi:", error);
-            // Hata Durumu Göstergesi
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7" style="text-align:center; padding: 20px; color:red;">
-                        <i class="fas fa-exclamation-triangle"></i> Kullanıcılar yüklenirken bir hata oluştu.<br>
-                        <small>${error.message}</small>
+                        <i class="fas fa-exclamation-triangle"></i> Yükleme Hatası: ${error.message}
                     </td>
                 </tr>
             `;
@@ -307,7 +286,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         if (!tableBody) return;
         tableBody.innerHTML = '';
 
-        // Boş Liste Kontrolü
         if (!users || users.length === 0) {
             tableBody.innerHTML = `
                 <tr>
@@ -373,7 +351,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             const div = document.createElement('div');
             div.className = `device-item ${device.is_locked ? 'locked' : ''}`;
             
-            // Eğer CSS yüklenmemişse diye inline stil ekliyoruz
             div.style.display = "flex";
             div.style.justifyContent = "space-between";
             div.style.alignItems = "center";
@@ -400,7 +377,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 <div class="device-info-left" style="display:flex; align-items:center; gap:10px;">
                     <div class="device-icon"><i class="fas ${deviceIconClass}"></i></div>
                     <div class="device-text">
-                        <div class="device-name" style="font-weight:bold;">${deviceInfo}</div>
+                        <div class="device-name" style="font-weight:bold; color:#333;">${deviceInfo}</div>
                         <div class="device-meta" style="font-size:0.8em; color:#888;">Son Giriş: ${lastLoginText}</div>
                     </div>
                 </div>
@@ -435,14 +412,12 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             renderDevicesList(devices);
 
             devicesListLoading.style.display = 'none';
-            deviceListContainer.style.display = 'block'; // flex yerine block (daha güvenli)
+            deviceListContainer.style.display = 'block';
         } catch (error) {
-            console.error("Cihazlar yüklenemedi:", error);
             devicesListLoading.style.display = 'none';
         }
     }
 
-    // --- Görünüm Yönetimi ---
     function showListView() {
         listView.style.display = 'block';
         formView.style.display = 'none';
@@ -453,7 +428,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         formView.style.display = 'block';
     }
 
-    // --- CRUD ---
     function handleNew() {
         form.reset();
         userIdInput.value = '';
@@ -523,7 +497,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             await pb.collection('users').delete(userId);
             await loadUsers();
         } catch (error) {
-            console.error('Hata:', error);
             alert('Hata: Kullanıcı silinemedi.');
         }
     }
@@ -595,7 +568,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 showListView();
             }
         } catch (error) {
-            console.error('Hata:', error);
             alert('Hata: ' + (error.message || 'İşlem başarısız.'));
         } finally {
             saveUserBtn.disabled = false;
