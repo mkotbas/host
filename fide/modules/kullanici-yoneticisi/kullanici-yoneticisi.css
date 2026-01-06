@@ -320,3 +320,54 @@
     margin-bottom: 20px;
     line-height: 1.5;
 }
+
+/* =========================================================
+   RBAC (Modül & Özellik Yetkileri) — user-permissions-section
+   JS ile sonradan eklendiği için burada renkleri sabitliyoruz.
+   ========================================================= */
+#user-permissions-section {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #eee;
+    color: #111827 !important;
+}
+
+/* Başlıklar + açıklamalar */
+#user-permissions-section h3 {
+    color: #111827 !important;
+    font-size: 1.35em;
+    margin-bottom: 6px;
+}
+
+#user-permissions-section p {
+    color: #6c757d !important;
+}
+
+/* RBAC içindeki tüm metinler: beyaz mirasını ez */
+#user-permissions-section,
+#user-permissions-section span,
+#user-permissions-section label,
+#user-permissions-section div,
+#user-permissions-section strong {
+    color: #111827 !important;
+}
+
+/* RBAC kutucuk kartları (JS label üretiyor) */
+#user-permissions-section #rbac-modules-box label,
+#user-permissions-section #rbac-features-box label {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef !important;
+    border-radius: 10px !important;
+}
+
+/* Checkbox görünümü */
+#user-permissions-section input[type="checkbox"] {
+    transform: scale(1.15);
+    cursor: pointer;
+}
+
+/* Disabled görünüm */
+#user-permissions-section input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
