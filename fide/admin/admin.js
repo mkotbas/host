@@ -47,6 +47,7 @@ const modules = [
 
 // --- Global Değişkenler ---
 let currentModuleId = null;
+let currentUserPermissions = {}; // YENİ: Anlık yetkileri tutar
 // 'pb' değişkeni 'db-config.js' dosyasından global olarak geliyor.
 
 // --- Uygulama Başlatma ---
@@ -55,65 +56,97 @@ window.onload = initializeAdminPanel;
 async function initializeAdminPanel() {
     // --- GÜVENLİK KONTROLÜ (GÜNCELLENDİ) ---
     const isLoggedIn = pb.authStore.isValid;
-    const userRole = isLoggedIn ? pb.authStore.model.role : null;
+    const user = isLoggedIn ? pb.authStore.model : null;
+    const userRole = user ? user.role : null;
+
+    // Yetkileri yükle (Admin ise boş kalabilir, Client ise DB'den gelir)
+    if (user && user.permissions) {
+        currentUserPermissions = user.permissions;
+    } else {
+        currentUserPermissions = {};
+    }
 
     updateAuthUI(isLoggedIn);
     updateConnectionIndicator(isLoggedIn);
 
     if (userRole === 'admin') {
-        // Kullanıcı admin ise, paneli normal şekilde yükle
-        renderModuleMenu('admin'); // 'admin' parametresi gönderildi
+        // --- ADMIN SENARYOSU ---
+        // Admin her şeyi görür, permissions parametresi null/boş gidebilir
+        renderModuleMenu('admin'); 
         
-        // Varsayılan olarak 'denetim-takip' modülünü yükle
+        // Varsayılan modül
         if (!currentModuleId) {
             loadModule('denetim-takip');
         }
 
-        // YENİ EKLENDİ: Anlık ban (kilitleme) sistemini dinlemeyi başlat
-        subscribeToAdminChanges();
+        // Anlık takip başlat
+        subscribeToUserChanges(user.id);
 
     } else if (userRole === 'client') {
-        // YENİ: Kullanıcı 'client' ise, panele kısıtlı erişim ver
-        renderModuleMenu('client'); // 'client' parametresi gönderildi
+        // --- CLIENT (BURAK) SENARYOSU ---
+        // Menüyü yetkilere göre oluştur
+        renderModuleMenu('client', currentUserPermissions);
 
-        // Varsayılan olarak (ve tek izin verilen) 'denetim-takip' modülünü yükle
-        loadModule('denetim-takip');
+        // Varsayılan olarak hangi modülü açalım?
+        // Önce 'denetim-takip' yetkisi var mı bakalım, yoksa ilk yetkili modülü açalım.
+        if (checkAccess('denetim-takip', currentUserPermissions)) {
+            loadModule('denetim-takip');
+        } else {
+            // Denetim takip yetkisi yoksa, listedeki ilk yetkili modülü bul
+            const firstAllowed = findFirstAccessibleModuleId(currentUserPermissions);
+            if (firstAllowed) {
+                loadModule(firstAllowed);
+            } else {
+                showAccessDeniedMessage("Erişim yetkiniz olan hiç bir modül bulunamadı.");
+            }
+        }
         
-        // Anlık ban (kilitleme) sistemini dinlemeyi başlat
-        // (Fonksiyon adı 'Admin' olsa da, giriş yapan mevcut kullanıcıyı dinler)
-        subscribeToAdminChanges();
+        // Anlık takip başlat
+        subscribeToUserChanges(user.id);
 
     } else {
-        // Kullanıcı admin/client değilse veya giriş yapmamışsa, erişimi engelle
-        document.getElementById('module-menu').innerHTML = ''; // Menüyü temizle
-        const container = document.getElementById('module-container');
-        container.innerHTML = `
-            <div style="text-align: center; padding: 50px; color: #dc3545;">
-                <i class="fas fa-exclamation-triangle fa-3x"></i>
-                <h2>Erişim Reddedildi</h2>
-                <p>Bu alana erişim yetkiniz bulunmamaktadır.</p>
-            </div>
-        `;
-        document.getElementById('module-title').innerHTML = '<i class="fas fa-ban"></i> Yetkisiz Erişim';
+        // --- YETKİSİZ SENARYOSU ---
+        showAccessDeniedMessage("Bu alana erişim yetkiniz bulunmamaktadır.");
     }
     setupEventListeners();
 }
 
-// --- ALT MENÜ DESTEKLİ MENÜ OLUŞTURUCU (GÜNCELLENDİ) ---
-function renderModuleMenu(userRole) { // userRole parametresi eklendi
+/**
+ * YENİ: Menüyü role ve yetkilere göre dinamik oluşturur.
+ */
+function renderModuleMenu(userRole, permissions = {}) {
     const menu = document.getElementById('module-menu');
     menu.innerHTML = ''; 
 
-    // Rol'e göre modülleri filtrele
+    // 1. Modülleri filtrele
     let accessibleModules = [];
+
     if (userRole === 'admin') {
-        accessibleModules = modules; // Admin tüm modülleri görür
-    } else if (userRole === 'client') {
-        // Client SADECE 'denetim-takip' modülünü görür
-        accessibleModules = modules.filter(m => m.id === 'denetim-takip');
+        accessibleModules = modules; // Admin hepsini görür
+    } else {
+        // Client için yetki kontrolü (Recursion / Map yapısı)
+        accessibleModules = modules.map(mod => {
+            // Ana modül kopyası oluştur (Referans bozmamak için)
+            const moduleCopy = { ...mod };
+
+            if (moduleCopy.submenu) {
+                // Alt menüsü varsa, alt menü elemanlarını filtrele
+                const filteredSubmenu = moduleCopy.submenu.filter(sub => checkAccess(sub.id, permissions));
+                
+                // Eğer filtrelenmiş alt menüde eleman kaldıysa, bu ana modülü menüye ekle
+                if (filteredSubmenu.length > 0) {
+                    moduleCopy.submenu = filteredSubmenu;
+                    return moduleCopy;
+                }
+                return null; // Alt menüsü boşaldıysa ana başlığı da gösterme
+            } else {
+                // Tekil modülse direkt kontrol et
+                return checkAccess(moduleCopy.id, permissions) ? moduleCopy : null;
+            }
+        }).filter(m => m !== null); // null olanları temizle
     }
 
-    // Erişilebilir modüller üzerinden menüyü oluştur
+    // 2. Menüyü DOM'a bas (Eski mantıkla aynı)
     accessibleModules.forEach(module => {
         const li = document.createElement('li');
         
@@ -129,15 +162,12 @@ function renderModuleMenu(userRole) { // userRole parametresi eklendi
                 subLi.querySelector('a').addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (currentModuleId !== sub.id) {
-                        loadModule(sub.id);
-                    }
+                    if (currentModuleId !== sub.id) loadModule(sub.id);
                 });
                 subMenu.appendChild(subLi);
             });
             
             li.appendChild(subMenu);
-
             li.querySelector('a').addEventListener('click', (e) => {
                 e.preventDefault();
                 li.classList.toggle('open');
@@ -148,17 +178,32 @@ function renderModuleMenu(userRole) { // userRole parametresi eklendi
             li.innerHTML = `<a href="#" data-module-id="${module.id}"><i class="${module.icon}"></i><span>${module.name}</span></a>`;
             li.querySelector('a').addEventListener('click', (e) => {
                 e.preventDefault();
-                if (currentModuleId !== module.id) {
-                    loadModule(module.id);
-                }
+                if (currentModuleId !== module.id) loadModule(module.id);
             });
         }
         menu.appendChild(li);
     });
 }
 
-// --- MODÜL YÜKLEYİCİ (MODERN YAPI - DEĞİŞİKLİK YOK) ---
+// --- MODÜL YÜKLEYİCİ (GÜNCELLENDİ: Güvenlik Kontrolü Eklendi) ---
 async function loadModule(moduleId) {
+    // YENİ: Yüklemeden önce son bir kez yetki kontrolü yap
+    // Eğer kullanıcı admin değilse VE yetkisi yoksa DUR.
+    const userRole = pb.authStore.model?.role;
+    if (userRole !== 'admin') {
+        if (!checkAccess(moduleId, currentUserPermissions)) {
+            console.error(`Erişim Reddedildi: ${moduleId}`);
+            document.getElementById('module-container').innerHTML = `
+                <div style="padding: 20px; color: red; text-align: center;">
+                    <i class="fas fa-lock fa-2x"></i>
+                    <h3>Erişim Reddedildi</h3>
+                    <p>Bu modülü görüntüleme yetkiniz yok.</p>
+                </div>`;
+            return;
+        }
+    }
+
+    // ... Buradan sonrası standart yükleme işlemi ...
     let module;
     for (const main of modules) {
         if (main.id === moduleId) {
@@ -196,12 +241,10 @@ async function loadModule(moduleId) {
     title.innerHTML = `<i class="${module.icon}"></i> ${module.name}`;
     
     try {
-        // HTML Yükle
         const htmlResponse = await fetch(`${module.path}${module.id}.html`);
         if (!htmlResponse.ok) throw new Error(`Dosya bulunamadı: ${module.id}.html`);
         container.innerHTML = await htmlResponse.text();
 
-        // CSS Yükle
         const cssId = `module-css-${module.id}`;
         if (!document.getElementById(cssId)) {
             const link = document.createElement('link');
@@ -211,66 +254,137 @@ async function loadModule(moduleId) {
             document.head.appendChild(link);
         }
 
-        // JAVASCRIPT YÜKLEYİCİ (Modern 'import' yöntemi)
         const oldScript = document.getElementById('module-script');
         if (oldScript) oldScript.remove();
 
         const formattedId = module.id.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
         const initFunctionName = `initialize${formattedId}Module`;
 
-        // Önbelleğe takılmamak için URL'ye zaman damgası ekle
         const moduleUrl = `${module.path}${module.id}.js?v=${new Date().getTime()}`;
         
-        // 'import()' komutu, 'export' içeren modern JS dosyalarını yükler
         const moduleExports = await import(moduleUrl);
         
         if (typeof moduleExports[initFunctionName] === 'function') {
             moduleExports[initFunctionName](pb);
         } else {
-            console.error(`Modern modül (import) başlatma fonksiyonu bulunamadı: ${initFunctionName}. Modülün .js dosyasının bu fonksiyonu 'export' ettiğinden emin olun.`);
+            console.error(`Modern modül (import) başlatma fonksiyonu bulunamadı: ${initFunctionName}`);
         }
 
     } catch (error) {
         console.error("Modül yüklenirken hata oluştu:", error);
-        container.innerHTML = `<p style="color: red;">'${module.name}' modülü yüklenemedi. <br>Hata: ${error.message}. <br>Lütfen '../modules/${module.id}/' klasörünün ve ilgili dosyaların sunucuda olduğundan emin olun.</p>`;
+        container.innerHTML = `<p style="color: red;">'${module.name}' modülü yüklenemedi. <br>Hata: ${error.message}.</p>`;
     }
 }
 
 /**
- * YENİ FONKSİYON: Anlık ban sistemini dinler (Admin paneli için).
- * Adminin kendi kaydını dinler. 'is_banned' true olursa, paneli kapatır.
+ * YENİ: Anlık kullanıcı değişikliklerini dinler (Ban + Yetki Değişimi)
  */
-function subscribeToAdminChanges() {
-    if (!pb || !pb.authStore.isValid) {
-        return; // Giriş yapılmamış veya yetkisiz
-    }
+function subscribeToUserChanges(userId) {
+    if (!pb || !pb.authStore.isValid) return;
 
-    const adminId = pb.authStore.model.id;
-    
     try {
-        // Adminin kendi 'users' kaydını dinle
-        pb.collection('users').subscribe(adminId, function(e) {
-            // console.log('Admin kullanıcı kaydı güncellendi:', e.record);
-            
-            if (e.record && e.record.is_banned === true) {
-                console.warn('Admin kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
-                
-                alert("Hesabınız başka bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor.");
-                
-                // Oturumu kapat (Bu dosyada 'api.js' import edilmediği için direkt metot kullanıyoruz)
+        // Kullanıcının kendi kaydını dinle
+        pb.collection('users').subscribe(userId, function(e) {
+            if (e.action === 'delete') {
+                alert("Kullanıcı hesabınız silindi. Çıkış yapılıyor.");
                 pb.authStore.clear();
-                
-                // Sayfayı yenileyerek giriş ekranına at
                 window.location.reload();
+                return;
+            }
+            
+            const record = e.record;
+
+            // 1. BAN KONTROLÜ
+            if (record.is_banned === true) {
+                alert("Hesabınız yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor.");
+                pb.authStore.clear();
+                window.location.reload();
+                return;
+            }
+
+            // 2. YETKİ (PERMISSIONS) GÜNCELLEMESİ
+            // Eğer permissions değiştiyse arayüzü güncelle
+            // PocketBase authStore'u güncellemek için kaydı save yapıyoruz
+            pb.authStore.save(pb.authStore.token, record);
+            
+            // Global değişkeni güncelle
+            currentUserPermissions = record.permissions || {};
+            
+            // Menüyü yeniden çiz
+            const role = record.role;
+            renderModuleMenu(role, currentUserPermissions);
+
+            // 3. AKTİF MODÜL KONTROLÜ
+            // Eğer kullanıcı şu an bir modüldeyse ve o modülün yetkisi alındıysa at!
+            if (currentModuleId && role !== 'admin') {
+                if (!checkAccess(currentModuleId, currentUserPermissions)) {
+                    alert("Yöneticiniz bu sayfaya erişim yetkinizi kaldırdı. Ana sayfaya yönlendiriliyorsunuz.");
+                    // Varsa başka bir modüle geç, yoksa kapat
+                    if (checkAccess('denetim-takip', currentUserPermissions)) {
+                        loadModule('denetim-takip');
+                    } else {
+                        const first = findFirstAccessibleModuleId(currentUserPermissions);
+                        if (first) loadModule(first);
+                        else {
+                             document.getElementById('module-container').innerHTML = '<p>Erişim yetkiniz kalmadı.</p>';
+                             document.getElementById('module-title').innerHTML = 'Yetkisiz';
+                        }
+                    }
+                }
             }
         });
     } catch (error) {
-        console.error('Admin dinlemesi (subscribe) başlatılamadı:', error);
+        console.error('Kullanıcı dinlemesi (subscribe) başlatılamadı:', error);
     }
 }
 
+/**
+ * YARDIMCI: Modül ID'sini (kebab-case) permission key'ine (snake_case) çevirir ve kontrol eder.
+ * Örn: 'bayi-yoneticisi' -> 'bayi_yoneticisi'
+ */
+function checkAccess(moduleId, permissions) {
+    if (!permissions) return false;
+    
+    // Tireleri alt çizgiye çevir
+    const key = moduleId.replace(/-/g, '_');
+    
+    // İlgili anahtar var mı ve access true mu?
+    if (permissions[key] && permissions[key].access === true) {
+        return true;
+    }
+    return false;
+}
 
-// --- ARAYÜZ GÜNCELLEME FONKSİYONLARI (DEĞİŞİKLİK YOK)---
+/**
+ * YARDIMCI: İlk erişilebilir modülü bulur.
+ */
+function findFirstAccessibleModuleId(permissions) {
+    for (const mod of modules) {
+        if (mod.submenu) {
+            for (const sub of mod.submenu) {
+                if (checkAccess(sub.id, permissions)) return sub.id;
+            }
+        } else {
+            if (checkAccess(mod.id, permissions)) return mod.id;
+        }
+    }
+    return null;
+}
+
+function showAccessDeniedMessage(msg) {
+    document.getElementById('module-menu').innerHTML = ''; 
+    const container = document.getElementById('module-container');
+    container.innerHTML = `
+        <div style="text-align: center; padding: 50px; color: #dc3545;">
+            <i class="fas fa-exclamation-triangle fa-3x"></i>
+            <h2>Erişim Reddedildi</h2>
+            <p>${msg}</p>
+        </div>
+    `;
+    document.getElementById('module-title').innerHTML = '<i class="fas fa-ban"></i> Yetkisiz Erişim';
+}
+
+// --- ARAYÜZ GÜNCELLEME VE EVENT LISTENERS (DEĞİŞİKLİK YOK) ---
 function updateAuthUI(isLoggedIn) {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
@@ -294,7 +408,6 @@ function updateConnectionIndicator(isLoggedIn) {
     statusText.textContent = isLoggedIn ? 'Buluta Bağlı' : 'Bağlı Değil';
 }
 
-// --- GİRİŞ/ÇIKIŞ OLAY DİNLEYİCİLERİ (DEĞİŞİKLİK YOK) ---
 function setupEventListeners() {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
