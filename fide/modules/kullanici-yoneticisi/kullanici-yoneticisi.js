@@ -90,36 +90,25 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     function buildRbacUIOnce() {
         if (rbacSectionEl) return;
 
+        // Form görünümüne RBAC bölümü ekle (HTML dosyasında yoksa JS ile üret)
         rbacSectionEl = document.createElement('div');
         rbacSectionEl.id = 'user-permissions-section';
-        rbacSectionEl.className = 'form-section rbac-section';
-
+        rbacSectionEl.className = 'form-section';
         rbacSectionEl.innerHTML = `
-            <div class="rbac">
-                <div class="rbac-header">
-                    <div>
-                        <h3 class="rbac-title">Modül &amp; Özellik Yetkileri</h3>
-                        <p class="rbac-subtitle">
-                            Standart Kullanıcılar (client) için modül erişimi ve modül içi kritik özellik izinleri.
-                            Yetkisi olmayan öğeler ilgili kullanıcıda menüde görünmez ve sayfaya erişemez.
-                        </p>
-                    </div>
-                </div>
+            <h3 style="margin-top: 0;">Modül & Özellik Yetkileri</h3>
+            <p style="margin-top: 6px; opacity: .85;">
+                Standart Kullanıcılar (client) için modül erişimi ve modül içi kritik özellik izinleri.
+                Yetkisi olmayan öğeler ilgili kullanıcıda menüde görünmez ve sayfaya erişemez.
+            </p>
 
-                <div class="rbac-panels">
-                    <div class="rbac-panel">
-                        <div class="rbac-panel-title">Modül Erişimi</div>
-                        <div class="rbac-module-list" id="rbac-modules-list"></div>
-                    </div>
+            <div id="rbac-modules-box" style="margin-top: 12px;">
+                <h4 style="margin: 12px 0 6px 0;">Modül Erişimi</h4>
+                <div class="rbac-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;"></div>
+            </div>
 
-                    <div class="rbac-panel">
-                        <div class="rbac-panel-title">Modül İçi Özellik Yetkileri</div>
-                        <div class="rbac-feature-groups" id="rbac-feature-groups"></div>
-                        <div class="rbac-empty" id="rbac-feature-empty" style="display:none;">
-                            Özellik yetkisi bulunan bir modül seçildiğinde burada görünecek.
-                        </div>
-                    </div>
-                </div>
+            <div id="rbac-features-box" style="margin-top: 14px;">
+                <h4 style="margin: 12px 0 6px 0;">Modül İçi Özellik Yetkileri</h4>
+                <div class="rbac-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;"></div>
             </div>
         `;
 
@@ -127,122 +116,52 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             formView.appendChild(rbacSectionEl);
         }
 
-        const modulesListEl = rbacSectionEl.querySelector('#rbac-modules-list');
-        const featureGroupsEl = rbacSectionEl.querySelector('#rbac-feature-groups');
-        const featureEmptyEl = rbacSectionEl.querySelector('#rbac-feature-empty');
+        const modulesGrid = rbacSectionEl.querySelector('#rbac-modules-box .rbac-grid');
+        const featuresGrid = rbacSectionEl.querySelector('#rbac-features-box .rbac-grid');
 
-        // Modül kartları (kompakt toggle)
         RBAC_MODULE_DEFS.forEach(m => {
-            const item = document.createElement('label');
-            item.className = 'rbac-module-item';
+            const wrap = document.createElement('label');
+            wrap.style.display = 'flex';
+            wrap.style.alignItems = 'center';
+            wrap.style.gap = '8px';
+            wrap.style.padding = '10px 12px';
+            wrap.style.border = '1px solid rgba(0,0,0,.1)';
+            wrap.style.borderRadius = '10px';
 
-            item.innerHTML = `
-                <div class="rbac-module-meta">
-                    <div class="rbac-module-name">${m.label}</div>
-                    <div class="rbac-module-hint">${m.id}</div>
-                </div>
-
-                <div class="rbac-module-control">
-                    <input type="checkbox" class="rbac-module-checkbox" data-module-id="${m.id}" aria-label="${m.label}">
-                    <span class="rbac-switch" aria-hidden="true"></span>
-                </div>
+            wrap.innerHTML = `
+                <input type="checkbox" class="rbac-module-checkbox" data-module-id="${m.id}">
+                <span>${m.label}</span>
             `;
-
-            modulesListEl.appendChild(item);
+            modulesGrid.appendChild(wrap);
         });
 
-        // Özellikleri modül bazında grupla
-        const featuresByModule = {};
         RBAC_FEATURE_DEFS.forEach(f => {
-            const moduleId = String(f.key || '').split('.')[0];
-            if (!featuresByModule[moduleId]) featuresByModule[moduleId] = [];
-            featuresByModule[moduleId].push(f);
-        });
+            const wrap = document.createElement('label');
+            wrap.style.display = 'flex';
+            wrap.style.alignItems = 'center';
+            wrap.style.gap = '8px';
+            wrap.style.padding = '10px 12px';
+            wrap.style.border = '1px solid rgba(0,0,0,.1)';
+            wrap.style.borderRadius = '10px';
 
-        Object.keys(featuresByModule).forEach(moduleId => {
-            const moduleDef = RBAC_MODULE_DEFS.find(m => m.id === moduleId);
-            const title = moduleDef ? moduleDef.label : moduleId;
-
-            const group = document.createElement('div');
-            group.className = 'rbac-feature-group';
-            group.dataset.moduleId = moduleId;
-
-            const featureItems = featuresByModule[moduleId].map(f => {
-                const compactLabel = String(f.label || '').includes(': ')
-                    ? String(f.label || '').split(': ').slice(1).join(': ')
-                    : String(f.label || '');
-                return `
-                    <label class="rbac-feature-item">
-                        <input type="checkbox" class="rbac-feature-checkbox" data-feature-key="${f.key}">
-                        <span class="rbac-feature-label">${compactLabel}</span>
-                    </label>
-                `;
-            }).join('');
-
-            group.innerHTML = `
-                <div class="rbac-feature-group-header">
-                    <span class="rbac-feature-group-title">${title}</span>
-                    <span class="rbac-feature-group-badge">özellik</span>
-                </div>
-                <div class="rbac-feature-list">
-                    ${featureItems}
-                </div>
+            wrap.innerHTML = `
+                <input type="checkbox" class="rbac-feature-checkbox" data-feature-key="${f.key}">
+                <span>${f.label}</span>
             `;
-
-            featureGroupsEl.appendChild(group);
+            featuresGrid.appendChild(wrap);
         });
 
-        function syncDependencies() {
-            // denetim-takip her zaman açık + kilitli
-            const denetimCb = rbacSectionEl.querySelector('.rbac-module-checkbox[data-module-id="denetim-takip"]');
-            if (denetimCb) {
-                denetimCb.checked = true;
-                denetimCb.disabled = true;
-                denetimCb.closest('.rbac-module-item')?.classList.add('is-locked');
-            }
-
-            const moduleState = {};
-            rbacSectionEl.querySelectorAll('.rbac-module-checkbox').forEach(cb => {
-                moduleState[cb.dataset.moduleId] = cb.checked === true;
-            });
-            moduleState['denetim-takip'] = true;
-
-            let anyVisibleGroup = false;
-
-            rbacSectionEl.querySelectorAll('.rbac-feature-group').forEach(group => {
-                const moduleId = group.dataset.moduleId;
-                const enabled = moduleState[moduleId] === true;
-
-                group.style.display = enabled ? 'block' : 'none';
-                group.classList.toggle('is-disabled', !enabled);
-
-                group.querySelectorAll('.rbac-feature-checkbox').forEach(cb => {
-                    cb.disabled = !enabled;
-                    if (!enabled) cb.checked = false;
-                });
-
-                if (enabled) anyVisibleGroup = true;
-            });
-
-            if (featureEmptyEl) featureEmptyEl.style.display = anyVisibleGroup ? 'none' : 'block';
-        }
-
-        syncDependencies();
-
+        // Modül kapalıysa alt özellikleri otomatik kapat (Bayi Yöneticisi)
         rbacSectionEl.addEventListener('change', (e) => {
             const t = e.target;
             if (!(t instanceof HTMLInputElement)) return;
 
-            if (t.classList.contains('rbac-module-checkbox')) {
-                // Modül kapandıysa ilgili alt özellikleri temizle
-                const moduleId = t.dataset.moduleId;
-                if (moduleId && t.checked !== true) {
-                    rbacSectionEl.querySelectorAll('.rbac-feature-checkbox').forEach(cb => {
-                        const key = cb.dataset.featureKey || '';
-                        if (key.startsWith(moduleId + '.')) cb.checked = false;
-                    });
-                }
-                syncDependencies();
+            if (t.classList.contains('rbac-module-checkbox') && t.dataset.moduleId === 'bayi-yoneticisi') {
+                const featureCbs = rbacSectionEl.querySelectorAll('.rbac-feature-checkbox');
+                featureCbs.forEach(cb => {
+                    cb.disabled = !t.checked;
+                    if (!t.checked) cb.checked = false;
+                });
             }
         });
     }
@@ -257,58 +176,29 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         buildRbacUIOnce();
         const p = normalizePermissions(perms);
 
-        // modüller
         rbacSectionEl.querySelectorAll('.rbac-module-checkbox').forEach(cb => {
             const id = cb.dataset.moduleId;
             cb.checked = p.modules[id] === true;
-
+            // denetim-takip her zaman açık
             if (id === 'denetim-takip') {
                 cb.checked = true;
                 cb.disabled = true;
-                cb.closest('.rbac-module-item')?.classList.add('is-locked');
             } else {
                 cb.disabled = false;
-                cb.closest('.rbac-module-item')?.classList.remove('is-locked');
             }
         });
 
-        // özellikler
         rbacSectionEl.querySelectorAll('.rbac-feature-checkbox').forEach(cb => {
             const key = cb.dataset.featureKey;
             cb.checked = p.features[key] === true;
         });
 
-        // modül kapalıysa alt özellikleri sıfırla + disable
-        const modulesState = {};
-        rbacSectionEl.querySelectorAll('.rbac-module-checkbox').forEach(cb => {
-            modulesState[cb.dataset.moduleId] = cb.checked === true;
-        });
-        modulesState['denetim-takip'] = true;
-
+        const bayiModule = rbacSectionEl.querySelector('.rbac-module-checkbox[data-module-id="bayi-yoneticisi"]');
+        const isBayiEnabled = bayiModule ? bayiModule.checked : false;
         rbacSectionEl.querySelectorAll('.rbac-feature-checkbox').forEach(cb => {
-            const key = cb.dataset.featureKey || '';
-            const moduleId = key.split('.')[0];
-            const enabled = modulesState[moduleId] === true;
-
-            cb.disabled = !enabled;
-            if (!enabled) cb.checked = false;
+            cb.disabled = !isBayiEnabled;
+            if (!isBayiEnabled) cb.checked = false;
         });
-
-        // grupları görünür/gizle + empty state
-        const featureEmptyEl = rbacSectionEl.querySelector('#rbac-feature-empty');
-        let anyVisibleGroup = false;
-
-        rbacSectionEl.querySelectorAll('.rbac-feature-group').forEach(group => {
-            const moduleId = group.dataset.moduleId;
-            const enabled = modulesState[moduleId] === true;
-
-            group.style.display = enabled ? 'block' : 'none';
-            group.classList.toggle('is-disabled', !enabled);
-
-            if (enabled) anyVisibleGroup = true;
-        });
-
-        if (featureEmptyEl) featureEmptyEl.style.display = anyVisibleGroup ? 'none' : 'block';
     }
 
     function readPermissionsFromUI() {
@@ -331,11 +221,12 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             perms.features[key] = cb.checked === true;
         });
 
-        // modül kapalıysa ilgili alt özellikleri sıfırla
-        Object.keys(perms.features).forEach(k => {
-            const moduleId = k.split('.')[0];
-            if (perms.modules[moduleId] !== true) perms.features[k] = false;
-        });
+        // bayi-yoneticisi kapalıysa alt özellikleri sıfırla
+        if (perms.modules['bayi-yoneticisi'] !== true) {
+            Object.keys(perms.features).forEach(k => {
+                if (k.startsWith('bayi-yoneticisi.')) perms.features[k] = false;
+            });
+        }
 
         return perms;
     }
@@ -430,349 +321,360 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
             const isLocked = device.is_locked === true;
             const statusText = isLocked ? 'Kilitli' : 'Açık';
-            const statusClass = isLocked ? 'status-badge status-banned' : 'status-badge status-active';
+            const statusClass = isLocked ? 'status-banned' : 'status-active';
 
             tr.innerHTML = `
-                <td>${deviceInfo}</td>
-                <td>${lastLoginText}</td>
-                <td><span class="${statusClass}">${statusText}</span></td>
+                <td data-label="Cihaz Bilgisi">${deviceInfo}</td>
+                <td data-label="Son Giriş">${lastLoginText}</td>
+                <td data-label="Durum"><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td class="actions-cell">
-                    <button type="button" class="btn-warning btn-sm btn-lock" title="Kilitle/Kilidi Aç">
+                    <button type="button" class="btn-danger btn-sm btn-device-delete"><i class="fas fa-trash"></i> Sil</button>
+                    <button type="button" class="btn-warning btn-sm btn-device-lock">
                         <i class="fas fa-lock"></i> ${isLocked ? 'Kilidi Aç' : 'Kilitle'}
-                    </button>
-                    <button type="button" class="btn-danger btn-sm btn-device-delete" title="Sil">
-                        <i class="fas fa-trash"></i> Sil
                     </button>
                 </td>
             `;
 
-            tr.querySelector('.btn-lock').addEventListener('click', (e) => {
-                e.preventDefault();
-                handleToggleDeviceLock(device.id, device.is_locked === true);
-            });
-
-            tr.querySelector('.btn-device-delete').addEventListener('click', (e) => {
-                e.preventDefault();
-                handleDeleteDevice(device.id);
-            });
+            tr.querySelector('.btn-device-delete').addEventListener('click', () => handleDeleteDevice(device.id));
+            tr.querySelector('.btn-device-lock').addEventListener('click', () => handleToggleLockDevice(device.id, device.is_locked));
 
             userDevicesTableBody.appendChild(tr);
         });
     }
 
-    // --- 2. CRUD İşlemleri ---
-
-    async function handleEdit(userId) {
+    /**
+     * Kullanıcının cihazlarını yükler.
+     */
+    async function loadUserDevices(userId) {
         try {
-            const user = await pb.collection('users').getOne(userId);
+            devicesListLoading.style.display = 'block';
+            userDevicesTableWrapper.style.display = 'none';
 
-            // Görünüm
-            listView.style.display = 'none';
-            formView.style.display = 'block';
-            formTitle.textContent = 'Kullanıcıyı Düzenle';
+            const devices = await pb.collection('user_devices').getFullList({
+                filter: `user="${userId}"`,
+                sort: '-created'
+            });
 
-            // Form alanlarını doldur
-            userIdInput.value = user.id;
-            userNameInput.value = user.name || '';
-            userEmailInput.value = user.email || '';
-            userRoleSelect.value = user.role || 'client';
+            renderDevicesTable(devices);
 
-            // Parola alanlarını düzenlemede boş bırak
-            userPasswordInput.value = '';
-            userPasswordConfirmInput.value = '';
-
-            // Admin ise parola alanlarını göster (isterse değiştirsin); client için de gösteriyoruz (sizdeki istek)
-            if (passwordWrapper) passwordWrapper.style.display = 'block';
-
-            // Mobil erişim
-            mobileAccessCheckbox.checked = user.mobile_access === true;
-
-            // Cihaz limiti sadece client için göster
-            const isClient = (userRoleSelect.value === 'client');
-            if (userDeviceLimitSection) userDeviceLimitSection.style.display = isClient ? 'block' : 'none';
-            if (userDeviceLimitInput) userDeviceLimitInput.value = String(user.device_limit ?? 1);
-
-            // BAN alanı sadece client için göster
-            if (userBanSection) userBanSection.style.display = isClient ? 'block' : 'none';
-
-            // BAN buton metni
-            if (toggleBanUserBtn) {
-                if (user.is_banned) {
-                    toggleBanUserBtn.innerHTML = `<i class="fas fa-unlock"></i> Bu Kullanıcının Hesap Kilidini Aç (UNBAN)`;
-                    toggleBanUserBtn.classList.remove('btn-danger');
-                    toggleBanUserBtn.classList.add('btn-success');
-                } else {
-                    toggleBanUserBtn.innerHTML = `<i class="fas fa-ban"></i> Bu Kullanıcının Hesabını Kilitle (BAN)`;
-                    toggleBanUserBtn.classList.remove('btn-success');
-                    toggleBanUserBtn.classList.add('btn-danger');
-                }
-            }
-
-            // RBAC sadece client için
-            setRbacUIVisible(isClient);
-            if (isClient) setPermissionsToUI(user.permissions || {});
-
-            // Cihazlar bölümü sadece client için
-            if (devicesHr) devicesHr.style.display = isClient ? 'block' : 'none';
-            if (devicesTitle) devicesTitle.style.display = isClient ? 'block' : 'none';
-            if (devicesDescription) devicesDescription.style.display = isClient ? 'block' : 'none';
-
-            if (isClient) {
-                if (devicesListLoading) devicesListLoading.style.display = 'block';
-                if (userDevicesTableWrapper) userDevicesTableWrapper.style.display = 'none';
-
-                const devices = await pb.collection('user_devices').getFullList({
-                    filter: `user="${user.id}"`,
-                    sort: '-last_login'
-                });
-
-                if (devicesListLoading) devicesListLoading.style.display = 'none';
-                if (userDevicesTableWrapper) userDevicesTableWrapper.style.display = 'block';
-                renderDevicesTable(devices);
-            } else {
-                if (devicesListLoading) devicesListLoading.style.display = 'none';
-                if (userDevicesTableWrapper) userDevicesTableWrapper.style.display = 'none';
-            }
-
+            devicesListLoading.style.display = 'none';
+            userDevicesTableWrapper.style.display = 'block';
         } catch (error) {
-            console.error("Kullanıcı düzenleme ekranı açılamadı:", error);
-            alert("Kullanıcı bilgileri alınırken bir hata oluştu.");
+            console.error("Cihazlar yüklenemedi:", error);
+            devicesListLoading.style.display = 'none';
+            userDevicesTableWrapper.style.display = 'none';
         }
     }
 
+    // --- 2. Görünüm Yönetimi ---
+
+    function showListView() {
+        listView.style.display = 'block';
+        formView.style.display = 'none';
+    }
+
+    function showFormView() {
+        listView.style.display = 'none';
+        formView.style.display = 'block';
+    }
+
+    // --- 3. CRUD İşlemleri ---
+
+    /**
+     * Yeni kullanıcı oluşturma formunu açar.
+     */
+    function handleNew() {
+        form.reset();
+        userIdInput.value = '';
+        formTitle.textContent = 'Yeni Kullanıcı Ekle';
+
+        userEmailInput.disabled = false;
+
+        // Yeni kayıtta parola alanlarını göster
+        passwordWrapper.style.display = 'block';
+        userPasswordInput.required = true;
+        userPasswordConfirmInput.required = true;
+
+        // Rol varsayılanı: client
+        userRoleSelect.value = 'client';
+        mobileAccessCheckbox.checked = false;
+
+        // Ban ve cihaz listesi bölümlerini gizle
+        userBanSection.style.display = 'none';
+        devicesHr.style.display = 'none';
+        devicesTitle.style.display = 'none';
+        devicesDescription.style.display = 'none';
+        devicesListLoading.style.display = 'none';
+        userDevicesTableWrapper.style.display = 'none';
+
+        // YENİ: Rol 'client' olarak varsayılan seçili olduğu için cihaz limitini göster
+        userDeviceLimitSection.style.display = 'block';
+        userDeviceLimitInput.value = 1; // Varsayılan
+
+        // RBAC varsayılanları
+        setRbacUIVisible(true);
+        setPermissionsToUI({ modules: { 'denetim-takip': true }, features: {} });
+
+        showFormView();
+    }
+
+    /**
+     * "Düzenle" butonuna basıldığında formu doldurur ve gösterir.
+     * DÜZELTME: 'is_banned' bölümü aktifleştirildi.
+     */
+    function handleEdit(userId) {
+        const user = allUsersCache.find(u => u.id === userId);
+        if (!user) return;
+
+        form.reset();
+        userIdInput.value = user.id;
+        formTitle.textContent = 'Kullanıcıyı Düzenle';
+
+        userNameInput.value = user.name || '';
+        userEmailInput.value = user.email;
+        userEmailInput.disabled = true;
+        userRoleSelect.value = user.role;
+        mobileAccessCheckbox.checked = user.mobile_access;
+
+        // RBAC: client için izinleri yükle
+        if (user.role === 'client') {
+            setRbacUIVisible(true);
+            setPermissionsToUI(user.permissions || {});
+        } else {
+            setRbacUIVisible(false);
+        }
+
+        passwordWrapper.style.display = 'none';
+        userPasswordInput.required = false;
+        userPasswordConfirmInput.required = false;
+
+        // Ban bölümünü ayarla ve GÖSTER
+        userBanSection.style.display = 'block';
+        updateBanButton(user.is_banned || false);
+
+        // Cihaz listesi bölümünü göster
+        devicesHr.style.display = 'block';
+        devicesTitle.style.display = 'block';
+        devicesDescription.style.display = 'block';
+
+        if (user.role === 'admin') {
+            // Admin ise: Cihaz yönetimi ve limiti gerekmez
+            devicesDescription.textContent = 'Yönetici (Admin) kullanıcıları için cihaz kilidi/limiti uygulanmaz.';
+            devicesListLoading.style.display = 'none';
+            userDevicesTableWrapper.style.display = 'none';
+            userDeviceLimitSection.style.display = 'none'; // Bireysel limiti gizle
+        } else {
+            // Client ise: Cihaz yönetimi ve limiti göster
+            devicesDescription.textContent = 'Kullanıcının giriş yaptığı ve kayıtlı olan cihazları. Buradan tek tek cihazları silebilir (sıfırlayabilir) veya kilitleyebilirsiniz.';
+            userDeviceLimitSection.style.display = 'block'; // Bireysel limiti göster
+            userDeviceLimitInput.value = user.device_limit || 1;
+
+            // Cihazları yükle
+            loadUserDevices(user.id);
+        }
+
+        showFormView();
+    }
+
+    /**
+     * Kullanıcıyı siler.
+     */
     async function handleDelete(userId) {
-        if (!confirm("Bu kullanıcıyı silmek istediğinizden emin misiniz?")) return;
+        if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) {
+            return;
+        }
         try {
             await pb.collection('users').delete(userId);
             await loadUsers();
         } catch (error) {
-            console.error("Kullanıcı silinemedi:", error);
-            alert("Kullanıcı silinirken bir hata oluştu.");
+            console.error('Kullanıcı silinirken hata:', error);
+            alert('Hata: Kullanıcı silinemedi.');
         }
     }
 
-    async function handleToggleDeviceLock(deviceId, isLocked) {
-        try {
-            await pb.collection('user_devices').update(deviceId, { is_locked: !isLocked });
+    // --- 4. Form & Yardımcı İşlevler ---
 
-            // Ekrandaki kullanıcı ID'si ile cihaz listesini yenile
-            const userId = userIdInput.value;
-            const devices = await pb.collection('user_devices').getFullList({
-                filter: `user="${userId}"`,
-                sort: '-last_login'
-            });
-            renderDevicesTable(devices);
-        } catch (error) {
-            console.error("Cihaz kilidi değiştirilemedi:", error);
-            alert("Cihaz kilidi güncellenirken bir hata oluştu.");
-        }
+    /**
+     * Ban butonunun metnini/durumunu ayarlar.
+     */
+    function updateBanButton(isBanned) {
+        if (!toggleBanUserBtn) return;
+        toggleBanUserBtn.textContent = isBanned ? 'Hesap Kilidini Aç' : 'Hesabı Kilitle';
+        toggleBanUserBtn.classList.toggle('btn-danger', !isBanned);
+        toggleBanUserBtn.classList.toggle('btn-success', isBanned);
     }
 
-    async function handleDeleteDevice(deviceId) {
-        if (!confirm("Bu cihaz kaydını silmek istediğinizden emin misiniz?")) return;
-        try {
-            await pb.collection('user_devices').delete(deviceId);
-
-            const userId = userIdInput.value;
-            const devices = await pb.collection('user_devices').getFullList({
-                filter: `user="${userId}"`,
-                sort: '-last_login'
-            });
-            renderDevicesTable(devices);
-        } catch (error) {
-            console.error("Cihaz silinemedi:", error);
-            alert("Cihaz silinirken bir hata oluştu.");
-        }
-    }
-
-    async function handleSaveUser(event) {
+    /**
+     * Form submit
+     * GÜNCELLEME 2.28: Artık güncelleme sonrası formda kalıyor. (Değişiklik yok)
+     */
+    async function handleFormSubmit(event) {
         event.preventDefault();
+        saveUserBtn.disabled = true;
+        saveUserBtn.textContent = 'Kaydediliyor.';
 
         const userId = userIdInput.value;
-        const name = userNameInput.value.trim();
-        const email = userEmailInput.value.trim();
-        const role = userRoleSelect.value;
 
-        if (!name || !email) {
-            alert("İsim ve e-posta alanları zorunludur.");
-            return;
-        }
-
-        // parola kontrolü
-        const password = userPasswordInput.value.trim();
-        const passwordConfirm = userPasswordConfirmInput.value.trim();
-
-        if (password || passwordConfirm) {
-            if (password !== passwordConfirm) {
-                alert("Parolalar eşleşmiyor.");
-                return;
-            }
-            if (password.length < 6) {
-                alert("Parola en az 6 karakter olmalıdır.");
-                return;
-            }
-        }
-
-        // client alanları
-        const mobile_access = mobileAccessCheckbox.checked === true;
-
-        // cihaz limiti sadece client
-        let device_limit = 1;
-        if (role === 'client') {
-            const raw = Number(userDeviceLimitInput.value || 1);
-            device_limit = Number.isFinite(raw) ? raw : 1;
-            if (device_limit < 1) device_limit = 1;
-            if (device_limit > 5) device_limit = 5;
-        }
-
+        // YENİ: Bireysel cihaz limiti veriye eklendi
         const data = {
-            name,
-            email,
-            role,
-            mobile_access
+            name: userNameInput.value,
+            email: userEmailInput.value,
+            role: userRoleSelect.value,
+            mobile_access: mobileAccessCheckbox.checked,
+            device_limit: 1 // Varsayılan (eğer admin ise)
         };
 
-        if (role === 'client') {
-            data.device_limit = device_limit;
-            data.permissions = readPermissionsFromUI();
-        } else {
-            data.permissions = {};
+        // Eğer rol client ise, bireysel limiti al
+        if (data.role === 'client') {
+            let limit = parseInt(userDeviceLimitInput.value);
+            if (isNaN(limit) || limit < 1) limit = 1;
+            if (limit > 5) limit = 5; // Veritabanı kuralına ek olarak JS'de de kontrol edelim
+            data.device_limit = limit;
         }
 
-        // parola sadece doluysa set et
-        if (password) {
-            data.password = password;
-            data.passwordConfirm = passwordConfirm;
+        // RBAC: Sadece client için permissions kaydet
+        if (data.role === 'client') {
+            data.permissions = readPermissionsFromUI();
         }
 
         try {
             if (userId) {
                 await pb.collection('users').update(userId, data);
+
+                // Arka plandaki veriyi (cache) güncelle
+                await loadUsers();
+
+                // Başarı mesajı ver ve formda kal
+                alert('Değişiklikler kaydedildi.');
+
             } else {
+                if (!userPasswordInput.value || !userPasswordConfirmInput.value) {
+                    throw new Error('Yeni kullanıcı için parola zorunludur.');
+                }
+                if (userPasswordInput.value !== userPasswordConfirmInput.value) {
+                    throw new Error('Parolalar eşleşmiyor.');
+                }
+                data.password = userPasswordInput.value;
+                data.passwordConfirm = userPasswordConfirmInput.value;
+
                 await pb.collection('users').create(data);
+
+                // Arka plandaki veriyi (cache) güncelle
+                await loadUsers();
+                // Yeni kayıtta listeye dön
+                showListView();
             }
 
-            alert("Kullanıcı kaydedildi.");
-            await loadUsers();
-
-            // sizdeki kural: kaydet sonrası formda kal
-            // (mevcut davranış korunuyor)
         } catch (error) {
-            console.error("Kullanıcı kaydedilemedi:", error);
-            alert("Kullanıcı kaydedilirken bir hata oluştu.");
+            console.error('Kullanıcı kaydedilirken hata:', error);
+            alert('Hata: ' + (error.message || 'Lütfen tüm zorunlu alanları doldurun.'));
+        } finally {
+            saveUserBtn.disabled = false;
+            saveUserBtn.textContent = 'Kaydet';
         }
     }
 
-    async function handleToggleBan() {
+    /**
+     * "Hesabı Kilitle / Kilidi Aç" butonu
+     * DÜZELTME: Hata mesajı basitleştirildi.
+     */
+    async function handleToggleBanUser() {
         const userId = userIdInput.value;
         if (!userId) return;
 
+        const user = allUsersCache.find(u => u.id === userId);
+        if (!user) return;
+
+        const currentBanStatus = user.is_banned || false;
+        const newBanStatus = !currentBanStatus;
+        const actionText = newBanStatus ? 'kilitlemek' : 'kilidi açmak';
+
+        if (!confirm(`Bu hesabı ${actionText} istediğinizden emin misiniz?`)) {
+            return;
+        }
+
         try {
-            const user = await pb.collection('users').getOne(userId);
-            const newBanState = !(user.is_banned === true);
-
-            await pb.collection('users').update(userId, { is_banned: newBanState });
-
-            if (toggleBanUserBtn) {
-                if (newBanState) {
-                    toggleBanUserBtn.innerHTML = `<i class="fas fa-unlock"></i> Bu Kullanıcının Hesap Kilidini Aç (UNBAN)`;
-                    toggleBanUserBtn.classList.remove('btn-danger');
-                    toggleBanUserBtn.classList.add('btn-success');
-                } else {
-                    toggleBanUserBtn.innerHTML = `<i class="fas fa-ban"></i> Bu Kullanıcının Hesabını Kilitle (BAN)`;
-                    toggleBanUserBtn.classList.remove('btn-success');
-                    toggleBanUserBtn.classList.add('btn-danger');
-                }
-            }
-
-            alert(newBanState ? "Kullanıcı kilitlendi (BAN)." : "Kullanıcı kilidi açıldı (UNBAN).");
+            await pb.collection('users').update(userId, { is_banned: newBanStatus });
             await loadUsers();
+
+            // Cache içinden güncel kullanıcıyı bulup butonu güncelle
+            const updated = allUsersCache.find(u => u.id === userId);
+            updateBanButton(updated?.is_banned || false);
+
         } catch (error) {
-            console.error("Ban işlemi başarısız:", error);
-            alert("Ban işlemi sırasında bir hata oluştu.");
+            console.error('Ban durumu güncellenirken hata:', error);
+            alert('Hata: Hesap durumu güncellenemedi.');
         }
     }
 
-    function resetFormToNewUser() {
-        formTitle.textContent = 'Yeni Kullanıcı Ekle';
-        userIdInput.value = '';
-        userNameInput.value = '';
-        userEmailInput.value = '';
-        userRoleSelect.value = 'client';
-
-        if (passwordWrapper) passwordWrapper.style.display = 'block';
-        userPasswordInput.value = '';
-        userPasswordConfirmInput.value = '';
-
-        mobileAccessCheckbox.checked = false;
-
-        // client default gösterimler
-        if (userDeviceLimitSection) userDeviceLimitSection.style.display = 'block';
-        if (userDeviceLimitInput) userDeviceLimitInput.value = '1';
-
-        if (userBanSection) userBanSection.style.display = 'block';
-        if (toggleBanUserBtn) {
-            toggleBanUserBtn.innerHTML = `<i class="fas fa-ban"></i> Bu Kullanıcının Hesabını Kilitle (BAN)`;
-            toggleBanUserBtn.classList.remove('btn-success');
-            toggleBanUserBtn.classList.add('btn-danger');
+    /**
+     * Cihazı siler
+     */
+    async function handleDeleteDevice(deviceId) {
+        if (!confirm('Bu cihazı silmek istediğinizden emin misiniz?')) {
+            return;
         }
-
-        // cihazlar kısmı kapalı (yeni kullanıcıda cihaz yok)
-        if (devicesHr) devicesHr.style.display = 'none';
-        if (devicesTitle) devicesTitle.style.display = 'none';
-        if (devicesDescription) devicesDescription.style.display = 'none';
-        if (devicesListLoading) devicesListLoading.style.display = 'none';
-        if (userDevicesTableWrapper) userDevicesTableWrapper.style.display = 'none';
-
-        // RBAC görünür + varsayılan
-        setRbacUIVisible(true);
-        setPermissionsToUI({ modules: { 'denetim-takip': true }, features: {} });
+        try {
+            await pb.collection('user_devices').delete(deviceId);
+            loadUserDevices(userIdInput.value);
+        } catch (error) {
+            console.error('Cihaz silinirken hata:', error);
+            alert('Hata: Cihaz silinemedi.');
+        }
     }
 
-    function goToListView() {
-        formView.style.display = 'none';
-        listView.style.display = 'block';
+    /**
+     * Cihazı kilitler
+     */
+    async function handleToggleLockDevice(deviceId, currentLockStatus) {
+        const newLockStatus = !currentLockStatus;
+        const actionText = newLockStatus ? 'kilitlemek' : 'kilidini açmak';
+
+        if (!confirm(`Bu cihazı ${actionText} istediğinizden emin misiniz?`)) {
+            return;
+        }
+        try {
+            await pb.collection('user_devices').update(deviceId, { 'is_locked': newLockStatus });
+            loadUserDevices(userIdInput.value);
+        } catch (error) {
+            console.error('Cihaz kilitlenirken hata:', error);
+            alert('Hata: Cihaz durumu güncellenemedi.');
+        }
     }
 
-    function goToFormViewNewUser() {
-        listView.style.display = 'none';
-        formView.style.display = 'block';
-        resetFormToNewUser();
+    /**
+     * Kullanıcı rolü değiştikçe cihaz limiti alanını ve RBAC alanını göster/gizle.
+     */
+    function handleRoleChange() {
+        const isAdmin = userRoleSelect.value === 'admin';
+        if (isAdmin) {
+            userDeviceLimitSection.style.display = 'none';
+            setRbacUIVisible(false);
+        } else {
+            userDeviceLimitSection.style.display = 'block';
+            setRbacUIVisible(true);
+        }
     }
 
-    // --- Event Listeners ---
-    if (addNewUserBtn) {
-        addNewUserBtn.addEventListener('click', () => goToFormViewNewUser());
+    // --- 5. Olay Dinleyicileri (Event Listeners) ---
+
+    function setupEventListeners() {
+        if (addNewUserBtn) addNewUserBtn.addEventListener('click', handleNew);
+        if (cancelUserFormBtn) cancelUserFormBtn.addEventListener('click', showListView);
+        if (form) form.addEventListener('submit', handleFormSubmit);
+
+        if (toggleBanUserBtn) toggleBanUserBtn.addEventListener('click', handleToggleBanUser);
+
+        if (userRoleSelect) userRoleSelect.addEventListener('change', handleRoleChange);
     }
 
-    if (cancelUserFormBtn) {
-        cancelUserFormBtn.addEventListener('click', () => goToListView());
-    }
+    // --- 6. Modülü Başlat ---
+    setupEventListeners();
 
-    if (saveUserBtn && form) {
-        form.addEventListener('submit', handleSaveUser);
-    }
+    // RBAC UI'yi hazırla (varsayılan: client görünür)
+    buildRbacUIOnce();
+    setRbacUIVisible(true);
+    setPermissionsToUI({ modules: { 'denetim-takip': true }, features: {} });
 
-    if (toggleBanUserBtn) {
-        toggleBanUserBtn.addEventListener('click', handleToggleBan);
-    }
-
-    if (userRoleSelect) {
-        userRoleSelect.addEventListener('change', () => {
-            const isClient = userRoleSelect.value === 'client';
-
-            if (userDeviceLimitSection) userDeviceLimitSection.style.display = isClient ? 'block' : 'none';
-            if (userBanSection) userBanSection.style.display = isClient ? 'block' : 'none';
-
-            if (devicesHr) devicesHr.style.display = isClient ? 'block' : 'none';
-            if (devicesTitle) devicesTitle.style.display = isClient ? 'block' : 'none';
-            if (devicesDescription) devicesDescription.style.display = isClient ? 'block' : 'none';
-
-            // RBAC sadece client
-            setRbacUIVisible(isClient);
-        });
-    }
-
-    // --- Init ---
-    loadUsers();
+    loadUsers(); // Ana kullanıcı listesini yükle
 }

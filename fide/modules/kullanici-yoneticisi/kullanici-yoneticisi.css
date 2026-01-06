@@ -1,130 +1,131 @@
-/* ===================================================================
-   Kullanıcı Yönetimi - CSS
-   =================================================================== */
+/* /modules/kullanici-yoneticisi/kullanici-yoneticisi.css */
 
-.card {
-    padding: 20px;
-}
+/* --- TEMİZLİK YAPILDI: ORTAK STİLLER STYLE.CSS'DEN GELİYOR --- */
 
+/* Modül başlığı ve açıklama */
 .module-header {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
 }
 
 .module-title {
+    font-size: 1.8em;
+    color: #333;
     margin: 0;
 }
 
 .module-description {
-    margin-top: 10px;
-    color: #555;
-    line-height: 1.45;
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 25px;
+    border-left: 4px solid #007bff;
+    background-color: #eaf6ff;
+    padding: 10px 15px;
+    border-radius: 4px;
 }
 
+/* Tablo Stilleri */
 .table-responsive {
-    width: 100%;
     overflow-x: auto;
+    margin-bottom: 20px;
 }
 
 #users-table {
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
+    border-collapse: separate; /* border-radius için */
+    border-spacing: 0;
+    margin-top: 20px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden; /* rounded köşelerin görünmesi için */
 }
 
-#users-table th,
+#users-table thead {
+    background-color: #f5f5f5;
+}
+
+/* Tablo Başlığı ve Hücre Stilleri */
 #users-table td {
+    padding: 12px 15px;
     border-bottom: 1px solid #eee;
-    padding: 12px 10px;
     text-align: left;
     vertical-align: middle;
+    font-size: 0.9em;
+    color: #333;
 }
 
 #users-table th {
-    background: #f5f5f5;
-    font-weight: 700;
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+    vertical-align: middle;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+#users-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+#users-table tbody tr:hover {
+    background-color: #f9f9f9;
 }
 
 .actions-cell {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-start;
-    align-items: center;
-    flex-wrap: wrap;
+    white-space: nowrap;
+}
+.actions-cell button {
+    margin-right: 8px;
+}
+.actions-cell button:last-child {
+    margin-right: 0;
 }
 
-.btn-sm {
-    padding: 6px 10px;
-    font-size: 0.85em;
-}
-
-.btn-success,
-.btn-primary,
-.btn-warning,
-.btn-danger,
-.btn-secondary {
-    border: 1px solid transparent;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 700;
-}
-
-.btn-success {
-    background: #28a745;
-    color: #fff;
-}
-
-.btn-primary {
-    background: #007bff;
-    color: #fff;
-}
-
-.btn-secondary {
-    background: #6c757d;
-    color: #fff;
-}
-
-.btn-warning {
-    background: #ffc107;
-    color: #111;
-}
-
-.btn-danger {
-    background: #dc3545;
-    color: #fff;
-}
-
-.role-badge,
-.status-badge {
+/* Rol Etiketi Stilleri */
+.role-badge {
     display: inline-block;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 0.78rem;
-    line-height: 1;
-    font-weight: 800;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: white;
+    text-align: center;
 }
 
 .role-badge.role-admin {
-    background-color: #343a40;
-    color: #fff;
+    background-color: #007bff;
 }
 
 .role-badge.role-client {
-    background-color: #17a2b8;
-    color: #fff;
+    background-color: #6c757d;
+}
+
+/* Durum Etiketleri */
+.status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: white;
+    text-align: center;
 }
 
 .status-badge.status-active {
     background-color: #28a745;
-    color: #fff;
 }
 
 .status-badge.status-banned {
     background-color: #dc3545;
-    color: #fff;
 }
 
 /* Form Stilleri */
@@ -189,6 +190,7 @@
     cursor: not-allowed;
 }
 
+
 /* Güvenlik Ayarları başlığı */
 #user-form-view h4 {
     font-size: 1.2em;
@@ -198,7 +200,6 @@
     padding-bottom: 10px;
     border-bottom: 1px dashed #cfe2ff;
 }
-
 #user-form-view h4 .fas {
     margin-right: 8px;
 }
@@ -321,246 +322,113 @@
 }
 
 /* =========================================================
-   RBAC (Modül & Özellik Yetkileri)
-   - Modern & kompakt görünüm
-   - Sadece RBAC bölümünü etkiler
+   RBAC – Hover / Active / Selected / Disabled Görsel İyileştirme
+   (RBAC UI JS ile label + input olarak üretiliyor)
    ========================================================= */
 
-#user-permissions-section.rbac-section {
+#user-permissions-section {
     margin-top: 22px;
     padding-top: 16px;
     border-top: 1px solid #eee;
 }
 
-#user-permissions-section.rbac-section .rbac-header {
-    margin-bottom: 12px;
+#user-permissions-section h3 {
+    font-size: 1.15em;
+    color: #111827;
+    margin-bottom: 8px;
 }
 
-#user-permissions-section.rbac-section .rbac-title {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
+#user-permissions-section p {
+    color: #4b5563;
+    line-height: 1.5;
 }
 
-#user-permissions-section.rbac-section .rbac-subtitle {
-    margin: 6px 0 0 0;
-    opacity: 0.85;
-    line-height: 1.45;
-    font-size: 0.92rem;
+#user-permissions-section .rbac-grid {
+    /* JS inline olarak display/grid veriyor ama burada genel ayarlar */
+    align-items: stretch;
 }
 
-#user-permissions-section.rbac-section .rbac-panels {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-@media (max-width: 900px) {
-    #user-permissions-section.rbac-section .rbac-panels {
-        grid-template-columns: 1fr;
-    }
-}
-
-#user-permissions-section.rbac-section .rbac-panel {
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    background: #fff;
-    padding: 12px;
-}
-
-#user-permissions-section.rbac-section .rbac-panel-title {
-    font-weight: 800;
-    font-size: 0.92rem;
-    margin-bottom: 10px;
-}
-
-#user-permissions-section.rbac-section .rbac-module-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 10px;
-}
-
-#user-permissions-section.rbac-section .rbac-module-item {
+/* RBAC kartı (label) */
+#user-permissions-section .rbac-grid > label {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    user-select: none;
 
-    padding: 10px 12px;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    background: #fff;
+    /* JS inline padding/border veriyor; daha modern görünüm için eziyoruz */
+    padding: 10px 12px !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
 
     cursor: pointer;
-    user-select: none;
-    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease,
+        border-color 0.12s ease,
+        background-color 0.12s ease,
+        opacity 0.12s ease;
 }
 
-#user-permissions-section.rbac-section .rbac-module-item:hover {
+/* Checkbox görünümü */
+#user-permissions-section .rbac-grid > label input[type="checkbox"] {
+    transform: scale(1.15);
+    margin: 0;
+    cursor: pointer;
+}
+
+/* Metin rengi (senin ekranda “beyaz yazı” sorunu yaşamaman için burada net koyu) */
+#user-permissions-section .rbac-grid > label span {
+    color: #111827;
+    font-size: 0.95em;
+    line-height: 1.2;
+}
+
+/* Hover */
+#user-permissions-section .rbac-grid > label:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.06);
-    border-color: rgba(59, 130, 246, 0.35);
+    border-color: #93c5fd !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.07);
+    background: #f8fbff !important;
 }
 
-#user-permissions-section.rbac-section .rbac-module-item.is-locked {
+/* Active (tıklama anı) */
+#user-permissions-section .rbac-grid > label:active {
+    transform: translateY(0px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+/* Selected (checked) – kartın seçili olduğu çok net belli olsun */
+#user-permissions-section .rbac-grid > label:has(input[type="checkbox"]:checked) {
+    border-color: #3b82f6 !important;
+    background: rgba(59, 130, 246, 0.08) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+/* Selected + Hover */
+#user-permissions-section .rbac-grid > label:has(input[type="checkbox"]:checked):hover {
+    background: rgba(59, 130, 246, 0.10) !important;
+}
+
+/* Disabled – kart tamamen “pasif” hissi versin */
+#user-permissions-section .rbac-grid > label:has(input[type="checkbox"]:disabled) {
+    opacity: 0.55;
+    background: #f3f4f6 !important;
+    border-color: #e5e7eb !important;
+    box-shadow: none;
     cursor: not-allowed;
-    opacity: 0.7;
 }
 
-#user-permissions-section.rbac-section .rbac-module-item.is-locked:hover {
+#user-permissions-section .rbac-grid > label:has(input[type="checkbox"]:disabled) input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+#user-permissions-section .rbac-grid > label:has(input[type="checkbox"]:disabled) span {
+    color: #374151;
+}
+
+/* Disabled kart hover olmasın */
+#user-permissions-section .rbac-grid > label:has(input[type="checkbox"]:disabled):hover {
     transform: none;
     box-shadow: none;
-    border-color: #e5e7eb;
-}
-
-#user-permissions-section.rbac-section .rbac-module-meta {
-    min-width: 0;
-}
-
-#user-permissions-section.rbac-section .rbac-module-name {
-    font-weight: 800;
-    line-height: 1.2;
-}
-
-#user-permissions-section.rbac-section .rbac-module-hint {
-    margin-top: 4px;
-    font-size: 0.78rem;
-    opacity: 0.75;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-#user-permissions-section.rbac-section .rbac-module-control {
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex: 0 0 auto;
-}
-
-#user-permissions-section.rbac-section .rbac-module-checkbox {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-}
-
-#user-permissions-section.rbac-section .rbac-switch {
-    width: 42px;
-    height: 24px;
-    border-radius: 999px;
-    border: 1px solid #e5e7eb;
-    background: #f3f4f6;
-    position: relative;
-    transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-#user-permissions-section.rbac-section .rbac-switch::after {
-    content: "";
-    width: 18px;
-    height: 18px;
-    border-radius: 999px;
-    background: #fff;
-    position: absolute;
-    top: 50%;
-    left: 3px;
-    transform: translateY(-50%);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    transition: left 0.15s ease;
-}
-
-#user-permissions-section.rbac-section .rbac-module-item:has(.rbac-module-checkbox:checked) .rbac-switch {
-    background: rgba(59, 130, 246, 0.95);
-    border-color: rgba(59, 130, 246, 0.95);
-}
-
-#user-permissions-section.rbac-section .rbac-module-item:has(.rbac-module-checkbox:checked) .rbac-switch::after {
-    left: 20px;
-}
-
-#user-permissions-section.rbac-section .rbac-feature-groups {
-    display: grid;
-    gap: 10px;
-}
-
-#user-permissions-section.rbac-section .rbac-feature-group {
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    background: #fff;
-    padding: 10px 12px;
-}
-
-#user-permissions-section.rbac-section .rbac-feature-group.is-disabled {
-    opacity: 0.7;
-}
-
-#user-permissions-section.rbac-section .rbac-feature-group-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-#user-permissions-section.rbac-section .rbac-feature-group-title {
-    font-weight: 900;
-    font-size: 0.92rem;
-}
-
-#user-permissions-section.rbac-section .rbac-feature-group-badge {
-    font-size: 0.72rem;
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: #f3f4f6;
-    border: 1px solid #e5e7eb;
-    opacity: 0.85;
-    white-space: nowrap;
-}
-
-#user-permissions-section.rbac-section .rbac-feature-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 8px 10px;
-}
-
-#user-permissions-section.rbac-section .rbac-feature-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    padding: 8px 10px;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    background: #fff;
-
-    cursor: pointer;
-    user-select: none;
-}
-
-#user-permissions-section.rbac-section .rbac-feature-item:hover {
-    border-color: rgba(59, 130, 246, 0.35);
-    background: rgba(59, 130, 246, 0.04);
-}
-
-#user-permissions-section.rbac-section .rbac-feature-item:has(.rbac-feature-checkbox:disabled) {
-    cursor: not-allowed;
-    opacity: 0.7;
-    background: #f3f4f6;
-}
-
-#user-permissions-section.rbac-section .rbac-feature-label {
-    font-size: 0.92rem;
-    line-height: 1.2;
-}
-
-#user-permissions-section.rbac-section .rbac-empty {
-    margin-top: 10px;
-    padding: 10px 12px;
-    border: 1px dashed #d1d5db;
-    border-radius: 12px;
-    background: #f9fafb;
-    opacity: 0.85;
-    font-size: 0.9rem;
+    border-color: #e5e7eb !important;
+    background: #f3f4f6 !important;
 }
