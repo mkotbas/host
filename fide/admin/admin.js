@@ -4,7 +4,7 @@ const modules = [
         id: 'denetim-takip',
         name: 'Denetim Takip',
         icon: 'fas fa-calendar-check',
-        path: './modules/denetim-takip/'
+        path: '../modules/denetim-takip/'
     },
     {
         id: 'fide-main-parent', // Ana menü ID'si
@@ -15,7 +15,7 @@ const modules = [
                 id: 'eposta-taslagi', // Bu ID, modül klasör adıyla aynı olmalı
                 name: 'E-posta Taslağı',
                 icon: 'fas fa-envelope-open-text',
-                path: './modules/eposta-taslagi/'
+                path: '../modules/eposta-taslagi/'
             }
         ]
     },
@@ -23,25 +23,25 @@ const modules = [
         id: 'bayi-yoneticisi', // ID, modül klasör adıyla aynı olmalı
         name: 'Bayi Yöneticisi',
         icon: 'fas fa-store',
-        path: './modules/bayi-yoneticisi/'
+        path: '../modules/bayi-yoneticisi/'
     },
     {
         id: 'soru-yoneticisi',
         name: 'Soru Yöneticisi',
         icon: 'fas fa-edit',
-        path: './modules/soru-yoneticisi/'
+        path: '../modules/soru-yoneticisi/'
     },
     {
         id: 'veritabani-yonetim',
         name: 'Veritabanı Yönetimi',
         icon: 'fas fa-cogs',
-        path: './modules/veritabani-yonetim/'
+        path: '../modules/veritabani-yonetim/'
     },
     {
         id: 'kullanici-yoneticisi',
         name: 'Kullanıcı Yönetimi',
         icon: 'fas fa-users-cog',
-        path: './modules/kullanici-yoneticisi/'
+        path: '../modules/kullanici-yoneticisi/'
     }
 ];
 
