@@ -1,7 +1,8 @@
 /**
  * Kullanıcı Yönetimi Modülü
- * GÜNCELLEME: Tablo yükleme durumu (loading state) ve boş veri kontrolü eklendi.
- * CSS yüklenmese bile tablonun çalıştığını görebilmek için hata yakalama güçlendirildi.
+ * GÜNCELLEME: Modül & Yetkiler alanı için 'Inline Style' koruması eklendi.
+ * Sayfa ilk açılışında stil kaymasını önlemek için JS tarafında stil zorlaması yapıldı.
+ * Tablo yükleme ve boş veri kontrolleri de dahildir.
  */
 export function initializeKullaniciYoneticisiModule(pbInstance) {
 
@@ -84,29 +85,44 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         return perms;
     }
 
-    // --- RBAC UI Oluşturucu ---
+    // --- RBAC UI Oluşturucu (GÜNCELLENDİ: Stil Garantisi) ---
     function buildRbacUIOnce() {
         if (rbacSectionEl) return;
         
         rbacSectionEl = document.createElement('div');
         rbacSectionEl.id = 'user-permissions-section';
         
-        // CSS yüklenmese bile düzgün görünsün diye inline style ekledik (fallback)
+        // CSS yüklenmese bile düzgün görünsün diye JS ile stilleri zorluyoruz (Inline Style)
+        rbacSectionEl.className = 'modern-card'; 
+        rbacSectionEl.style.backgroundColor = '#ffffff';
+        rbacSectionEl.style.border = '1px solid #e5e7eb';
+        rbacSectionEl.style.borderRadius = '12px';
+        rbacSectionEl.style.padding = '25px';
+        rbacSectionEl.style.marginTop = '20px';
+        rbacSectionEl.style.marginBottom = '20px';
+        rbacSectionEl.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+        
         rbacSectionEl.innerHTML = `
-            <h4 class="section-divider" style="margin-top:20px; border-bottom:1px solid #ddd; padding-bottom:5px;">
-                <span><i class="fas fa-key"></i> Modül & Yetkiler</span>
+            <h4 class="section-divider" style="margin-top:0; border-bottom:1px solid #f3f4f6; padding-bottom:10px; margin-bottom:15px;">
+                <span style="background:#fff; color:#374151; padding:0 10px; font-weight:600;">
+                    <i class="fas fa-key"></i> Modül & Yetkiler
+                </span>
             </h4>
-            <p style="margin:10px 0 20px 0; color:#666; font-size:0.9em;">
+            <p style="margin:0 0 20px 0; color:#4b5563; font-size:0.9em; line-height:1.5;">
                 Kullanıcının erişebileceği modülleri ve özel yetkilerini buradan yönetebilirsiniz.
             </p>
 
-            <div id="rbac-modules-box" style="margin-bottom: 20px;">
-                <h5 style="margin: 0 0 10px 0; font-size:0.95em; color:#333; font-weight:bold;">Modül Erişimi</h5>
+            <div id="rbac-modules-box" style="margin-bottom: 25px;">
+                <h5 style="margin: 0 0 12px 0; font-size:0.95em; color:#111827; font-weight:700; text-transform:uppercase;">
+                    <i class="fas fa-cubes"></i> Modül Erişimi
+                </h5>
                 <div class="rbac-grid"></div>
             </div>
 
             <div id="rbac-features-box">
-                <h5 style="margin: 0 0 10px 0; font-size:0.95em; color:#333; font-weight:bold;">Modül İçi Özellikler</h5>
+                <h5 style="margin: 0 0 12px 0; font-size:0.95em; color:#111827; font-weight:700; text-transform:uppercase;">
+                    <i class="fas fa-tools"></i> Modül İçi Özellikler
+                </h5>
                 <div class="rbac-grid"></div>
             </div>
         `;
@@ -123,30 +139,42 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         const modulesGrid = rbacSectionEl.querySelector('#rbac-modules-box .rbac-grid');
         const featuresGrid = rbacSectionEl.querySelector('#rbac-features-box .rbac-grid');
 
-        // Grid stili yoksa diye manuel stil ekle
-        modulesGrid.style.display = 'grid';
-        modulesGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
-        modulesGrid.style.gap = '10px';
-        
-        featuresGrid.style.display = 'grid';
-        featuresGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(240px, 1fr))';
-        featuresGrid.style.gap = '10px';
+        // Grid stili
+        const gridStyle = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;';
+        modulesGrid.style.cssText = gridStyle;
+        featuresGrid.style.cssText = gridStyle;
+
+        // Label Stili (Kutu Görünümü)
+        const labelStyle = 'display: flex; align-items: center; gap: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 15px; cursor: pointer; user-select: none; transition: all 0.2s;';
 
         RBAC_MODULE_DEFS.forEach(m => {
             const wrap = document.createElement('label');
+            wrap.style.cssText = labelStyle;
+            
             wrap.innerHTML = `
-                <input type="checkbox" class="rbac-module-checkbox" data-module-id="${m.id}">
-                <span>${m.label}</span>
+                <input type="checkbox" class="rbac-module-checkbox" data-module-id="${m.id}" style="transform: scale(1.2); cursor: pointer;">
+                <span style="font-size:0.9em; color:#374151; font-weight:500;">${m.label}</span>
             `;
+            
+            // Hover efekti (JS ile)
+            wrap.onmouseenter = () => { wrap.style.borderColor = '#93c5fd'; wrap.style.backgroundColor = '#fff'; };
+            wrap.onmouseleave = () => { wrap.style.borderColor = '#e5e7eb'; wrap.style.backgroundColor = '#f9fafb'; };
+
             modulesGrid.appendChild(wrap);
         });
 
         RBAC_FEATURE_DEFS.forEach(f => {
             const wrap = document.createElement('label');
+            wrap.style.cssText = labelStyle;
+            
             wrap.innerHTML = `
-                <input type="checkbox" class="rbac-feature-checkbox" data-feature-key="${f.key}">
-                <span>${f.label}</span>
+                <input type="checkbox" class="rbac-feature-checkbox" data-feature-key="${f.key}" style="transform: scale(1.2); cursor: pointer;">
+                <span style="font-size:0.9em; color:#374151; font-weight:500;">${f.label}</span>
             `;
+
+            wrap.onmouseenter = () => { wrap.style.borderColor = '#93c5fd'; wrap.style.backgroundColor = '#fff'; };
+            wrap.onmouseleave = () => { wrap.style.borderColor = '#e5e7eb'; wrap.style.backgroundColor = '#f9fafb'; };
+
             featuresGrid.appendChild(wrap);
         });
 
@@ -157,7 +185,14 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 const featureCbs = rbacSectionEl.querySelectorAll('.rbac-feature-checkbox');
                 featureCbs.forEach(cb => {
                     cb.disabled = !t.checked;
-                    if (!t.checked) cb.checked = false;
+                    if (!t.checked) {
+                        cb.checked = false;
+                        cb.parentElement.style.opacity = '0.5';
+                        cb.parentElement.style.cursor = 'not-allowed';
+                    } else {
+                        cb.parentElement.style.opacity = '1';
+                        cb.parentElement.style.cursor = 'pointer';
+                    }
                 });
             }
         });
@@ -193,6 +228,14 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         const isBayiEnabled = bayiModule ? bayiModule.checked : false;
         rbacSectionEl.querySelectorAll('.rbac-feature-checkbox').forEach(cb => {
             cb.disabled = !isBayiEnabled;
+            // Görsel durumu güncelle
+            if(!isBayiEnabled) {
+                cb.parentElement.style.opacity = '0.5';
+                cb.parentElement.style.cursor = 'not-allowed';
+            } else {
+                cb.parentElement.style.opacity = '1';
+                cb.parentElement.style.cursor = 'pointer';
+            }
             if (!isBayiEnabled) cb.checked = false;
         });
     }
