@@ -16,8 +16,8 @@ function loadScript(url) {
 
 /**
  * Bayi Yöneticisi Modülü
- * GÜNCELLENDİ: Modüler Yetki Sistemi (Permissions) entegre edildi.
- * Admin olmayan kullanıcılar için veri izolasyonu ve özellik kısıtlaması.
+ * GÜNCELLENDİ: Arayüz Temizliği Eklendi.
+ * Yetkisi olmayan kullanıcılar için boş kutular (container) tamamen kaldırılıyor.
  */
 export async function initializeBayiYoneticisiModule(pbInstance) {
     
@@ -26,15 +26,15 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         await loadScript('https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js');
     } catch (error) {
         console.error('Excel kütüphanesi yüklenemedi:', error);
-        alert('Raporlama ve İçe Aktarma özelliği için gerekli Excel kütüphanesi yüklenemedi. Lütfen internet bağlantınızı kontrol edin.');
+        // Hata mesajını sadece adminlere göstermek daha şık olabilir ama şimdilik kalsın.
     }
 
     // --- Global Değişkenler ve DOM Elementleri ---
-    const pb = pbInstance; // PocketBase bağlantısı
-    let allBayiler = []; // Veritabanından çekilen tüm bayilerin tam listesi
-    let allUsers = [];   // Veritabanından çekilen tüm kullanıcıların (Denetim Uzmanları) listesi
+    const pb = pbInstance; 
+    let allBayiler = []; 
+    let allUsers = [];   
 
-    // YENİ: Mevcut kullanıcı ve yetkileri
+    // Mevcut kullanıcı ve yetkileri
     const currentUser = pb.authStore.model;
     const isClient = currentUser && currentUser.role === 'client';
     const permissions = currentUser?.permissions?.bayi_yoneticisi || {};
@@ -42,27 +42,26 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
 
     // Ana elementler
     const container = document.getElementById('bayi-yonetici-container');
-    if (!container) return; // HTML yüklenmemişse modülü durdur
+    if (!container) return; 
 
     const mainTable = document.getElementById('bayi-table'); 
     const tableBody = document.getElementById('bayi-table-body');
     const loadingSpinner = document.getElementById('loading-spinner');
     
-    // Modal (Açılır Pencere) elementleri (Ekle/Düzenle)
+    // Modal elementleri
     const modal = document.getElementById('bayi-modal');
     const modalTitle = document.getElementById('modal-title');
     const bayiForm = document.getElementById('bayi-form');
     const bayiIdInput = document.getElementById('bayi-id');
     const uzmanSelect = document.getElementById('sorumlu_kullanici');
     
-    // Arama çubukları ve filtreler
+    // Filtreler
     const dropdownFilter = document.getElementById('kontrol-filtresi');
     const searchInputs = document.querySelectorAll('.column-search-input');
     
-    // Raporlama (Dışa Aktarma) elementleri
+    // Raporlama
     const columnCheckboxesContainer = document.getElementById('column-checkboxes');
     
-    // Raporlama (Dışa Aktarma) için Sütun Tanımları
     const fields = [
         { key: 'bolge', label: 'Bölge' },
         { key: 'sehir', label: 'Şehir' },
@@ -76,7 +75,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     const allFieldKeys = fields.map(f => f.key);
 
 
-    // --- YENİ: İçe Aktarma (Import) için Global Değişkenler ---
+    // --- İçe Aktarma Değişkenleri ---
     const dbFieldsForMapping = [
         { key: 'bayiKodu', label: 'Bayi Kodu (Zorunlu)' },
         { key: 'bayiAdi', label: 'Bayi Adı' },
@@ -89,11 +88,10 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     ];
     
     const requiredFields = ['bayiKodu'];
-
     let excelHeaders = []; 
     let excelData = [];    
 
-    // İçe Aktarma (Import) Modal Elementleri
+    // Modal Elementleri
     const importModal = document.getElementById('import-modal');
     const importStep1 = document.getElementById('import-step-1');
     const importStep2 = document.getElementById('import-step-2');
@@ -107,7 +105,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     const importLoadingText = document.getElementById('import-loading-text');
     const importResults = document.getElementById('import-results');
 
-    // Toplu Atama (Bulk Assign) Modal Elementleri
     const btnOpenBulkAssignModal = document.getElementById('btn-open-bulk-assign-modal');
     const bulkAssignModal = document.getElementById('bulk-assign-modal');
     const bulkAssignFilterBolge = document.getElementById('bulk-assign-filter-bolge');
@@ -120,31 +117,40 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     const bulkAssignLoadingText = document.getElementById('bulk-assign-loading-text');
 
 
-    // --- YENİ: Özellik (Feature) Kısıtlamalarını Uygula ---
+    // --- YENİ: Gelişmiş Özellik Kısıtlamaları (Arayüz Temizliği) ---
     function applyFeatureRestrictions() {
         if (isClient) {
             // 1. CRUD Yetkisi Yoksa (Yeni Ekle)
             if (!features.crud_operations) {
                 const btnNew = document.getElementById('btn-yeni-bayi');
-                if (btnNew) btnNew.remove(); // Butonu tamamen sil
+                if (btnNew) btnNew.remove(); 
             }
 
             // 2. Excel Yetkisi Yoksa (İçe/Dışa Aktar)
+            // Sadece butonları değil, KUTULARI (Container) sil.
             if (!features.excel_import_export) {
-                const exportSection = document.querySelector('.export-section'); // Varsa kapsayıcı sınıf
-                const btnExport = document.getElementById('btn-export-excel');
-                const btnImport = document.getElementById('btn-open-import-modal');
-                const btnView = document.getElementById('btn-view-selected'); // Sütun seçimi
-                
-                if (btnExport) btnExport.closest('.col-md-3')?.remove() || btnExport.remove();
-                if (btnImport) btnImport.remove();
-                // Raporlama bölümünü tamamen gizle istersen:
-                // document.getElementById('report-controls').style.display = 'none';
+                // İçe Aktar Bölümü
+                const importSection = container.querySelector('.report-import-section');
+                if (importSection) importSection.remove();
+
+                // Dışa Aktar Bölümü
+                const exportSection = container.querySelector('.report-export-section');
+                if (exportSection) exportSection.remove();
             }
 
             // 3. Toplu Atama Yetkisi Yoksa
+            // Kutuyu tamamen sil
             if (!features.bulk_assign) {
-                if (btnOpenBulkAssignModal) btnOpenBulkAssignModal.remove();
+                const assignSection = container.querySelector('.report-assign-section');
+                if (assignSection) assignSection.remove();
+            }
+
+            // Eğer TÜM raporlama kutuları silindiyse, dıştaki Fieldset'i de sil ki boş kalmasın.
+            // (Opsiyonel ama şık olur)
+            const remainingSections = container.querySelectorAll('.fieldset-content-wrapper > div');
+            if (remainingSections.length === 0) {
+                const fieldset = container.querySelector('.report-fieldset');
+                if (fieldset) fieldset.remove();
             }
         }
     }
@@ -157,25 +163,20 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         
         showLoading(true);
         try {
-            // Kullanıcıları çek (Herkes admin veya client, sorumlu ataması için lazım)
             allUsers = await pb.collection('users').getFullList({ sort: 'name' });
             
-            // --- VERİ İZOLASYONU ---
-            // Eğer kullanıcı CLIENT ise, sadece sorumlu olduğu bayileri çek.
-            // Eğer ADMIN ise, tüm bayileri çek.
+            // Veri İzolasyonu
             let filterString = '';
             if (isClient) {
                 filterString = `sorumlu_kullanici = "${currentUser.id}"`;
             }
 
-            // Bayileri çek
             allBayiler = await pb.collection('bayiler').getFullList({
                 sort: '-created',
                 expand: 'sorumlu_kullanici',
-                filter: filterString // Filtreyi uygula
+                filter: filterString 
             });
 
-            // Veriyi işle (Email yerine İsim gösterimi için)
             allBayiler.forEach(bayi => {
                 const user = bayi.expand?.sorumlu_kullanici;
                 bayi.sorumlu_kullanici_email = user?.name || ''; 
@@ -248,7 +249,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
                 </td>
             `;
 
-            // Event listener'ları sadece butonlar varsa ekle
             const btnEdit = tr.querySelector('.btn-edit');
             const btnDelete = tr.querySelector('.btn-delete');
             
@@ -265,12 +265,8 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     function populateUserDropdown() {
         uzmanSelect.innerHTML = '<option value="">Atanmamış</option>'; 
         
-        // Eğer kullanıcı Client ise ve CRUD yetkisi varsa bile, başkasına atama yapamaz.
-        // Sadece kendini görebilir veya bu alan disable edilir.
-        // Biz burada basitçe: Client ise bu alanı disable yapalım.
         if (isClient) {
             uzmanSelect.disabled = true;
-            // Kendi adını ekle ve seç
             const option = document.createElement('option');
             option.value = currentUser.id;
             option.textContent = currentUser.name || currentUser.email;
@@ -279,7 +275,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             return;
         }
 
-        // Admin ise listeyi doldur
         uzmanSelect.disabled = false;
         allUsers.forEach(user => {
             if (user.role === 'client' || user.role === 'admin') {
@@ -308,6 +303,9 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
 
 
     function populateColumnCheckboxes() {
+        // Eğer container silindiyse (yetki yoksa) işlemi yapma
+        if (!columnCheckboxesContainer) return;
+
         columnCheckboxesContainer.innerHTML = '';
         fields.forEach(field => {
             const label = document.createElement('label');
@@ -320,7 +318,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     // --- CRUD Fonksiyonları ---
 
     function handleNewBayi() {
-        // Ekstra güvenlik: Yetkisiz çağırmayı engelle
         if (isClient && !features.crud_operations) {
             alert("Yetkisiz işlem.");
             return;
@@ -330,9 +327,8 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         bayiIdInput.value = ''; 
         modalTitle.textContent = 'Yeni Bayi Ekle'; 
         
-        // Client ise sorumlu kullanıcıyı otomatik kendisi yap
         if (isClient) {
-            populateUserDropdown(); // Tekrar tetikle ki disable/seçili olsun
+            populateUserDropdown(); 
         }
         
         modal.style.display = 'flex'; 
@@ -356,11 +352,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         document.getElementById('yonetmen').value = bayi.yonetmen || ''; 
         document.getElementById('email').value = bayi.email || '';
         
-        // Sorumlu kullanıcı ataması
         if (isClient) {
-             // Client ise dropdown zaten disable ve kendi seçili
-             // Ama veritabanında başka biri atanmışsa? (Normalde olamaz filter var ama)
-             // Yine de UI'da kendi görünür.
         } else {
              document.getElementById('sorumlu_kullanici').value = bayi.sorumlu_kullanici || ''; 
         }
@@ -404,7 +396,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             ilce: document.getElementById('ilce').value,
             yonetmen: document.getElementById('yonetmen').value, 
             email: document.getElementById('email').value,
-            // Client ise bu alan disabled olduğu için formdan gelmez, manuel ekle
             sorumlu_kullanici: isClient ? currentUser.id : (document.getElementById('sorumlu_kullanici').value || null)
         };
         
@@ -496,15 +487,13 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     // --- Raporlama ---
 
     function getFilteredDataForExport() {
+        if (!columnCheckboxesContainer) return { headers: [], data: [] }; // Container yoksa boş dön
+
         const selectedKeys = Array.from(columnCheckboxesContainer.querySelectorAll('.column-check:checked'))
             .map(cb => cb.value);
 
         const keysToExport = selectedKeys.length > 0 ? selectedKeys : allFieldKeys;
         const selectedHeaders = keysToExport.map(key => fields.find(f => f.key === key).label);
-
-        // Mevcut filtreli veriyi (allBayiler üzerinden değil) kullanmak daha doğru olurdu ama
-        // yapı gereği applyAllFilters ile aynı mantığı kullanıyoruz.
-        // allBayiler zaten loadModuleData içinde filtrelendiği için GÜVENLİ.
         
         const filterValue = dropdownFilter.value;
         const searchValues = {};
@@ -513,10 +502,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         });
         
         const filteredBayiler = allBayiler.filter(bayi => {
-            // ... (Filtre mantığı aynı) ...
-            // Kod tekrarını önlemek için applyAllFilters mantığı buraya kopyalandı varsayalım.
-            // Kısa yol: applyAllFilters sonucunu global bir değişkende tutmak olabilirdi ama
-            // güvenlik için her seferinde hesaplamak daha iyidir.
             let passDropdown = true;
             switch (filterValue) {
                 case 'no_bolge': passDropdown = !bayi.bolge; break;
@@ -563,6 +548,8 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     }
 
     function applyColumnVisibility() {
+        if (!columnCheckboxesContainer) return; // Container yoksa işlem yapma
+
         const selectedKeys = Array.from(columnCheckboxesContainer.querySelectorAll('.column-check:checked'))
             .map(cb => cb.value);
 
@@ -619,11 +606,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
 
 
     // --- Excel İçe Aktarma ---
-    // (Bu fonksiyonlar aynı kalır, sadece en başta buton yoksa tetiklenmezler)
-    // Güvenlik için her birinin başına yetki kontrolü ekleyebiliriz ama 
-    // UI'dan butonu sildiğimiz için erişim zaten zor. 
-    // Yine de 'openImportModal' içine ekleyelim.
-
     function openImportModal() {
         if (isClient && !features.excel_import_export) {
             alert("Bu işlem için yetkiniz yok.");
