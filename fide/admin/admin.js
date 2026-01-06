@@ -12,7 +12,7 @@ const modules = [
         icon: 'fas fa-home',
         submenu: [
             {
-                id: 'eposta-taslagi', // Bu ID, modül klasör adıyla aynı olmalı
+                id: 'eposta-taslagi',
                 name: 'E-posta Taslağı',
                 icon: 'fas fa-envelope-open-text',
                 path: '../modules/eposta-taslagi/'
@@ -20,7 +20,7 @@ const modules = [
         ]
     },
     {
-        id: 'bayi-yoneticisi', // ID, modül klasör adıyla aynı olmalı
+        id: 'bayi-yoneticisi',
         name: 'Bayi Yöneticisi',
         icon: 'fas fa-store',
         path: '../modules/bayi-yoneticisi/'
@@ -71,9 +71,30 @@ function getCurrentUserId() {
     return pb?.authStore?.isValid ? pb.authStore.model?.id : null;
 }
 
+/**
+ * KRİTİK: Client girişinde pb.authStore.model çoğu zaman permissions alanını içermez.
+ * Bu nedenle, initialize aşamasında DB'den users kaydı çekilip liveUserRecord doldurulur.
+ */
+async function seedLiveUserRecordFromDb() {
+    if (!pb?.authStore?.isValid) return;
+    const userId = getCurrentUserId();
+    if (!userId) return;
+
+    try {
+        liveUserRecord = await pb.collection('users').getOne(userId);
+    } catch (e) {
+        console.warn('RBAC seed failed (users.getOne):', e);
+        liveUserRecord = null;
+    }
+}
+
 function canAccessModule(moduleId) {
     if (!pb?.authStore?.isValid) return false;
     if (isAdminUser()) return true;
+
+    // Güvenli başlangıç: denetim-takip, client için “en azından giriş sonrası boş kalma” riskini azaltır.
+    // Single Source of Truth yine DB'den seed ile gelir; bu sadece seed gecikirse kilitlenmeyi önler.
+    if (moduleId === 'denetim-takip') return true;
 
     const perms = getNormalizedPermissions(liveUserRecord || pb.authStore.model);
     return perms.modules[moduleId] === true;
@@ -105,7 +126,6 @@ function redirectToSafeModule() {
 window.onload = initializeAdminPanel;
 
 async function initializeAdminPanel() {
-    // --- GÜVENLİK KONTROLÜ ---
     const isLoggedIn = pb.authStore.isValid;
     const userRole = isLoggedIn ? pb.authStore.model.role : null;
 
@@ -113,20 +133,23 @@ async function initializeAdminPanel() {
     updateConnectionIndicator(isLoggedIn);
 
     if (userRole === 'admin' || userRole === 'client') {
-        // RBAC: Menü ve modül erişimi %100 users.permissions üzerinden yönetilir (admin her şeye erişir).
+
+        // ✅ KRİTİK DÜZELTME: Menü/render/guard öncesi DB'den gerçek users kaydını seed et
+        await seedLiveUserRecordFromDb();
+
         renderModuleMenu();
 
-        // Varsayılan modül: denetim-takip (herkes için güvenli başlangıç)
         if (!currentModuleId) {
             loadModule('denetim-takip');
         }
 
-        // Anlık ban + canlı yetki değişimi + cihaz kilidi dinlemeleri
         subscribeToCurrentUserChanges();
         subscribeToCurrentUserDevices();
 
+        // İlk açılışta modüller dinlesin diye event yayınla
+        emitRbacUpdate();
+
     } else {
-        // Kullanıcı admin/client değilse veya giriş yapmamışsa, erişimi engelle
         document.getElementById('module-menu').innerHTML = '';
         const container = document.getElementById('module-container');
         container.innerHTML = `
@@ -147,12 +170,10 @@ function renderModuleMenu() {
     const menu = document.getElementById('module-menu');
     menu.innerHTML = '';
 
-    // RBAC: Admin tüm modülleri görür. Client sadece permissions.modules true olanları görür.
     const accessibleModules = isAdminUser()
         ? modules
         : modules
             .map(m => {
-                // submenu destekli yapı: parent görünürlüğü, child erişimi olanlara göre belirlenir
                 if (m.submenu && Array.isArray(m.submenu)) {
                     const allowedSubs = m.submenu.filter(s => canAccessModule(s.id));
                     if (allowedSubs.length === 0) return null;
@@ -205,7 +226,7 @@ function renderModuleMenu() {
     });
 }
 
-// --- MODÜL YÜKLEYİCİ (MODERN YAPI - RBAC GUARD EKLENDİ) ---
+// --- MODÜL YÜKLEYİCİ (Modern import + RBAC GUARD) ---
 async function loadModule(moduleId) {
     let module;
     for (const main of modules) {
@@ -224,7 +245,6 @@ async function loadModule(moduleId) {
 
     if (!module) { console.error("Modül bulunamadı:", moduleId); return; }
 
-    // RBAC GUARD: Yetkisi yoksa modülü hiç yükleme
     if (!canAccessModule(moduleId)) {
         console.warn('RBAC: Modül erişimi reddedildi:', moduleId);
         alert('Bu modüle erişim yetkiniz yok.');
@@ -234,7 +254,6 @@ async function loadModule(moduleId) {
 
     currentModuleId = moduleId;
 
-    // Aktif menü öğesini ayarla
     document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
     const activeLink = document.querySelector(`.sidebar-menu a[data-module-id="${moduleId}"]`);
     if (activeLink) {
@@ -252,12 +271,10 @@ async function loadModule(moduleId) {
     title.innerHTML = `<i class="${module.icon}"></i> ${module.name}`;
 
     try {
-        // HTML Yükle
         const htmlResponse = await fetch(`${module.path}${module.id}.html`);
         if (!htmlResponse.ok) throw new Error(`Dosya bulunamadı: ${module.id}.html`);
         container.innerHTML = await htmlResponse.text();
 
-        // CSS Yükle
         const cssId = `module-css-${module.id}`;
         if (!document.getElementById(cssId)) {
             const link = document.createElement('link');
@@ -267,23 +284,19 @@ async function loadModule(moduleId) {
             document.head.appendChild(link);
         }
 
-        // JAVASCRIPT YÜKLEYİCİ (Modern 'import' yöntemi)
         const oldScript = document.getElementById('module-script');
         if (oldScript) oldScript.remove();
 
         const formattedId = module.id.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
         const initFunctionName = `initialize${formattedId}Module`;
-
-        // Önbelleğe takılmamak için URL'ye zaman damgası ekle
         const moduleUrl = `${module.path}${module.id}.js?v=${new Date().getTime()}`;
 
-        // 'import()' komutu, 'export' içeren modern JS dosyalarını yükler
         const moduleExports = await import(moduleUrl);
 
         if (typeof moduleExports[initFunctionName] === 'function') {
             moduleExports[initFunctionName](pb);
         } else {
-            console.error(`Modern modül (import) başlatma fonksiyonu bulunamadı: ${initFunctionName}. Modülün .js dosyasının bu fonksiyonu 'export' ettiğinden emin olun.`);
+            console.error(`Modern modül başlatma fonksiyonu bulunamadı: ${initFunctionName}.`);
         }
 
     } catch (error) {
@@ -292,11 +305,6 @@ async function loadModule(moduleId) {
     }
 }
 
-/**
- * RBAC + Güvenlik: Giriş yapan kullanıcının kendi users kaydını anlık dinler.
- * - is_banned => anında oturumu düşürür (kill switch)
- * - permissions/role değişikliği => menüyü günceller, açık modül yetkisiz kaldıysa dışarı atar
- */
 function subscribeToCurrentUserChanges() {
     if (!pb || !pb.authStore.isValid) return;
 
@@ -309,7 +317,6 @@ function subscribeToCurrentUserChanges() {
 
             liveUserRecord = e.record;
 
-            // Kill Switch: Ban
             if (e.record.is_banned === true) {
                 console.warn('RBAC: Kullanıcı banlandı. Oturum sonlandırılıyor.');
                 alert('Hesabınız yönetici tarafından kilitlendi. Sistemden çıkış yapılıyor.');
@@ -318,7 +325,6 @@ function subscribeToCurrentUserChanges() {
                 return;
             }
 
-            // Menü + açık modül kontrolü
             renderModuleMenu();
 
             if (currentModuleId && !canAccessModule(currentModuleId)) {
@@ -327,7 +333,6 @@ function subscribeToCurrentUserChanges() {
                 redirectToSafeModule();
             }
 
-            // Modüller UI güncelleyebilsin diye event yay
             emitRbacUpdate();
         });
     } catch (error) {
@@ -335,13 +340,6 @@ function subscribeToCurrentUserChanges() {
     }
 }
 
-/**
- * Cihaz Kilidi (Realtime): user_devices koleksiyonunu dinler.
- * - Kullanıcının cihazı is_locked=true olursa anında oturumu düşürür.
- *
- * Not: PocketBase subscribe filtrelemesi sürüme göre değişebilir; bu nedenle '*' dinleyip
- * ilgili kullanıcı kaydını ayıklıyoruz.
- */
 function subscribeToCurrentUserDevices() {
     if (!pb || !pb.authStore.isValid) return;
 
@@ -369,8 +367,7 @@ function subscribeToCurrentUserDevices() {
     }
 }
 
-
-// --- ARAYÜZ GÜNCELLEME FONKSİYONLARI (DEĞİŞİKLİK YOK)---
+// --- UI yardımcıları ---
 function updateAuthUI(isLoggedIn) {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
@@ -394,7 +391,6 @@ function updateConnectionIndicator(isLoggedIn) {
     statusText.textContent = isLoggedIn ? 'Buluta Bağlı' : 'Bağlı Değil';
 }
 
-// --- GİRİŞ/ÇIKIŞ OLAY DİNLEYİCİLERİ (DEĞİŞİKLİK YOK) ---
 function setupEventListeners() {
     const loginToggleBtn = document.getElementById('login-toggle-btn');
     const logoutBtn = document.getElementById('logout-btn');
