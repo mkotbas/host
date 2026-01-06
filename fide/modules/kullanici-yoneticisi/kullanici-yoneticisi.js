@@ -294,6 +294,7 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
     /**
      * Cihaz listesini HTML tablosuna çizer.
+     * FIX: device_info + last_login alanlarını kullanır (admin UI kolonlarıyla uyumlu).
      * GÜNCELLEME 2.29: Butonlara type="button" eklendi.
      */
     function renderDevicesTable(devices) {
@@ -306,19 +307,31 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
         devices.forEach(device => {
             const tr = document.createElement('tr');
-            const lockText = device.is_locked ? 'Kilitli' : 'Açık';
-            const lockClass = device.is_locked ? 'status-banned' : 'status-active';
-            const createdDate = new Date(device.created).toLocaleString('tr-TR', {
-                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-            });
+
+            const deviceInfo = (device.device_info && String(device.device_info).trim() !== '')
+                ? device.device_info
+                : 'Bilinmeyen Cihaz';
+
+            const lastLoginSource = device.last_login || device.lastLogin || device.created;
+            const lastLoginText = lastLoginSource
+                ? new Date(lastLoginSource).toLocaleString('tr-TR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                })
+                : '-';
+
+            const isLocked = device.is_locked === true;
+            const statusText = isLocked ? 'Kilitli' : 'Açık';
+            const statusClass = isLocked ? 'status-banned' : 'status-active';
 
             tr.innerHTML = `
-                <td data-label="Cihaz ID">${device.device_id || '-'}</td>
-                <td data-label="Durum"><span class="status-badge ${lockClass}">${lockText}</span></td>
-                <td data-label="Kayıt Tarihi">${createdDate}</td>
+                <td data-label="Cihaz Bilgisi">${deviceInfo}</td>
+                <td data-label="Son Giriş">${lastLoginText}</td>
+                <td data-label="Durum"><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td class="actions-cell">
                     <button type="button" class="btn-danger btn-sm btn-device-delete"><i class="fas fa-trash"></i> Sil</button>
-                    <button type="button" class="btn-warning btn-sm btn-device-lock"><i class="fas fa-lock"></i> ${device.is_locked ? 'Kilidi Aç' : 'Kilitle'}</button>
+                    <button type="button" class="btn-warning btn-sm btn-device-lock">
+                        <i class="fas fa-lock"></i> ${isLocked ? 'Kilidi Aç' : 'Kilitle'}
+                    </button>
                 </td>
             `;
 
@@ -526,7 +539,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
         try {
             if (userId) {
-                // --- GÜNCELLEME (GÜNCELLEME 2.28) ---
                 await pb.collection('users').update(userId, data);
 
                 // Arka plandaki veriyi (cache) güncelle
@@ -536,7 +548,6 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 alert('Değişiklikler kaydedildi.');
 
             } else {
-                // --- YENİ KAYIT (DAVRANIŞ DEĞİŞMEDİ) ---
                 if (!userPasswordInput.value || !userPasswordConfirmInput.value) {
                     throw new Error('Yeni kullanıcı için parola zorunludur.');
                 }
