@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.26</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.27</strong></p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.23)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.27)</li>
                 <li><strong>KURAL: Dökümanı "Canlı" Tut (BAĞLAYICI):</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. <strong>Sistemin o anki çalışan son halini</strong> tek doğru kaynak olarak yansıtır. Herhangi bir özellik eklendiğinde, çıkarıldığında veya davranışı değiştiğinde <strong>yeni madde, not veya başlık eklenmez</strong>; ilgili mevcut madde <strong>güncel ve doğru çalışma mantığını</strong> yansıtacak şekilde yerinde güncellenir. README her zaman sistemin o anki tek doğru tarifidir.</li>
                 <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
                 <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
@@ -584,7 +584,7 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
                             </ol>
                             Ürün seçilmemiş olsa dahi, statik metin veya not varsa soru e-postaya dahil edilir.
                         
-                            <p><strong>Güvenli Veri Kontrolü (Çökme Önleme):</strong> Seçilen bayi, yıl geçişi nedeniyle puanları sıfırlanmış olsa veya ilgili Excel listesinde hiç bulunmasa bile <code>generateEmail</code> akışı durmaz ve taslak e-posta her koşulda oluşturulur. Bu durumda; yönetmen adı <strong>öncelikle PocketBase bayi kaydındaki</strong> <code>bayiler.yonetmen</code> alanından alınır. Eğer bu bilgi yoksa Excel (DiDe) verisindeki <code>'Bayi Yönetmeni'</code> alanı yedek olarak kullanılır; hiçbir kaynakta bulunamazsa varsayılan <code>Yetkili</code> kullanılır. DiDe/FiDe puan tablolarında eksik değerler otomatik olarak <code>-</code> ile doldurulur.</p>
+                            <p><strong>Güvenli Veri Kontrolü (Çökme Önleme):</strong> Seçilen bayi, yıl geçişi nedeniyle puanları sıfırlanmış olsa veya ilgili Excel listesinde hiç bulunmasa bile <code>generateEmail</code> akışı durmaz ve taslak e-posta her koşulda oluşturulur. Bu durumda; yönetmen adı <strong>öncelikle PocketBase bayi kaydındaki</strong> <code>bayiler.yonetmen</code> alanından alınır. Eğer bu bilgi yoksa Excel (DiDe) verisindeki <code>'Bayi Yönetmeni'</code> alanı yedek olarak kullanılır; hiçbir kaynakta bulunamazsa varsayılan <code>Yetkili</code> kullanılır. DiDe/FiDe puan tabloları <strong>sabit 12 aylık (Ocak-Aralık) formatta oluşturulur ve</strong> eksik değerler otomatik olarak <code>-</code> ile doldurulur.</p>
 </li>
                     </ul>
                 </li>
@@ -1152,3 +1152,10 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
 
 </body>
 </html>
+SELF-CHECK RAPORU
+- <!DOCTYPE html> mevcut mu? : EVET
+- </html> mevcut mu? : EVET
+- Toplam section sayısı (orijinal): 18
+- Toplam section sayısı (çıktı): 18
+- Section listesi birebir mi? : EVET
+- Herhangi bir bölüm kısaltıldı mı? : HAYIR
