@@ -5,7 +5,7 @@
             <button id="add-new-user-btn" class="btn-success btn-sm"><i class="fas fa-plus"></i> Yeni Kullanıcı Ekle</button>
         </div>
         <p class="module-description">
-            Sisteme kayıtlı tüm kullanıcıları burada yönetebilirsiniz.
+            Sisteme kayıtlı tüm kullanıcıları burada yönetebilirsiniz. Bir kullanıcıyı düzenlemek veya silmek için ilgili satırdaki butonları kullanın.
         </p>
         <div class="table-responsive">
             <table id="users-table">
@@ -27,8 +27,7 @@
     </div>
 
     <div id="user-form-view" style="display: none;">
-        <h3 id="user-form-title" class="module-title" style="margin-bottom: 20px;">Yeni Kullanıcı Ekle</h3>
-        
+        <h3 id="user-form-title">Yeni Kullanıcı Ekle</h3>
         <form id="user-form">
             <input type="hidden" id="user-id-input">
             
@@ -60,93 +59,39 @@
                 </select>
             </div>
 
-            <div id="permission-management-section" style="display: none;">
-                <h4><i class="fas fa-user-tag"></i> Modül ve Özellik Yetkileri</h4>
-                <p class="text-muted" style="font-size: 0.9em; margin-bottom: 15px;">
-                    Standart kullanıcının erişebileceği modülleri ve özellikleri seçin.
-                </p>
-
-                <div class="permission-group">
-                    <div class="permission-header">
-                        <input type="checkbox" id="perm-bayi-yoneticisi-access" class="perm-main-check" data-target="sub-perm-bayi">
-                        <label for="perm-bayi-yoneticisi-access">Bayi Yöneticisi Modülü</label>
-                        <span class="perm-badge">Modül Erişimi</span>
-                    </div>
-                    <div class="sub-permissions" id="sub-perm-bayi">
-                        <div class="sub-perm-item">
-                            <input type="checkbox" id="perm-bayi-export">
-                            <label for="perm-bayi-export">Raporlama & Görüntüleme (Dışa Aktar)</label>
-                        </div>
-                        <div class="sub-perm-item">
-                            <input type="checkbox" id="perm-bayi-import">
-                            <label for="perm-bayi-import">Excel'den Bayi Aktar (İçe Aktar)</label>
-                        </div>
-                        <div class="sub-perm-item">
-                            <input type="checkbox" id="perm-bayi-assign">
-                            <label for="perm-bayi-assign">Toplu Denetim Uzmanı Atama</label>
-                        </div>
-                        <div class="sub-perm-item">
-                            <input type="checkbox" id="perm-bayi-crud">
-                            <label for="perm-bayi-crud">Yeni Bayi Ekleme / Silme / Düzenleme</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="permission-group">
-                    <div class="permission-header">
-                        <input type="checkbox" id="perm-denetim-takip-access" class="perm-main-check" data-target="sub-perm-denetim">
-                        <label for="perm-denetim-takip-access">Denetim Takip (Dashboard)</label>
-                        <span class="perm-badge">Modül Erişimi</span>
-                    </div>
-                    <div class="sub-permissions" id="sub-perm-denetim">
-                         <div class="sub-perm-item">
-                             <small style="color: #6b7280;">
-                                 <i class="fas fa-info-circle"></i> Kullanıcı sadece kendi verilerini görür.
-                             </small>
-                         </div>
-                    </div>
-                </div>
-
-                <div class="permission-group">
-                    <div class="permission-header">
-                        <input type="checkbox" id="perm-eposta-taslagi-access">
-                        <label for="perm-eposta-taslagi-access">E-posta Taslağı Yönetimi</label>
-                        <span class="perm-badge">Admin Modülü</span>
-                    </div>
-                </div>
-            </div>
-
             <hr>
             
             <h4><i class="fas fa-shield-alt"></i> Güvenlik Ayarları</h4>
 
             <div class="form-row">
+                
                 <div class="form-group form-group-checkbox-modern" id="mobile-access-box">
+                    <label>Mobil Erişim İzni</label>
                     <div class="checkbox-wrapper">
                         <input type="checkbox" id="user-mobile-access-checkbox">
-                        <label for="user-mobile-access-checkbox">Mobil Cihazlardan Erişime İzin Ver</label>
+                        <label for="user-mobile-access-checkbox" class="checkbox-label">Mobil Cihazlardan Erişime İzin Ver</label>
                     </div>
                 </div>
 
                 <div class="form-group" id="user-device-limit-section" style="display: none;">
                     <label for="user-device-limit-input">Bireysel Cihaz Limiti (Max: 5)</label>
                     <input type="number" id="user-device-limit-input" min="1" max="5" value="1">
+                    <small>Bu standart kullanıcının kaç farklı cihazdan giriş yapabileceğini belirler.</small>
                 </div>
-            </div> 
-
-            <div class="form-group" id="user-ban-section" style="display: none;">
-                <label>Hesap Durumu</label>
+            </div> <div class="form-group" id="user-ban-section" style="display: none;">
+                <label>Hesap Durumu (Anlık Kilitleme)</label>
                 <button type="button" id="toggle-ban-user-btn" class="btn-danger" style="width: 100%;">
-                    <i class="fas fa-ban"></i> Hesabı Kilitle (BAN)
+                    <i class="fas fa-ban"></i> Bu Kullanıcının Hesabını Kilitle (BAN)
                 </button>
+                <small>Bu işlem anlıktır. Kullanıcı o anda ne yaparsa yapsın sistemden atılır ve "Hesap kilitlendi" mesajı alır.</small>
             </div>
-            
             <hr id="devices-hr" style="display: none;">
+
             <h4 id="devices-title" style="display: none;"><i class="fas fa-desktop"></i> Kayıtlı Cihazlar</h4>
-            <p id="devices-description" style="display: none;">Kullanıcının giriş yaptığı cihazlar.</p>
+            <p id="devices-description" style="display: none;">Kullanıcının giriş yaptığı ve kayıtlı olan cihazları. Buradan tek tek cihazları silebilir (sıfırlayabilir) veya kilitleyebilirsiniz.</p>
             
-            <div id="devices-list-loading" style="display: none; text-align: center;">
-                <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
+            <div id="devices-list-loading" style="display: none; text-align: center; padding: 20px;">
+                <i class="fas fa-spinner fa-spin"></i> Cihazlar yükleniyor...
             </div>
             
             <div class="table-responsive" id="user-devices-table-wrapper" style="display: none;">
@@ -159,7 +104,8 @@
                             <th>İşlemler</th>
                         </tr>
                     </thead>
-                    <tbody id="user-devices-table-body"></tbody>
+                    <tbody id="user-devices-table-body">
+                        </tbody>
                 </table>
             </div>
             
