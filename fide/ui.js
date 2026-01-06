@@ -280,12 +280,14 @@ export async function generateEmail() {
     });
 
     const cYear = new Date().getFullYear();
-    const cMonth = new Date().getMonth() + 1;
-    let mHeaders = Array.from({length: cMonth}, (_, i) => `<th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${state.monthNames[i + 1] || i + 1}</th>`).join('');
+    // const cMonth = new Date().getMonth() + 1; // Artık buna ihtiyaç yok, sabit 12 ay olacak.
     
-    // Veri olmayan bayi için otomatik "-" (çizgi) ekleme mantığı
-    let dScores = Array.from({length: cMonth}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(storeInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
-    let fScores = Array.from({length: cMonth}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(fideStoreInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
+    // 12 Ay için başlık döngüsü (length: 12)
+    let mHeaders = Array.from({length: 12}, (_, i) => `<th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${state.monthNames[i + 1] || i + 1}</th>`).join('');
+    
+    // Veri olmayan bayi için otomatik "-" (çizgi) ekleme mantığı - 12 Ay için
+    let dScores = Array.from({length: 12}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(storeInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
+    let fScores = Array.from({length: 12}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(fideStoreInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
     
     const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #ddd;"><thead><tr><th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #ddd; font-weight: bold; padding: 6px;">DiDe</td>${dScores}</tr><tr><td style="border: 1px solid #ddd; font-weight: bold; padding: 6px;">FiDe</td>${fScores}</tr></tbody></table></div>`;
 
