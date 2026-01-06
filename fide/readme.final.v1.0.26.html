@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.21</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.26</strong></p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.21)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.23)</li>
                 <li><strong>KURAL: Dökümanı "Canlı" Tut (BAĞLAYICI):</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. <strong>Sistemin o anki çalışan son halini</strong> tek doğru kaynak olarak yansıtır. Herhangi bir özellik eklendiğinde, çıkarıldığında veya davranışı değiştiğinde <strong>yeni madde, not veya başlık eklenmez</strong>; ilgili mevcut madde <strong>güncel ve doğru çalışma mantığını</strong> yansıtacak şekilde yerinde güncellenir. README her zaman sistemin o anki tek doğru tarifidir.</li>
                 <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
                 <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
@@ -212,10 +212,126 @@
                 <li><strong>Temiz Kod ve Ölü Kod Temizliği:</strong> Zamanla yapılan güncellemelerden sonra devre dışı bırakılan kodları (eski fonksiyonlar, kullanılmayan değişkenler) "yorum satırı" haline getirip dosyada bırakma. Bu kodları <strong>tamamen sil</strong>.</li>
                 <li><strong>Mantıksal İyileştirme (Basitleştirme):</strong> Kod mantığını her zaman en sade ve performanslı olacak şekilde kurgula.</li>
                 <li><strong>HER İŞLEM ÖNCESİ DOSYA TALEBİ (KRİTİK):</strong> Herhangi bir özellik ekleme, güncelleme, silme veya düzeltme isteği geldiğinde; ilgili dosyaları benden <strong>mutlaka tekrar iste</strong>. <strong>Eğer yapılacak işlem arayüzde (HTML) görsel bir değişiklik içeriyorsa, tasarımın bütünlüğü için ilgili <code>.css</code> dosyasını da mutlaka talep et.</strong> Dosyalar sohbet geçmişinde daha önce paylaşılmış olsa bile, benden güncel hallerini istemeden ve ben yüklemeden asla kod yazmaya başlama.</li>
-                <li><strong>DÖKÜMAN GÜNCELLEME ONAYI:</strong> İstenilen tüm kodlama ve güncelleme işlemleri bittiğinde, bana <strong>"Dökümanı güncellemek ister misiniz?"</strong> diye sor. Ben <strong>"güncelle"</strong> diyene kadar <code>readme.html</code> dosyasında herhangi bir değişiklik yapma.</li>
+                
+                <li><strong>README GÜNCELLEME FORMATI (ZORUNLU):</strong> <code>readme.html</code> güncellemeleri varsayılan olarak <strong>DIFF/PATCH</strong> formatında yapılır.
+                    <ul>
+                        <li><strong>DIFF:</strong> Sadece değişen satır/bloklar “eski → yeni” şeklinde verilir.</li>
+                        <li><strong>PATCH:</strong> “Şu bloğu bul → bununla değiştir” gibi uygulanabilir talimat verilir.</li>
+                        <li><strong>TAM DOSYA:</strong> Sadece kullanıcı açıkça “tam dosya ver” derse, dosyanın tamamı eksiksiz üretilir (gerekirse <code>&lt;!-- PART x/y --&gt;</code> ile).</li>
+                    </ul>
+                </li>
+<li><strong>DÖKÜMAN GÜNCELLEME ONAYI:</strong> İstenilen tüm kodlama ve güncelleme işlemleri bittiğinde, bana <strong>"Dökümanı güncellemek ister misiniz?"</strong> diye sor. Ben <strong>"güncelle"</strong> diyene kadar <code>readme.html</code> dosyasında herhangi bir değişiklik yapma.</li>
             
                 <li><strong>PROSEDÜR (ZORUNLU):</strong> Herhangi bir kod, mantık veya davranış değişikliği tamamlandığında, <code>readme.html</code> dosyası güncellenmeden önce kullanıcıya <strong>“Dökümanı güncellemek ister misiniz?”</strong> sorusu sorulur; kullanıcı açıkça onay vermeden dokümanda değişiklik yapılmaz.</li>
 </ol>
+<hr>
+<h3><i class="fas fa-shield-alt"></i> ZORUNLU TESLİM FORMATI (Düzeltici Prompt)</h3>
+<p><strong>Aşağıdaki kurallar bağlayıcıdır. Uymayan çıktı geçersizdir.</strong></p>
+<ul>
+    <li><strong>TAM DOSYA:</strong> Çıktı <code>&lt;!DOCTYPE html&gt;</code> ile başlamalı ve <code>&lt;/html&gt;</code> ile bitmelidir.</li>
+    <li><strong>EKSİLTME YASAĞI:</strong> Hiçbir bölüm kısaltılamaz, özetlenemez, atlanamaz. <code>...</code> yasaktır.</li>
+    <li><strong>BÜTÜNLÜK:</strong> Güncelleme sadece ilgili mevcut bölümlerde yapılır, diğer tüm <code>&lt;section id="..."&gt;</code> bölümleri birebir korunur.</li>
+    <li><strong>CHANGELOG YOK:</strong> Yeni madde ekleme; doğru çalışma mantığını yerinde güncelle.</li>
+    <li><strong>DOĞRULAMA:</strong> Güncelleme sonrası <code>&lt;!DOCTYPE html&gt;</code>, <code>&lt;/html&gt;</code> ve ana section sayısı raporlanmalıdır.</li>
+    <li><strong>ÇIKTI LİMİTİ:</strong> Tek parça mümkün değilse <code>&lt;!-- PART x/y --&gt;</code> şeklinde parça parça verilir; son parça <code>&lt;/html&gt;</code> ile biter.</li>
+
+<hr>
+<h3><i class="fas fa-ban"></i> ÖZETLEME / SADELEŞTİRME YASAĞI (KRİTİK EK)</h3>
+
+<p>
+Bu doküman <strong>overview, özet veya tanıtım dokümanı değildir</strong>.
+Her <code>&lt;section id="..."&gt;</code> bölümü <strong>zorunlu ve bağlayıcıdır</strong>.
+</p>
+
+<ul>
+    <li><strong>SECTION KAYBI YASAKTIR:</strong> Orijinal dokümandaki herhangi bir
+        <code>&lt;section id="..."&gt;</code> bloğunun silinmesi, kısaltılması veya atlanması
+        <strong>HATALI ÇIKTI</strong> sayılır.</li>
+
+    <li><strong>SECTION SAYISI KONTROLÜ (ZORUNLU):</strong>
+        Güncelleme sonrası yapay zeka aşağıdaki bilgileri raporlamak zorundadır:
+        <ul>
+            <li>Orijinal section sayısı</li>
+            <li>Güncel section sayısı</li>
+            <li>Sayım eşleşmiyorsa çıktı <strong>GEÇERSİZDİR</strong></li>
+        </ul>
+    </li>
+
+    <li><strong>OVERVIEW MODU YASAK:</strong>
+        Yapay zeka bu dokümanı yeniden yazamaz, sadeleştiremez veya “daha okunur” hâle getiremez.
+        Sadece <strong>yerinde güncelleme</strong> yapabilir.</li>
+
+    <li><strong>DETAY GEREKSİZ SAYILAMAZ:</strong>
+        “Uzun”, “detay”, “advanced”, “deep” gibi gerekçelerle hiçbir bölüm atlanamaz.</li>
+
+    <li><strong>EKSİK ÇIKTI DAVRANIŞI:</strong>
+        Herhangi bir bölüm eksikse, yapay zeka bunu başarısız çıktı olarak işaretlemeli
+        ve kendiliğinden yeniden üretim önermelidir.</li>
+</ul>
+
+<hr>
+<h3><i class="fas fa-brain"></i> MODEL-BAĞIMSIZ AI SÖZLEŞMESİ (GENEL)</h3>
+
+<p>
+Bu bölüm; <strong>Gemini, ChatGPT, Claude, DeepSeek</strong> ve gelecekte kullanılacak
+<strong>tüm yapay zeka araçları</strong> için geçerlidir. Model, sağlayıcı veya sürüm fark etmeksizin
+aşağıdaki kurallar bağlayıcıdır.
+</p>
+
+<ul>
+    <li><strong>MODEL BAĞIMSIZLIK:</strong> Yapay zeka, kendi model sınırlamalarını (token limiti, özetleme eğilimi vb.) gerekçe göstererek içerik atlayamaz.</li>
+    <li><strong>YENİDEN YAZMA YASAĞI:</strong> Bu doküman baştan yazılamaz. Sadece talep edilen değişiklikler yerinde uygulanır.</li>
+    <li><strong>OKU → KARŞILAŞTIR → YAZ:</strong> Yapay zeka, önce mevcut dosyayı eksiksiz okuduğunu, ardından neyi değiştirdiğini bildiğini ve sadece bu farkları uyguladığını varsaymalıdır.</li>
+    <li><strong>ÇIKTI DENETİMİ:</strong> Yapay zeka, çıktının eksiksiz olduğunu varsaymak yerine kontrol etmekle yükümlüdür.</li>
+    <li><strong>HATA = DUR:</strong> Emin olunmayan hiçbir durumda tahmini çıktı üretilmez. Yazma durdurulur ve kullanıcıdan talimat istenir.</li>
+    <li><strong>ÖZET / SADELEŞTİRME MODU YASAK:</strong> “Daha okunur”, “daha kısa”, “optimize” gerekçeleriyle metin değiştirilemez.</li>
+    <li><strong>İHLAL SONUCU:</strong> Bu kurallara uymayan her çıktı otomatik olarak <strong>geçersiz</strong> sayılır.</li>
+</ul>
+
+<p>
+Bu sözleşme, yapay zekanın “yardımcı” değil <strong>uygulayıcı</strong> rolünde olduğunu varsayar.
+</p>
+
+<hr>
+<h3><i class="fas fa-stop-circle"></i> FAIL-FAST PROTOKOLÜ (ZORUNLU)</h3>
+
+<p>
+Yapay zeka, bu doküman üzerinde işlem yaparken <strong>en ufak bir belirsizlik</strong>,
+eksik bağlam, dosya parçası, token limiti veya bölüm sayısı uyuşmazlığı tespit ederse
+<strong>derhal yazmayı DURDURMAK zorundadır</strong>.
+</p>
+
+<ul>
+    <li><strong>HTML ÜRETİMİ YASAK:</strong> Fail-fast tetiklendiğinde hiçbir HTML çıktısı verilmez.</li>
+    <li><strong>SADECE HATA BİLDİR:</strong> Yapay zeka yalnızca hangi bilginin eksik olduğunu açıkça belirtir.</li>
+    <li><strong>TAHMİN YASAĞI:</strong> Eksik bilgi “varsayım” ile doldurulamaz.</li>
+</ul>
+
+<hr>
+<h3><i class="fas fa-clipboard-check"></i> ZORUNLU SELF-CHECK RAPORU</h3>
+
+<p>
+Güncelleme tamamlandıktan sonra, yapay zeka çıktının <strong>sonuna</strong>
+aşağıdaki kontrol raporunu eklemek zorundadır:
+</p>
+
+<pre>
+SELF-CHECK RAPORU
+- <!DOCTYPE html> mevcut mu? : EVET/HAYIR
+- </html> mevcut mu? : EVET/HAYIR
+- Toplam section sayısı (orijinal): X
+- Toplam section sayısı (çıktı): Y
+- Section listesi birebir mi? : EVET/HAYIR
+- Herhangi bir bölüm kısaltıldı mı? : EVET/HAYIR
+
+Eğer herhangi bir cevap HAYIR ise çıktı GEÇERSİZDİR.
+</pre>
+
+<p>
+Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</strong>.
+</p>
+</ul>
+
         </div>
         <section id="introduction">
             <h2><i class="fas fa-rocket"></i> Giriş ve Teknoloji Yığını</h2>
@@ -468,7 +584,7 @@
                             </ol>
                             Ürün seçilmemiş olsa dahi, statik metin veya not varsa soru e-postaya dahil edilir.
                         
-                            <p><strong>Güvenli Veri Kontrolü (Çökme Önleme):</strong> Seçilen bayi, yıl geçişi nedeniyle puanları sıfırlanmış olsa veya ilgili Excel listesinde hiç bulunmasa bile <code>generateEmail</code> akışı durmaz ve taslak e-posta her koşulda oluşturulur. Bu durumda; yönetmen adı için varsayılan <code>Yetkili</code> kullanılır ve DiDe/FiDe puan tablolarında eksik değerler otomatik olarak <code>-</code> ile doldurulur.</p>
+                            <p><strong>Güvenli Veri Kontrolü (Çökme Önleme):</strong> Seçilen bayi, yıl geçişi nedeniyle puanları sıfırlanmış olsa veya ilgili Excel listesinde hiç bulunmasa bile <code>generateEmail</code> akışı durmaz ve taslak e-posta her koşulda oluşturulur. Bu durumda; yönetmen adı <strong>öncelikle PocketBase bayi kaydındaki</strong> <code>bayiler.yonetmen</code> alanından alınır. Eğer bu bilgi yoksa Excel (DiDe) verisindeki <code>'Bayi Yönetmeni'</code> alanı yedek olarak kullanılır; hiçbir kaynakta bulunamazsa varsayılan <code>Yetkili</code> kullanılır. DiDe/FiDe puan tablolarında eksik değerler otomatik olarak <code>-</code> ile doldurulur.</p>
 </li>
                     </ul>
                 </li>
@@ -649,7 +765,7 @@
                 <li><strong>Eksik Bayi Verisi (Excel'de Yok):</strong> Seçilen bayi Excel listesinde bulunmasa bile sistem hata vermez; e-posta taslağı üretimi devam eder.</li>
                 <li><strong>Yıl Geçişi / Puanların Boş Olması:</strong> Yeni yıla geçişle puanlar sıfırlansa veya skorlar gelmese bile, puan tablosu hücreleri otomatik olarak <code>-</code> ile doldurulur.</li>
                 <li><strong>E-posta Taslağı Sürekliliği:</strong> <code>generateEmail</code> fonksiyonunda bayi verisi bulunamadığında artık <code>alert</code> + <code>return</code> ile süreç durdurulmaz.</li>
-                <li><strong>Yönetmen Adı Varsayılanı:</strong> Bayi yönetmeni bilgisi yoksa e-posta selamlamasında varsayılan isim <strong>Yetkili</strong> kullanılır.</li>
+                <li><strong>Yönetmen Adı Kaynağı ve Varsayılan:</strong> E-posta selamlamasında yönetmen adı <strong>öncelikle PocketBase</strong> bayi kaydındaki <code>bayiler.yonetmen</code> alanından alınır. Bu bilgi yoksa Excel (DiDe) verisindeki <code>'Bayi Yönetmeni'</code> alanı yedek olarak kullanılır; hiçbir kaynakta bulunamazsa varsayılan <strong>Yetkili</strong> kullanılır.</li>
             </ul>
 
             <h3>Beklenen Sonuç (Hızlı)</h3>
@@ -675,7 +791,7 @@
                 <li>PocketBase'de kayıtlı bir bayiyi seç, ancak DiDe/FiDe Excel verilerinde bu bayi kodunun bulunmadığından emin ol.</li>
                 <li>E-posta taslağını üret.</li>
                 <li><strong>Beklenen:</strong> Sistem uyarı penceresi (<code>alert</code>) ile durmaz; e-posta taslağı oluşur.</li>
-                <li><strong>Beklenen:</strong> Selamlama satırında yönetmen adı yoksa varsayılan <strong>Yetkili</strong> kullanılır.</li>
+                <li><strong>Beklenen:</strong> Selamlama satırında yönetmen adı <strong>öncelikle PocketBase</strong> bayi kaydından gelir. PocketBase’de de yoksa Excel (DiDe) yedeği denenir; yine yoksa varsayılan <strong>Yetkili</strong> kullanılır.</li>
             </ol>
 
             <h3>Test 3: Boş Excel / Boş Skor Dizisi</h3>
@@ -823,6 +939,7 @@
 
             <h3>Placeholder Sözleşmesi (Birebir Yazım)</h3>
             <p>Client tarafı aşağıdaki placeholder’ları birebir arar (büyük/küçük harf duyarlıdır):</p>
+            <p><strong>{YONETMEN_ADI}</strong> değeri, e-posta üretilirken <strong>öncelikle PocketBase</strong> bayi kaydındaki <code>bayiler.yonetmen</code> alanından alınır. Bu bilgi yoksa Excel (DiDe) verisindeki <code>'Bayi Yönetmeni'</code> alanı yedek olarak kullanılır; yine yoksa varsayılan <strong>Yetkili</strong> kullanılır.</p>
             <pre>
 {YONETMEN_ADI}
 {BAYI_BILGISI}
