@@ -29,7 +29,39 @@
     color: var(--ky-text);
 }
 
-/* Card container improvements (inherits existing .card if any) */
+/* --- GÜNCELLENMİŞ BUTON STİLLERİ (DAHA GÜÇLÜ SEÇİCİLER) --- */
+.ky .btn-primary, 
+.ky .btn-warning, 
+.ky .btn-danger, 
+.ky .btn-success, 
+.ky .btn-secondary {
+    text-decoration: none; 
+    cursor: pointer; 
+    border: none; 
+    border-radius: 10px;
+    padding: 10px 16px; 
+    font-weight: 600; 
+    transition: all 0.3s ease;
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 8px;
+    box-shadow: var(--ky-shadow-sm);
+}
+
+.ky .btn-sm { padding: 6px 12px; font-size: 12px; }
+.ky .btn-primary { background-color: var(--ky-primary); color: white; }
+.ky .btn-danger { background-color: var(--ky-danger); color: white; }
+.ky .btn-success { background-color: var(--ky-success); color: white; }
+.ky .btn-warning { background-color: var(--ky-warning); color: white; }
+
+/* Hover efektleri */
+.ky .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.ky .btn-danger:hover { opacity: 0.9; transform: translateY(-1px); }
+.ky .btn-success:hover { opacity: 0.9; transform: translateY(-1px); }
+.ky .btn-warning:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* Card container improvements */
 .ky.card {
     background: var(--ky-bg);
     border: 1px solid var(--ky-border);
