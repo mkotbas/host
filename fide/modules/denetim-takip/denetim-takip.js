@@ -52,7 +52,12 @@ export async function initializeDenetimTakipModule(pb) {
             await populateUserFilterDropdown();
         }
 
-        applyDataFilterAndRunDashboard('my_data');
+        // --- STİL GÜVENLİĞİ İÇİN GECİKMELİ BAŞLATMA ---
+        // Tarayıcının CSS dosyasını işlemesine zaman tanımak için 50ms bekletiyoruz.
+        setTimeout(() => {
+            applyDataFilterAndRunDashboard('my_data');
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+        }, 50);
 
     } else {
         const uploadArea = document.getElementById('upload-area');
@@ -60,9 +65,8 @@ export async function initializeDenetimTakipModule(pb) {
             uploadArea.innerHTML = '<p style="text-align: center; color: var(--danger);">Denetim takip sistemini kullanmak için lütfen sisteme giriş yapın.</p>';
             uploadArea.style.display = 'block';
         }
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
     }
-
-    if (loadingOverlay) loadingOverlay.style.display = 'none';
 }
 
 async function loadSettings() {
@@ -200,7 +204,7 @@ function applyDataFilterAndRunDashboard(viewId) {
 
 function runDashboard() {
     updateUILabels();
-    populateAllFilters(allStores); // İlk başta tüm filtreleri doldur
+    populateAllFilters(allStores); 
     applyAndRepopulateFilters(); 
 }
 
@@ -246,7 +250,6 @@ function setupModuleEventListeners(userRole) {
         runDashboard();
     });
 
-    // Ana Filtreler için Dinleyiciler
     safeAddListener('bolge-filter', 'change', () => { updateDropdowns('bolge'); applyAndRepopulateFilters(); });
     safeAddListener('yonetmen-filter', 'change', () => { updateDropdowns('yonetmen'); applyAndRepopulateFilters(); });
     safeAddListener('sehir-filter', 'change', () => { updateDropdowns('sehir'); applyAndRepopulateFilters(); });
@@ -258,7 +261,6 @@ function setupModuleEventListeners(userRole) {
     });
 }
 
-// Akıllı Filtreleme: Bir filtre seçildiğinde diğerlerini daraltır
 function updateDropdowns(changedFilter) {
     const filters = { bolge: 'bolge-filter', yonetmen: 'yonetmen-filter', sehir: 'sehir-filter', ilce: 'ilce-filter' };
     const values = {
@@ -268,25 +270,21 @@ function updateDropdowns(changedFilter) {
         ilce: document.getElementById(filters.ilce)?.value || 'Tümü'
     };
 
-    // Şu anki seçimlere uyan bayileri bul
     const filteredPool = allStores.filter(s => 
         (values.bolge === 'Tümü' || s.bolge === values.bolge) &&
         (values.yonetmen === 'Tümü' || s.yonetmen === values.yonetmen) &&
         (values.sehir === 'Tümü' || s.sehir === values.sehir)
     );
 
-    // Eğer Bölge değiştiyse, altındaki her şeyi güncelle
     if (changedFilter === 'bolge') {
         repopulateSelect('yonetmen-filter', filteredPool, 'yonetmen');
         repopulateSelect('sehir-filter', filteredPool, 'sehir');
         repopulateSelect('ilce-filter', filteredPool, 'ilce');
     } 
-    // YENİ: Eğer Bayi Yönetmeni değiştiyse, şehir ve ilçeleri daralt
     else if (changedFilter === 'yonetmen') {
         repopulateSelect('sehir-filter', filteredPool, 'sehir');
         repopulateSelect('ilce-filter', filteredPool, 'ilce');
     }
-    // Eğer Şehir değiştiyse ilçeleri güncelle
     else if (changedFilter === 'sehir') {
         repopulateSelect('ilce-filter', filteredPool, 'ilce');
     }
@@ -301,7 +299,6 @@ function repopulateSelect(elementId, dataPool, fieldName) {
     select.innerHTML = '<option value="Tümü">Tümü</option>';
     uniqueValues.forEach(v => { if (v) select.innerHTML += `<option value="${v}">${v}</option>`; });
     
-    // Eski seçilen değer yeni listede de varsa koru, yoksa Tümü'ne çek
     if (uniqueValues.includes(currentVal)) select.value = currentVal;
     else select.value = 'Tümü';
 }
