@@ -194,11 +194,11 @@
         <div id="ai-instructions">
             <h2><i class="fas fa-robot"></i> Yapay Zeka İçin Talimatlar (Sürüm Takibi)</h2>
             <p><strong>Bu döküman bir yapay zekaya yüklendiğinde, öncelikle bu bölüm okunmalıdır.</strong></p>
-            <p>Proje Sürümü: <strong>v1.0.28</strong></p>
+            <p>Proje Sürümü: <strong>v1.0.34</strong></p>
             
             <ol>
                 <li>Bu dökümanı yüklediğimde ilk olarak bu bölümü incele. Tüm yapıyı analiz et ve anladığını doğrula.</li>
-                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.28)</li>
+                <li>Dökümana versiyon numarası ekle. Herhangi bir güncelleme yapıldığında versiyon numarası buna göre güncellensin. (Mevcut: v1.0.34)</li>
                 <li><strong>KURAL: Dökümanı "Canlı" Tut (BAĞLAYICI):</strong> Bu döküman bir "değişiklik günlüğü" (changelog) değildir. <strong>Sistemin o anki çalışan son halini</strong> tek doğru kaynak olarak yansıtır. Herhangi bir özellik eklendiğinde, çıkarıldığında veya davranışı değiştiğinde <strong>yeni madde, not veya başlık eklenmez</strong>; ilgili mevcut madde <strong>güncel ve doğru çalışma mantığını</strong> yansıtacak şekilde yerinde güncellenir. README her zaman sistemin o anki tek doğru tarifidir.</li>
                 <li>Bir özellik eklendiğinde, dökümana "yeni özellik eklendi" yazmak yerine, o özelliği sistemin bir parçası olarak ilgili bölüme işle.</li>
                 <li>Bir hata düzeltildiğinde, "hata düzeltildi" notu düşme; ilgili modülün çalışma mantığını düzeltilen (doğru) haliyle güncelle.</li>
@@ -212,6 +212,8 @@
                 <li><strong>Temiz Kod ve Ölü Kod Temizliği:</strong> Zamanla yapılan güncellemelerden sonra devre dışı bırakılan kodları (eski fonksiyonlar, kullanılmayan değişkenler) "yorum satırı" haline getirip dosyada bırakma. Bu kodları <strong>tamamen sil</strong>.</li>
                 <li><strong>Mantıksal İyileştirme (Basitleştirme):</strong> Kod mantığını her zaman en sade ve performanslı olacak şekilde kurgula.</li>
                 <li><strong>HER İŞLEM ÖNCESİ DOSYA TALEBİ (KRİTİK):</strong> Herhangi bir özellik ekleme, güncelleme, silme veya düzeltme isteği geldiğinde; ilgili dosyaları benden <strong>mutlaka tekrar iste</strong>. <strong>Eğer yapılacak işlem arayüzde (HTML) görsel bir değişiklik içeriyorsa, tasarımın bütünlüğü için ilgili <code>.css</code> dosyasını da mutlaka talep et.</strong> Dosyalar sohbet geçmişinde daha önce paylaşılmış olsa bile, benden güncel hallerini istemeden ve ben yüklemeden asla kod yazmaya başlama.</li>
+                <li><strong>GÜVENLİ DOM ERİŞİMİ (KRİTİK):</strong> Herhangi bir JavaScript kodu yazarken, bir elemente müdahale etmeden önce o elementin DOM'da var olduğunu (<code>null</code> olmadığını) mutlaka kontrol et.</li>
+                <li><strong>BÜTÜNSEL İŞ MANTIĞI ANALİZİ (ZORUNLU):</strong> Dosyalar paylaşıldığında sadece kod satırlarına odaklanma; <strong>uygulamanın fonksiyonel amacını</strong> ve veri alanları arasındaki <strong>mantıksal hiyerarşiyi</strong> (örn: Bölge -> Yönetmen -> Şehir bağımlılığı) bizzat analiz et. Bir güncelleme yaparken bu bağımlılıkları koru ve değişikliğin etkilediği tüm bileşenleri (sayaçlar, listeler vb.) <strong>zincirleme (cascading)</strong> olarak güncelle.</li>
                 
                 <li><strong>README GÜNCELLEME FORMATI (ZORUNLU):</strong> <code>readme.html</code> güncellemeleri varsayılan olarak <strong>DIFF/PATCH</strong> formatında yapılır.
                     <ul>
@@ -323,8 +325,6 @@ SELF-CHECK RAPORU
 - Toplam section sayısı (çıktı): Y
 - Section listesi birebir mi? : EVET/HAYIR
 - Herhangi bir bölüm kısaltıldı mı? : EVET/HAYIR
-
-Eğer herhangi bir cevap HAYIR ise çıktı GEÇERSİZDİR.
 </pre>
 
 <p>
@@ -513,7 +513,7 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
 │   ├── <strong>bayi-yoneticisi/</strong>
 │   │   └── bayi-yoneticisi.html, .css, .js     <em>(Bayiler koleksiyonu için CRUD, Excel İçe/Dışa Aktarma)</em>
 │   ├── <strong>denetim-takip/</strong>
-│   │   └── denetim-takip.html, .css, .js     <em>(Denetim ilerleme paneli (dashboard) ve kullanıcı filtreleme)</em>
+│   │   └── denetim-takip.html, .css, .js     <em>(Denetim ilerleme paneli (dashboard) ve periyot tabanlı filtreleme)</em>
 │   ├── <strong>eposta-taslagi/</strong>
 │   │   └── eposta-taslagi.html, .css, .js    <em>(Quill.js editörü ile e-posta şablonu yönetimi)</em>
 │   ├── <strong>kullanici-yoneticisi/</strong>
@@ -606,7 +606,9 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
                     <ul>
                         <li><code>loadMasterData()</code>: Role göre tüm verileri (Admin: tümü, Client: sadece kendi) <code>allStoresMaster</code>, <code>allReportsMaster</code> gibi ana listelere yükler.</li>
                         <li><code>applyDataFilterAndRunDashboard(viewId)</code>: Admin'in seçtiği görünüme ('Benim Verilerim', 'Genel Bakış' veya 'Diğer Kullanıcı') göre ana listeleri filtreleyerek <code>allStores</code>, <code>auditedStoreCodesCurrentMonth</code> gibi "Görünüm" listelerini doldurur.</li>
-                        <li><code>runDashboard()</code>: Filtrelenmiş "Görünüm" listelerine göre sayaçları (<code>calculateAndDisplayDashboard</code>) ve listeleri (<code>renderRemainingStores</code>) çizer.</li>
+                        <li><strong>Periyot Yönetimi (<code>currentPeriod</code>):</strong> Modül artık "Aylık" ve "Yıllık" olmak üzere iki farklı görünüm periyodunu destekler. Yıllık periyotta, bir bayinin yıl içinde bir kez denetlenmesi yeterli kabul edilir.</li>
+                        <li><strong>Akıllı Filtreleme:</strong> Filtreler arasında (Bölge -> Yönetmen -> Şehir -> İlçe) hiyerarşik bir bağ vardır; bir üst filtre seçildiğinde alt filtre seçenekleri otomatik olarak daralır.</li>
+                        <li><code>runDashboard()</code>: Filtrelenmiş "Görünüm" listelerine ve aktif periyoda (Aylık/Yıllık) göre sayaçları (<code>calculateAndDisplayDashboard</code>) ve listeleri (<code>renderRemainingStores</code>) çizer.</li>
                     </ul>
                 </li>
                 <li><code>modules/bayi-yoneticisi.js</code>:
@@ -695,6 +697,7 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
                 <ul>
                     <li>“Güvenli” ve “yıkıcı” eylemler ayrımı hâlâ aynı mı?</li>
                     <li>Silme/sıfırlama akışları ve bağımlı tablolar doğru anlatılıyor mu?</li>
+                    <li><strong>Periyot Kontrolü:</strong> Periyot seçimleri (Aylık/Yıllık) listeleri doğru etkiliyor mu?</li>
                 </ul>
 
                 <h3>Bitiriş Kuralı</h3>
@@ -721,7 +724,7 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
                     <ul>
                         <li><code>modules/soru-yoneticisi.js</code> &rarr; <code>renderQuestionManager</code>: <code>&lt;select&gt;</code> içine yeni <code>&lt;option value="anket_tipi"&gt;</code> eklenmeli.</li>
                         <li><code>modules/soru-yoneticisi.js</code> &rarr; <code>toggleSpecialManagerUI</code>: Yeni tip için özel bir ayar paneli (<code>renderAnketManagerUI</code> gibi) gerekiyorsa <code>else if</code> eklenmeli.</li>
-                        <li><code>modules/soru-yoneticisi.js</code> &rarr; <code>saveQuestions</code>: Yeni tipin özel verilerini (eğer varsa) JSON'a kaydetme mantığı eklenmeli.</li>
+                        <li><code>modules/soru-yoneticisi.js</code> &rarr; <code>saveQuestions</code>: Yeni tipின் özel verilerini (eğer varsa) JSON'a kaydetme mantığı eklenmeli.</li>
                     </ul>
                 </li>
                 <li><strong>Denetçi Arayüzü (Görüntüleme):</strong>
@@ -798,7 +801,7 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
             <ol>
                 <li>DiDe veya FiDe skorlarının hiç gelmediği bir durum oluştur (örn: ilgili tip için <code>scores</code> alanı boş/undefined).</li>
                 <li>E-posta taslağı üret ve puan tablosunu kontrol et.</li>
-                <li><strong>Beklenen:</strong> Her satırda eksik puanlar için <code>-</code görünür; tablo üretimi hata vermez.</li>
+                <li><strong>Beklenen:</strong> Her satırda eksik puanlar için <code>-</code> görünür; tablo üretimi hata vermez.</li>
             </ol>
 
             <h3>Test 4: Bayi Kodu Tip Uyuşmazlığı (Sayı ↔ Metin)</h3>
@@ -827,7 +830,8 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
                 <li><strong>Changelog Yok:</strong> “Yeni özellik eklendi / hata düzeltildi” notu düşülmez. Doğru çalışma mantığı ilgili bölüme işlenir.</li>
                 <li><strong>Dosya Disiplini:</strong> CSS değişikliği, ilgili <code>.css</code> dosyasına yazılır. HTML içine stil gömme yapılmaz.</li>
                 <li><strong>Mevcut Dosyalar:</strong> Yeni dosya oluşturulmaz. Sadece var olan dosyalar üzerinde çalışılır.</li>
-                <li><strong>Modül Sözleşmesi:</strong> Admin modülleri “Modül Sözleşmesi”ne uymak zorundadır (bkz. Admin Panel Mimarisi).</li>
+                <li><strong>Hiyerarşi Koruma:</strong> Veri alanları arasındaki mantıksal bağlar (Bölge -> Yönetmen vb.) teknik dökümandan okunmalıdır.</li>
+                <li><strong>Zincirleme Güncelleme:</strong> Bir parça değiştiğinde sistemin bütünü (dashboard, sayaçlar) render edilmelidir.</li>
             </ul>
 
             <h3>Güncelleme → README Eşleştirme Kuralları</h3>
@@ -1064,6 +1068,11 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
                         <td>Migration senaryosu uygulanmadı</td>
                         <td><code>modules/soru-yoneticisi.js</code> (Senaryo Sistemi), <a href="#questions-deep">Migration</a></td>
                     </tr>
+                    <tr>
+                        <td>"Veriler İşleniyor"da takılı kalıyor (Admin Modülü)</td>
+                        <td>Element bulunamadığı için JS çökmesi (Safe Access eksikliği)</td>
+                        <td><code>denetim-takip.js</code> (setupModuleEventListeners), <a href="#ai-instructions">AI Kural 16 (Güvenli DOM Erişimi)</a></td>
+                    </tr>
                 </tbody>
             </table>
         </section>
@@ -1074,7 +1083,6 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
   <p>
     Bu bölüm, <strong>klasör yapısındaki tüm modüllerin</strong> nasıl çalıştığını, hangi ayar ve seçeneklere sahip olduğunu,
     hangi verileri etkilediğini ve bir sorun durumunda <em>nereden başlanacağını</em> tek yerde toplar.
-    Amaç; projeyi ilk kez açan bir yapay zekânın veya geliştiricinin, <strong>başka kaynağa bakmadan</strong> sistemi doğru anlamasıdır.
   </p>
 
   <h3>Genel Kurallar (Tüm Modüller İçin Geçerli)</h3>
@@ -1083,14 +1091,22 @@ Bu rapor eklenmeden verilen çıktılar <strong>otomatik olarak reddedilir</stro
     <li>Her modül kendi <code>.html / .css / .js</code> dosyalarıyla <strong>izole</strong> çalışır.</li>
     <li>Event listener’lar, tekrar yüklemeyi önleyen <strong>guard</strong> mekanizmasına sahiptir.</li>
     <li>Admin kabuğu nötrdür; modül CSS’i kendi görsel dünyasını kurabilir.</li>
+    <li><strong>Savunmacı Programlama:</strong> Modüller, HTML elementlerinin varlığını kontrol ederek çalışır; eksik element durumunda sistemi kilitlemez.</li>
   </ul>
 
   <hr>
 
   <h3 id="mod-denetim-takip">denetim-takip</h3>
-  <p><strong>Rol:</strong> Operasyonel kalp. İlerleme, hedefler ve geri alma burada yönetilir.</p>
+  <p><strong>Rol:</strong> Operasyonel kalp. İlerleme, hedefler ve periyot tabanlı takip burada yönetilir.</p>
   <ul>
     <li><strong>Nasıl Çalışır:</strong> Master veriler (tüm raporlar/bayiler) çekilir; rol ve filtrelere göre view veriler türetilir.</li>
+    <li><strong>Periyot Seçenekleri:</strong> "Aylık" (sadece mevcut ayın denetimleri) ve "Yıllık" (yıl içindeki herhangi bir denetim) görünümleri arasında geçiş yapılabilir.</li>
+    <li><strong>Akıllı Filtreleme ve Hiyerarşi (KRİTİK):</strong>
+        <ul>
+            <li><strong>Zorunlu Daraltma:</strong> Herhangi bir üst filtre (örn: Bölge) değiştiğinde, altındaki tüm açılır menüler (Yönetmen, Şehir, İlçe) anlık olarak süzülmeli ve hiyerarşi korunmalıdır.</li>
+            <li><strong>Zincirleme Güncelleme:</strong> Filtre değişimi anında tüm dashboard bileşenlerini (Sayaçlar, Listeler, İlerleme Çubukları) "VE" (AND) mantığıyla yeniden render etmelidir.</li>
+        </ul>
+    </li>
     <li><strong>Seçenekler:</strong> Aylık hedef (global), filtreler (bölge/şehir/yönetmen), geri alma, yıllık sıfırlama.</li>
     <li><strong>Etkiler:</strong> Sayaçlar, dashboard, performans ölçümü.</li>
     <li><strong>Önemli:</strong> Geri alma <em>silme değildir</em>; <code>denetim_geri_alinanlar</code> kullanılır.</li>
