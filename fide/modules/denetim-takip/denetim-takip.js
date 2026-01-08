@@ -22,8 +22,7 @@ let pbInstance = null;
 let currentUserRole = null;
 let currentUserId = null;
 
-// --- YARDIMCI GÜVENLİK FONKSİYONLARI ---
-// Bu fonksiyonlar sistemin hata verip çökmesini engeller
+// --- YARDIMCI GÜVENLİK FONKSİYONLARI (Kural 16 - Safe Access) ---
 function safeSetText(id, text) {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
@@ -201,8 +200,7 @@ function applyDataFilterAndRunDashboard(viewId) {
 
 function runDashboard() {
     updateUILabels();
-    calculateAndDisplayDashboard();
-    populateAllFilters(allStores);
+    populateAllFilters(allStores); // İlk başta tüm filtreleri doldur
     applyAndRepopulateFilters(); 
 }
 
@@ -248,14 +246,59 @@ function setupModuleEventListeners(userRole) {
         runDashboard();
     });
 
-    safeAddListener('bolge-filter', 'change', applyAndRepopulateFilters);
-    safeAddListener('yonetmen-filter', 'change', applyAndRepopulateFilters);
-    safeAddListener('sehir-filter', 'change', applyAndRepopulateFilters);
+    // Ana Filtreler için Dinleyiciler
+    safeAddListener('bolge-filter', 'change', () => { updateDropdowns('bolge'); applyAndRepopulateFilters(); });
+    safeAddListener('yonetmen-filter', 'change', () => { updateDropdowns('yonetmen'); applyAndRepopulateFilters(); });
+    safeAddListener('sehir-filter', 'change', () => { updateDropdowns('sehir'); applyAndRepopulateFilters(); });
     safeAddListener('ilce-filter', 'change', applyAndRepopulateFilters);
+
     safeAddListener('local-city-filter', 'change', (e) => {
         localCityFilterValue = e.target.value;
         renderRemainingStores(currentGlobalFilteredStores); 
     });
+}
+
+// Akıllı Filtreleme: Bir filtre seçildiğinde diğerlerini daraltır
+function updateDropdowns(changedFilter) {
+    const filters = { bolge: 'bolge-filter', yonetmen: 'yonetmen-filter', sehir: 'sehir-filter', ilce: 'ilce-filter' };
+    const values = {
+        bolge: document.getElementById(filters.bolge)?.value || 'Tümü',
+        yonetmen: document.getElementById(filters.yonetmen)?.value || 'Tümü',
+        sehir: document.getElementById(filters.sehir)?.value || 'Tümü',
+        ilce: document.getElementById(filters.ilce)?.value || 'Tümü'
+    };
+
+    // Şu anki seçimlere uyan bayileri bul
+    const filteredPool = allStores.filter(s => 
+        (values.bolge === 'Tümü' || s.bolge === values.bolge) &&
+        (values.yonetmen === 'Tümü' || s.yonetmen === values.yonetmen) &&
+        (values.sehir === 'Tümü' || s.sehir === values.sehir)
+    );
+
+    // Eğer Bölge değiştiyse, altındaki Yönetmen ve Şehirleri güncelle
+    if (changedFilter === 'bolge') {
+        repopulateSelect('yonetmen-filter', filteredPool, 'yonetmen');
+        repopulateSelect('sehir-filter', filteredPool, 'sehir');
+        repopulateSelect('ilce-filter', filteredPool, 'ilce');
+    } 
+    // Eğer Şehir değiştiyse ilçeleri güncelle
+    else if (changedFilter === 'sehir') {
+        repopulateSelect('ilce-filter', filteredPool, 'ilce');
+    }
+}
+
+function repopulateSelect(elementId, dataPool, fieldName) {
+    const select = document.getElementById(elementId);
+    if (!select) return;
+    const currentVal = select.value;
+    const uniqueValues = [...new Set(dataPool.map(s => s[fieldName]))].sort((a, b) => a.localeCompare(b, 'tr'));
+    
+    select.innerHTML = '<option value="Tümü">Tümü</option>';
+    uniqueValues.forEach(v => { if (v) select.innerHTML += `<option value="${v}">${v}</option>`; });
+    
+    // Eski seçilen değer yeni listede de varsa koru, yoksa Tümü'ne çek
+    if (uniqueValues.includes(currentVal)) select.value = currentVal;
+    else select.value = 'Tümü';
 }
 
 async function resetProgress() {
@@ -317,19 +360,47 @@ async function revertAudit(bayiKodu) {
     if (loadingOverlay) loadingOverlay.style.display = 'none';
 }
 
-function calculateAndDisplayDashboard() {
+function applyAndRepopulateFilters() {
+    const selected = {
+        bolge: document.getElementById('bolge-filter')?.value || 'Tümü', 
+        yonetmen: document.getElementById('yonetmen-filter')?.value || 'Tümü',
+        sehir: document.getElementById('sehir-filter')?.value || 'Tümü', 
+        ilce: document.getElementById('ilce-filter')?.value || 'Tümü'
+    };
+
+    currentGlobalFilteredStores = allStores.filter(s =>
+        (selected.bolge === 'Tümü' || s.bolge === selected.bolge) &&
+        (selected.yonetmen === 'Tümü' || s.yonetmen === selected.yonetmen) &&
+        (selected.sehir === 'Tümü' || s.sehir === selected.sehir) &&
+        (selected.ilce === 'Tümü' || s.ilce === selected.ilce)
+    );
+
+    const filteredStoreCodes = new Set(currentGlobalFilteredStores.map(s => s.bayiKodu));
+
+    const filteredAuditsMonth = auditedStoreCodesCurrentMonth.filter(a => filteredStoreCodes.has(a.code));
+    const filteredAuditsYear = auditedStoreCodesCurrentYear.filter(a => filteredStoreCodes.has(a.code));
+
+    calculateAndDisplayDashboard(filteredAuditsMonth, filteredAuditsYear);
+    renderRemainingStores(currentGlobalFilteredStores); 
+    renderAuditedStores(filteredAuditsMonth, filteredAuditsYear);
+}
+
+function calculateAndDisplayDashboard(filteredMonth, filteredYear) {
     const today = new Date();
     const isYearly = currentPeriod === 'yillik';
-    const auditedCount = isYearly ? auditedStoreCodesCurrentYear.length : auditedStoreCodesCurrentMonth.length;
+    
+    const activeAuditsMonth = filteredMonth || auditedStoreCodesCurrentMonth;
+    const activeAuditsYear = filteredYear || auditedStoreCodesCurrentYear;
+    
+    const auditedCount = isYearly ? activeAuditsYear.length : activeAuditsMonth.length;
     
     safeSetText('work-days-count', getRemainingWorkdays());
     safeSetText('total-stores-count', aylikHedef); 
     safeSetText('audited-stores-count', auditedCount);
     safeSetText('remaining-stores-count', Math.max(0, aylikHedef - auditedCount));
     
-    const totalStores = allStores.length; 
-    const auditedYearlyCount = auditedStoreCodesCurrentYear.length; 
-    const annualProgress = totalStores > 0 ? (auditedYearlyCount / totalStores) * 100 : 0;
+    const totalStores = currentGlobalFilteredStores.length || allStores.length; 
+    const annualProgress = totalStores > 0 ? (activeAuditsYear.length / totalStores) * 100 : 0;
     
     const dashboardTitle = document.getElementById('dashboard-title');
     if (dashboardTitle) dashboardTitle.innerHTML = `<i class="fas fa-calendar-day"></i> ${today.getFullYear()} ${monthNames[today.getMonth()]} Ayı Performansı`;
@@ -339,43 +410,27 @@ function calculateAndDisplayDashboard() {
         annualIndicator.innerHTML = `
             <div class="annual-header">
                  <h4><i class="fas fa-calendar-alt"></i> ${today.getFullYear()} Yıllık Hedef</h4>
-                 <p class="annual-progress-text">${auditedYearlyCount} / ${totalStores}</p>
+                 <p class="annual-progress-text">${activeAuditsYear.length} / ${totalStores}</p>
             </div>
             <div class="progress-bar">
                 <div class="progress-bar-fill" style="width: ${annualProgress.toFixed(2)}%;">${annualProgress.toFixed(0)}%</div>
             </div>`;
     }
 
-    renderAuditedStores(); 
     const content = document.getElementById('dashboard-content');
     if (content) content.style.display = 'block';
 }
 
 function populateAllFilters(stores) {
-    const filters = { bolge: 'bolge', yonetmen: 'yonetmen', sehir: 'sehir', ilce: 'ilce' };
+    const filters = { bolge: 'bolge-filter', yonetmen: 'yonetmen-filter', sehir: 'sehir-filter', ilce: 'ilce-filter' };
     Object.keys(filters).forEach(key => {
-        const select = document.getElementById(filters[key] + '-filter');
+        const select = document.getElementById(filters[key]);
         if (!select) return;
-        const uniqueValues = [...new Set(stores.map(s => s[filters[key]]))].sort((a, b) => a.localeCompare(b, 'tr'));
+        const fieldName = key;
+        const uniqueValues = [...new Set(stores.map(s => s[fieldName]))].sort((a, b) => a.localeCompare(b, 'tr'));
         select.innerHTML = '<option value="Tümü">Tümü</option>';
         uniqueValues.forEach(value => { if (value) select.innerHTML += `<option value="${value}">${value}</option>`; });
     });
-}
-
-function applyAndRepopulateFilters() {
-    const selected = {
-        bolge: document.getElementById('bolge-filter')?.value || 'Tümü', 
-        yonetmen: document.getElementById('yonetmen-filter')?.value || 'Tümü',
-        sehir: document.getElementById('sehir-filter')?.value || 'Tümü', 
-        ilce: document.getElementById('ilce-filter')?.value || 'Tümü'
-    };
-    currentGlobalFilteredStores = allStores.filter(s =>
-        (selected.bolge === 'Tümü' || s.bolge === selected.bolge) &&
-        (selected.yonetmen === 'Tümü' || s.yonetmen === selected.yonetmen) &&
-        (selected.sehir === 'Tümü' || s.sehir === selected.sehir) &&
-        (selected.ilce === 'Tümü' || s.ilce === selected.ilce)
-    );
-    renderRemainingStores(currentGlobalFilteredStores); 
 }
 
 function renderRemainingStores(filteredStores) {
@@ -419,11 +474,11 @@ function renderRemainingStores(filteredStores) {
     });
 }
 
-function renderAuditedStores() {
+function renderAuditedStores(filteredMonth, filteredYear) {
     const container = document.getElementById('denetlenen-bayiler-container');
     if (!container) return;
     const isYearly = currentPeriod === 'yillik';
-    const activeAudits = isYearly ? auditedStoreCodesCurrentYear : auditedStoreCodesCurrentMonth;
+    const activeAudits = isYearly ? (filteredYear || auditedStoreCodesCurrentYear) : (filteredMonth || auditedStoreCodesCurrentMonth);
 
     if (activeAudits.length === 0) {
         container.innerHTML = `<p class="empty-list-message">Denetim kaydı bulunamadı.</p>`;
