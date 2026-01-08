@@ -471,6 +471,7 @@
     background: #fff7f7;
     border-radius: var(--ky-radius);
     padding: 14px;
+    margin-top: 20px; /* Bu satırı ekledim: Mobil Erişim alanı ile arasında boşluk oluşturur */
 }
 
 .ky-danger-zone > label {
