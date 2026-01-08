@@ -59,7 +59,7 @@
                 <p id="total-stores-count">0</p>
             </div>
             <div class="stat-card completed">
-                <span><i class="fas fa-check"></i> Bu Ay Denetlenen</span>
+                <span><i class="fas fa-check"></i> <span id="stat-completed-label">Bu Ay Denetlenen</span></span>
                 <p id="audited-stores-count">0</p>
             </div>
             <div class="stat-card remaining">
@@ -76,6 +76,13 @@
             <small>Varsayılan olarak 'Benim Verilerim' gösterilir. Global veriler veya başka bir kullanıcı için seçim yapabilirsiniz.</small>
         </div>
         <div class="multi-filter-container">
+            <div class="filter-item">
+                <label for="period-filter">Görünüm Periyodu</label>
+                <select id="period-filter">
+                    <option value="aylik" selected>Aylık (Sadece Bu Ay)</option>
+                    <option value="yillik">Yıllık (Tüm Yıl)</option>
+                </select>
+            </div>
             <div class="filter-item">
                 <label for="bolge-filter">Bölge</label>
                 <select id="bolge-filter"></select>
@@ -97,7 +104,7 @@
         <div class="audit-lists-container">
             <div class="audit-list-column">
                 <div class="list-header-wrapper">
-                    <h4><i class="fas fa-list-ul"></i> Denetlenecek Bayiler</h4>
+                    <h4><i class="fas fa-list-ul"></i> <span id="list-remaining-label">Denetlenecek Bayiler</span></h4>
                     <select id="local-city-filter" class="header-select" title="Şehre Göre Süz">
                         <option value="Tümü">Tüm Şehirler</option>
                     </select>
@@ -106,7 +113,7 @@
             </div>
             <div class="audit-list-column">
                 <div class="list-header-wrapper">
-                    <h4><i class="fas fa-check-double"></i> Bu Ay Denetlenenler</h4>
+                    <h4><i class="fas fa-check-double"></i> <span id="list-completed-label">Bu Ay Denetlenenler</span></h4>
                 </div>
                 <div id="denetlenen-bayiler-container"></div>
             </div>
