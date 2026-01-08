@@ -275,12 +275,17 @@ function updateDropdowns(changedFilter) {
         (values.sehir === 'Tümü' || s.sehir === values.sehir)
     );
 
-    // Eğer Bölge değiştiyse, altındaki Yönetmen ve Şehirleri güncelle
+    // Eğer Bölge değiştiyse, altındaki her şeyi güncelle
     if (changedFilter === 'bolge') {
         repopulateSelect('yonetmen-filter', filteredPool, 'yonetmen');
         repopulateSelect('sehir-filter', filteredPool, 'sehir');
         repopulateSelect('ilce-filter', filteredPool, 'ilce');
     } 
+    // YENİ: Eğer Bayi Yönetmeni değiştiyse, şehir ve ilçeleri daralt
+    else if (changedFilter === 'yonetmen') {
+        repopulateSelect('sehir-filter', filteredPool, 'sehir');
+        repopulateSelect('ilce-filter', filteredPool, 'ilce');
+    }
     // Eğer Şehir değiştiyse ilçeleri güncelle
     else if (changedFilter === 'sehir') {
         repopulateSelect('ilce-filter', filteredPool, 'ilce');
