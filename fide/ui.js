@@ -498,11 +498,28 @@ function selectExpiredCodes() {
     debouncedSaveFormState();
 }
 
+// --- GÜNCELLENDİ: E-POSTA TASLAĞINDA CC ALANINI GÖSTERME ---
 function openEmailDraft() {
     const codes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(c => !state.expiredCodes.includes(c));
     if (!codes.length) return;
     const q = state.fideQuestions.find(f => f.type === 'pop_system') || {};
-    window.open('', '_blank').document.write(`Kime: ${q.popEmailTo?.join(',')}<br>İçerik:<br>${codes.join(', ')}`);
+    
+    // To ve CC bilgilerini alalım
+    const toEmails = q.popEmailTo?.join(', ') || '';
+    const ccEmails = q.popEmailCc?.join(', ') || '';
+    
+    // Yeni bir pencere açalım
+    let emailWindow = window.open('', '_blank');
+    let content = `<b>Kime:</b> ${toEmails}<br>`;
+    
+    // Eğer CC adresleri varsa ekleyelim
+    if (ccEmails) {
+        content += `<b>Bilgi (CC):</b> ${ccEmails}<br>`;
+    }
+    
+    content += `<br><b>İçerik:</b><br>${codes.join(', ')}`;
+    
+    emailWindow.document.write(content);
 }
 
 function toggleStylingView(cb, id) {
