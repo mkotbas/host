@@ -209,7 +209,8 @@ function applyDataFilterAndRunDashboard(viewId) {
 
 function runDashboard() {
     calculateAndDisplayDashboard();
-    populateAllFilters(allStores); 
+    // Başlangıçta tüm filtreleri eldeki (allStores) verisine göre doldur
+    updateAllFilterOptions(); 
     applyAndRepopulateFilters(); 
 }
 
@@ -249,8 +250,6 @@ function setupModuleEventListeners(userRole) {
         renderRemainingStores(currentGlobalFilteredStores); 
     });
 }
-
-// resetProgress fonksiyonu tamamen kaldırıldı.
 
 async function saveSettings() {
     if (!pbInstance.authStore.isValid || currentUserRole !== 'admin') return alert("Bu işlem için yetkiniz bulunmamaktadır.");
@@ -330,27 +329,77 @@ function calculateAndDisplayDashboard() {
     document.getElementById('dashboard-content').style.display = 'block';
 }
 
-function populateAllFilters(stores) {
-    const filters = { bolge: 'bolge', yonetmen: 'yonetmen', sehir: 'sehir', ilce: 'ilce' };
-    Object.keys(filters).forEach(key => {
-        const select = document.getElementById(filters[key] + '-filter');
-        const uniqueValues = [...new Set(stores.map(s => s[filters[key]]))].sort((a, b) => a.localeCompare(b, 'tr'));
-        select.innerHTML = '<option value="Tümü">Tümü</option>';
-        uniqueValues.forEach(value => { if (value) { select.innerHTML += `<option value="${value}">${value}</option>`; } });
+/**
+ * Filtre seçeneklerini (açılır menüleri) akıllı şekilde günceller.
+ * Her bir filtre, kendisi dışındaki diğer filtrelerde seçili olan kriterlere göre daraltılır.
+ */
+function updateAllFilterOptions() {
+    const filters = {
+        'bolge-filter': 'bolge',
+        'yonetmen-filter': 'yonetmen',
+        'sehir-filter': 'sehir',
+        'ilce-filter': 'ilce'
+    };
+
+    Object.keys(filters).forEach(currentFilterId => {
+        const currentSelect = document.getElementById(currentFilterId);
+        const currentField = filters[currentFilterId];
+        const previousValue = currentSelect.value; // Mevcut seçimi unutma
+
+        // Diğer filtrelerin o anki değerlerini al
+        const otherFilters = {};
+        Object.keys(filters).forEach(id => {
+            if (id !== currentFilterId) {
+                otherFilters[filters[id]] = document.getElementById(id).value;
+            }
+        });
+
+        // Bu filtre için seçenekleri bulurken diğer seçili kriterlere uyan bayileri baz al
+        const availableStores = allStores.filter(s => {
+            return Object.keys(otherFilters).every(field => {
+                return otherFilters[field] === 'Tümü' || s[field] === otherFilters[field];
+            });
+        });
+
+        // Benzersiz değerleri al ve alfabetik sırala
+        const uniqueValues = [...new Set(availableStores.map(s => s[currentField]))]
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b, 'tr'));
+
+        // HTML'i güncelle
+        currentSelect.innerHTML = '<option value="Tümü">Tümü</option>';
+        uniqueValues.forEach(val => {
+            currentSelect.innerHTML += `<option value="${val}">${val}</option>`;
+        });
+
+        // Eğer eski seçim hala listede varsa onu tekrar seç, yoksa 'Tümü'ne dön
+        if (uniqueValues.includes(previousValue)) {
+            currentSelect.value = previousValue;
+        } else {
+            currentSelect.value = 'Tümü';
+        }
     });
 }
 
 function applyAndRepopulateFilters() {
     const selected = {
-        bolge: document.getElementById('bolge-filter').value, yonetmen: document.getElementById('yonetmen-filter').value,
-        sehir: document.getElementById('sehir-filter').value, ilce: document.getElementById('ilce-filter').value
+        bolge: document.getElementById('bolge-filter').value,
+        yonetmen: document.getElementById('yonetmen-filter').value,
+        sehir: document.getElementById('sehir-filter').value,
+        ilce: document.getElementById('ilce-filter').value
     };
+
+    // Tablo verilerini filtrele
     currentGlobalFilteredStores = allStores.filter(s =>
         (selected.bolge === 'Tümü' || s.bolge === selected.bolge) &&
         (selected.yonetmen === 'Tümü' || s.yonetmen === selected.yonetmen) &&
         (selected.sehir === 'Tümü' || s.sehir === selected.sehir) &&
         (selected.ilce === 'Tümü' || s.ilce === selected.ilce)
     );
+
+    // DİKKAT: Filtre seçeneklerini (dropdown listelerini) de daraltılmış verilere göre güncelle
+    updateAllFilterOptions();
+
     renderRemainingStores(currentGlobalFilteredStores); 
 }
 
