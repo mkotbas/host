@@ -244,8 +244,9 @@
             </div>
 
             <h4 style="margin-top: 20px;">Adım 2: Atanacak Bilgiyi Seçin</h4>
-            <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="form-group">
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: flex-end;">
+                <div class="form-group" style="flex: 1;">
                     <label for="bulk-assign-type-select">Neyi Atamak İstiyorsunuz?</label>
                     <select id="bulk-assign-type-select" class="form-control">
                         <option value="sorumlu_kullanici">Denetim Uzmanı Atama</option>
@@ -253,14 +254,14 @@
                     </select>
                 </div>
 
-                <div class="form-group" id="bulk-assign-user-select-container">
+                <div class="form-group" id="bulk-assign-user-select-container" style="flex: 1;">
                     <label for="bulk-assign-user-select">Atanacak Denetim Uzmanı</label>
                     <select id="bulk-assign-user-select" class="form-control">
                         <option value="">Lütfen bir kullanıcı seçin...</option>
                     </select>
                 </div>
 
-                <div class="form-group" id="bulk-assign-text-input-container" style="display: none;">
+                <div class="form-group" id="bulk-assign-text-input-container" style="display: none; flex: 1;">
                     <label for="bulk-assign-text-input">Yeni Yönetmen Adı</label>
                     <input type="text" id="bulk-assign-text-input" class="form-control" placeholder="Yönetmen adını yazın...">
                 </div>
