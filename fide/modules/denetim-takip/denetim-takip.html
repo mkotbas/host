@@ -45,20 +45,28 @@
     <div id="dashboard-content" style="display: none;">
         <div class="panel-header">
              <h3 id="dashboard-title"></h3>
-             <div id="annual-performance-indicator"></div>
+             <div class="header-right-group">
+                <div class="view-mode-selector">
+                    <div class="btn-group" id="view-mode-toggle">
+                        <button class="btn-sm btn-primary active" data-mode="monthly">Aylık</button>
+                        <button class="btn-sm btn-light" data-mode="yearly">Yıllık</button>
+                    </div>
+                </div>
+                <div id="annual-performance-indicator"></div>
+             </div>
         </div>
        
         <div class="dashboard-grid">
-            <div class="stat-card">
+            <div class="stat-card" id="work-days-card">
                 <span><i class="fas fa-briefcase"></i> Kalan İş Günü</span>
                 <p id="work-days-count">0</p>
             </div>
             <div class="stat-card">
-                <span><i class="fas fa-bullseye"></i> Aylık Denetim Hedefi</span>
+                <span><i class="fas fa-bullseye"></i> <span id="target-label">Aylık Denetim Hedefi</span></span>
                 <p id="total-stores-count">0</p>
             </div>
             <div class="stat-card completed">
-                <span><i class="fas fa-check"></i> Bu Ay Denetlenen</span>
+                <span><i class="fas fa-check"></i> <span id="audited-label">Bu Ay Denetlenen</span></span>
                 <p id="audited-stores-count">0</p>
             </div>
             <div class="stat-card remaining">
@@ -105,7 +113,7 @@
             </div>
             <div class="audit-list-column">
                 <div class="list-header-wrapper">
-                    <h4><i class="fas fa-check-double"></i> Bu Ay Denetlenenler</h4>
+                    <h4 id="audited-list-title"><i class="fas fa-check-double"></i> Bu Ay Denetlenenler</h4>
                 </div>
                 <div id="denetlenen-bayiler-container"></div>
             </div>

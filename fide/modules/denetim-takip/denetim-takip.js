@@ -12,6 +12,7 @@ let geriAlinanKayitlariBuYil = [];
 
 let currentGlobalFilteredStores = []; 
 let localCityFilterValue = 'Tümü';    
+let currentViewMode = 'monthly'; // YENİ: Varsayılan görünüm modu
 
 let globalAylikHedef = 0; 
 let aylikHedef = 0; 
@@ -185,18 +186,22 @@ function applyDataFilterAndRunDashboard(viewId) {
         if (!record.expand || !record.expand.bayi) return;
         const storeCode = record.expand.bayi.bayiKodu;
         const reportDate = new Date(record.denetimTamamlanmaTarihi);
-        yearlyCodes.add(storeCode);
+        
+        // Yıllık verileri topla (Geri alınanlar hariç)
+        if (!geriAlinanBayiKodlariYil.has(storeCode)) {
+            yearlyCodes.add(storeCode);
+        }
+
+        // Aylık verileri topla
         if (reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear) {
-            if (!monthlyAuditsMap.has(storeCode)) {
+            if (!monthlyAuditsMap.has(storeCode) && !geriAlinanBayiKodlariAy.has(storeCode)) {
                 monthlyAuditsMap.set(storeCode, { code: storeCode, timestamp: reportDate.getTime() });
             }
         }
     });
     
-    auditedStoreCodesCurrentMonth = Array.from(monthlyAuditsMap.values())
-        .filter(audit => !geriAlinanBayiKodlariAy.has(audit.code));
-    auditedStoreCodesCurrentYear = Array.from(yearlyCodes)
-        .filter(code => !geriAlinanBayiKodlariYil.has(code));
+    auditedStoreCodesCurrentMonth = Array.from(monthlyAuditsMap.values());
+    auditedStoreCodesCurrentYear = Array.from(yearlyCodes);
 
     aylikHedef = globalAylikHedef; 
 
@@ -209,7 +214,6 @@ function applyDataFilterAndRunDashboard(viewId) {
 
 function runDashboard() {
     calculateAndDisplayDashboard();
-    // Başlangıçta tüm filtreleri eldeki (allStores) verisine göre doldur
     updateAllFilterOptions(); 
     applyAndRepopulateFilters(); 
 }
@@ -239,6 +243,23 @@ function setupModuleEventListeners(userRole) {
     } else {
         if (adminPanelBtn) adminPanelBtn.style.display = 'none';
     }
+
+    // YENİ: Aylık/Yıllık Mod Değiştirici
+    const modeButtons = document.querySelectorAll('#view-mode-toggle button');
+    modeButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            modeButtons.forEach(b => {
+                b.classList.remove('btn-primary', 'active');
+                b.classList.add('btn-light');
+            });
+            e.target.classList.remove('btn-light');
+            e.target.classList.add('btn-primary', 'active');
+            
+            currentViewMode = e.target.dataset.mode;
+            calculateAndDisplayDashboard();
+            renderAuditedStores();
+        });
+    });
 
     document.getElementById('bolge-filter').addEventListener('change', applyAndRepopulateFilters);
     document.getElementById('yonetmen-filter').addEventListener('change', applyAndRepopulateFilters);
@@ -303,23 +324,48 @@ async function revertAudit(bayiKodu) {
 
 function calculateAndDisplayDashboard() {
     const today = new Date();
-    const auditedMonthlyCount = auditedStoreCodesCurrentMonth.length;
-    const remainingToTarget = aylikHedef - auditedMonthlyCount;
+    const totalStoresCount = allStores.length;
+    
+    let displayTarget, displayAudited, titleIcon, titleText, targetLabel, auditedLabel, listTitle;
+
+    if (currentViewMode === 'monthly') {
+        displayTarget = aylikHedef;
+        displayAudited = auditedStoreCodesCurrentMonth.length;
+        titleIcon = "calendar-day";
+        titleText = `${today.getFullYear()} ${monthNames[today.getMonth()]} Ayı Performansı`;
+        targetLabel = "Aylık Denetim Hedefi";
+        auditedLabel = "Bu Ay Denetlenen";
+        listTitle = "Bu Ay Denetlenenler";
+        document.getElementById('work-days-card').style.display = 'block';
+    } else {
+        displayTarget = totalStoresCount;
+        displayAudited = auditedStoreCodesCurrentYear.length;
+        titleIcon = "calendar-alt";
+        titleText = `${today.getFullYear()} Yılı Genel Performans`;
+        targetLabel = "Yıllık Toplam Bayi";
+        auditedLabel = "Yıl Boyu Denetlenen";
+        listTitle = "Bu Yıl Denetlenenler";
+        document.getElementById('work-days-card').style.display = 'none';
+    }
+
+    const remainingToTarget = Math.max(0, displayTarget - displayAudited);
     const remainingWorkDays = getRemainingWorkdays();
-    const totalStores = allStores.length; 
-    const auditedYearlyCount = auditedStoreCodesCurrentYear.length; 
-    const annualProgress = totalStores > 0 ? (auditedYearlyCount / totalStores) * 100 : 0;
     
-    document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-calendar-day"></i> ${today.getFullYear()} ${monthNames[today.getMonth()]} Ayı Performansı`;
+    document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-${titleIcon}"></i> ${titleText}`;
+    document.getElementById('target-label').textContent = targetLabel;
+    document.getElementById('audited-label').textContent = auditedLabel;
+    document.getElementById('audited-list-title').innerHTML = `<i class="fas fa-check-double"></i> ${listTitle}`;
+    
     document.getElementById('work-days-count').textContent = remainingWorkDays;
-    document.getElementById('total-stores-count').textContent = aylikHedef; 
-    document.getElementById('audited-stores-count').textContent = auditedMonthlyCount;
-    document.getElementById('remaining-stores-count').textContent = Math.max(0, remainingToTarget);
+    document.getElementById('total-stores-count').textContent = displayTarget;
+    document.getElementById('audited-stores-count').textContent = displayAudited;
+    document.getElementById('remaining-stores-count').textContent = remainingToTarget;
     
+    const annualProgress = totalStoresCount > 0 ? (auditedStoreCodesCurrentYear.length / totalStoresCount) * 100 : 0;
     document.getElementById('annual-performance-indicator').innerHTML = `
         <div class="annual-header">
-             <h4><i class="fas fa-calendar-alt"></i> ${today.getFullYear()} Yıllık Hedef</h4>
-             <p class="annual-progress-text">${auditedYearlyCount} / ${totalStores}</p>
+             <h4><i class="fas fa-calendar-alt"></i> Yıllık İlerleme</h4>
+             <p class="annual-progress-text">${auditedStoreCodesCurrentYear.length} / ${totalStoresCount}</p>
         </div>
         <div class="progress-bar">
             <div class="progress-bar-fill" style="width: ${annualProgress.toFixed(2)}%;">${annualProgress.toFixed(0)}%</div>
@@ -329,10 +375,6 @@ function calculateAndDisplayDashboard() {
     document.getElementById('dashboard-content').style.display = 'block';
 }
 
-/**
- * Filtre seçeneklerini (açılır menüleri) akıllı şekilde günceller.
- * Her bir filtre, kendisi dışındaki diğer filtrelerde seçili olan kriterlere göre daraltılır.
- */
 function updateAllFilterOptions() {
     const filters = {
         'bolge-filter': 'bolge',
@@ -344,9 +386,8 @@ function updateAllFilterOptions() {
     Object.keys(filters).forEach(currentFilterId => {
         const currentSelect = document.getElementById(currentFilterId);
         const currentField = filters[currentFilterId];
-        const previousValue = currentSelect.value; // Mevcut seçimi unutma
+        const previousValue = currentSelect.value;
 
-        // Diğer filtrelerin o anki değerlerini al
         const otherFilters = {};
         Object.keys(filters).forEach(id => {
             if (id !== currentFilterId) {
@@ -354,25 +395,21 @@ function updateAllFilterOptions() {
             }
         });
 
-        // Bu filtre için seçenekleri bulurken diğer seçili kriterlere uyan bayileri baz al
         const availableStores = allStores.filter(s => {
             return Object.keys(otherFilters).every(field => {
                 return otherFilters[field] === 'Tümü' || s[field] === otherFilters[field];
             });
         });
 
-        // Benzersiz değerleri al ve alfabetik sırala
         const uniqueValues = [...new Set(availableStores.map(s => s[currentField]))]
             .filter(Boolean)
             .sort((a, b) => a.localeCompare(b, 'tr'));
 
-        // HTML'i güncelle
         currentSelect.innerHTML = '<option value="Tümü">Tümü</option>';
         uniqueValues.forEach(val => {
             currentSelect.innerHTML += `<option value="${val}">${val}</option>`;
         });
 
-        // Eğer eski seçim hala listede varsa onu tekrar seç, yoksa 'Tümü'ne dön
         if (uniqueValues.includes(previousValue)) {
             currentSelect.value = previousValue;
         } else {
@@ -389,7 +426,6 @@ function applyAndRepopulateFilters() {
         ilce: document.getElementById('ilce-filter').value
     };
 
-    // Tablo verilerini filtrele
     currentGlobalFilteredStores = allStores.filter(s =>
         (selected.bolge === 'Tümü' || s.bolge === selected.bolge) &&
         (selected.yonetmen === 'Tümü' || s.yonetmen === selected.yonetmen) &&
@@ -397,22 +433,25 @@ function applyAndRepopulateFilters() {
         (selected.ilce === 'Tümü' || s.ilce === selected.ilce)
     );
 
-    // DİKKAT: Filtre seçeneklerini (dropdown listelerini) de daraltılmış verilere göre güncelle
     updateAllFilterOptions();
-
     renderRemainingStores(currentGlobalFilteredStores); 
 }
 
 function renderRemainingStores(filteredStores) {
     const container = document.getElementById('denetlenecek-bayiler-container');
     container.innerHTML = '';
-    const auditedCodesThisMonth = auditedStoreCodesCurrentMonth.map(audit => audit.code);
-    const allRemainingStores = filteredStores.filter(store => !auditedCodesThisMonth.includes(store.bayiKodu));
+    
+    // Seçili periyoda göre "denetlenenler" listesini baz al
+    const auditedCodes = (currentViewMode === 'monthly') 
+        ? auditedStoreCodesCurrentMonth.map(audit => audit.code)
+        : auditedStoreCodesCurrentYear;
+
+    const allRemainingStores = filteredStores.filter(store => !auditedCodes.includes(store.bayiKodu));
 
     if (allRemainingStores.length === 0) {
         const select = document.getElementById('local-city-filter');
         if(select) select.innerHTML = '<option value="Tümü">Şehir Yok</option>';
-        container.innerHTML = `<p class="empty-list-message">Seçili kriterlere uygun, bu ay denetlenmemiş bayi bulunamadı.</p>`;
+        container.innerHTML = `<p class="empty-list-message">Seçili kriterlere uygun denetlenmemiş bayi bulunamadı.</p>`;
         return;
     }
 
@@ -422,9 +461,7 @@ function renderRemainingStores(filteredStores) {
     
     select.innerHTML = '<option value="Tümü">Tüm Şehirler</option>';
     uniqueCities.forEach(city => {
-        if (city) {
-            select.innerHTML += `<option value="${city}">${city}</option>`;
-        }
+        if (city) select.innerHTML += `<option value="${city}">${city}</option>`;
     });
 
     if (uniqueCities.includes(previousSelection)) {
@@ -452,10 +489,10 @@ function renderRemainingStores(filteredStores) {
     Object.keys(storesByRegion).sort().forEach(region => {
         const regionStores = storesByRegion[region];
         const totalInRegion = allStores.filter(s => (s.bolge || 'Bölge Belirtilmemiş') === region).length;
-        const auditedInRegion = allStores.filter(s => (s.bolge || 'Bölge Belirtilmemiş') === region && auditedCodesThisMonth.includes(s.bayiKodu)).length;
+        const auditedInRegion = allStores.filter(s => (s.bolge || 'Bölge Belirtilmemiş') === region && auditedCodes.includes(s.bayiKodu)).length;
         const progress = totalInRegion > 0 ? (auditedInRegion / totalInRegion) * 100 : 0;
         
-        let regionHtml = `<div class="region-container"><div class="region-header"><span>${region} (Bu Ay: ${auditedInRegion}/${totalInRegion})</span></div><div class="progress-bar"><div class="progress-bar-fill" style="width: ${progress.toFixed(2)}%;">${progress.toFixed(0)}%</div></div><ul class="store-list">`;
+        let regionHtml = `<div class="region-container"><div class="region-header"><span>${region} (${auditedInRegion}/${totalInRegion})</span></div><div class="progress-bar"><div class="progress-bar-fill" style="width: ${progress.toFixed(2)}%;">${progress.toFixed(0)}%</div></div><ul class="store-list">`;
         regionStores.forEach(store => {
             regionHtml += `<li class="store-list-item">${store.bayiAdi} (${store.bayiKodu}) - ${store.sehir}/${store.ilce}</li>`;
         });
@@ -466,16 +503,22 @@ function renderRemainingStores(filteredStores) {
 
 function renderAuditedStores() {
     const container = document.getElementById('denetlenen-bayiler-container');
+    
     if (!allStores || allStores.length === 0) { 
-        container.innerHTML = '<p class="empty-list-message">Sistemde bu görünüm için bayi bulunamadı.</p>';
+        container.innerHTML = '<p class="empty-list-message">Sistemde bayi bulunamadı.</p>';
         return;
     }
-    if (auditedStoreCodesCurrentMonth.length === 0) { 
-        container.innerHTML = '<p class="empty-list-message">Bu ay bu görünüm için denetim yapılmadı veya yapılanlar geri alındı.</p>';
+
+    const currentAuditedData = (currentViewMode === 'monthly') 
+        ? auditedStoreCodesCurrentMonth 
+        : auditedStoreCodesCurrentYear.map(code => ({ code: code, timestamp: 0 }));
+
+    if (currentAuditedData.length === 0) { 
+        container.innerHTML = '<p class="empty-list-message">Bu dönem için denetim kaydı bulunamadı.</p>';
         return;
     }
     
-    const auditedStoresDetails = auditedStoreCodesCurrentMonth
+    const auditedStoresDetails = currentAuditedData
         .map(audit => {
             const storeFromMaster = allStoresMaster.find(store => store.bayiKodu === audit.code);
             return { ...(storeFromMaster || {bayiKodu: audit.code, bayiAdi: 'Bilinmeyen Bayi'}), timestamp: audit.timestamp };
@@ -485,7 +528,8 @@ function renderAuditedStores() {
     
     let listHtml = '<ul class="store-list">';
     auditedStoresDetails.forEach(store => {
-        const revertButtonHtml = currentUserRole === 'admin'
+        // Geri alma butonu sadece Aylık modda ve Admin ise gözüksün (Yıllık modda karmaşıklığı önlemek için)
+        const revertButtonHtml = (currentUserRole === 'admin' && currentViewMode === 'monthly')
             ? `<button class="btn-warning btn-sm btn-revert-audit" data-bayi-kodu="${store.bayiKodu}" title="Bu denetimi listeden kaldır"><i class="fas fa-undo"></i> Geri Al</button>`
             : ''; 
 
