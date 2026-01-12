@@ -326,7 +326,7 @@ function calculateAndDisplayDashboard() {
     const today = new Date();
     const totalStoresCount = allStores.length;
     
-    let displayTarget, displayAudited, titleIcon, titleText, targetLabel, auditedLabel, listTitle;
+    let displayTarget, displayAudited, titleIcon, titleText, targetLabel, auditedLabel, listTitle, remainingListTitle;
 
     if (currentViewMode === 'monthly') {
         displayTarget = aylikHedef;
@@ -336,6 +336,7 @@ function calculateAndDisplayDashboard() {
         targetLabel = "Aylık Denetim Hedefi";
         auditedLabel = "Bu Ay Denetlenen";
         listTitle = "Bu Ay Denetlenenler";
+        remainingListTitle = "Bu Ay Denetlenecek Bayiler";
         document.getElementById('work-days-card').style.display = 'block';
     } else {
         displayTarget = totalStoresCount;
@@ -345,6 +346,7 @@ function calculateAndDisplayDashboard() {
         targetLabel = "Yıllık Toplam Bayi";
         auditedLabel = "Yıl Boyu Denetlenen";
         listTitle = "Bu Yıl Denetlenenler";
+        remainingListTitle = "Bu Yıl Denetlenecek Bayiler";
         document.getElementById('work-days-card').style.display = 'none';
     }
 
@@ -355,6 +357,7 @@ function calculateAndDisplayDashboard() {
     document.getElementById('target-label').textContent = targetLabel;
     document.getElementById('audited-label').textContent = auditedLabel;
     document.getElementById('audited-list-title').innerHTML = `<i class="fas fa-check-double"></i> ${listTitle}`;
+    document.getElementById('remaining-list-title').innerHTML = `<i class="fas fa-list-ul"></i> ${remainingListTitle}`;
     
     document.getElementById('work-days-count').textContent = remainingWorkDays;
     document.getElementById('total-stores-count').textContent = displayTarget;
