@@ -22,10 +22,10 @@
     </div>
 </div>
 
-
 <div class="card" id="audit-tracker-manager">
     <div class="card-header">
-        <div class="header-placeholder"></div> <button id="open-admin-panel-btn" class="btn-primary btn-sm"><i class="fas fa-cogs"></i> Yönetim Paneli</button>
+        <div class="header-placeholder"></div> 
+        <button id="open-admin-panel-btn" class="btn-primary btn-sm"><i class="fas fa-cogs"></i> Yönetim Paneli</button>
     </div>
     
     <div id="upload-area">
@@ -37,8 +37,6 @@
     <div id="loaded-data-area" style="display: none;">
          <div class="loaded-data-info">
             <p><i class="fas fa-database"></i> Veriler buluttan yüklendi.</p>
-            <div class="data-actions">
-                </div>
         </div>
     </div>
     
@@ -62,15 +60,15 @@
                 <p id="work-days-count">0</p>
             </div>
             <div class="stat-card">
-                <span><i class="fas fa-bullseye"></i> <span id="target-label">Aylık Denetim Hedefi</span></span>
+                <span><i class="fas fa-bullseye"></i> <span id="target-label">Hedef</span></span>
                 <p id="total-stores-count">0</p>
             </div>
             <div class="stat-card completed">
-                <span><i class="fas fa-check"></i> <span id="audited-label">Bu Ay Denetlenen</span></span>
+                <span><i class="fas fa-check"></i> <span id="audited-label">Denetlenen</span></span>
                 <p id="audited-stores-count">0</p>
             </div>
             <div class="stat-card remaining">
-                <span><i class="fas fa-hourglass-start"></i> <span id="remaining-label">Aylık Hedefe Kalan</span></span>
+                <span><i class="fas fa-hourglass-start"></i> <span id="remaining-label">Hedefe Kalan</span></span>
                 <p id="remaining-stores-count">0</p>
             </div>
         </div>
@@ -80,8 +78,8 @@
                 <label for="admin-user-filter"><i class="fas fa-user-shield"></i> Admin: Veri Görünümü Seç</label>
                 <select id="admin-user-filter"></select>
             </div>
-            <small>Varsayılan olarak 'Benim Verilerim' gösterilir. Global veriler veya başka bir kullanıcı için seçim yapabilirsiniz.</small>
         </div>
+
         <div class="multi-filter-container">
             <div class="filter-item">
                 <label for="bolge-filter">Bölge</label>
@@ -113,7 +111,7 @@
             </div>
             <div class="audit-list-column">
                 <div class="list-header-wrapper">
-                    <h4 id="audited-list-title"><i class="fas fa-check-double"></i> Bu Ay Denetlenenler</h4>
+                    <h4 id="audited-list-title"><i class="fas fa-check-double"></i> Denetlenenler</h4>
                 </div>
                 <div id="denetlenen-bayiler-container"></div>
             </div>
