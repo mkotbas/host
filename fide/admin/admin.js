@@ -1,3 +1,5 @@
+// --- mkotbas/host/host-main/fide/admin/admin.js ---
+
 // --- Modül Tanımlamaları (Alt Menü Destekli Yapı) ---
 const modules = [
     {
@@ -5,6 +7,12 @@ const modules = [
         name: 'Denetim Takip',
         icon: 'fas fa-calendar-check',
         path: '../modules/denetim-takip/'
+    },
+    {
+        id: 'calisma-takvimi',
+        name: 'Çalışma Takvimi',
+        icon: 'fas fa-calendar-alt',
+        path: '../modules/calisma-takvimi/'
     },
     {
         id: 'fide-main-parent', // Ana menü ID'si

@@ -1,0 +1,152 @@
+/* fide/modules/calisma-takvimi/calisma-takvimi.css */
+
+.calendar-module-container {
+    padding: 10px;
+}
+
+/* Bilgilendirme Paneli */
+.calendar-module-container .info-banner {
+    background: #fff;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+    text-align: center;
+    border-left: 5px solid #cc0000;
+}
+
+.calendar-module-container .info-banner p {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.calendar-module-container .calendar-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.calendar-module-container .month-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+    padding: 1rem;
+    transition: transform 0.2s ease;
+    border: 1px solid #e2e8f0;
+}
+
+.calendar-module-container .month-card:hover {
+    transform: translateY(-5px);
+}
+
+.calendar-module-container .month-stats {
+    background: #f8fafc;
+    padding: 0.5rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: #475569;
+    display: flex;
+    justify-content: space-between;
+    border: 1px solid #e2e8f0;
+}
+
+.calendar-module-container .stat-item span {
+    display: block;
+    font-weight: bold;
+    color: #0f172a;
+}
+
+.calendar-module-container .month-header {
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(to right, #ff7f7f, #cc0000);
+    padding: 0.8rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.calendar-module-container .weekdays-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.calendar-module-container .weekday {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.calendar-module-container .days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+.calendar-module-container .day {
+    text-align: center;
+    padding: 0.75rem 0.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    position: relative;
+    transition: all 0.2s ease;
+    background: #f8fafc;
+    color: #94a3b8;
+    user-select: none;
+    font-size: 0.85rem;
+}
+
+.calendar-module-container .day.interactive {
+    cursor: pointer;
+}
+
+.calendar-module-container .day.interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: 1px solid #cbd5e1;
+}
+
+.calendar-module-container .day.workday {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.calendar-module-container .day.three { background: #f59e0b; color: white; }
+.calendar-module-container .day.two { background: #10b981; color: white; }
+.calendar-module-container .day.one { background: #3b82f6; color: white; }
+
+.calendar-module-container .day.leave {
+    background: #ef4444 !important;
+    color: white !important;
+    opacity: 0.8;
+    text-decoration: line-through;
+}
+
+.calendar-module-container .visit-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #334155;
+    color: #fff;
+    font-size: 0.6rem;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #fff;
+}
+
+.calendar-module-container .day.empty { visibility: hidden; }
+
+@media (max-width: 1200px) { .calendar-module-container .calendar-container { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .calendar-module-container .calendar-container { grid-template-columns: 1fr; } }
