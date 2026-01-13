@@ -33,14 +33,6 @@ export async function initializeCalismaTakvimiModule(pb) {
                 const stored = localStorage.getItem('bayiPlanlayiciData');
                 leaveData = (stored && stored !== "undefined") ? JSON.parse(stored) : {};
             }
-        } else {
-            const stored = localStorage.getItem('bayiPlanlayiciData');
-            leaveData = (stored && stored !== "undefined") ? JSON.parse(stored) : {};
-        }
-
-        if (pbInstance.authStore.model.role === 'admin') {
-            const adminBtn = document.getElementById('open-admin-panel-btn');
-            if (adminBtn) adminBtn.style.display = 'inline-flex';
         }
     }
 
@@ -50,16 +42,17 @@ export async function initializeCalismaTakvimiModule(pb) {
         const saveBtn = document.getElementById('save-settings-btn');
         const overlay = document.getElementById('admin-panel-overlay');
 
+        if (pbInstance.authStore.model.role === 'admin') {
+            openBtn.style.display = 'inline-flex';
+        }
+
         if (openBtn) openBtn.onclick = () => overlay.style.display = 'flex';
         if (closeBtn) closeBtn.onclick = () => overlay.style.display = 'none';
         
         if (saveBtn) {
             saveBtn.onclick = async () => {
                 const newVal = parseInt(document.getElementById('monthly-target-input').value);
-                if (isNaN(newVal) || newVal < 1) {
-                    alert("Lütfen geçerli bir sayı girin.");
-                    return;
-                }
+                if (isNaN(newVal) || newVal < 1) return;
                 try {
                     const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
                     await pbInstance.collection('ayarlar').update(record.id, { deger: newVal });
@@ -67,10 +60,7 @@ export async function initializeCalismaTakvimiModule(pb) {
                     document.getElementById('display-base-target').textContent = newVal;
                     overlay.style.display = 'none';
                     renderCalendar();
-                    alert("Hedef güncellendi.");
-                } catch (e) {
-                    alert("Hedef kaydedilemedi. PocketBase yetkilerini kontrol edin.");
-                }
+                } catch (e) { alert("Hata oluştu."); }
             };
         }
     }
@@ -78,11 +68,8 @@ export async function initializeCalismaTakvimiModule(pb) {
     async function toggleLeave(month, day) {
         const key = `${year}-${month}-${day}`;
         
-        if (leaveData[key]) {
-            delete leaveData[key];
-        } else {
-            leaveData[key] = true;
-        }
+        if (leaveData[key]) delete leaveData[key];
+        else leaveData[key] = true;
 
         localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
         renderCalendar();
@@ -95,21 +82,15 @@ export async function initializeCalismaTakvimiModule(pb) {
                     record = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
                 } catch (e) { record = null; }
 
+                const dataToSend = JSON.parse(JSON.stringify(leaveData));
+
                 if (record) {
-                    // PocketBase JSON alanını tamamen güncellemek için temiz bir nesne gönderiyoruz
-                    await pbInstance.collection('ayarlar').update(record.id, { 
-                        "deger": JSON.parse(JSON.stringify(leaveData)) 
-                    });
+                    await pbInstance.collection('ayarlar').update(record.id, { "deger": dataToSend });
                 } else {
-                    await pbInstance.collection('ayarlar').create({
-                        anahtar: settingsKey,
-                        deger: leaveData
-                    });
+                    await pbInstance.collection('ayarlar').create({ anahtar: settingsKey, deger: dataToSend });
                 }
-                console.log("Bulut başarıyla güncellendi.");
             } catch (error) {
-                console.error("PocketBase Hata Detayı:", error);
-                alert("Veritabanı hatası: İzin değişikliği kaydedilemedi. Lütfen PocketBase 'ayarlar' koleksiyonu yetkilerini kontrol edin.");
+                console.error("Senkronizasyon Hatası:", error);
             }
         }
     }
@@ -149,7 +130,6 @@ export async function initializeCalismaTakvimiModule(pb) {
             const firstDay = new Date(year, m, 1).getDay();
             const totalDays = new Date(year, m + 1, 0).getDate();
             const allWorkDays = getWorkDays(m);
-            
             const activeWorkDays = [];
             let relevantLeaveCount = 0;
 
@@ -159,23 +139,12 @@ export async function initializeCalismaTakvimiModule(pb) {
             });
 
             const baseTarget = globalAylikHedef;
-            const currentTarget = allWorkDays.length > 0 
-                ? Math.max(0, baseTarget - Math.round((baseTarget / allWorkDays.length) * relevantLeaveCount))
-                : 0;
-
+            const currentTarget = allWorkDays.length > 0 ? Math.max(0, baseTarget - Math.round((baseTarget / allWorkDays.length) * relevantLeaveCount)) : 0;
             const basePerDay = activeWorkDays.length > 0 ? Math.floor(currentTarget / activeWorkDays.length) : 0;
             const extras = activeWorkDays.length > 0 ? currentTarget % activeWorkDays.length : 0;
-            
-            const monthSeed = year + m + (currentTarget * 100);
-            const shuffled = seededShuffle([...activeWorkDays], monthSeed);
-            
+            const shuffled = seededShuffle([...activeWorkDays], year + m + (currentTarget * 100));
             const planMap = {};
             shuffled.forEach((d, i) => planMap[d] = basePerDay + (i < extras ? 1 : 0));
-
-            let totalLeaveDisplay = 0;
-            for(let d=1; d<=totalDays; d++) {
-                if(leaveData[`${year}-${m}-${d}`]) totalLeaveDisplay++;
-            }
 
             const card = document.createElement('div');
             card.className = 'month-card-cal';
@@ -183,8 +152,7 @@ export async function initializeCalismaTakvimiModule(pb) {
                 <div class="month-header-cal">${monthsTR[m]} ${year}</div>
                 <div class="month-stats-cal">
                     <div class="stat-item-cal">Hedef<span>${currentTarget}</span></div>
-                    <div class="stat-item-cal">İzin<span>${totalLeaveDisplay} Gün</span></div>
-                    <div class="stat-item-cal">Mesai<span>${allWorkDays.length} Gün</span></div>
+                    <div class="stat-item-cal">Mesai<span>${activeWorkDays.length} G</span></div>
                 </div>
                 <div class="weekdays-row-cal">${weekdaysTR.map(d => `<div class="weekday-cal">${d}</div>`).join('')}</div>
                 <div class="days-grid-cal"></div>
@@ -204,21 +172,18 @@ export async function initializeCalismaTakvimiModule(pb) {
                 if (dayOfWeek !== 0) {
                     box.classList.add('interactive-cal');
                     box.onclick = () => toggleLeave(m, d);
-
-                    if (leaveData[key]) {
-                        box.classList.add('leave-cal');
-                    } else if (dayOfWeek !== 6) {
+                    if (leaveData[key]) box.classList.add('leave-cal');
+                    else if (dayOfWeek !== 6) {
                         box.classList.add('workday-cal');
                         const count = planMap[d] || 0;
-                        if(count >= 3) box.classList.add('three-cal');
-                        else if(count === 2) box.classList.add('two-cal');
-                        else if(count === 1) box.classList.add('one-cal');
-                        
                         if (count > 0) {
                             const b = document.createElement('span');
                             b.className = 'visit-badge-cal';
                             b.textContent = count;
                             box.appendChild(b);
+                            if(count >= 3) box.classList.add('three-cal');
+                            else if(count === 2) box.classList.add('two-cal');
+                            else box.classList.add('one-cal');
                         }
                     }
                 }
