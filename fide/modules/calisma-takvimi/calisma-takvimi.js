@@ -27,15 +27,15 @@ export async function initializeCalismaTakvimiModule(pb) {
             const settingsKey = `leaveData_${pbInstance.authStore.model.id}`;
             try {
                 const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
-                // Buluttan gelen veriyi al, yoksa boş nesne ata
                 leaveData = leaveRecord.deger || {};
                 localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
             } catch (error) {
-                console.log("Bulutta veri yok veya hata oluştu, yerel hafıza kullanılıyor.");
-                leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+                const stored = localStorage.getItem('bayiPlanlayiciData');
+                leaveData = (stored && stored !== "undefined") ? JSON.parse(stored) : {};
             }
         } else {
-            leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+            const stored = localStorage.getItem('bayiPlanlayiciData');
+            leaveData = (stored && stored !== "undefined") ? JSON.parse(stored) : {};
         }
 
         if (pbInstance.authStore.model.role === 'admin') {
@@ -69,51 +69,47 @@ export async function initializeCalismaTakvimiModule(pb) {
                     renderCalendar();
                     alert("Hedef güncellendi.");
                 } catch (e) {
-                    alert("Hedef kaydedilemedi.");
+                    alert("Hedef kaydedilemedi. PocketBase yetkilerini kontrol edin.");
                 }
             };
         }
     }
 
-    /**
-     * İzin durumunu değiştirir ve PocketBase'e tam nesne gönderimi yaparak 
-     * silinen kayıtların veritabanından kalkmasını garanti eder.
-     */
     async function toggleLeave(month, day) {
         const key = `${year}-${month}-${day}`;
         
-        // Veriyi yerel olarak değiştir
         if (leaveData[key]) {
             delete leaveData[key];
         } else {
             leaveData[key] = true;
         }
 
-        // Arayüzü hemen güncelle (Hız hissi için)
         localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
         renderCalendar();
 
-        // Bulut Senkronizasyonu
         if (pbInstance && pbInstance.authStore.isValid) {
             const settingsKey = `leaveData_${pbInstance.authStore.model.id}`;
             try {
-                const record = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
-                
-                // KRİTİK: PocketBase JSON alanını tamamen değiştirmek için nesnenin kopyasını gönderiyoruz
-                await pbInstance.collection('ayarlar').update(record.id, { 
-                    "deger": { ...leaveData } 
-                });
-                console.log("Bulut senkronize edildi.");
-            } catch (error) {
-                if (error.status === 404) {
+                let record;
+                try {
+                    record = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
+                } catch (e) { record = null; }
+
+                if (record) {
+                    // PocketBase JSON alanını tamamen güncellemek için temiz bir nesne gönderiyoruz
+                    await pbInstance.collection('ayarlar').update(record.id, { 
+                        "deger": JSON.parse(JSON.stringify(leaveData)) 
+                    });
+                } else {
                     await pbInstance.collection('ayarlar').create({
                         anahtar: settingsKey,
                         deger: leaveData
                     });
-                } else {
-                    alert("İzin değişikliği buluta kaydedilemedi. Lütfen bağlantınızı kontrol edin.");
-                    console.error("Kayıt hatası:", error);
                 }
+                console.log("Bulut başarıyla güncellendi.");
+            } catch (error) {
+                console.error("PocketBase Hata Detayı:", error);
+                alert("Veritabanı hatası: İzin değişikliği kaydedilemedi. Lütfen PocketBase 'ayarlar' koleksiyonu yetkilerini kontrol edin.");
             }
         }
     }
