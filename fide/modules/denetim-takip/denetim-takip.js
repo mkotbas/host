@@ -312,12 +312,14 @@ async function saveSettings() {
     applyDataFilterAndRunDashboard(currentView);
 }
 
-function calculateTodayGoal(totalTarget, currentAudited) {
+/**
+ * GÜNCELLENDİ: Hem bugünkü planı hem de revize edilmiş toplam hedefi hesaplar.
+ */
+function getRevisedTargetInfo(baseTarget, currentAudited) {
     const today = new Date();
     const year = today.getFullYear();
     const month = today.getMonth();
     const todayDate = today.getDate();
-
     const leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
 
     const lastDay = new Date(year, month + 1, 0).getDate();
@@ -342,25 +344,26 @@ function calculateTodayGoal(totalTarget, currentAudited) {
         if (leaveData[`${year}-${month}-${d}`]) leaveInWorkDays++;
     });
     
-    const baseTarget = 47;
+    // Revize Hedef Hesaplama (Takvim Mantığı)
     const dailyAverage = baseTarget / (allWorkDays.length || 1);
     const deduction = Math.round(dailyAverage * leaveInWorkDays);
-    const revisedTarget = Math.max(0, baseTarget - deduction);
+    const revisedTotalTarget = Math.max(0, baseTarget - deduction);
 
-    const remainingToVisit = Math.max(0, revisedTarget - currentAudited);
+    // Kalan iş ve günlük dağıtım
+    const remainingToVisit = Math.max(0, revisedTotalTarget - currentAudited);
     
-    if (activeWorkDays.length === 0) return 0;
-    
-    const todayKey = `${year}-${month}-${todayDate}`;
-    if (today.getDay() === 0 || today.getDay() === 6 || leaveData[todayKey]) {
-        return 0;
+    let todayGoal = 0;
+    if (activeWorkDays.length > 0) {
+        const todayKey = `${year}-${month}-${todayDate}`;
+        if (!(today.getDay() === 0 || today.getDay() === 6 || leaveData[todayKey])) {
+            const basePerDay = Math.floor(remainingToVisit / activeWorkDays.length);
+            const extras = remainingToVisit % activeWorkDays.length;
+            const todayIdxInActive = activeWorkDays.indexOf(todayDate);
+            todayGoal = todayIdxInActive < extras ? basePerDay + 1 : basePerDay;
+        }
     }
 
-    const basePerDay = Math.floor(remainingToVisit / activeWorkDays.length);
-    const extras = remainingToVisit % activeWorkDays.length;
-
-    const todayIdxInActive = activeWorkDays.indexOf(todayDate);
-    return todayIdxInActive < extras ? basePerDay + 1 : basePerDay;
+    return { revisedTotalTarget, todayGoal };
 }
 
 function calculateAndDisplayDashboard() {
@@ -370,8 +373,15 @@ function calculateAndDisplayDashboard() {
     let displayTarget, displayAudited, titleIcon, titleText, targetLabel, auditedLabel, listTitle, remainingListTitle;
 
     if (currentViewMode === 'monthly') {
-        displayTarget = aylikHedef;
         displayAudited = auditedStoreCodesCurrentMonth.length;
+        
+        // YENİ: İzinleri hesaba katarak hedefi revize et
+        const baseMonthlyTarget = aylikHedef || 47;
+        const targetInfo = getRevisedTargetInfo(baseMonthlyTarget, displayAudited);
+        
+        displayTarget = targetInfo.revisedTotalTarget; // Revize edilmiş hedef
+        const todayGoal = targetInfo.todayGoal; // Bugünkü plan
+
         titleIcon = "calendar-day";
         titleText = `${today.getFullYear()} ${monthNames[today.getMonth()]} Ayı Performansı`;
         targetLabel = "Aylık Denetim Hedefi";
@@ -381,8 +391,12 @@ function calculateAndDisplayDashboard() {
         
         const workDaysCard = document.getElementById('work-days-card');
         const dailyGoalCard = document.getElementById('daily-goal-card');
+        const dailyGoalCount = document.getElementById('daily-goal-count');
+
         if (workDaysCard) workDaysCard.style.display = 'block';
         if (dailyGoalCard) dailyGoalCard.style.display = 'block';
+        if (dailyGoalCount) dailyGoalCount.textContent = todayGoal;
+
     } else {
         displayTarget = totalStoresCount;
         displayAudited = auditedStoreCodesCurrentYear.length;
@@ -402,10 +416,6 @@ function calculateAndDisplayDashboard() {
     const remainingToTarget = Math.max(0, displayTarget - displayAudited);
     const remainingWorkDays = getRemainingWorkdays();
     
-    const todayGoal = (currentViewMode === 'monthly') ? calculateTodayGoal(displayTarget, displayAudited) : 0;
-    const dailyGoalCount = document.getElementById('daily-goal-count');
-    if (dailyGoalCount) dailyGoalCount.textContent = todayGoal;
-
     const dashboardTitle = document.getElementById('dashboard-title');
     if (dashboardTitle) dashboardTitle.innerHTML = `<i class="fas fa-${titleIcon}"></i> ${titleText}`;
     
