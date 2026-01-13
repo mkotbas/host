@@ -104,12 +104,10 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     async function loadModuleData() {
         showLoading(true);
         try {
-            // Kullanıcıları çek
             try {
                 allUsers = await pb.collection('users').getFullList({ sort: 'name' });
             } catch (e) { console.error("Kullanıcı listesi alınamadı:", e); }
 
-            // Bayileri çek
             allBayiler = await pb.collection('bayiler').getFullList({
                 sort: '-created',
                 expand: 'sorumlu_kullanici' 
@@ -280,15 +278,24 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
 
         let filteredBayiler = allBayiler.filter(bayi => {
             let passDropdown = true;
+            
+            // Değer kontrolü yardımcı fonksiyonu: null, undefined veya boşluktan oluşan değerleri "yok" kabul eder.
+            const isEmpty = (val) => !val || val.toString().trim() === '';
+
             switch (filterValue) {
-                case 'no_bolge': passDropdown = !bayi.bolge; break;
-                case 'no_sehir': passDropdown = !bayi.sehir; break;
-                case 'no_ilce': passDropdown = !bayi.ilce; break;
-                case 'no_yonetmen': passDropdown = !bayi.yonetmen; break; 
-                case 'no_uzman': passDropdown = !bayi.sorumlu_kullanici_email; break;
+                case 'no_bolge': passDropdown = isEmpty(bayi.bolge); break;
+                case 'no_sehir': passDropdown = isEmpty(bayi.sehir); break;
+                case 'no_ilce': passDropdown = isEmpty(bayi.ilce); break;
+                case 'no_bayiKodu': passDropdown = isEmpty(bayi.bayiKodu); break;
+                case 'no_bayiAdi': passDropdown = isEmpty(bayi.bayiAdi); break;
+                case 'no_yonetmen': passDropdown = isEmpty(bayi.yonetmen); break; 
+                case 'no_email': passDropdown = isEmpty(bayi.email); break;
+                case 'no_uzman': passDropdown = isEmpty(bayi.sorumlu_kullanici_email); break;
                 default: passDropdown = true;
             }
+
             if (!passDropdown) return false; 
+
             for (const key in searchValues) {
                 const term = searchValues[key];
                 if (term && !(bayi[key] || '').toLowerCase().includes(term)) return false;
