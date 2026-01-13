@@ -1,22 +1,66 @@
-.calendar-module-container { padding: 15px; }
-.cal-info-banner { 
-    background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 20px;
-    border-left: 5px solid #3b82f6; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+/* fide/modules/calisma-takvimi/calisma-takvimi.css */
+
+.calendar-module-wrapper { padding: 10px; }
+
+.info-banner-cal {
+    background: #fff; padding: 1.2rem; border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 2rem;
+    text-align: center; border-left: 5px solid #cc0000;
 }
-.cal-main-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-.m-card { background: #fff; border-radius: 12px; padding: 15px; border: 1px solid #e5e7eb; }
-.m-header { text-align: center; font-weight: bold; background: #3b82f6; color: #fff; padding: 8px; border-radius: 8px; margin-bottom: 10px; }
-.m-stats { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; padding: 5px; background: #f8fafc; border-radius: 5px; }
-.w-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; font-size: 11px; color: #6b7280; font-weight: bold; }
-.d-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 5px; }
-.d-box { 
-    aspect-ratio: 1; display: flex; align-items: center; justify-content: center; 
-    border-radius: 6px; font-weight: bold; font-size: 12px; position: relative; 
-    background: #f3f4f6; color: #9ca3af; cursor: pointer; transition: 0.2s;
+
+.calendar-grid-main {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem; width: 100%;
 }
-.d-box.active-day { background: #f9fafb; color: #374151; }
-.d-box.leave { background: #ef4444 !important; color: #fff !important; text-decoration: line-through; }
-.d-box.three { background: #f59e0b; color: #fff; }
-.d-box.two { background: #10b981; color: #fff; }
-.d-box.one { background: #3b82f6; color: #fff; }
-.v-badge { position: absolute; top: -3px; right: -3px; background: #1f2937; color: #fff; font-size: 9px; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+.month-card-cal {
+    background: #ffffff; border-radius: 16px; padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+}
+
+.month-header-cal {
+    text-align: center; font-size: 1.15rem; font-weight: 600;
+    color: #fff; background: linear-gradient(to right, #ff7f7f, #cc0000);
+    padding: 0.8rem; border-radius: 12px; margin-bottom: 1rem;
+}
+
+.month-stats-cal {
+    background: #f8fafc; padding: 0.5rem; border-radius: 8px;
+    margin-bottom: 1rem; font-size: 0.85rem; display: flex;
+    justify-content: space-between; border: 1px solid #e2e8f0;
+}
+
+.stat-item-cal span { display: block; font-weight: bold; color: #0f172a; }
+
+.weekdays-row-cal { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 0.5rem; }
+.weekday-cal { text-align: center; font-size: 0.85rem; color: #64748b; }
+
+.days-grid-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
+
+.day-cal {
+    text-align: center; padding: 0.75rem 0.2rem; border-radius: 8px;
+    font-weight: 600; position: relative; background: #f8fafc;
+    color: #94a3b8; user-select: none; font-size: 0.85rem;
+}
+
+.day-cal.interactive-cal { cursor: pointer; }
+.day-cal.interactive-cal:hover { transform: translateY(-2px); background: #e2e8f0; }
+
+.day-cal.workday-cal { background: #f1f5f9; color: #475569; }
+.day-cal.three-cal { background: #f59e0b; color: white; }
+.day-cal.two-cal { background: #10b981; color: white; }
+.day-cal.one-cal { background: #3b82f6; color: white; }
+
+.day-cal.leave-cal {
+    background: #ef4444 !important; color: white !important;
+    text-decoration: line-through;
+}
+
+.visit-badge-cal {
+    position: absolute; top: -5px; right: -5px; background: #334155;
+    color: #fff; font-size: 0.6rem; width: 16px; height: 16px;
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; border: 1.5px solid #fff;
+}
+
+.day-cal.empty-cal { visibility: hidden; }

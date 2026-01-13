@@ -8,7 +8,7 @@ const modules = [
         path: '../modules/denetim-takip/'
     },
     {
-        id: 'calisma-takvimi', // Takvim modülümüzün ID'si
+        id: 'calisma-takvimi',
         name: 'Çalışma Takvimi',
         icon: 'fas fa-calendar-alt',
         path: '../modules/calisma-takvimi/'
@@ -66,7 +66,6 @@ async function initializeAdminPanel() {
     if (userRole === 'admin' || userRole === 'client') {
         renderModuleMenu(userRole);
         if (!currentModuleId) {
-            // Varsayılan olarak ilk modülü yükle
             loadModule('denetim-takip');
         }
         subscribeToAdminChanges();
@@ -174,7 +173,7 @@ function updateConnectionIndicator(isLoggedIn) {
     const statusSwitch = document.getElementById('connection-status-switch');
     statusSwitch.classList.toggle('connected', isLoggedIn);
     statusSwitch.classList.toggle('disconnected', !isLoggedIn);
-    document.getElementById('connection-status-text').textContent = isLoggedIn ? 'Bağlı' : 'Değil';
+    document.getElementById('connection-status-text').textContent = isLoggedIn ? 'Buluta Bağlı' : 'Bağlı Değil';
 }
 
 function setupEventListeners() {
@@ -190,6 +189,6 @@ function setupEventListeners() {
         try {
             await pb.collection('users').authWithPassword(email, password);
             window.location.reload();
-        } catch (e) { alert("Hata."); }
+        } catch (e) { alert("E-posta veya şifre hatalı."); }
     };
 }
