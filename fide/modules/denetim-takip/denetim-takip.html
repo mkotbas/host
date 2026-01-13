@@ -22,7 +22,6 @@
     </div>
 </div>
 
-
 <div class="card" id="audit-tracker-manager">
     <div class="card-header">
         <div class="header-placeholder"></div> <button id="open-admin-panel-btn" class="btn-primary btn-sm"><i class="fas fa-cogs"></i> Yönetim Paneli</button>
@@ -57,8 +56,13 @@
         </div>
        
         <div class="dashboard-grid">
+            <div class="stat-card highlight" id="today-target-card">
+                <span><i class="fas fa-calendar-check"></i> Bugünün Planı</span>
+                <p id="today-visit-count">0</p>
+                <small id="today-status-text">Gereken Ziyaret</small>
+            </div>
             <div class="stat-card" id="work-days-card">
-                <span><i class="fas fa-briefcase"></i> Kalan İş Günü</span>
+                <span><i class="fas fa-briefcase"></i> Kalan Aktif Gün</span>
                 <p id="work-days-count">0</p>
             </div>
             <div class="stat-card">
