@@ -121,7 +121,7 @@ body {
 .main-content {
     flex-grow: 1;
     background-color: #e9e9e9;
-    /* GÜNCELLEME: Modül içindeki yazıların beyaz zeminde görünmesi için koyu renk eklendi */
+    /* GÜNCELLEME: Modül içindeki yazıları beyaz zeminde görünmesi için koyu renk eklendi */
     color: #334155; 
     padding: 0;
     overflow-y: auto;

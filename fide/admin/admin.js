@@ -8,7 +8,7 @@ const modules = [
         path: '../modules/denetim-takip/'
     },
     {
-        id: 'calisma-takvimi', // Takvim modülü buraya eklendi
+        id: 'calisma-takvimi', // Takvim modülü listeye eklendi
         name: 'Çalışma Takvimi',
         icon: 'fas fa-calendar-alt',
         path: '../modules/calisma-takvimi/'
@@ -73,7 +73,6 @@ async function initializeAdminPanel() {
         document.getElementById('module-menu').innerHTML = '';
         const container = document.getElementById('module-container');
         container.innerHTML = `<div style="text-align: center; padding: 50px; color: #dc3545;"><i class="fas fa-exclamation-triangle fa-3x"></i><h2>Erişim Reddedildi</h2><p>Lütfen sisteme giriş yapın.</p></div>`;
-        document.getElementById('module-title').innerHTML = '<i class="fas fa-ban"></i> Yetkisiz Erişim';
     }
     setupEventListeners();
 }

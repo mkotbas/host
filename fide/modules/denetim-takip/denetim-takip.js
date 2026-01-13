@@ -55,6 +55,7 @@ function calculateTodayRequirement() {
     const day = today.getDate();
     const dayOfWeek = today.getDay();
 
+    // Hafta sonu ise veya bugün izinliyse 0 döner
     if (dayOfWeek === 0 || dayOfWeek === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
 
     const allWorkDays = getWorkDaysOfMonth(year, month);
@@ -120,13 +121,12 @@ export async function initializeDenetimTakipModule(pb) {
 
 async function loadSettings() {
     try {
-        // Genel hedefi çek
         const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
         globalAylikHedef = record.deger || 0;
     } catch (error) { globalAylikHedef = 0; }
 
     try {
-        // BULUTTAN İZİN VERİLERİNİ ÇEK (LocalStorage yerine)
+        // BULUTTAN İZİN VERİLERİNİ ÇEK
         const settingsKey = `leaveData_${currentUserId}`;
         const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
         leaveDataBulut = leaveRecord.deger || {};
