@@ -8,7 +8,7 @@ const modules = [
         path: '../modules/denetim-takip/'
     },
     {
-        id: 'calisma-takvimi',
+        id: 'calisma-takvimi', // Takvim modülü buraya eklendi
         name: 'Çalışma Takvimi',
         icon: 'fas fa-calendar-alt',
         path: '../modules/calisma-takvimi/'
@@ -72,7 +72,8 @@ async function initializeAdminPanel() {
     } else {
         document.getElementById('module-menu').innerHTML = '';
         const container = document.getElementById('module-container');
-        container.innerHTML = `<div style="text-align: center; padding: 50px; color: #dc3545;"><i class="fas fa-exclamation-triangle fa-3x"></i><h2>Erişim Reddedildi</h2><p>Lütfen giriş yapın.</p></div>`;
+        container.innerHTML = `<div style="text-align: center; padding: 50px; color: #dc3545;"><i class="fas fa-exclamation-triangle fa-3x"></i><h2>Erişim Reddedildi</h2><p>Lütfen sisteme giriş yapın.</p></div>`;
+        document.getElementById('module-title').innerHTML = '<i class="fas fa-ban"></i> Yetkisiz Erişim';
     }
     setupEventListeners();
 }
@@ -93,14 +94,25 @@ function renderModuleMenu(userRole) {
             module.submenu.forEach(sub => {
                 const subLi = document.createElement('li');
                 subLi.innerHTML = `<a href="#" data-module-id="${sub.id}"><i class="${sub.icon}"></i><span>${sub.name}</span></a>`;
-                subLi.querySelector('a').addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); loadModule(sub.id); });
+                subLi.querySelector('a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    loadModule(sub.id);
+                });
                 subMenu.appendChild(subLi);
             });
             li.appendChild(subMenu);
-            li.querySelector('a').addEventListener('click', (e) => { e.preventDefault(); li.classList.toggle('open'); subMenu.classList.toggle('open'); });
+            li.querySelector('a').addEventListener('click', (e) => {
+                e.preventDefault();
+                li.classList.toggle('open');
+                subMenu.classList.toggle('open');
+            });
         } else {
             li.innerHTML = `<a href="#" data-module-id="${module.id}"><i class="${module.icon}"></i><span>${module.name}</span></a>`;
-            li.querySelector('a').addEventListener('click', (e) => { e.preventDefault(); loadModule(module.id); });
+            li.querySelector('a').addEventListener('click', (e) => {
+                e.preventDefault();
+                loadModule(module.id);
+            });
         }
         menu.appendChild(li);
     });
@@ -124,12 +136,12 @@ async function loadModule(moduleId) {
 
     const container = document.getElementById('module-container');
     const title = document.getElementById('module-title');
-    container.innerHTML = `<p>Yükleniyor...</p>`;
+    container.innerHTML = `<p style="padding:20px; color:#3b82f6;"><i class="fas fa-spinner fa-spin"></i> Modül yükleniyor...</p>`;
     title.innerHTML = `<i class="${module.icon}"></i> ${module.name}`;
 
     try {
         const htmlResponse = await fetch(`${module.path}${module.id}.html`);
-        if (!htmlResponse.ok) throw new Error("Dosya eksik.");
+        if (!htmlResponse.ok) throw new Error(`${module.id}.html dosyası bulunamadı.`);
         container.innerHTML = await htmlResponse.text();
 
         const cssId = `module-css-${module.id}`;
@@ -149,7 +161,8 @@ async function loadModule(moduleId) {
             moduleExports[initFunctionName](pb);
         }
     } catch (error) {
-        container.innerHTML = `<p style="color: red;">Yükleme hatası: ${error.message}</p>`;
+        console.error("Yükleme hatası:", error);
+        container.innerHTML = `<div style="padding:20px; color:#ef4444;"><i class="fas fa-exclamation-circle"></i> Modül yüklenemedi: ${error.message}</div>`;
     }
 }
 

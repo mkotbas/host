@@ -1,12 +1,15 @@
 /* fide/modules/calisma-takvimi/calisma-takvimi.css */
 
-.calendar-module-wrapper { padding: 10px; }
+.calendar-module-wrapper { padding: 5px; }
 
-.info-banner-cal {
+.cal-info-banner {
     background: #fff; padding: 1.2rem; border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 2rem;
     text-align: center; border-left: 5px solid #cc0000;
 }
+
+.cal-info-banner p { color: #1e293b; font-weight: 600; margin-bottom: 5px; }
+.cal-info-banner small { color: #64748b; font-style: italic; }
 
 .calendar-grid-main {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -16,7 +19,10 @@
 .month-card-cal {
     background: #ffffff; border-radius: 16px; padding: 1rem;
     box-shadow: 0 8px 32px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+    transition: transform 0.2s ease;
 }
+
+.month-card-cal:hover { transform: translateY(-5px); }
 
 .month-header-cal {
     text-align: center; font-size: 1.15rem; font-weight: 600;
@@ -32,8 +38,11 @@
 
 .stat-item-cal span { display: block; font-weight: bold; color: #0f172a; }
 
-.weekdays-row-cal { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 0.5rem; }
-.weekday-cal { text-align: center; font-size: 0.85rem; color: #64748b; }
+.weekdays-row-cal { 
+    display: grid; grid-template-columns: repeat(7, 1fr); 
+    margin-bottom: 0.5rem; font-weight: bold;
+}
+.weekday-cal { text-align: center; font-size: 0.8rem; color: #64748b; }
 
 .days-grid-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
 
@@ -43,8 +52,8 @@
     color: #94a3b8; user-select: none; font-size: 0.85rem;
 }
 
-.day-cal.interactive-cal { cursor: pointer; }
-.day-cal.interactive-cal:hover { transform: translateY(-2px); background: #e2e8f0; }
+.day-cal.interactive-cal { cursor: pointer; border: 1px solid transparent; }
+.day-cal.interactive-cal:hover { transform: translateY(-2px); border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
 .day-cal.workday-cal { background: #f1f5f9; color: #475569; }
 .day-cal.three-cal { background: #f59e0b; color: white; }
@@ -53,14 +62,14 @@
 
 .day-cal.leave-cal {
     background: #ef4444 !important; color: white !important;
-    text-decoration: line-through;
+    text-decoration: line-through; opacity: 0.8;
 }
 
 .visit-badge-cal {
     position: absolute; top: -5px; right: -5px; background: #334155;
-    color: #fff; font-size: 0.6rem; width: 16px; height: 16px;
+    color: #fff; font-size: 0.65rem; width: 18px; height: 18px;
     border-radius: 50%; display: flex; align-items: center;
-    justify-content: center; border: 1.5px solid #fff;
+    justify-content: center; border: 2px solid #fff;
 }
 
 .day-cal.empty-cal { visibility: hidden; }
