@@ -1,6 +1,6 @@
 /**
  * Kullanıcı Yönetimi Modülü
- * GÜNCELLEME 24.10: Stil senkronizasyonu için başlangıç gecikmesi eklendi.
+ * GÜNCELLEME: Admin hesapları için silme ve banlama seçenekleri kaldırıldı.
  */
 export function initializeKullaniciYoneticisiModule(pbInstance) {
     
@@ -73,6 +73,14 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
             const tr = document.createElement('tr');
             const roleClass = user.role === 'admin' ? 'role-admin' : 'role-client';
             const banStatusClass = user.is_banned ? 'status-banned' : 'status-active';
+            
+            // Eğer kullanıcı admin ise silme butonunu gösterme, yerine bilgi yazısı ekle
+            const actionButtons = user.role === 'admin' 
+                ? `<button class="btn-warning btn-sm btn-edit"><i class="fas fa-edit"></i> Düzenle</button>
+                   <span class="text-muted" style="margin-left: 5px; font-size: 0.8rem;">Korunuyor</span>`
+                : `<button class="btn-warning btn-sm btn-edit"><i class="fas fa-edit"></i> Düzenle</button>
+                   <button class="btn-danger btn-sm btn-delete"><i class="fas fa-trash"></i> Sil</button>`;
+
             tr.innerHTML = `
                 <td><strong>${user.name || 'İsimsiz'}</strong></td>
                 <td>${user.email}</td>
@@ -81,12 +89,18 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
                 <td>${user.mobile_access ? 'Evet' : 'Hayır'}</td>
                 <td>${new Date(user.created).toLocaleDateString('tr-TR')}</td>
                 <td class="actions-cell">
-                    <button class="btn-warning btn-sm btn-edit"><i class="fas fa-edit"></i> Düzenle</button>
-                    <button class="btn-danger btn-sm btn-delete"><i class="fas fa-trash"></i> Sil</button>
+                    ${actionButtons}
                 </td>
             `;
+            
             tr.querySelector('.btn-edit').addEventListener('click', () => handleEdit(user.id));
-            tr.querySelector('.btn-delete').addEventListener('click', () => handleDelete(user.id));
+            
+            // Silme butonu sadece admin olmayanlar için var, kontrol ederek ekliyoruz
+            const deleteBtn = tr.querySelector('.btn-delete');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => handleDelete(user.id));
+            }
+            
             tableBody.appendChild(tr);
         });
     }
@@ -130,7 +144,11 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
         form.reset(); userIdInput.value = user.id; formTitle.textContent = 'Kullanıcıyı Düzenle';
         userNameInput.value = user.name || ''; userEmailInput.value = user.email; userEmailInput.disabled = true;
         userRoleSelect.value = user.role; mobileAccessCheckbox.checked = user.mobile_access;
-        passwordWrapper.style.display = 'none'; userBanSection.style.display = 'block';
+        passwordWrapper.style.display = 'none'; 
+        
+        // Eğer kullanıcı admin ise BAN butonunun olduğu bölümü gizle
+        userBanSection.style.display = user.role === 'admin' ? 'none' : 'block';
+        
         updateBanButton(user.is_banned); devicesHr.style.display = 'block';
         if (user.role === 'client') { loadUserDevices(user.id); userDeviceLimitSection.style.display = 'block'; userDeviceLimitInput.value = user.device_limit || 1; }
         else { userDeviceLimitSection.style.display = 'none'; userDevicesTableWrapper.style.display = 'none'; }
@@ -138,6 +156,12 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
     }
 
     async function handleDelete(userId) {
+        const user = allUsersCache.find(u => u.id === userId);
+        if (user && user.role === 'admin') {
+            alert('Güvenlik gereği yönetici hesapları silinemez!');
+            return;
+        }
+        
         if (!confirm('Emin misiniz?')) return;
         try {
             const devices = await pb.collection('user_devices').getFullList({ filter: `user = "${userId}"` });
@@ -165,6 +189,11 @@ export function initializeKullaniciYoneticisiModule(pbInstance) {
 
     async function handleToggleBanUser() {
         const user = allUsersCache.find(u => u.id === userIdInput.value);
+        if (user && user.role === 'admin') {
+            alert('Yönetici hesapları kilitlenemez!');
+            return;
+        }
+
         if (!confirm('BAN durumu değişecek, emin misiniz?')) return;
         try {
             const newStatus = !user.is_banned;
