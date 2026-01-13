@@ -1,0 +1,120 @@
+/**
+ * Çalışma Takvimi Modülü - Stil Dosyası
+ * Bulut tabanlı ve dinamik hedef hesaplama arayüzü
+ */
+
+/* Ana Modül Konteynırı */
+.calisma-takvimi-wrapper {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    font-family: 'Inter', sans-serif;
+}
+
+/* Üst Panel: Hedef Giriş Alanı */
+.hedef-yonetim-paneli {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f0f2f5;
+    margin-bottom: 25px;
+}
+
+.hedef-girdi-grubu {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hedef-input {
+    width: 120px;
+    padding: 8px 12px;
+    border: 2px solid #e0e4e9;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+
+.hedef-input:focus {
+    border-color: #4a90e2;
+    outline: none;
+}
+
+/* Takvim Izgarası (Grid) */
+.takvim-izgara {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* Haftalık 7 gün dizilimi */
+    gap: 15px;
+}
+
+.gun-kutusu {
+    aspect-ratio: 1 / 1;
+    border: 1px solid #edf0f3;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #fcfdfe;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.gun-kutusu:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 15px rgba(0,0,0,0.05);
+}
+
+/* Senkronizasyon ve Durum Renkleri */
+.gun-no {
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+/* Otomatik Denetim Takip ile Senkron Durumlar */
+.denetim-tamamlandi {
+    background-color: #ecfdf5 !important;
+    border-color: #10b981 !important;
+}
+
+.denetim-bekliyor {
+    background-color: #fffbeb !important;
+    border-color: #f59e0b !important;
+}
+
+/* Performans Göstergesi */
+.performans-bari-alani {
+    margin-top: 25px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 10px;
+}
+
+.progres-cubugu {
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progres-doluluk {
+    height: 100%;
+    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+    width: 0%; /* JS ile dinamik olarak güncellenir */
+    transition: width 0.5s ease-in-out;
+}
+
+/* Mobil Uyumluluk */
+@media (max-width: 768px) {
+    .takvim-izgara {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .hedef-yonetim-paneli {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
