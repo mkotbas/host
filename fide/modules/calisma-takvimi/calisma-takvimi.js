@@ -1,51 +1,46 @@
 // fide/modules/calisma-takvimi/calisma-takvimi.js
 
 let pbInstance = null;
-let globalAylikHedef = 47; // Varsayılan değer
+let globalAylikHedef = 47; 
 let leaveData = {};
 
 export async function initializeCalismaTakvimiModule(pb) {
     pbInstance = pb;
     const year = new Date().getFullYear();
     
-    // Verileri buluttan ve hafızadan yükle
     await loadInitialSettings();
     setupEventListeners();
     renderCalendar();
 
     async function loadInitialSettings() {
-        // 1. Veritabanından (ayarlar tablosu) hedef sayısını çek
         try {
             const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
             globalAylikHedef = record.deger || 47;
             document.getElementById('monthly-target-input').value = globalAylikHedef;
             document.getElementById('display-base-target').textContent = globalAylikHedef;
         } catch (error) {
-            console.error("Hedef okunamadı, varsayılan 47 kullanılıyor.");
             globalAylikHedef = 47;
             document.getElementById('display-base-target').textContent = globalAylikHedef;
         }
 
-        // 2. İzin verilerini BULUTTAN çek (YENİ: Denetim Takip ile senkronize olması için)
         if (pbInstance && pbInstance.authStore.isValid) {
             const settingsKey = `leaveData_${pbInstance.authStore.model.id}`;
             try {
                 const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
+                // Buluttan gelen veriyi al, yoksa boş nesne ata
                 leaveData = leaveRecord.deger || {};
-                // Buluttaki veriyi yerel hafızaya da yazalım
                 localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
             } catch (error) {
-                // Bulutta kayıt yoksa (404), yerel hafızadan (localStorage) devam et
-                console.log("Bulutta izin verisi bulunamadı, yerel hafıza kullanılıyor.");
+                console.log("Bulutta veri yok veya hata oluştu, yerel hafıza kullanılıyor.");
                 leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
             }
         } else {
             leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
         }
 
-        // 3. Yetki kontrolü (Yönetim Paneli butonu sadece adminlere görünür)
         if (pbInstance.authStore.model.role === 'admin') {
-            document.getElementById('open-admin-panel-btn').style.display = 'inline-flex';
+            const adminBtn = document.getElementById('open-admin-panel-btn');
+            if (adminBtn) adminBtn.style.display = 'inline-flex';
         }
     }
 
@@ -65,54 +60,59 @@ export async function initializeCalismaTakvimiModule(pb) {
                     alert("Lütfen geçerli bir sayı girin.");
                     return;
                 }
-
                 try {
-                    // Sayıyı veritabanına kaydet
                     const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
                     await pbInstance.collection('ayarlar').update(record.id, { deger: newVal });
-                    
-                    // Ekranı güncelle
                     globalAylikHedef = newVal;
                     document.getElementById('display-base-target').textContent = newVal;
                     overlay.style.display = 'none';
-                    renderCalendar(); // Takvimi yeni sayıya göre anında yeniden hesapla
-                    alert("Hedef güncellendi ve takvim yeniden hesaplandı.");
+                    renderCalendar();
+                    alert("Hedef güncellendi.");
                 } catch (e) {
-                    alert("Hedef kaydedilemedi. Veritabanı bağlantısını kontrol edin.");
+                    alert("Hedef kaydedilemedi.");
                 }
             };
         }
     }
 
     /**
-     * İzin durumunu değiştirir ve BULUTA KAYDEDER.
-     * Denetim Takip modülünün bu değişikliği algılaması için PocketBase kaydı kritiktir.
+     * İzin durumunu değiştirir ve PocketBase'e tam nesne gönderimi yaparak 
+     * silinen kayıtların veritabanından kalkmasını garanti eder.
      */
     async function toggleLeave(month, day) {
         const key = `${year}-${month}-${day}`;
-        if (leaveData[key]) delete leaveData[key];
-        else leaveData[key] = true;
+        
+        // Veriyi yerel olarak değiştir
+        if (leaveData[key]) {
+            delete leaveData[key];
+        } else {
+            leaveData[key] = true;
+        }
 
-        // 1. Yerel hafızayı güncelle ve takvimi hemen yeniden çiz
+        // Arayüzü hemen güncelle (Hız hissi için)
         localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
         renderCalendar();
 
-        // 2. BULUT SENKRONİZASYONU (YENİ)
+        // Bulut Senkronizasyonu
         if (pbInstance && pbInstance.authStore.isValid) {
             const settingsKey = `leaveData_${pbInstance.authStore.model.id}`;
             try {
-                // Mevcut kaydı bul ve güncelle
                 const record = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
-                await pbInstance.collection('ayarlar').update(record.id, { deger: leaveData });
+                
+                // KRİTİK: PocketBase JSON alanını tamamen değiştirmek için nesnenin kopyasını gönderiyoruz
+                await pbInstance.collection('ayarlar').update(record.id, { 
+                    "deger": { ...leaveData } 
+                });
+                console.log("Bulut senkronize edildi.");
             } catch (error) {
-                // Kayıt yoksa yeni oluştur
                 if (error.status === 404) {
                     await pbInstance.collection('ayarlar').create({
                         anahtar: settingsKey,
                         deger: leaveData
                     });
                 } else {
-                    console.error("Bulut senkronizasyon hatası:", error);
+                    alert("İzin değişikliği buluta kaydedilemedi. Lütfen bağlantınızı kontrol edin.");
+                    console.error("Kayıt hatası:", error);
                 }
             }
         }
