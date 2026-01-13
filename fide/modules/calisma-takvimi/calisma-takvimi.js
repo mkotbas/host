@@ -2,58 +2,28 @@
 
 export async function initializeCalismaTakvimiModule(pb) {
     const monthsTR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-    const weekdaysTR = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pa'];
+    const weekdaysTR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz'];
     const year = new Date().getFullYear();
     const container = document.querySelector('.calendar-grid-main');
     
-    // Kullanıcıya özel anahtar oluştur (Örn: leaveData_a1b2c3d4)
-    const userId = pb.authStore.model.id;
-    const settingsKey = `leaveData_${userId}`;
-    let leaveData = {};
-    let globalTarget = 47;
+    // Verileri tarayıcı hafızasından çek
+    let leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
 
-    // 1. ADIM: Buluttan Verileri Çek
-    async function loadCloudData() {
-        try {
-            // Kullanıcının kişisel izin günlerini al
-            try {
-                const record = await pb.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
-                leaveData = record.deger || {};
-            } catch (e) { leaveData = {}; }
-
-            // Sistemin genel hedefini al
-            try {
-                const targetRec = await pb.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
-                globalTarget = targetRec.deger || 47;
-            } catch (e) { globalTarget = 47; }
-            
-            renderCalendar();
-        } catch (error) { console.error("Bulut veri yükleme hatası:", error); }
+    function saveData() {
+        localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
     }
 
-    // 2. ADIM: Buluta Veri Kaydet
-    async function saveCloudData() {
-        const payload = { anahtar: settingsKey, deger: leaveData };
-        try {
-            const existing = await pb.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
-            await pb.collection('ayarlar').update(existing.id, { deger: leaveData });
-        } catch (err) {
-            if (err.status === 404) {
-                await pb.collection('ayarlar').create(payload);
-            }
+    function toggleLeave(month, day) {
+        const key = `${year}-${month}-${day}`;
+        if (leaveData[key]) {
+            delete leaveData[key];
+        } else {
+            leaveData[key] = true;
         }
+        saveData();
+        renderCalendar();
     }
 
-    async function toggleLeave(month, day) {
-        const dateKey = `${year}-${month}-${day}`;
-        if (leaveData[dateKey]) delete leaveData[dateKey];
-        else leaveData[dateKey] = true;
-        
-        renderCalendar(); // Anında güncelle
-        await saveCloudData(); // Buluta gönder
-    }
-
-    // Karıştırma Algoritması (Denetim Takip ile birebir aynı olmalı)
     function seededShuffle(array, seed) {
         let currentSeed = seed;
         const random = () => {
@@ -67,6 +37,17 @@ export async function initializeCalismaTakvimiModule(pb) {
         return array;
     }
 
+    function getWorkDays(month) {
+        const days = [];
+        const date = new Date(year, month, 1);
+        while(date.getMonth() === month) {
+            const dw = date.getDay(); // 0: Pazar, 6: Cts
+            if(dw !== 0 && dw !== 6) days.push(date.getDate());
+            date.setDate(date.getDate() + 1);
+        }
+        return days;
+    }
+
     function renderCalendar() {
         if (!container) return;
         container.innerHTML = '';
@@ -74,70 +55,86 @@ export async function initializeCalismaTakvimiModule(pb) {
         for (let m = 0; m < 12; m++) {
             const firstDay = new Date(year, m, 1).getDay();
             const totalDays = new Date(year, m + 1, 0).getDate();
-            const workDays = [];
+            const allWorkDays = getWorkDays(m);
             
-            for (let d = 1; d <= totalDays; d++) {
-                const dw = new Date(year, m, d).getDay();
-                if (dw !== 0 && dw !== 6) workDays.push(d);
-            }
+            const activeWorkDays = [];
+            let relevantLeaveCount = 0;
 
-            const activeWD = workDays.filter(d => !leaveData[`${year}-${m}-${d}`]);
-            const target = Math.max(0, globalTarget - Math.round((globalTarget / workDays.length) * (workDays.length - activeWD.length)));
+            allWorkDays.forEach(day => {
+                if (leaveData[`${year}-${m}-${day}`]) relevantLeaveCount++;
+                else activeWorkDays.push(day);
+            });
+
+            // Hedef 47 üzerinden hesaplama
+            const baseTarget = 47;
+            const currentTarget = allWorkDays.length > 0 
+                ? Math.max(0, baseTarget - Math.round((baseTarget / allWorkDays.length) * relevantLeaveCount))
+                : 0;
+
+            const basePerDay = activeWorkDays.length > 0 ? Math.floor(currentTarget / activeWorkDays.length) : 0;
+            const extras = activeWorkDays.length > 0 ? currentTarget % activeWorkDays.length : 0;
             
-            const baseCount = activeWD.length ? Math.floor(target / activeWD.length) : 0;
-            const extrasCount = activeWD.length ? target % activeWD.length : 0;
+            const monthSeed = year + m + (currentTarget * 100);
+            const shuffled = seededShuffle([...activeWorkDays], monthSeed);
             
-            let seed = year + m + (target * 100);
-            const shuffled = seededShuffle([...activeWD], seed);
             const planMap = {};
-            shuffled.forEach((d, i) => planMap[d] = baseCount + (i < extrasCount ? 1 : 0));
+            shuffled.forEach((d, i) => planMap[d] = basePerDay + (i < extras ? 1 : 0));
+
+            let totalLeaveDisplay = 0;
+            for(let d=1; d<=totalDays; d++) {
+                if(leaveData[`${year}-${m}-${d}`]) totalLeaveDisplay++;
+            }
 
             const card = document.createElement('div');
             card.className = 'month-card-cal';
-            
-            let leaveCount = 0;
-            for(let d=1; d<=totalDays; d++) { if(leaveData[`${year}-${m}-${d}`]) leaveCount++; }
-
             card.innerHTML = `
                 <div class="month-header-cal">${monthsTR[m]} ${year}</div>
                 <div class="month-stats-cal">
-                    <div class="stat-item-cal">Hedef<span>${target}</span></div>
-                    <div class="stat-item-cal">İzin<span>${leaveCount} G</span></div>
-                    <div class="stat-item-cal">Mesai<span>${workDays.length} G</span></div>
+                    <div class="stat-item-cal">Hedef<span>${currentTarget}</span></div>
+                    <div class="stat-item-cal">İzin<span>${totalLeaveDisplay} Gün</span></div>
+                    <div class="stat-item-cal">Mesai<span>${allWorkDays.length} Gün</span></div>
                 </div>
                 <div class="weekdays-row-cal">${weekdaysTR.map(d => `<div class="weekday-cal">${d}</div>`).join('')}</div>
                 <div class="days-grid-cal"></div>
             `;
             
             const grid = card.querySelector('.days-grid-cal');
-            const skip = (firstDay === 0 ? 6 : firstDay - 1);
-            for (let s = 0; s < skip; s++) grid.innerHTML += '<div class="day-cal" style="visibility:hidden"></div>';
+            const skipDays = (firstDay === 0 ? 6 : firstDay - 1);
+            for (let s = 0; s < skipDays; s++) grid.innerHTML += '<div class="day-cal empty-cal"></div>';
 
             for (let d = 1; d <= totalDays; d++) {
                 const dayOfWeek = new Date(year, m, d).getDay();
                 const key = `${year}-${m}-${d}`;
-                const div = document.createElement('div');
-                div.className = 'day-cal';
-                div.textContent = d;
+                const box = document.createElement('div');
+                box.className = 'day-cal';
+                box.textContent = d;
 
-                if (dayOfWeek !== 0) { 
-                    div.classList.add('interactive-cal');
-                    if (leaveData[key]) div.classList.add('leave-cal');
-                    else if (dayOfWeek !== 6) {
-                        div.classList.add('workday-cal');
+                if (dayOfWeek !== 0) { // Pazar hariç etkileşimli
+                    box.classList.add('interactive-cal');
+                    box.onclick = () => toggleLeave(m, d);
+
+                    if (leaveData[key]) {
+                        box.classList.add('leave-cal');
+                    } else if (dayOfWeek !== 6) { // Hafta içi
+                        box.classList.add('workday-cal');
                         const count = planMap[d] || 0;
-                        if(count >= 3) div.classList.add('three-cal');
-                        else if(count === 2) div.classList.add('two-cal');
-                        else if(count === 1) div.classList.add('one-cal');
-                        if (count > 0) div.innerHTML += `<span class="visit-badge-cal">${count}</span>`;
+                        if(count >= 3) box.classList.add('three-cal');
+                        else if(count === 2) box.classList.add('two-cal');
+                        else if(count === 1) box.classList.add('one-cal');
+                        
+                        if (count > 0) {
+                            const b = document.createElement('span');
+                            b.className = 'visit-badge-cal';
+                            b.textContent = count;
+                            box.appendChild(b);
+                        }
                     }
-                    div.onclick = () => toggleLeave(m, d);
                 }
-                grid.appendChild(div);
+                grid.appendChild(box);
             }
             container.appendChild(card);
         }
     }
 
-    await loadCloudData();
+    renderCalendar();
 }
