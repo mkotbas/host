@@ -1,4 +1,5 @@
-// --- Kapsüllenmiş Global Değişkenler ---
+// fide/modules/denetim-takip/denetim-takip.js
+
 let allStoresMaster = [];
 let allReportsMaster = [];
 let allGeriAlinanMaster = [];
@@ -7,8 +8,7 @@ let allUsers = [];
 let allStores = [];
 let auditedStoreCodesCurrentMonth = [];
 let auditedStoreCodesCurrentYear = [];
-let geriAlinanKayitlariBuAy = [];
-let geriAlinanKayitlariBuYil = [];
+let leaveDataBulut = {}; // Yeni bulut verisi tutucu
 
 let currentGlobalFilteredStores = []; 
 let localCityFilterValue = 'Tümü';    
@@ -22,18 +22,8 @@ let pbInstance = null;
 let currentUserRole = null;
 let currentUserId = null;
 
-// --- YENİ: TAKVİM ENTEGRASYON FONKSİYONLARI ---
+// --- TAKVİM ENTEGRASYON FONKSİYONLARI (GÜNCELLENDİ) ---
 
-/**
- * Çalışma takvimindeki izin verilerini çeker.
- */
-function getLeaveData() {
-    return JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
-}
-
-/**
- * Belirli bir ayın iş günlerini (Pzt-Cum) hesaplar.
- */
 function getWorkDaysOfMonth(year, month) {
     const days = [];
     const date = new Date(year, month, 1);
@@ -45,9 +35,6 @@ function getWorkDaysOfMonth(year, month) {
     return days;
 }
 
-/**
- * seededShuffle algoritması (Takvimle birebir aynı dağıtımı yapmak için).
- */
 function seededShuffle(array, seed) {
     let currentSeed = seed;
     const random = () => {
@@ -61,9 +48,6 @@ function seededShuffle(array, seed) {
     return array;
 }
 
-/**
- * Bugünün FiDe ihtiyacını takvim mantığına göre hesaplar.
- */
 function calculateTodayRequirement() {
     const today = new Date();
     const year = today.getFullYear();
@@ -71,20 +55,18 @@ function calculateTodayRequirement() {
     const day = today.getDate();
     const dayOfWeek = today.getDay();
 
-    // Hafta sonu ise veya bugün izinliyse 0 döner
-    const leaveData = getLeaveData();
-    if (dayOfWeek === 0 || dayOfWeek === 6 || leaveData[`${year}-${month}-${day}`]) return 0;
+    if (dayOfWeek === 0 || dayOfWeek === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
 
     const allWorkDays = getWorkDaysOfMonth(year, month);
     const activeWorkDays = [];
     let relevantLeaveCount = 0;
 
     allWorkDays.forEach(d => {
-        if (leaveData[`${year}-${month}-${d}`]) relevantLeaveCount++;
+        if (leaveDataBulut[`${year}-${month}-${d}`]) relevantLeaveCount++;
         else activeWorkDays.push(d);
     });
 
-    const baseTarget = 47;
+    const baseTarget = globalAylikHedef || 47;
     const dailyAverage = baseTarget / allWorkDays.length;
     const currentTarget = Math.max(0, baseTarget - Math.round(dailyAverage * relevantLeaveCount));
 
@@ -100,14 +82,13 @@ function calculateTodayRequirement() {
         todayPlanned = basePerDay + (dayIndexInShuffled < extras ? 1 : 0);
     }
 
-    // Bugün tamamlanan FiDe sayısını bul
     const todayStart = new Date(today.setHours(0,0,0,0)).getTime();
     const completedToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp >= todayStart).length;
 
     return Math.max(0, todayPlanned - completedToday);
 }
 
-// --- MEVCUT MODÜL BAŞLATMA ---
+// --- MODÜL BAŞLATMA ---
 
 export async function initializeDenetimTakipModule(pb) {
     pbInstance = pb;
@@ -130,7 +111,7 @@ export async function initializeDenetimTakipModule(pb) {
         applyDataFilterAndRunDashboard('my_data');
 
     } else {
-        document.getElementById('upload-area').innerHTML = '<p style="text-align: center; color: var(--danger);">Denetim takip sistemini kullanmak için lütfen sisteme giriş yapın.</p>';
+        document.getElementById('upload-area').innerHTML = '<p style="text-align: center; color: var(--danger);">Giriş yapın.</p>';
         document.getElementById('upload-area').style.display = 'block';
     }
 
@@ -139,12 +120,18 @@ export async function initializeDenetimTakipModule(pb) {
 
 async function loadSettings() {
     try {
+        // Genel hedefi çek
         const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
         globalAylikHedef = record.deger || 0;
-    } catch (error) {
-        globalAylikHedef = 0;
-        if (error.status !== 404) console.error("Aylık hedef ayarı yüklenemedi:", error);
-    }
+    } catch (error) { globalAylikHedef = 0; }
+
+    try {
+        // BULUTTAN İZİN VERİLERİNİ ÇEK (LocalStorage yerine)
+        const settingsKey = `leaveData_${currentUserId}`;
+        const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
+        leaveDataBulut = leaveRecord.deger || {};
+    } catch (error) { leaveDataBulut = {}; }
+
     if (currentUserRole === 'admin') {
         document.getElementById('monthly-target-input').value = globalAylikHedef > 0 ? globalAylikHedef : '';
     }
@@ -157,9 +144,6 @@ async function loadMasterData() {
         if (allStoresMaster.length > 0) {
             document.getElementById('upload-area').style.display = 'none';
             document.getElementById('loaded-data-area').style.display = 'block';
-        } else {
-            document.getElementById('upload-area').style.display = 'block';
-            document.getElementById('loaded-data-area').style.display = 'none';
         }
         const today = new Date();
         const firstDayOfYear = new Date(today.getFullYear(), 0, 1).toISOString();
@@ -172,9 +156,7 @@ async function loadMasterData() {
             filter: `yil_ay ~ "${today.getFullYear()}-"`,
             expand: 'bayi'
         });
-    } catch (error) {
-        console.error("Ana veriler yüklenirken hata oluştu:", error);
-    }
+    } catch (error) { console.error("Veri hatası:", error); }
 }
 
 async function populateUserFilterDropdown() {
@@ -185,12 +167,10 @@ async function populateUserFilterDropdown() {
         selectElement.innerHTML = `<option value="my_data" selected>Benim Verilerim (Admin)</option><option value="global">Genel Bakış (Tüm Sistem)</option>`;
         allUsers.forEach(user => {
             if (user.id !== currentUserId) {
-                const displayName = user.name || user.email;
-                const roleLabel = user.role === 'admin' ? 'Admin' : 'Client';
-                selectElement.innerHTML += `<option value="${user.id}">${displayName} (${roleLabel})</option>`;
+                selectElement.innerHTML += `<option value="${user.id}">${user.name || user.email}</option>`;
             }
         });
-    } catch (error) { console.error("Kullanıcı listesi hatası:", error); }
+    } catch (error) { }
 }
 
 function applyDataFilterAndRunDashboard(viewId) {
@@ -242,14 +222,13 @@ function calculateAndDisplayDashboard() {
     const year = today.getFullYear();
     const month = today.getMonth();
     
-    // İzinli günlere göre hedefi düşür
-    const leaveData = getLeaveData();
     const allWorkDays = getWorkDaysOfMonth(year, month);
     let currentMonthLeaves = 0;
-    allWorkDays.forEach(d => { if (leaveData[`${year}-${month}-${d}`]) currentMonthLeaves++; });
+    allWorkDays.forEach(d => { if (leaveDataBulut[`${year}-${month}-${d}`]) currentMonthLeaves++; });
     
-    const dailyAverage = 47 / allWorkDays.length;
-    const adjustedTarget = Math.max(0, 47 - Math.round(dailyAverage * currentMonthLeaves));
+    const baseTarget = globalAylikHedef || 47;
+    const dailyAverage = baseTarget / allWorkDays.length;
+    const adjustedTarget = Math.max(0, baseTarget - Math.round(dailyAverage * currentMonthLeaves));
 
     let displayTarget, displayAudited;
     if (currentViewMode === 'monthly') {
@@ -274,8 +253,6 @@ function calculateAndDisplayDashboard() {
     renderAuditedStores(); 
     document.getElementById('dashboard-content').style.display = 'block';
 }
-
-// --- DİĞER YARDIMCI FONKSİYONLAR ---
 
 function setupModuleEventListeners(userRole) {
     if (document.body.dataset.denetimTakipListenersAttached) return;
@@ -317,7 +294,7 @@ async function saveSettings() {
         globalAylikHedef = val;
         applyDataFilterAndRunDashboard(document.getElementById('admin-user-filter').value || 'my_data');
         document.getElementById('admin-panel-overlay').style.display = 'none';
-    } catch (e) { alert("Hata oluştu."); }
+    } catch (e) { alert("Hata."); }
 }
 
 function updateAllFilterOptions() {
@@ -344,7 +321,7 @@ function renderRemainingStores(filtered) {
     const cont = document.getElementById('denetlenecek-bayiler-container');
     const audited = (currentViewMode === 'monthly') ? auditedStoreCodesCurrentMonth.map(a => a.code) : auditedStoreCodesCurrentYear;
     const rem = filtered.filter(s => !audited.includes(s.bayiKodu));
-    cont.innerHTML = rem.length ? '' : '<p class="empty-list-message">Denetlenecek bayi kalmadı.</p>';
+    cont.innerHTML = rem.length ? '' : '<p class="empty-list-message">Kayıt yok.</p>';
     if (!rem.length) return;
 
     const lSel = document.getElementById('local-city-filter');
@@ -379,10 +356,10 @@ function getRemainingWorkdays() {
 
 window.revertAudit = async (code) => {
     const s = allStoresMaster.find(x => x.bayiKodu === code);
-    if (!confirm("Denetimi geri almak istiyor musunuz?")) return;
+    if (!confirm("Geri almak istiyor musunuz?")) return;
     try {
         await pbInstance.collection('denetim_geri_alinanlar').create({yil_ay: `${new Date().getFullYear()}-${new Date().getMonth()}`, bayi: s.id});
         await loadMasterData();
         applyDataFilterAndRunDashboard(document.getElementById('admin-user-filter').value || 'my_data');
-    } catch (e) { alert("Hata."); }
+    } catch (e) { }
 };
