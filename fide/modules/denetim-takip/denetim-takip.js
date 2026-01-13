@@ -313,7 +313,7 @@ async function saveSettings() {
 }
 
 /**
- * GÜNCELLENDİ: Hem bugünkü planı hem de izin günlerine göre revize edilmiş aylık hedefi hesaplar.
+ * GÜNCELLENDİ: Hem bugünkü planı hem de izinlere göre revize edilen toplam aylık hedefi hesaplar.
  */
 function getRevisedTargetInfo(baseTarget, currentAudited) {
     const today = new Date();
@@ -331,29 +331,34 @@ function getRevisedTargetInfo(baseTarget, currentAudited) {
         const dayOfWeek = date.getDay();
         const key = `${year}-${month}-${d}`;
 
+        // Hafta içi kontrolü
         if (dayOfWeek > 0 && dayOfWeek < 6) {
             allWorkDays.push(d);
+            // Bugün dahil/sonrası ve izinli değilse "aktif" gün
             if (d >= todayDate && !leaveData[key]) {
                 activeWorkDays.push(d);
             }
         }
     }
 
+    // 1. ADIM: İzin günlerinin iş yüküne etkisini hesapla
     let leaveInWorkDays = 0;
     allWorkDays.forEach(d => {
         if (leaveData[`${year}-${month}-${d}`]) leaveInWorkDays++;
     });
     
-    // Revize Hedef: İzin günlerinin mesaiye oranına göre ana hedeften düşüş yapar
+    // Revize Hedef: İzin günleri oranında hedeften düşüş yapılır
     const dailyAverage = baseTarget / (allWorkDays.length || 1);
     const deduction = Math.round(dailyAverage * leaveInWorkDays);
     const revisedTotalTarget = Math.max(0, baseTarget - deduction);
 
-    // Bugünkü Plan hesabı
+    // 2. ADIM: Kalan işi kalan aktif günlere böl
     const remainingToVisit = Math.max(0, revisedTotalTarget - currentAudited);
+    
     let todayGoal = 0;
     if (activeWorkDays.length > 0) {
         const todayKey = `${year}-${month}-${todayDate}`;
+        // Bugün hafta sonu veya izinli değilsek hesaplama yap
         if (!(today.getDay() === 0 || today.getDay() === 6 || leaveData[todayKey])) {
             const basePerDay = Math.floor(remainingToVisit / activeWorkDays.length);
             const extras = remainingToVisit % activeWorkDays.length;
@@ -374,12 +379,12 @@ function calculateAndDisplayDashboard() {
     if (currentViewMode === 'monthly') {
         displayAudited = auditedStoreCodesCurrentMonth.length;
         
-        // ÖNEMLİ GÜNCELLEME: Takvime göre hedefi burada revize ediyoruz
+        // ÖNEMLİ: İzinlere göre revize edilen hedefi ve bugünkü planı al
         const baseMonthlyTarget = aylikHedef || 47;
         const targetInfo = getRevisedTargetInfo(baseMonthlyTarget, displayAudited);
         
-        displayTarget = targetInfo.revisedTotalTarget; // İzinler düşülmüş gerçek aylık hedef
-        const todayGoal = targetInfo.todayGoal; // Bugünkü plan sayınız
+        displayTarget = targetInfo.revisedTotalTarget; // Artık kartta 47 değil, revize sayı görünecek
+        const todayGoal = targetInfo.todayGoal;
 
         titleIcon = "calendar-day";
         titleText = `${today.getFullYear()} ${monthNames[today.getMonth()]} Ayı Performansı`;
@@ -412,7 +417,7 @@ function calculateAndDisplayDashboard() {
         if (dailyGoalCard) dailyGoalCard.style.display = 'none';
     }
 
-    // Hedefe kalan rakamı artık revize edilmiş (izinleri düşülmüş) hedef üzerinden hesaplanıyor
+    // Hedefe Kalan artık (Revize Hedef - Tamamlanan) şeklinde otomatik güncellenir
     const remainingToTarget = Math.max(0, displayTarget - displayAudited);
     const remainingWorkDays = getRemainingWorkdays();
     
