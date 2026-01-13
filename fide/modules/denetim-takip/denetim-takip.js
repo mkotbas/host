@@ -1,3 +1,5 @@
+// mkotbas/host/host-main/fide/modules/denetim-takip/denetim-takip.js
+
 // --- Kapsüllenmiş Global Değişkenler ---
 let allStoresMaster = [];
 let allReportsMaster = [];
@@ -12,7 +14,7 @@ let geriAlinanKayitlariBuYil = [];
 
 let currentGlobalFilteredStores = []; 
 let localCityFilterValue = 'Tümü';    
-let currentViewMode = 'monthly'; // YENİ: Varsayılan görünüm modu
+let currentViewMode = 'monthly'; 
 
 let globalAylikHedef = 0; 
 let aylikHedef = 0; 
@@ -187,12 +189,10 @@ function applyDataFilterAndRunDashboard(viewId) {
         const storeCode = record.expand.bayi.bayiKodu;
         const reportDate = new Date(record.denetimTamamlanmaTarihi);
         
-        // Yıllık verileri topla (Geri alınanlar hariç)
         if (!geriAlinanBayiKodlariYil.has(storeCode)) {
             yearlyCodes.add(storeCode);
         }
 
-        // Aylık verileri topla
         if (reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear) {
             if (!monthlyAuditsMap.has(storeCode) && !geriAlinanBayiKodlariAy.has(storeCode)) {
                 monthlyAuditsMap.set(storeCode, { code: storeCode, timestamp: reportDate.getTime() });
@@ -244,7 +244,6 @@ function setupModuleEventListeners(userRole) {
         if (adminPanelBtn) adminPanelBtn.style.display = 'none';
     }
 
-    // YENİ: Aylık/Yıllık Mod Değiştirici
     const modeButtons = document.querySelectorAll('#view-mode-toggle button');
     modeButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -322,6 +321,35 @@ async function revertAudit(bayiKodu) {
     loadingOverlay.style.display = 'none';
 }
 
+/**
+ * ÇALIŞMA TAKVİMİ ENTEGRASYONU
+ * Takvimdeki izin verilerini okur ve kalan aktif iş günlerini hesaplar.
+ */
+function getRemainingActiveWorkdays() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+    
+    // calismatakvimi.html'den gelen izin verilerini oku
+    const leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+    
+    let activeWorkdays = 0;
+    const currentDay = today.getDate();
+
+    for (let day = currentDay; day <= lastDayOfMonth; day++) {
+        const date = new Date(year, month, day);
+        const dayOfWeek = date.getDay(); // 0: Paz, 6: Cts
+        const key = `${year}-${month}-${day}`;
+
+        // Sadece hafta içi (Pzt-Cum) ve İzinli olmayan günleri say
+        if (dayOfWeek > 0 && dayOfWeek < 6 && !leaveData[key]) {
+            activeWorkdays++;
+        }
+    }
+    return activeWorkdays;
+}
+
 function calculateAndDisplayDashboard() {
     const today = new Date();
     const totalStoresCount = allStores.length;
@@ -337,7 +365,42 @@ function calculateAndDisplayDashboard() {
         auditedLabel = "Bu Ay Denetlenen";
         listTitle = "Bu Ay Denetlenenler";
         remainingListTitle = "Bu Ay Denetlenecek Bayiler";
+        
         document.getElementById('work-days-card').style.display = 'block';
+        document.getElementById('today-target-card').style.display = 'block';
+
+        // --- GÜNLÜK HEDEF HESAPLAMA (TAKİP SİSTEMİ) ---
+        const remainingToTarget = Math.max(0, displayTarget - displayAudited);
+        const activeWorkDaysLeft = getRemainingActiveWorkdays();
+        
+        let todayTarget = 0;
+        let statusText = "Gereken Ziyaret";
+
+        if (activeWorkDaysLeft > 0) {
+            // Kalan hedefi kalan günlere böl (Yukarı yuvarla ki hedef tamamlansın)
+            todayTarget = Math.ceil(remainingToTarget / activeWorkDaysLeft);
+        } else {
+            todayTarget = remainingToTarget;
+            statusText = "Kalan Toplam (Süre Doldu)";
+        }
+
+        const leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+        const isTodayLeave = leaveData[`${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`];
+        const isWeekend = today.getDay() === 0 || today.getDay() === 6;
+
+        if (isTodayLeave || isWeekend) {
+            document.getElementById('today-visit-count').textContent = "İZİN";
+            document.getElementById('today-status-text').textContent = "Bugün Görev Yok";
+            document.getElementById('today-target-card').classList.add('leave-day');
+        } else {
+            document.getElementById('today-visit-count').textContent = todayTarget;
+            document.getElementById('today-status-text').textContent = statusText;
+            document.getElementById('today-target-card').classList.remove('leave-day');
+        }
+
+        document.getElementById('work-days-count').textContent = activeWorkDaysLeft;
+        document.getElementById('remaining-stores-count').textContent = remainingToTarget;
+
     } else {
         displayTarget = totalStoresCount;
         displayAudited = auditedStoreCodesCurrentYear.length;
@@ -347,11 +410,11 @@ function calculateAndDisplayDashboard() {
         auditedLabel = "Yıl Boyu Denetlenen";
         listTitle = "Bu Yıl Denetlenenler";
         remainingListTitle = "Bu Yıl Denetlenecek Bayiler";
+        
         document.getElementById('work-days-card').style.display = 'none';
+        document.getElementById('today-target-card').style.display = 'none';
+        document.getElementById('remaining-stores-count').textContent = Math.max(0, displayTarget - displayAudited);
     }
-
-    const remainingToTarget = Math.max(0, displayTarget - displayAudited);
-    const remainingWorkDays = getRemainingWorkdays();
     
     document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-${titleIcon}"></i> ${titleText}`;
     document.getElementById('target-label').textContent = targetLabel;
@@ -359,10 +422,8 @@ function calculateAndDisplayDashboard() {
     document.getElementById('audited-list-title').innerHTML = `<i class="fas fa-check-double"></i> ${listTitle}`;
     document.getElementById('remaining-list-title').innerHTML = `<i class="fas fa-list-ul"></i> ${remainingListTitle}`;
     
-    document.getElementById('work-days-count').textContent = remainingWorkDays;
     document.getElementById('total-stores-count').textContent = displayTarget;
     document.getElementById('audited-stores-count').textContent = displayAudited;
-    document.getElementById('remaining-stores-count').textContent = remainingToTarget;
     
     const annualProgress = totalStoresCount > 0 ? (auditedStoreCodesCurrentYear.length / totalStoresCount) * 100 : 0;
     document.getElementById('annual-performance-indicator').innerHTML = `
@@ -444,7 +505,6 @@ function renderRemainingStores(filteredStores) {
     const container = document.getElementById('denetlenecek-bayiler-container');
     container.innerHTML = '';
     
-    // Seçili periyoda göre "denetlenenler" listesini baz al
     const auditedCodes = (currentViewMode === 'monthly') 
         ? auditedStoreCodesCurrentMonth.map(audit => audit.code)
         : auditedStoreCodesCurrentYear;
@@ -531,7 +591,6 @@ function renderAuditedStores() {
     
     let listHtml = '<ul class="store-list">';
     auditedStoresDetails.forEach(store => {
-        // Geri alma butonu sadece Aylık modda ve Admin ise gözüksün (Yıllık modda karmaşıklığı önlemek için)
         const revertButtonHtml = (currentUserRole === 'admin' && currentViewMode === 'monthly')
             ? `<button class="btn-warning btn-sm btn-revert-audit" data-bayi-kodu="${store.bayiKodu}" title="Bu denetimi listeden kaldır"><i class="fas fa-undo"></i> Geri Al</button>`
             : ''; 
@@ -546,18 +605,4 @@ function renderAuditedStores() {
             revertAudit(bayiKodu); 
         });
     });
-}
-
-function getRemainingWorkdays() {
-    const today = new Date(); const year = today.getFullYear(); const month = today.getMonth();
-    const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-    let remainingWorkdays = 0;
-    if (today.getDate() > lastDayOfMonth) return 0;
-    for (let day = today.getDate(); day <= lastDayOfMonth; day++) {
-        const dayOfWeek = new Date(year, month, day).getDay();
-        if (dayOfWeek > 0 && dayOfWeek < 6) {
-            remainingWorkdays++;
-        }
-    }
-    return remainingWorkdays;
 }
