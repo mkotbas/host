@@ -1,68 +1,60 @@
 /* fide/modules/calisma-takvimi/calisma-takvimi.css */
 
 .calendar-module-wrapper { 
-    padding: 10px; 
-    background-color: #ffffff; /* Ana arka planı beyaz yapalım */
+    padding: 10px !important; 
+    color: #1e293b !important; /* Tüm içeriğin rengini koyu yapalım */
 }
 
-/* Üstteki Bilgilendirme Paneli */
+/* Üst Bilgi Paneli */
 .info-banner-cal {
-    background: #f8fafc !important; 
-    padding: 1.5rem !important; 
+    background: #ffffff !important; 
+    padding: 20px !important; 
     border-radius: 12px !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; 
-    margin-bottom: 2rem !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important; 
+    margin-bottom: 25px !important;
     text-align: center !important; 
     border-left: 5px solid #cc0000 !important;
 }
 
 .info-banner-cal p { 
-    color: #1e293b !important; /* Yazı rengi: Koyu Lacivert/Siyah */
-    font-weight: 700 !important; 
-    margin-bottom: 5px !important;
-    font-size: 1rem !important;
-}
-
-.info-banner-cal p strong {
-    color: #cc0000 !important; /* "Ziyaret Planlayıcı" kısmını kırmızı yapalım */
-}
-
-/* Takvim Izgarası */
-.calendar-grid-main {
-    display: grid !important; 
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
-    gap: 1.5rem !important; 
-    width: 100% !important;
+    color: #1e293b !important; /* Yazı kesinlikle görünür olmalı */
+    font-weight: 700 !important;
+    font-size: 15px !important;
 }
 
 /* Ay Kartları */
+.calendar-grid-main {
+    display: grid !important; 
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
+    gap: 20px !important;
+}
+
 .month-card-cal {
     background: #ffffff !important; 
-    border-radius: 16px !important; 
-    padding: 1rem !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.05) !important; 
+    border-radius: 15px !important; 
+    padding: 15px !important;
     border: 1px solid #e2e8f0 !important;
 }
 
-/* Ay Başlıkları (Ocak 2026 vb.) */
+/* Ay Başlığı (Ocak 2026 vb.) */
 .month-header-cal {
     text-align: center !important; 
-    font-size: 1.25rem !important; 
+    font-size: 18px !important; 
     font-weight: 800 !important;
-    color: #1e293b !important; /* Ay ismi Koyu Lacivert */
-    background: #f1f5f9 !important; /* Hafif gri arka plan */
-    padding: 1rem !important; 
-    border-radius: 12px !important; 
-    margin-bottom: 1rem !important;
+    color: #0f172a !important; /* Tam Siyah/Lacivert */
+    background: #f1f5f9 !important;
+    padding: 12px !important; 
+    border-radius: 10px !important; 
+    margin-bottom: 15px !important;
     border: 1px solid #cbd5e1 !important;
 }
 
-/* İstatistik Alanı (Hedef, İzin, Mesai) */
+/* Hedef, İzin, Mesai Alanı */
 .month-stats-cal {
     background: #f8fafc !important; 
-    padding: 0.8rem !important; 
-    border-radius: 10px !important;
-    margin-bottom: 1rem !important; 
+    padding: 10px !important; 
+    border-radius: 8px !important;
+    margin-bottom: 15px !important; 
     display: flex !important;
     justify-content: space-between !important; 
     border: 1px solid #e2e8f0 !important;
@@ -71,81 +63,55 @@
 .stat-item-cal { 
     text-align: center !important; 
     flex: 1 !important;
-    color: #475569 !important; /* "Hedef, İzin, Mesai" yazıları: Koyu Gri */
+    color: #475569 !important; /* "Hedef" gibi etiketler: Koyu Gri */
     font-weight: 700 !important;
-    font-size: 0.85rem !important;
+    font-size: 13px !important;
 }
 
 .stat-item-cal span { 
     display: block !important; 
     font-weight: 900 !important; 
-    color: #0f172a !important; /* Rakamlar: Tam Siyah */
-    font-size: 1.15rem !important;
+    color: #1e293b !important; /* Rakamlar: Koyu */
+    font-size: 18px !important;
     margin-top: 4px !important;
 }
 
-/* Gün İsimleri (Pt, Sa, Ça...) */
-.weekdays-row-cal { 
-    display: grid !important; 
-    grid-template-columns: repeat(7, 1fr) !important; 
-    margin-bottom: 0.5rem !important;
-}
+/* Gün Yazıları (Pt, Sa...) */
 .weekday-cal { 
     text-align: center !important; 
-    font-size: 0.85rem !important; 
-    color: #64748b !important; /* Gün isimleri: Gri */
-    font-weight: 700 !important;
+    font-size: 13px !important; 
+    color: #64748b !important; 
+    font-weight: 800 !important;
 }
 
-/* Gün Kutucukları */
-.days-grid-cal { 
-    display: grid !important; 
-    grid-template-columns: repeat(7, 1fr) !important; 
-    gap: 0.5rem !important; 
-}
+.days-grid-cal { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 6px !important; }
 
 .day-cal {
     text-align: center !important; 
-    padding: 0.8rem 0.2rem !important; 
+    padding: 10px 0 !important; 
     border-radius: 8px !important;
     font-weight: 700 !important; 
-    position: relative !important; 
     background: #f1f5f9 !important;
-    color: #64748b !important; 
-    user-select: none !important; 
-    font-size: 0.9rem !important;
+    color: #334155 !important; /* Sayılar artık beyaz olmayacak */
+    font-size: 14px !important;
 }
 
-.day-cal.interactive-cal { cursor: pointer !important; }
+.day-cal.leave-cal { background: #ef4444 !important; color: #ffffff !important; }
+.day-cal.workday-cal { background: #e2e8f0 !important; color: #1e293b !important; }
 
-/* Hafta İçi Aktif Günler */
-.day-cal.workday-cal { 
-    background: #e2e8f0 !important; 
-    color: #1e293b !important; /* Sayılar: Koyu */
-}
-
-/* İzinli Gün (Kırmızı) */
-.day-cal.leave-cal {
-    background: #ef4444 !important; 
-    color: #ffffff !important; /* İzinli günde rakam beyaz kalsın (kırmızı üstünde beyaz iyidir) */
-    text-decoration: line-through !important;
-}
-
-/* Ziyaret Sayısı Rozetleri (Küçük siyah yuvarlaklar) */
+/* Küçük ziyaret sayısı rozeti */
 .visit-badge-cal {
     position: absolute !important; 
-    top: -5px !important; 
-    right: -5px !important; 
+    top: -4px !important; 
+    right: -4px !important; 
     background: #0f172a !important; 
     color: #ffffff !important; 
-    font-size: 0.65rem !important; 
+    font-size: 10px !important; 
     width: 18px !important; 
     height: 18px !important;
     border-radius: 50% !important; 
     display: flex !important; 
     align-items: center !important;
-    justify-content: center !important; 
+    justify-content: center !important;
     border: 2px solid #ffffff !important;
 }
-
-.day-cal.empty-cal { visibility: hidden !important; }
