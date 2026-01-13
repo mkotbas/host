@@ -48,6 +48,10 @@ function seededShuffle(array, seed) {
     return array;
 }
 
+/**
+ * Bugün yapılması gereken denetim sayısını hesaplar.
+ * İzin günlerini ve hedefleri dinamik olarak analiz eder.
+ */
 function calculateTodayRequirement() {
     const today = new Date();
     const year = today.getFullYear();
@@ -55,24 +59,29 @@ function calculateTodayRequirement() {
     const day = today.getDate();
     const dayOfWeek = today.getDay();
 
+    // Bugün hafta sonuysa veya bulutta izinli olarak işaretlenmişse 0 dön
     if (dayOfWeek === 0 || dayOfWeek === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
 
     const allWorkDays = getWorkDaysOfMonth(year, month);
     const activeWorkDays = [];
     let relevantLeaveCount = 0;
 
+    // Ay içindeki gerçek mesai günlerini ve izin sayısını belirle
     allWorkDays.forEach(d => {
         if (leaveDataBulut[`${year}-${month}-${d}`]) relevantLeaveCount++;
         else activeWorkDays.push(d);
     });
 
     const baseTarget = globalAylikHedef || 47;
+    // İzin günlerine düşen hedef payını düşerek "Ayarlanmış Hedef" bul
     const dailyAverage = baseTarget / allWorkDays.length;
     const currentTarget = Math.max(0, baseTarget - Math.round(dailyAverage * relevantLeaveCount));
 
-    const basePerDay = Math.floor(currentTarget / activeWorkDays.length);
-    const extras = currentTarget % activeWorkDays.length;
+    // Kalan hedefi kalan mesai günlerine dağıt
+    const basePerDay = activeWorkDays.length > 0 ? Math.floor(currentTarget / activeWorkDays.length) : 0;
+    const extras = activeWorkDays.length > 0 ? currentTarget % activeWorkDays.length : 0;
 
+    // Dağılımın her ay aynı ve adil olması için 'seed' kullanarak karıştır
     const monthSeed = year + month + (currentTarget * 100);
     const shuffledDays = seededShuffle([...activeWorkDays], monthSeed);
     
@@ -82,6 +91,7 @@ function calculateTodayRequirement() {
         todayPlanned = basePerDay + (dayIndexInShuffled < extras ? 1 : 0);
     }
 
+    // Bugün şu ana kadar kaç tane tamamlandığını bul
     const todayStart = new Date(today.setHours(0,0,0,0)).getTime();
     const completedToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp >= todayStart).length;
 
@@ -120,16 +130,19 @@ export async function initializeDenetimTakipModule(pb) {
 
 async function loadSettings() {
     try {
-        // Hedef bilgisi sadece okunur hale getirildi
         const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
         globalAylikHedef = record.deger || 0;
     } catch (error) { globalAylikHedef = 0; }
 
     try {
+        // Çalışma Takvimi modülü ile aynı anahtarı (leaveData_USERID) kullanır
         const settingsKey = `leaveData_${currentUserId}`;
         const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
         leaveDataBulut = leaveRecord.deger || {};
-    } catch (error) { leaveDataBulut = {}; }
+    } catch (error) { 
+        console.warn("Bulut izin verisi yüklenemedi, boş kabul ediliyor.");
+        leaveDataBulut = {}; 
+    }
 }
 
 async function loadMasterData() {
@@ -254,7 +267,6 @@ function setupModuleEventListeners(userRole) {
     document.body.dataset.denetimTakipListenersAttached = 'true';
 
     if (userRole === 'admin') {
-        // Buradaki Yönetim Paneli buton dinleyicileri kaldırıldı
         document.getElementById('admin-user-filter').onchange = (e) => applyDataFilterAndRunDashboard(e.target.value);
     }
 
@@ -330,10 +342,31 @@ function renderAuditedStores() {
     cont.innerHTML = '<ul class="store-list">' + details.map(s => `<li class="store-list-item completed-item"><span>${s.bayiAdi} (${s.bayiKodu})</span>${(currentUserRole === 'admin' && currentViewMode === 'monthly') ? `<button class="btn-warning btn-sm" onclick="revertAudit('${s.bayiKodu}')"><i class="fas fa-undo"></i> Geri Al</button>` : ''}</li>`).join('') + '</ul>';
 }
 
+/**
+ * Ayın geri kalanındaki gerçek iş günü sayısını hesaplar.
+ * Hafta sonlarını ve buluttaki izinli günleri düşer.
+ */
 function getRemainingWorkdays() {
-    const today = new Date(); const last = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    let rem = 0; for (let d = today.getDate(); d <= last; d++) { if ([1,2,3,4,5].includes(new Date(today.getFullYear(), today.getMonth(), d).getDay())) rem++; }
-    return rem;
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    
+    let remainingWorkDays = 0;
+    
+    // Bugünden başlayarak ayın sonuna kadar tara
+    for (let d = today.getDate(); d <= lastDay; d++) {
+        const checkDate = new Date(year, month, d);
+        const dayOfWeek = checkDate.getDay();
+        const key = `${year}-${month}-${d}`;
+        
+        // Hafta içi mi? (Pzt=1, Cum=5) VE İzinli DEĞİL mi?
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !leaveDataBulut[key]) {
+            remainingWorkDays++;
+        }
+    }
+    
+    return remainingWorkDays;
 }
 
 window.revertAudit = async (code) => {
