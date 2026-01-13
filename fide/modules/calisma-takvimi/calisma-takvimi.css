@@ -1,117 +1,83 @@
 /* fide/modules/calisma-takvimi/calisma-takvimi.css */
 
-.calendar-module-wrapper { 
-    padding: 10px !important; 
-    color: #1e293b !important; /* Tüm içeriğin rengini koyu yapalım */
+.calendar-module-wrapper { padding: 5px; }
+
+.cal-info-banner {
+    background: #fff; padding: 1.2rem; border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 2rem;
+    text-align: center; border-left: 5px solid #cc0000;
 }
 
-/* Üst Bilgi Paneli */
-.info-banner-cal {
-    background: #ffffff !important; 
-    padding: 20px !important; 
-    border-radius: 12px !important;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important; 
-    margin-bottom: 25px !important;
-    text-align: center !important; 
-    border-left: 5px solid #cc0000 !important;
-}
+.cal-info-banner p { color: #1e293b; font-weight: 600; margin-bottom: 5px; }
+.cal-info-banner small { color: #64748b; font-style: italic; }
 
-.info-banner-cal p { 
-    color: #1e293b !important; /* Yazı kesinlikle görünür olmalı */
-    font-weight: 700 !important;
-    font-size: 15px !important;
-}
-
-/* Ay Kartları */
 .calendar-grid-main {
-    display: grid !important; 
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
-    gap: 20px !important;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem; width: 100%;
 }
 
 .month-card-cal {
-    background: #ffffff !important; 
-    border-radius: 15px !important; 
-    padding: 15px !important;
-    border: 1px solid #e2e8f0 !important;
+    background: #ffffff; border-radius: 16px; padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+    transition: transform 0.2s ease;
 }
 
-/* Ay Başlığı (Ocak 2026 vb.) */
+.month-card-cal:hover { transform: translateY(-5px); }
+
+/* --- DEĞİŞİKLİK YAPILAN KISIM BAŞLANGICI --- */
 .month-header-cal {
-    text-align: center !important; 
-    font-size: 18px !important; 
-    font-weight: 800 !important;
-    color: #0f172a !important; /* Tam Siyah/Lacivert */
-    background: #f1f5f9 !important;
-    padding: 12px !important; 
-    border-radius: 10px !important; 
-    margin-bottom: 15px !important;
-    border: 1px solid #cbd5e1 !important;
+    text-align: center; 
+    font-size: 1.2rem; /* Yazı boyutu biraz büyütüldü */
+    font-weight: 700; /* Yazı kalınlaştırıldı */
+    color: #334155; /* YAZI RENGİ KOYU GRİ YAPILDI (Görünürlük için) */
+    background: #f8fafc; /* Arka plan daha açık bir gri yapıldı */
+    padding: 0.8rem; 
+    border-radius: 12px; 
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0; /* Altına ince bir çizgi eklendi */
 }
+/* --- DEĞİŞİKLİK YAPILAN KISIM BİTİŞİ --- */
 
-/* Hedef, İzin, Mesai Alanı */
 .month-stats-cal {
-    background: #f8fafc !important; 
-    padding: 10px !important; 
-    border-radius: 8px !important;
-    margin-bottom: 15px !important; 
-    display: flex !important;
-    justify-content: space-between !important; 
-    border: 1px solid #e2e8f0 !important;
+    background: #f8fafc; padding: 0.5rem; border-radius: 8px;
+    margin-bottom: 1rem; font-size: 0.85rem; display: flex;
+    justify-content: space-between; border: 1px solid #e2e8f0;
 }
 
-.stat-item-cal { 
-    text-align: center !important; 
-    flex: 1 !important;
-    color: #475569 !important; /* "Hedef" gibi etiketler: Koyu Gri */
-    font-weight: 700 !important;
-    font-size: 13px !important;
-}
+.stat-item-cal span { display: block; font-weight: bold; color: #0f172a; }
 
-.stat-item-cal span { 
-    display: block !important; 
-    font-weight: 900 !important; 
-    color: #1e293b !important; /* Rakamlar: Koyu */
-    font-size: 18px !important;
-    margin-top: 4px !important;
+.weekdays-row-cal { 
+    display: grid; grid-template-columns: repeat(7, 1fr); 
+    margin-bottom: 0.5rem; font-weight: bold;
 }
+.weekday-cal { text-align: center; font-size: 0.8rem; color: #64748b; }
 
-/* Gün Yazıları (Pt, Sa...) */
-.weekday-cal { 
-    text-align: center !important; 
-    font-size: 13px !important; 
-    color: #64748b !important; 
-    font-weight: 800 !important;
-}
-
-.days-grid-cal { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 6px !important; }
+.days-grid-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
 
 .day-cal {
-    text-align: center !important; 
-    padding: 10px 0 !important; 
-    border-radius: 8px !important;
-    font-weight: 700 !important; 
-    background: #f1f5f9 !important;
-    color: #334155 !important; /* Sayılar artık beyaz olmayacak */
-    font-size: 14px !important;
+    text-align: center; padding: 0.75rem 0.2rem; border-radius: 8px;
+    font-weight: 600; position: relative; background: #f8fafc;
+    color: #94a3b8; user-select: none; font-size: 0.85rem;
 }
 
-.day-cal.leave-cal { background: #ef4444 !important; color: #ffffff !important; }
-.day-cal.workday-cal { background: #e2e8f0 !important; color: #1e293b !important; }
+.day-cal.interactive-cal { cursor: pointer; border: 1px solid transparent; }
+.day-cal.interactive-cal:hover { transform: translateY(-2px); border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-/* Küçük ziyaret sayısı rozeti */
+.day-cal.workday-cal { background: #f1f5f9; color: #475569; }
+.day-cal.three-cal { background: #f59e0b; color: white; }
+.day-cal.two-cal { background: #10b981; color: white; }
+.day-cal.one-cal { background: #3b82f6; color: white; }
+
+.day-cal.leave-cal {
+    background: #ef4444 !important; color: white !important;
+    text-decoration: line-through; opacity: 0.8;
+}
+
 .visit-badge-cal {
-    position: absolute !important; 
-    top: -4px !important; 
-    right: -4px !important; 
-    background: #0f172a !important; 
-    color: #ffffff !important; 
-    font-size: 10px !important; 
-    width: 18px !important; 
-    height: 18px !important;
-    border-radius: 50% !important; 
-    display: flex !important; 
-    align-items: center !important;
-    justify-content: center !important;
-    border: 2px solid #ffffff !important;
+    position: absolute; top: -5px; right: -5px; background: #334155;
+    color: #fff; font-size: 0.65rem; width: 18px; height: 18px;
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; border: 2px solid #fff;
 }
+
+.day-cal.empty-cal { visibility: hidden; }
