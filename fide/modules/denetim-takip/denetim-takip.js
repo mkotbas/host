@@ -377,7 +377,6 @@ function calculateAndDisplayDashboard() {
         let statusText = "Gereken Ziyaret";
 
         if (activeWorkDaysLeft > 0) {
-            // Kalan hedefi kalan günlere böl (Yukarı yuvarla ki hedef tamamlansın)
             todayTarget = Math.ceil(remainingToTarget / activeWorkDaysLeft);
         } else {
             todayTarget = remainingToTarget;
