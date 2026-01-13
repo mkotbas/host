@@ -8,7 +8,7 @@ let allUsers = [];
 let allStores = [];
 let auditedStoreCodesCurrentMonth = [];
 let auditedStoreCodesCurrentYear = [];
-let leaveDataBulut = {}; // Yeni bulut verisi tutucu
+let leaveDataBulut = {};
 
 let currentGlobalFilteredStores = []; 
 let localCityFilterValue = 'Tümü';    
@@ -21,75 +21,6 @@ const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Tem
 let pbInstance = null;
 let currentUserRole = null;
 let currentUserId = null;
-
-// --- TAKVİM ENTEGRASYON FONKSİYONLARI (GÜNCELLENDİ) ---
-
-function getWorkDaysOfMonth(year, month) {
-    const days = [];
-    const date = new Date(year, month, 1);
-    while(date.getMonth() === month) {
-        const dayOfWeek = date.getDay(); 
-        if(dayOfWeek !== 0 && dayOfWeek !== 6) days.push(date.getDate());
-        date.setDate(date.getDate() + 1);
-    }
-    return days;
-}
-
-function seededShuffle(array, seed) {
-    let currentSeed = seed;
-    const random = () => {
-        const x = Math.sin(currentSeed++) * 10000;
-        return x - Math.floor(x);
-    };
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
-
-function calculateTodayRequirement() {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const day = today.getDate();
-    const dayOfWeek = today.getDay();
-
-    // Hafta sonu ise veya bugün izinliyse 0 döner
-    if (dayOfWeek === 0 || dayOfWeek === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
-
-    const allWorkDays = getWorkDaysOfMonth(year, month);
-    const activeWorkDays = [];
-    let relevantLeaveCount = 0;
-
-    allWorkDays.forEach(d => {
-        if (leaveDataBulut[`${year}-${month}-${d}`]) relevantLeaveCount++;
-        else activeWorkDays.push(d);
-    });
-
-    const baseTarget = globalAylikHedef || 47;
-    const dailyAverage = baseTarget / allWorkDays.length;
-    const currentTarget = Math.max(0, baseTarget - Math.round(dailyAverage * relevantLeaveCount));
-
-    const basePerDay = Math.floor(currentTarget / activeWorkDays.length);
-    const extras = currentTarget % activeWorkDays.length;
-
-    const monthSeed = year + month + (currentTarget * 100);
-    const shuffledDays = seededShuffle([...activeWorkDays], monthSeed);
-    
-    let todayPlanned = 0;
-    const dayIndexInShuffled = shuffledDays.indexOf(day);
-    if (dayIndexInShuffled !== -1) {
-        todayPlanned = basePerDay + (dayIndexInShuffled < extras ? 1 : 0);
-    }
-
-    const todayStart = new Date(today.setHours(0,0,0,0)).getTime();
-    const completedToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp >= todayStart).length;
-
-    return Math.max(0, todayPlanned - completedToday);
-}
-
-// --- MODÜL BAŞLATMA ---
 
 export async function initializeDenetimTakipModule(pb) {
     pbInstance = pb;
@@ -126,15 +57,10 @@ async function loadSettings() {
     } catch (error) { globalAylikHedef = 0; }
 
     try {
-        // BULUTTAN İZİN VERİLERİNİ ÇEK
         const settingsKey = `leaveData_${currentUserId}`;
         const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
         leaveDataBulut = leaveRecord.deger || {};
     } catch (error) { leaveDataBulut = {}; }
-
-    if (currentUserRole === 'admin') {
-        document.getElementById('monthly-target-input').value = globalAylikHedef > 0 ? globalAylikHedef : '';
-    }
 }
 
 async function loadMasterData() {
@@ -236,7 +162,7 @@ function calculateAndDisplayDashboard() {
         displayAudited = auditedStoreCodesCurrentMonth.length;
         document.getElementById('work-days-card').style.display = 'block';
         document.getElementById('today-required-card').style.display = 'block';
-        document.getElementById('today-required-count').textContent = calculateTodayRequirement();
+        document.getElementById('today-required-count').textContent = calculateTodayRequirement(allWorkDays, year, month);
     } else {
         displayTarget = allStores.length;
         displayAudited = auditedStoreCodesCurrentYear.length;
@@ -254,14 +180,48 @@ function calculateAndDisplayDashboard() {
     document.getElementById('dashboard-content').style.display = 'block';
 }
 
+function calculateTodayRequirement(allWorkDays, year, month) {
+    const today = new Date();
+    const day = today.getDate();
+    if (today.getDay() === 0 || today.getDay() === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
+
+    const activeWorkDays = [];
+    allWorkDays.forEach(d => { if (!leaveDataBulut[`${year}-${month}-${d}`]) activeWorkDays.push(d); });
+
+    const baseTarget = globalAylikHedef || 47;
+    const currentTarget = Math.max(0, baseTarget - Math.round((baseTarget / allWorkDays.length) * (allWorkDays.length - activeWorkDays.length)));
+    const basePerDay = Math.floor(currentTarget / activeWorkDays.length);
+    const extras = currentTarget % activeWorkDays.length;
+
+    const monthSeed = year + month + (currentTarget * 100);
+    const shuffled = seededShuffle([...activeWorkDays], monthSeed);
+    
+    const dayIdx = shuffled.indexOf(day);
+    if (dayIdx === -1) return 0;
+    
+    const planned = basePerDay + (dayIdx < extras ? 1 : 0);
+    const completedToday = auditedStoreCodesCurrentMonth.filter(a => new Date(a.timestamp).getDate() === day).length;
+    return Math.max(0, planned - completedToday);
+}
+
+function seededShuffle(array, seed) {
+    let currentSeed = seed;
+    const random = () => { const x = Math.sin(currentSeed++) * 10000; return x - Math.floor(x); };
+    for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; }
+    return array;
+}
+
+function getWorkDaysOfMonth(year, month) {
+    const days = []; const date = new Date(year, month, 1);
+    while(date.getMonth() === month) { if(date.getDay() !== 0 && date.getDay() !== 6) days.push(date.getDate()); date.setDate(date.getDate() + 1); }
+    return days;
+}
+
 function setupModuleEventListeners(userRole) {
     if (document.body.dataset.denetimTakipListenersAttached) return;
     document.body.dataset.denetimTakipListenersAttached = 'true';
 
     if (userRole === 'admin') {
-        document.getElementById('open-admin-panel-btn').onclick = () => document.getElementById('admin-panel-overlay').style.display = 'flex';
-        document.getElementById('close-admin-panel-btn').onclick = () => document.getElementById('admin-panel-overlay').style.display = 'none';
-        document.getElementById('save-settings-btn').onclick = saveSettings;
         document.getElementById('admin-user-filter').onchange = (e) => applyDataFilterAndRunDashboard(e.target.value);
     }
 
@@ -284,17 +244,6 @@ function setupModuleEventListeners(userRole) {
         localCityFilterValue = e.target.value;
         renderRemainingStores(currentGlobalFilteredStores); 
     };
-}
-
-async function saveSettings() {
-    const val = parseInt(document.getElementById('monthly-target-input').value);
-    try {
-        const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
-        await pbInstance.collection('ayarlar').update(record.id, { deger: val });
-        globalAylikHedef = val;
-        applyDataFilterAndRunDashboard(document.getElementById('admin-user-filter').value || 'my_data');
-        document.getElementById('admin-panel-overlay').style.display = 'none';
-    } catch (e) { alert("Hata."); }
 }
 
 function updateAllFilterOptions() {

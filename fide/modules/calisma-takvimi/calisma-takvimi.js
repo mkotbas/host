@@ -1,26 +1,74 @@
 // fide/modules/calisma-takvimi/calisma-takvimi.js
 
-export async function initializeCalismaTakvimiModule(pb) {
-    const monthsTR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-    const weekdaysTR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz'];
-    const year = new Date().getFullYear();
-    const container = document.querySelector('.calendar-grid-main');
-    
-    // Verileri tarayıcı hafızasından çek
-    let leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+let pbInstance = null;
+let globalAylikHedef = 47;
+let leaveData = {};
 
-    function saveData() {
-        localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
+export async function initializeCalismaTakvimiModule(pb) {
+    pbInstance = pb;
+    const year = new Date().getFullYear();
+    
+    // Verileri yükle
+    await loadInitialSettings();
+    setupEventListeners();
+    renderCalendar();
+
+    async function loadInitialSettings() {
+        // 1. Hedef bilgisini çek
+        try {
+            const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
+            globalAylikHedef = record.deger || 47;
+            document.getElementById('monthly-target-input').value = globalAylikHedef;
+            document.getElementById('display-base-target').textContent = globalAylikHedef;
+        } catch (error) {
+            globalAylikHedef = 47;
+        }
+
+        // 2. İzin verilerini çek
+        leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+
+        // 3. Yetki kontrolü (Yönetim Paneli butonu için)
+        if (pbInstance.authStore.model.role === 'admin') {
+            document.getElementById('open-admin-panel-btn').style.display = 'inline-flex';
+        }
+    }
+
+    function setupEventListeners() {
+        const openBtn = document.getElementById('open-admin-panel-btn');
+        const closeBtn = document.getElementById('close-admin-panel-btn');
+        const saveBtn = document.getElementById('save-settings-btn');
+        const overlay = document.getElementById('admin-panel-overlay');
+
+        if (openBtn) openBtn.onclick = () => overlay.style.display = 'flex';
+        if (closeBtn) closeBtn.onclick = () => overlay.style.display = 'none';
+        
+        if (saveBtn) {
+            saveBtn.onclick = async () => {
+                const newVal = parseInt(document.getElementById('monthly-target-input').value);
+                if (isNaN(newVal) || newVal < 1) {
+                    alert("Lütfen geçerli bir sayı girin.");
+                    return;
+                }
+
+                try {
+                    const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
+                    await pbInstance.collection('ayarlar').update(record.id, { deger: newVal });
+                    globalAylikHedef = newVal;
+                    document.getElementById('display-base-target').textContent = newVal;
+                    overlay.style.display = 'none';
+                    renderCalendar(); // Takvimi anında yeniden hesapla
+                } catch (e) {
+                    alert("Hedef kaydedilemedi.");
+                }
+            };
+        }
     }
 
     function toggleLeave(month, day) {
         const key = `${year}-${month}-${day}`;
-        if (leaveData[key]) {
-            delete leaveData[key];
-        } else {
-            leaveData[key] = true;
-        }
-        saveData();
+        if (leaveData[key]) delete leaveData[key];
+        else leaveData[key] = true;
+        localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
         renderCalendar();
     }
 
@@ -41,7 +89,7 @@ export async function initializeCalismaTakvimiModule(pb) {
         const days = [];
         const date = new Date(year, month, 1);
         while(date.getMonth() === month) {
-            const dw = date.getDay(); // 0: Pazar, 6: Cts
+            const dw = date.getDay();
             if(dw !== 0 && dw !== 6) days.push(date.getDate());
             date.setDate(date.getDate() + 1);
         }
@@ -49,8 +97,11 @@ export async function initializeCalismaTakvimiModule(pb) {
     }
 
     function renderCalendar() {
+        const container = document.querySelector('.calendar-grid-main');
         if (!container) return;
         container.innerHTML = '';
+        const monthsTR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+        const weekdaysTR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz'];
         
         for (let m = 0; m < 12; m++) {
             const firstDay = new Date(year, m, 1).getDay();
@@ -65,8 +116,8 @@ export async function initializeCalismaTakvimiModule(pb) {
                 else activeWorkDays.push(day);
             });
 
-            // Hedef 47 üzerinden hesaplama
-            const baseTarget = 47;
+            // Dinamik hedef üzerinden hesaplama
+            const baseTarget = globalAylikHedef;
             const currentTarget = allWorkDays.length > 0 
                 ? Math.max(0, baseTarget - Math.round((baseTarget / allWorkDays.length) * relevantLeaveCount))
                 : 0;
@@ -109,13 +160,13 @@ export async function initializeCalismaTakvimiModule(pb) {
                 box.className = 'day-cal';
                 box.textContent = d;
 
-                if (dayOfWeek !== 0) { // Pazar hariç etkileşimli
+                if (dayOfWeek !== 0) {
                     box.classList.add('interactive-cal');
                     box.onclick = () => toggleLeave(m, d);
 
                     if (leaveData[key]) {
                         box.classList.add('leave-cal');
-                    } else if (dayOfWeek !== 6) { // Hafta içi
+                    } else if (dayOfWeek !== 6) {
                         box.classList.add('workday-cal');
                         const count = planMap[d] || 0;
                         if(count >= 3) box.classList.add('three-cal');
@@ -135,6 +186,4 @@ export async function initializeCalismaTakvimiModule(pb) {
             container.appendChild(card);
         }
     }
-
-    renderCalendar();
 }
