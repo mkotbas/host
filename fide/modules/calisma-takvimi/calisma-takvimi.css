@@ -24,27 +24,45 @@
 
 .month-card-cal:hover { transform: translateY(-5px); }
 
-/* --- DEĞİŞİKLİK YAPILAN KISIM BAŞLANGICI --- */
 .month-header-cal {
     text-align: center; 
-    font-size: 1.2rem; /* Yazı boyutu biraz büyütüldü */
-    font-weight: 700; /* Yazı kalınlaştırıldı */
-    color: #334155; /* YAZI RENGİ KOYU GRİ YAPILDI (Görünürlük için) */
-    background: #f8fafc; /* Arka plan daha açık bir gri yapıldı */
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #334155; /* Ay başlığı rengi */
+    background: #f8fafc;
     padding: 0.8rem; 
     border-radius: 12px; 
     margin-bottom: 1rem;
-    border-bottom: 2px solid #e2e8f0; /* Altına ince bir çizgi eklendi */
+    border-bottom: 2px solid #e2e8f0;
 }
-/* --- DEĞİŞİKLİK YAPILAN KISIM BİTİŞİ --- */
 
+/* --- İSTATİSTİK ALANI (HEDEF, İZİN, MESAI) GÜNCELLEMESİ --- */
 .month-stats-cal {
-    background: #f8fafc; padding: 0.5rem; border-radius: 8px;
-    margin-bottom: 1rem; font-size: 0.85rem; display: flex;
-    justify-content: space-between; border: 1px solid #e2e8f0;
+    background: #f8fafc; 
+    padding: 0.8rem; 
+    border-radius: 10px;
+    margin-bottom: 1rem; 
+    font-size: 0.85rem; 
+    display: flex;
+    justify-content: space-between; 
+    border: 1px solid #e2e8f0;
 }
 
-.stat-item-cal span { display: block; font-weight: bold; color: #0f172a; }
+.stat-item-cal {
+    text-align: center;
+    flex: 1;
+    color: #64748b; /* "Hedef, İzin, Mesai" yazılarının rengi (Koyu Gri) */
+    font-weight: 600;
+}
+
+.stat-item-cal span { 
+    display: block; 
+    font-weight: 800; 
+    color: #0f172a; /* Rakamların rengi (Siyah) */
+    font-size: 1.1rem;
+    margin-top: 2px;
+}
+/* --- GÜNCELLEME SONU --- */
 
 .weekdays-row-cal { 
     display: grid; grid-template-columns: repeat(7, 1fr); 
