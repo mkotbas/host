@@ -26,8 +26,22 @@ export async function initializeCalismaTakvimiModule(pb) {
             document.getElementById('display-base-target').textContent = globalAylikHedef;
         }
 
-        // 2. İzin verilerini yerel hafızadan çek
-        leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+        // 2. İzin verilerini BULUTTAN çek (YENİ: Denetim Takip ile senkronize olması için)
+        if (pbInstance && pbInstance.authStore.isValid) {
+            const settingsKey = `leaveData_${pbInstance.authStore.model.id}`;
+            try {
+                const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
+                leaveData = leaveRecord.deger || {};
+                // Buluttaki veriyi yerel hafızaya da yazalım
+                localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
+            } catch (error) {
+                // Bulutta kayıt yoksa (404), yerel hafızadan (localStorage) devam et
+                console.log("Bulutta izin verisi bulunamadı, yerel hafıza kullanılıyor.");
+                leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+            }
+        } else {
+            leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+        }
 
         // 3. Yetki kontrolü (Yönetim Paneli butonu sadece adminlere görünür)
         if (pbInstance.authStore.model.role === 'admin') {
@@ -70,12 +84,38 @@ export async function initializeCalismaTakvimiModule(pb) {
         }
     }
 
-    function toggleLeave(month, day) {
+    /**
+     * İzin durumunu değiştirir ve BULUTA KAYDEDER.
+     * Denetim Takip modülünün bu değişikliği algılaması için PocketBase kaydı kritiktir.
+     */
+    async function toggleLeave(month, day) {
         const key = `${year}-${month}-${day}`;
         if (leaveData[key]) delete leaveData[key];
         else leaveData[key] = true;
+
+        // 1. Yerel hafızayı güncelle ve takvimi hemen yeniden çiz
         localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
         renderCalendar();
+
+        // 2. BULUT SENKRONİZASYONU (YENİ)
+        if (pbInstance && pbInstance.authStore.isValid) {
+            const settingsKey = `leaveData_${pbInstance.authStore.model.id}`;
+            try {
+                // Mevcut kaydı bul ve güncelle
+                const record = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
+                await pbInstance.collection('ayarlar').update(record.id, { deger: leaveData });
+            } catch (error) {
+                // Kayıt yoksa yeni oluştur
+                if (error.status === 404) {
+                    await pbInstance.collection('ayarlar').create({
+                        anahtar: settingsKey,
+                        deger: leaveData
+                    });
+                } else {
+                    console.error("Bulut senkronizasyon hatası:", error);
+                }
+            }
+        }
     }
 
     function seededShuffle(array, seed) {
@@ -122,7 +162,6 @@ export async function initializeCalismaTakvimiModule(pb) {
                 else activeWorkDays.push(day);
             });
 
-            // ARTIK BURASI VERİTABANINDAN GELEN SAYIYI KULLANIYOR
             const baseTarget = globalAylikHedef;
             const currentTarget = allWorkDays.length > 0 
                 ? Math.max(0, baseTarget - Math.round((baseTarget / allWorkDays.length) * relevantLeaveCount))
