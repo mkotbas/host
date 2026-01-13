@@ -1,131 +1,75 @@
 /* fide/modules/calisma-takvimi/calisma-takvimi.css */
 
-.calendar-module-wrapper { padding: 10px; }
+.calendar-module-wrapper { padding: 5px; }
 
-/* Bilgi Çubuğu - Yatay ve Modern Görünüm */
 .cal-info-banner {
-    background: #fff; 
-    padding: 15px 25px; 
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-    margin-bottom: 20px;
-    border: 1px solid #e2e8f0;
-    display: flex; 
-    flex-direction: row; /* Yatay hizalama */
-    align-items: center; 
-    justify-content: space-between;
-    text-align: left;
-    gap: 20px;
+    background: #fff; padding: 1.2rem; border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 2rem;
+    text-align: center; border-left: 5px solid #cc0000;
 }
 
-.cal-info-banner p { 
-    color: #1e293b; 
-    font-weight: 500; 
-    margin: 0; 
-    font-size: 1rem;
-    flex-grow: 1;
-}
+.cal-info-banner p { color: #1e293b; font-weight: 600; margin-bottom: 5px; }
+.cal-info-banner small { color: #64748b; font-style: italic; }
 
-.cal-info-banner p strong { color: #008CBA; }
-
-.cal-info-banner small { 
-    color: #94a3b8; 
-    font-size: 0.85rem;
-    display: block;
-    margin-top: 4px;
-}
-
-#open-admin-panel-btn {
-    white-space: nowrap;
-    border-radius: 8px;
-    height: 40px;
-}
-
-/* Takvim Izgarası */
 .calendar-grid-main {
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.2rem; 
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem; width: 100%;
 }
 
-/* Ay Kartı */
 .month-card-cal {
-    background: #ffffff; 
-    border-radius: 12px; 
-    padding: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-    border: 1px solid #e2e8f0;
+    background: #ffffff; border-radius: 16px; padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+    transition: transform 0.2s ease;
 }
+
+.month-card-cal:hover { transform: translateY(-5px); }
 
 .month-header-cal {
-    text-align: center; 
-    font-size: 1rem; 
-    font-weight: 700;
-    color: #fff; 
-    background: #008CBA;
-    padding: 10px; 
-    border-radius: 8px; 
-    margin-bottom: 10px;
+    text-align: center; font-size: 1.15rem; font-weight: 600;
+    color: #fff; background: linear-gradient(to right, #ff7f7f, #cc0000);
+    padding: 0.8rem; border-radius: 12px; margin-bottom: 1rem;
 }
 
 .month-stats-cal {
-    background: #f8fafc; 
-    padding: 6px 12px; 
-    border-radius: 6px;
-    margin-bottom: 10px; 
-    font-size: 0.8rem; 
-    display: flex;
-    justify-content: space-around; 
-    border: 1px solid #e2e8f0;
+    background: #f8fafc; padding: 0.5rem; border-radius: 8px;
+    margin-bottom: 1rem; font-size: 0.85rem; display: flex;
+    justify-content: space-between; border: 1px solid #e2e8f0;
 }
 
-.stat-item-cal { text-align: center; }
-.stat-item-cal span { font-weight: 800; color: #008CBA; margin-left: 5px; }
+.stat-item-cal span { display: block; font-weight: bold; color: #0f172a; }
 
-.weekdays-row-cal { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 5px; }
-.weekday-cal { text-align: center; font-size: 0.75rem; color: #64748b; font-weight: 700; }
+.weekdays-row-cal { 
+    display: grid; grid-template-columns: repeat(7, 1fr); 
+    margin-bottom: 0.5rem; font-weight: bold;
+}
+.weekday-cal { text-align: center; font-size: 0.8rem; color: #64748b; }
 
-.days-grid-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.days-grid-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
 
 .day-cal {
-    aspect-ratio: 1/1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    font-weight: 600; 
-    position: relative; 
-    background: #f8fafc;
-    color: #94a3b8; 
-    font-size: 0.85rem;
-    border: 1px solid transparent;
+    text-align: center; padding: 0.75rem 0.2rem; border-radius: 8px;
+    font-weight: 600; position: relative; background: #f8fafc;
+    color: #94a3b8; user-select: none; font-size: 0.85rem;
 }
 
-.day-cal.interactive-cal { cursor: pointer; color: #1e293b; border-color: #f1f5f9; }
-.day-cal.interactive-cal:hover { background: #e2e8f0; }
+.day-cal.interactive-cal { cursor: pointer; border: 1px solid transparent; }
+.day-cal.interactive-cal:hover { transform: translateY(-2px); border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-.day-cal.workday-cal { background: #f1f5f9; }
-.day-cal.three-cal { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
-.day-cal.two-cal { background: #fef3c7; color: #d97706; border-color: #fde68a; }
-.day-cal.one-cal { background: #dcfce7; color: #16a34a; border-color: #bbf7d0; }
+.day-cal.workday-cal { background: #f1f5f9; color: #475569; }
+.day-cal.three-cal { background: #f59e0b; color: white; }
+.day-cal.two-cal { background: #10b981; color: white; }
+.day-cal.one-cal { background: #3b82f6; color: white; }
 
 .day-cal.leave-cal {
-    background: #ef4444 !important; 
-    color: white !important;
-    text-decoration: line-through; 
+    background: #ef4444 !important; color: white !important;
+    text-decoration: line-through; opacity: 0.8;
 }
 
 .visit-badge-cal {
-    position: absolute; top: 2px; right: 2px; 
-    background: #1e293b; color: #fff; 
-    font-size: 0.6rem; width: 16px; height: 16px;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+    position: absolute; top: -5px; right: -5px; background: #334155;
+    color: #fff; font-size: 0.65rem; width: 18px; height: 18px;
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; border: 2px solid #fff;
 }
 
 .day-cal.empty-cal { visibility: hidden; }
-
-/* Mobil Uyumluluk */
-@media (max-width: 768px) {
-    .cal-info-banner { flex-direction: column; text-align: center; padding: 20px; }
-    #open-admin-panel-btn { width: 100%; }
-}
