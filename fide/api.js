@@ -4,9 +4,6 @@ import * as state from './state.js';
 
 let pb; // PocketBase instance
 
-// --- YARDIMCI GÜVENLİK FONKSİYONLARI ---
-// (Bu bölümde değişiklik yok)
-
 /**
  * Cihazın mobil olup olmadığını User Agent üzerinden kontrol eder.
  * @returns {boolean}
@@ -25,14 +22,12 @@ function getDeviceDescription() {
     let os = "Unknown OS";
     let browser = "Unknown Browser";
 
-    // İşletim Sistemi Tespiti
     if (/Windows/.test(ua)) os = "Windows";
     else if (/Macintosh/.test(ua)) os = "MacOS";
     else if (/iPhone|iPad|iPod/.test(ua)) os = "iOS";
     else if (/Android/.test(ua)) os = "Android";
     else if (/Linux/.test(ua)) os = "Linux";
 
-    // Tarayıcı Tespiti
     if (/Edg/.test(ua)) browser = "Edge";
     else if (/Chrome/.test(ua) && !/Edg/.test(ua)) browser = "Chrome";
     else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = "Safari";
@@ -42,15 +37,46 @@ function getDeviceDescription() {
 }
 
 /**
- * Rastgele, benzersiz bir cihaz anahtarı oluşturur.
- * @returns {string} Örneğin: "AHS7-8J3K-9B3D-N1C9"
+ * PROFESYONEL PARMAK İZİ SİSTEMİ (Browser Fingerprinting)
+ * Cihazın donanım ve yazılım özelliklerinden benzersiz bir ID üretir.
+ * @returns {Promise<string>}
  */
-function generateDeviceKey() {
-    const arr = new Uint32Array(4);
-    window.crypto.getRandomValues(arr); 
-    return Array.from(arr, dec => dec.toString(36)).join('-').toUpperCase();
-}
+async function getDeviceFingerprint() {
+    const components = [
+        navigator.userAgent,
+        navigator.language,
+        screen.colorDepth,
+        screen.width + "x" + screen.height,
+        new Date().getTimezoneOffset(),
+        navigator.hardwareConcurrency || "unknown",
+        navigator.platform,
+        // Canvas Fingerprinting: Tarayıcının grafik işleme karakteristiği
+        (function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = "top";
+            ctx.font = "14px 'Arial'";
+            ctx.textBaseline = "alphabetic";
+            ctx.fillStyle = "#f60";
+            ctx.fillRect(125, 1, 62, 20);
+            ctx.fillStyle = "#069";
+            ctx.fillText("FideSecurity_123!@#", 2, 15);
+            ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+            ctx.fillText("FideSecurity_123!@#", 4, 17);
+            return canvas.toDataURL();
+        })()
+    ];
 
+    const fingerprintString = components.join('###');
+    
+    // Web Crypto API ile SHA-256 Hash oluşturma
+    const msgUint8 = new TextEncoder().encode(fingerprintString);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    
+    return hashHex;
+}
 
 /**
  * API modülünü PocketBase instance ile başlatır.
@@ -60,96 +86,68 @@ export function initApi(pbInstance) {
     pb = pbInstance;
 }
 
-// --- (SÜRE GÜNCELLENDİ) ANLIK ABONELİK FONKSİYONU ---
-
 /**
- * (SÜRE GÜNCELLENDİ)
  * Kullanıcının kilit (ban) ve cihaz kilidi (lock) durumlarını anlık dinler.
- * ÖNCE cihazın mevcut durumunu kontrol eder, SONRA değişiklikleri dinler.
  */
 export async function subscribeToRealtimeChanges() {
     if (!pb || !pb.authStore.isValid) {
-        return; // Giriş yapılmamışsa dinleme
+        return;
     }
 
     const userId = pb.authStore.model.id;
-    const browserDeviceKey = localStorage.getItem('myAppDeviceKey');
+    // Yeni parmak izi sistemine göre anahtarı al
+    const browserDeviceKey = await getDeviceFingerprint();
 
-    // 1. Hesap Kilidi (Ban) Dinlemesi
     try {
-        // --- ANINDA KONTROL (Hesap Banı) ---
         const currentUserRecord = await pb.collection('users').getOne(userId);
         if (currentUserRecord.is_banned === true) {
-             console.warn('Hesap zaten kilitli. Oturum sonlandırılıyor.');
+             console.warn('Hesap kilitli. Oturum sonlandırılıyor.');
              showLockoutOverlay("Hesabınız bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
              logoutUser();
-             // --- SÜRE GÜNCELLENDİ ---
-             setTimeout(() => window.location.reload(), 3000); // 2 saniyeden 3 saniyeye
-             return; // Fonksiyondan çık
+             setTimeout(() => window.location.reload(), 3000);
+             return;
         }
         
-        // --- GELECEKTEKİ DEĞİŞİKLİKLERİ DİNLE (Hesap Banı) ---
         pb.collection('users').subscribe(userId, function(e) {
             if (e.record && e.record.is_banned === true) {
-                console.warn('Kullanıcı kilitlendi (is_banned=true). Oturum sonlandırılıyor.');
                 showLockoutOverlay("Hesabınız bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
                 logoutUser();
-                // --- SÜRE GÜNCELLENDİ ---
-                setTimeout(() => window.location.reload(), 3000); // 2 saniyeden 3 saniyeye
+                setTimeout(() => window.location.reload(), 3000);
             }
         });
     } catch (error) {
-        console.error('Kullanıcı (ban) dinlemesi başlatılamadı:', error);
+        console.error('Kullanıcı dinlemesi başlatılamadı:', error);
     }
 
-    // 2. Cihaz Kilidi Dinlemesi (Sadece 'client' rolü ve kayıtlı anahtar varsa)
-    if (pb.authStore.model.role === 'client' && browserDeviceKey) {
+    if (pb.authStore.model.role === 'client') {
         try {
-            // 1. Cihazın mevcut kaydını bul
             const deviceRecord = await pb.collection('user_devices').getFirstListItem(
                 `user="${userId}" && device_key="${browserDeviceKey}"`
             );
 
-            // 2. (YENİ) ANINDA KONTROL: Cihaz zaten kilitli mi?
             if (deviceRecord.is_locked === true) {
-                console.warn('Cihaz zaten kilitli. Oturum sonlandırılıyor.');
                 showLockoutOverlay("Bu cihaz bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
                 logoutUser();
-                // --- SÜRE GÜNCELLENDİ ---
-                setTimeout(() => window.location.reload(), 3000); // 2 saniyeden 3 saniyeye
-                return; // Fonksiyondan çık, abonelik kurma
+                setTimeout(() => window.location.reload(), 3000);
+                return;
             }
 
-            // 3. (MEVCUT) GELECEKTEKİ DEĞİŞİKLİKLERİ DİNLE: Cihaz şu an kilitli değil.
             pb.collection('user_devices').subscribe(deviceRecord.id, function(e) {
                 if (e.record && e.record.is_locked === true) {
-                    console.warn('Cihaz kilitlendi (is_locked=true). Oturum sonlandırılıyor.');
                     showLockoutOverlay("Bu cihaz bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
                     logoutUser();
-                    // --- SÜRE GÜNCELLENDİ ---
-                    setTimeout(() => window.location.reload(), 3000); // 2 saniyeden 3 saniyeye
+                    setTimeout(() => window.location.reload(), 3000);
                 }
             });
 
         } catch (error) {
-            // Hata (örn: 404 Not Found), cihaz kaydının silindiği anlamına gelir.
-            console.error('Cihaz (lock) dinlemesi başlatılamadı veya cihaz kaydı bulunamadı:', error);
-            
-            showLockoutOverlay("Cihaz kaydınız bulunamadı veya geçersiz. Güvenlik nedeniyle çıkış yapılıyor...");
-            logoutUser();
-            localStorage.removeItem('myAppDeviceKey'); // Bozuk anahtarı temizle
-            // --- SÜRE GÜNCELLENDİ ---
-            setTimeout(() => window.location.reload(), 3000); // 2 saniyeden 3 saniyeye
+            console.error('Cihaz kilidi kontrol hatası:', error);
         }
     }
 }
 
-
-// --- MEVCUT FONKSİYONLAR (Bu bölümde değişiklik yok) ---
-
 /**
  * O anki aya ait denetim verilerini yükler.
- * (Bu fonksiyonda değişiklik yok)
  */
 async function loadMonthlyAuditData() {
     state.setAuditedThisMonth([]);
@@ -189,7 +187,6 @@ async function loadMonthlyAuditData() {
 
 /**
  * Bulutta kayıtlı olan DiDe ve FiDe excel verilerini çeker.
- * (Bu fonksiyonda değişiklik yok)
  */
 export async function loadExcelDataFromCloud() {
     if (!pb || !pb.authStore.isValid) return;
@@ -198,7 +195,8 @@ export async function loadExcelDataFromCloud() {
         const dideRecord = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
         if (dideRecord) {
             if (dideRecord.dosyaAdi) {
-                document.getElementById('file-name').textContent = `Buluttan yüklendi: ${dideRecord.dosyaAdi}`;
+                const el = document.getElementById('file-name');
+                if(el) el.textContent = `Buluttan yüklendi: ${dideRecord.dosyaAdi}`;
             }
             state.setDideData(dideRecord.veri);
         }
@@ -210,7 +208,8 @@ export async function loadExcelDataFromCloud() {
         const fideRecord = await pb.collection('excel_verileri').getFirstListItem('tip="fide"');
         if (fideRecord) {
             if (fideRecord.dosyaAdi) {
-                document.getElementById('fide-file-name').textContent = `Buluttan yüklendi: ${fideRecord.dosyaAdi}`;
+                const el = document.getElementById('fide-file-name');
+                if(el) el.textContent = `Buluttan yüklendi: ${fideRecord.dosyaAdi}`;
             }
             state.setFideData(fideRecord.veri);
         }
@@ -221,7 +220,6 @@ export async function loadExcelDataFromCloud() {
 
 /**
  * Uygulama için gerekli tüm başlangıç verilerini yükler.
- * (Bu fonksiyonda değişiklik yok)
  */
 export async function loadInitialData() {
     if (!pb || !pb.authStore.isValid) {
@@ -265,7 +263,8 @@ export async function loadInitialData() {
     } catch (error) {
         console.error("Başlangıç verileri okunurken hata oluştu:", error);
         state.setFideQuestions(state.fallbackFideQuestions);
-        document.getElementById('initialization-error').style.display = 'block';
+        const errDiv = document.getElementById('initialization-error');
+        if(errDiv) errDiv.style.display = 'block';
         return false;
     } finally {
         hideLoadingOverlay();
@@ -274,7 +273,6 @@ export async function loadInitialData() {
 
 /**
  * Formun mevcut durumunu veritabanına kaydeder veya günceller.
- * --- GÜNCELLENDİ ---
  */
 export async function saveFormState(reportData, isFinalizing = false) {
     if (!state.selectedStore || !pb || !pb.authStore.isValid) return;
@@ -282,7 +280,7 @@ export async function saveFormState(reportData, isFinalizing = false) {
     const bayiKodu = String(state.selectedStore.bayiKodu);
     const storeRecord = state.allStores.find(s => s.bayiKodu === bayiKodu);
     if (!storeRecord) {
-        console.error("Kaydedilecek bayi veritabanında bulunamadı!");
+        console.error("Bayi bulunamadı!");
         return;
     }
 
@@ -293,7 +291,7 @@ export async function saveFormState(reportData, isFinalizing = false) {
             const undoneRecord = await pb.collection('denetim_geri_alinanlar').getFirstListItem(`yil_ay="${currentMonthKey}" && bayi="${storeRecord.id}"`);
             await pb.collection('denetim_geri_alinanlar').delete(undoneRecord.id);
         } catch (error) {
-            if (error.status !== 404) console.error("Geri alınmış denetim kaydı temizlenirken bir hata oluştu:", error);
+            if (error.status !== 404) console.error("Geri alınan rapor temizleme hatası:", error);
         }
     }
 
@@ -308,12 +306,7 @@ export async function saveFormState(reportData, isFinalizing = false) {
         dataToSave.denetimTamamlanmaTarihi = new Date().toISOString();
     }
 
-    // --- GÜNCELLEME ---
-    // Yükleme ekranını SADECE "isFinalizing" (E-posta taslağı oluşturma) 
-    // durumunda göster. Diğer tüm (arka plan) kaydetmeler sessizce yapılsın.
-    if (isFinalizing) {
-        showLoadingOverlay("Rapor kaydediliyor...");
-    }
+    if (isFinalizing) showLoadingOverlay("Rapor kaydediliyor...");
 
     try {
         if (state.currentReportId) {
@@ -323,22 +316,15 @@ export async function saveFormState(reportData, isFinalizing = false) {
             state.setCurrentReportId(newRecord.id);
         }
     } catch (error) {
-        console.error("PocketBase'e yazma hatası:", error);
-        // Sadece sonlandırma sırasında hata uyarısı göster
-        if (isFinalizing) {
-            alert("Rapor kaydedilirken bir hata oluştu!");
-        }
+        console.error("Kayıt hatası:", error);
+        if (isFinalizing) alert("Rapor kaydedilirken bir hata oluştu!");
     } finally {
-        // Yükleme ekranını sadece gösterildiyse gizle
-        if (isFinalizing) {
-            hideLoadingOverlay();
-        }
+        if (isFinalizing) hideLoadingOverlay();
     }
 }
 
 /**
  * Belirli bir bayi için kaydedilmiş raporu buluttan yükler.
- * (Bu fonksiyonda değişiklik yok)
  */
 export async function loadReportForStore(bayiKodu) {
     if (!pb || !pb.authStore.isValid) return null;
@@ -357,10 +343,9 @@ export async function loadReportForStore(bayiKodu) {
 
     } catch (error) {
         if (error.status === 404) {
-            console.log("Bu bayi için kaydedilmiş bir rapor bulunamadı. Temiz form açılıyor.");
             state.setCurrentReportId(null);
         } else {
-            console.error("PocketBase'den rapor okuma hatası:", error);
+            console.error("Rapor yükleme hatası:", error);
         }
         return null;
     } finally {
@@ -370,154 +355,103 @@ export async function loadReportForStore(bayiKodu) {
 
 /**
  * Belirtilen tipteki Excel verisini buluttan siler.
- * (Bu fonksiyonda değişiklik yok)
  */
 export async function clearExcelFromCloud(type) {
-    if (!pb.authStore.isValid) {
-        alert("Bu işlem için giriş yapmış olmalısınız.");
-        return;
-    }
+    if (!pb.authStore.isValid) return;
     
     try {
         const record = await pb.collection('excel_verileri').getFirstListItem(`tip="${type}"`);
         await pb.collection('excel_verileri').delete(record.id);
-        alert(`${type.toUpperCase()} Excel verisi buluttan temizlendi. Sayfa yenileniyor.`);
+        alert(`${type.toUpperCase()} verisi silindi. Sayfa yenileniyor.`);
         window.location.reload();
     } catch (error) {
-        if (error.status === 404) {
-            alert(`Silinecek ${type.toUpperCase()} verisi bulunamadı.`);
-        } else {
-            console.error(`${type.toUpperCase()} verisi silinirken bir hata oluştu:`, error);
-            alert("Veri silinirken bir hata oluştu.");
-        }
+        console.error("Silme hatası:", error);
     }
 }
 
 /**
- * DÜZELTİLDİ: Kullanıcı girişi ve BİREYSEL cihaz limiti.
- * @param {string} email 
- * @param {string} password 
- * @returns {Promise<{success: boolean, message: string}>} Giriş denemesinin sonucunu döner.
- * (Bu fonksiyonda değişiklik yok)
+ * PROFESYONEL PARMAK İZİ DESTEKLİ GİRİŞ
  */
 export async function loginUser(email, password) {
-    if (!pb) return { success: false, message: "Veritabanı bağlantısı kurulamadı." };
+    if (!pb) return { success: false, message: "Bağlantı hatası." };
 
     let user;
     try {
-        // 1. Adım: Şifre ile kimlik doğrulama
         const authData = await pb.collection('users').authWithPassword(email, password);
-        
-        // --- DÜZELTME BURADA ---
-        // 'authData.record' (dönen kayıt), 'device_limit' gibi özel alanlarımızı içermeyebilir.
-        // Bu nedenle, 'device_limit' gibi alanlara güvenli erişim için
-        // kullanıcının tam kaydını 'getOne' ile tekrar çekiyoruz.
         user = await pb.collection('users').getOne(authData.record.id);
-        // --- DÜZELTME BİTTİ ---
-
     } catch (error) {
-        console.error("Login error:", error);
         return { success: false, message: "E-posta veya şifre hatalı." };
     }
 
     try {
-        // 2. Adım: Kullanıcı KİLİTLİ (BANNED) mi?
         if (user.is_banned === true) {
             logoutUser();
-            return { success: false, message: "Bu hesap yönetici tarafından kilitlenmiştir." };
+            return { success: false, message: "Bu hesap kilitlenmiştir." };
         }
 
-        // 3. Adım: Kullanıcı ROLÜ 'admin' mi?
-        if (user.role === 'admin') {
-            return { success: true, message: "Yönetici girişi başarılı." };
-        }
+        if (user.role === 'admin') return { success: true, message: "Yönetici girişi başarılı." };
 
-        // 4. Adım: 'client' (Standart Kullanıcı) için Güvenlik Kontrolleri
-        
-        // 4a. Mobil Erişim Kontrolü
         if (user.mobile_access === false && isMobileDevice()) {
             logoutUser();
-            return { success: false, message: "Bu hesaptan mobil cihaz ile giriş izni yoktur." };
+            return { success: false, message: "Mobil cihaz girişi yasaktır." };
         }
 
-        // 4b. Yeni Cihaz Yönetimi
-        const browserDeviceKey = localStorage.getItem('myAppDeviceKey');
-        const currentDeviceDesc = getDeviceDescription(); 
+        // Cihaz parmak izini hesapla
+        const browserFingerprint = await getDeviceFingerprint();
+        const currentDeviceDesc = getDeviceDescription();
 
-        if (browserDeviceKey) {
-            // --- CİHAZDA ANAHTAR VAR (Normal giriş denemesi) ---
-            try {
-                const deviceRecord = await pb.collection('user_devices').getFirstListItem(
-                    `user="${user.id}" && device_key="${browserDeviceKey}"`
-                );
+        try {
+            // Parmak iziyle eşleşen cihazı ara
+            const deviceRecord = await pb.collection('user_devices').getFirstListItem(
+                `user="${user.id}" && device_key="${browserFingerprint}"`
+            );
 
-                if (deviceRecord.is_locked) {
-                    logoutUser();
-                    return { success: false, message: "Bu cihaz yönetici tarafından kilitlenmiştir." };
-                }
-
-                await pb.collection('user_devices').update(deviceRecord.id, {
-                    'last_login': new Date().toISOString(),
-                    'device_info': currentDeviceDesc 
-                });
-                return { success: true, message: "Giriş başarılı." };
-
-            } catch (error) {
-                // Hata 404 (Not Found) ise: Tarayıcıdaki anahtar veritabanında yok.
-                // (Muhtemelen admin tarafından silinmiş veya eski sistemden kalma).
-                // Anahtarı temizle ve yeniden giriş yapmayı dene (yeni cihaz gibi).
-                localStorage.removeItem('myAppDeviceKey');
-                return loginUser(email, password); // Fonksiyonu yeniden çağır
+            if (deviceRecord.is_locked) {
+                logoutUser();
+                return { success: false, message: "Bu cihaz kilitlenmiştir." };
             }
 
-        } else {
-            // --- CİHAZDA ANAHTAR YOK (Yeni Cihaz Kaydı) ---
-            
-            // Cihaz limitini doğrudan tam 'user' kaydından oku
-            // (Artık 'user' nesnesinde 'device_limit' alanı garanti)
-            const deviceLimit = user.device_limit || 1; 
+            await pb.collection('user_devices').update(deviceRecord.id, {
+                'last_login': new Date().toISOString(),
+                'device_info': currentDeviceDesc 
+            });
+            return { success: true, message: "Giriş başarılı." };
 
+        } catch (error) {
+            // Parmak izi sistemde yoksa yeni cihaz olarak değerlendir
+            const deviceLimit = user.device_limit || 1;
             const userDevices = await pb.collection('user_devices').getFullList({
                 filter: `user="${user.id}"`
             });
             
             if (userDevices.length >= deviceLimit) {
-                // CİHAZ LİMİTİ DOLU
                 logoutUser();
                 return { 
                     success: false, 
-                    message: `Kişisel cihaz limitiniz (${deviceLimit}) dolmuştur. Yeni bir cihaz ekleyemezsiniz. Lütfen yöneticinizle iletişime geçin.` 
+                    message: `Cihaz limitiniz (${deviceLimit}) dolmuştur. Lütfen yöneticinizle iletişime geçin.` 
                 };
             }
 
-            // LİMİT DOLU DEĞİL: Yeni cihazı kaydet
-            const newKey = generateDeviceKey();
-            
             await pb.collection('user_devices').create({
                 'user': user.id,
-                'device_key': newKey,
+                'device_key': browserFingerprint,
                 'device_info': currentDeviceDesc,
                 'last_login': new Date().toISOString(),
                 'is_locked': false
             });
 
-            localStorage.setItem('myAppDeviceKey', newKey);
-            return { success: true, message: "Yeni cihaz kaydedildi ve giriş yapıldı." };
+            return { success: true, message: "Yeni cihaz kaydedildi." };
         }
 
     } catch (error) {
-        // Bu 'catch' bloğu, 4. Adımdaki (client güvenliği) tüm hataları yakalar.
-        console.error("Login security check error:", error);
+        console.error("Güvenlik kontrolü hatası:", error);
         logoutUser();
-        // Hatanın nedeni büyük ihtimalle 'user_devices' tablosunun bulunamaması
-        // veya 'device_limit' alanının 'users' tablosuna eklenmemiş olmasıdır.
-        return { success: false, message: "Güvenlik kontrolü sırasında bir hata oluştu." };
+        return { success: false, message: "Güvenlik hatası oluştu." };
     }
 }
 
 /**
  * Kullanıcı çıkış işlemini yapar.
- * (Bu fonksiyonda değişiklik yok)
  */
 export function logoutUser() {
     if (pb) {
