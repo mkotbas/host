@@ -313,7 +313,7 @@ async function saveSettings() {
 }
 
 /**
- * GÜNCELLENDİ: Hem bugünkü planı hem de revize edilmiş toplam hedefi hesaplar.
+ * GÜNCELLENDİ: Hem bugünkü planı hem de izin günlerine göre revize edilmiş aylık hedefi hesaplar.
  */
 function getRevisedTargetInfo(baseTarget, currentAudited) {
     const today = new Date();
@@ -344,14 +344,13 @@ function getRevisedTargetInfo(baseTarget, currentAudited) {
         if (leaveData[`${year}-${month}-${d}`]) leaveInWorkDays++;
     });
     
-    // Revize Hedef Hesaplama (Takvim Mantığı)
+    // Revize Hedef: İzin günlerinin mesaiye oranına göre ana hedeften düşüş yapar
     const dailyAverage = baseTarget / (allWorkDays.length || 1);
     const deduction = Math.round(dailyAverage * leaveInWorkDays);
     const revisedTotalTarget = Math.max(0, baseTarget - deduction);
 
-    // Kalan iş ve günlük dağıtım
+    // Bugünkü Plan hesabı
     const remainingToVisit = Math.max(0, revisedTotalTarget - currentAudited);
-    
     let todayGoal = 0;
     if (activeWorkDays.length > 0) {
         const todayKey = `${year}-${month}-${todayDate}`;
@@ -375,12 +374,12 @@ function calculateAndDisplayDashboard() {
     if (currentViewMode === 'monthly') {
         displayAudited = auditedStoreCodesCurrentMonth.length;
         
-        // YENİ: İzinleri hesaba katarak hedefi revize et
+        // ÖNEMLİ GÜNCELLEME: Takvime göre hedefi burada revize ediyoruz
         const baseMonthlyTarget = aylikHedef || 47;
         const targetInfo = getRevisedTargetInfo(baseMonthlyTarget, displayAudited);
         
-        displayTarget = targetInfo.revisedTotalTarget; // Revize edilmiş hedef
-        const todayGoal = targetInfo.todayGoal; // Bugünkü plan
+        displayTarget = targetInfo.revisedTotalTarget; // İzinler düşülmüş gerçek aylık hedef
+        const todayGoal = targetInfo.todayGoal; // Bugünkü plan sayınız
 
         titleIcon = "calendar-day";
         titleText = `${today.getFullYear()} ${monthNames[today.getMonth()]} Ayı Performansı`;
@@ -413,6 +412,7 @@ function calculateAndDisplayDashboard() {
         if (dailyGoalCard) dailyGoalCard.style.display = 'none';
     }
 
+    // Hedefe kalan rakamı artık revize edilmiş (izinleri düşülmüş) hedef üzerinden hesaplanıyor
     const remainingToTarget = Math.max(0, displayTarget - displayAudited);
     const remainingWorkDays = getRemainingWorkdays();
     
