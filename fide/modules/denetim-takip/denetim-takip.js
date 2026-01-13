@@ -322,6 +322,72 @@ async function revertAudit(bayiKodu) {
     loadingOverlay.style.display = 'none';
 }
 
+/**
+ * YENİ FONKSİYON: Çalışma Takvimi kurallarına göre bugünkü hedefi hesaplar.
+ * Redistribution (Yeniden Dağıtım) mantığını kullanır.
+ */
+function calculateDynamicDailyTarget(totalTarget, auditedCount) {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const todayDate = today.getDate();
+
+    // Çalışma takviminden izin verilerini al (LocalStorage)
+    const leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+    
+    // 1. Ayın başından sonuna kadar olan TÜM gerçek iş günlerini (Pzt-Cum) bul
+    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const allWorkDays = [];
+    const activeRemainingWorkDays = [];
+
+    for (let d = 1; d <= lastDayOfMonth; d++) {
+        const date = new Date(currentYear, currentMonth, d);
+        const dayOfWeek = date.getDay(); // 0: Paz, 6: Cts
+        
+        // Sadece hafta içi
+        if (dayOfWeek > 0 && dayOfWeek < 6) {
+            allWorkDays.push(d);
+            const key = `${currentYear}-${currentMonth}-${d}`;
+            
+            // Eğer bugün veya sonrasındaysa ve izinli değilse "aktif kalan gün"dür
+            if (d >= todayDate && !leaveData[key]) {
+                activeRemainingWorkDays.push(d);
+            }
+        }
+    }
+
+    // 2. İzin günlerine göre ana hedefi revize et (Takvim mantığı)
+    let relevantLeaveCount = 0;
+    allWorkDays.forEach(d => {
+        if (leaveData[`${currentYear}-${currentMonth}-${d}`]) relevantLeaveCount++;
+    });
+
+    // Hedef revizesi: (47 / iş günü sayısı) * izin sayısı kadar düşer
+    const dailyAverage = 47 / (allWorkDays.length || 1);
+    const deduction = Math.round(dailyAverage * relevantLeaveCount);
+    const revisedTarget = Math.max(0, 47 - deduction);
+
+    // 3. Kalan işi, kalan aktif günlere dağıt (Yeniden Hesaplama)
+    const remainingToVisit = Math.max(0, revisedTarget - auditedCount);
+    const daysLeft = activeRemainingWorkDays.length;
+
+    if (daysLeft === 0) return 0;
+
+    // Dağıtım algoritması (Base + Extras)
+    const basePerDay = Math.floor(remainingToVisit / daysLeft);
+    const extras = remainingToVisit % daysLeft;
+
+    // Eğer bugün izinliysek veya hafta sonuysa hedef 0
+    const todayKey = `${currentYear}-${currentMonth}-${todayDate}`;
+    if (today.getDay() === 0 || today.getDay() === 6 || leaveData[todayKey]) {
+        return 0;
+    }
+
+    // Eğer bugün listedeki ilk 'extras' kadar günün içindeyse +1 alır
+    const todayIndex = activeRemainingWorkDays.indexOf(todayDate);
+    return todayIndex < extras ? basePerDay + 1 : basePerDay;
+}
+
 function calculateAndDisplayDashboard() {
     const today = new Date();
     const totalStoresCount = allStores.length;
@@ -338,6 +404,7 @@ function calculateAndDisplayDashboard() {
         listTitle = "Bu Ay Denetlenenler";
         remainingListTitle = "Bu Ay Denetlenecek Bayiler";
         document.getElementById('work-days-card').style.display = 'block';
+        document.getElementById('daily-goal-card').style.display = 'block'; // Bugünün Planı kartını göster
     } else {
         displayTarget = totalStoresCount;
         displayAudited = auditedStoreCodesCurrentYear.length;
@@ -348,10 +415,14 @@ function calculateAndDisplayDashboard() {
         listTitle = "Bu Yıl Denetlenenler";
         remainingListTitle = "Bu Yıl Denetlenecek Bayiler";
         document.getElementById('work-days-card').style.display = 'none';
+        document.getElementById('daily-goal-card').style.display = 'none'; // Yıllık modda gizle
     }
 
     const remainingToTarget = Math.max(0, displayTarget - displayAudited);
-    const remainingWorkDays = getRemainingWorkdays();
+    
+    // Dinamik günlük hedefi hesapla
+    const dailyGoal = calculateDynamicDailyTarget(displayTarget, displayAudited);
+    const remainingWorkDays = getRemainingWorkdays(); // Bu fonksiyon artık izinleri de düşüyor
     
     document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-${titleIcon}"></i> ${titleText}`;
     document.getElementById('target-label').textContent = targetLabel;
@@ -360,6 +431,7 @@ function calculateAndDisplayDashboard() {
     document.getElementById('remaining-list-title').innerHTML = `<i class="fas fa-list-ul"></i> ${remainingListTitle}`;
     
     document.getElementById('work-days-count').textContent = remainingWorkDays;
+    document.getElementById('daily-goal-count').textContent = dailyGoal; // UI'ya yaz
     document.getElementById('total-stores-count').textContent = displayTarget;
     document.getElementById('audited-stores-count').textContent = displayAudited;
     document.getElementById('remaining-stores-count').textContent = remainingToTarget;
@@ -548,14 +620,24 @@ function renderAuditedStores() {
     });
 }
 
+/**
+ * GÜNCELLENDİ: Artık çalışma takvimindeki izinleri de hesaba katıyor.
+ */
 function getRemainingWorkdays() {
     const today = new Date(); const year = today.getFullYear(); const month = today.getMonth();
     const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+    const leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+    
     let remainingWorkdays = 0;
     if (today.getDate() > lastDayOfMonth) return 0;
+    
     for (let day = today.getDate(); day <= lastDayOfMonth; day++) {
-        const dayOfWeek = new Date(year, month, day).getDay();
-        if (dayOfWeek > 0 && dayOfWeek < 6) {
+        const date = new Date(year, month, day);
+        const dayOfWeek = date.getDay();
+        const key = `${year}-${month}-${day}`;
+        
+        // Hafta içi mi VE İzinli DEĞİL mi?
+        if (dayOfWeek > 0 && dayOfWeek < 6 && !leaveData[key]) {
             remainingWorkdays++;
         }
     }
