@@ -1,33 +1,35 @@
 // fide/modules/calisma-takvimi/calisma-takvimi.js
 
 let pbInstance = null;
-let globalAylikHedef = 47;
+let globalAylikHedef = 47; // Varsayılan değer
 let leaveData = {};
 
 export async function initializeCalismaTakvimiModule(pb) {
     pbInstance = pb;
     const year = new Date().getFullYear();
     
-    // Verileri yükle
+    // Verileri buluttan ve hafızadan yükle
     await loadInitialSettings();
     setupEventListeners();
     renderCalendar();
 
     async function loadInitialSettings() {
-        // 1. Hedef bilgisini çek
+        // 1. Veritabanından (ayarlar tablosu) hedef sayısını çek
         try {
             const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
             globalAylikHedef = record.deger || 47;
             document.getElementById('monthly-target-input').value = globalAylikHedef;
             document.getElementById('display-base-target').textContent = globalAylikHedef;
         } catch (error) {
+            console.error("Hedef okunamadı, varsayılan 47 kullanılıyor.");
             globalAylikHedef = 47;
+            document.getElementById('display-base-target').textContent = globalAylikHedef;
         }
 
-        // 2. İzin verilerini çek
+        // 2. İzin verilerini yerel hafızadan çek
         leaveData = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
 
-        // 3. Yetki kontrolü (Yönetim Paneli butonu için)
+        // 3. Yetki kontrolü (Yönetim Paneli butonu sadece adminlere görünür)
         if (pbInstance.authStore.model.role === 'admin') {
             document.getElementById('open-admin-panel-btn').style.display = 'inline-flex';
         }
@@ -51,14 +53,18 @@ export async function initializeCalismaTakvimiModule(pb) {
                 }
 
                 try {
+                    // Sayıyı veritabanına kaydet
                     const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
                     await pbInstance.collection('ayarlar').update(record.id, { deger: newVal });
+                    
+                    // Ekranı güncelle
                     globalAylikHedef = newVal;
                     document.getElementById('display-base-target').textContent = newVal;
                     overlay.style.display = 'none';
-                    renderCalendar(); // Takvimi anında yeniden hesapla
+                    renderCalendar(); // Takvimi yeni sayıya göre anında yeniden hesapla
+                    alert("Hedef güncellendi ve takvim yeniden hesaplandı.");
                 } catch (e) {
-                    alert("Hedef kaydedilemedi.");
+                    alert("Hedef kaydedilemedi. Veritabanı bağlantısını kontrol edin.");
                 }
             };
         }
@@ -116,7 +122,7 @@ export async function initializeCalismaTakvimiModule(pb) {
                 else activeWorkDays.push(day);
             });
 
-            // Dinamik hedef üzerinden hesaplama
+            // ARTIK BURASI VERİTABANINDAN GELEN SAYIYI KULLANIYOR
             const baseTarget = globalAylikHedef;
             const currentTarget = allWorkDays.length > 0 
                 ? Math.max(0, baseTarget - Math.round((baseTarget / allWorkDays.length) * relevantLeaveCount))
