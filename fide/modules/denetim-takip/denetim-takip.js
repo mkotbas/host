@@ -8,7 +8,7 @@ let allUsers = [];
 let allStores = [];
 let auditedStoreCodesCurrentMonth = [];
 let auditedStoreCodesCurrentYear = [];
-let leaveDataBulut = {}; 
+let leaveDataBulut = {}; // Yeni bulut verisi tutucu
 
 let currentGlobalFilteredStores = []; 
 let localCityFilterValue = 'Tümü';    
@@ -22,7 +22,7 @@ let pbInstance = null;
 let currentUserRole = null;
 let currentUserId = null;
 
-// --- TAKVİM ENTEGRASYON FONKSİYONLARI ---
+// --- TAKVİM ENTEGRASYON FONKSİYONLARI (GÜNCELLENDİ) ---
 
 function getWorkDaysOfMonth(year, month) {
     const days = [];
@@ -55,6 +55,7 @@ function calculateTodayRequirement() {
     const day = today.getDate();
     const dayOfWeek = today.getDay();
 
+    // Hafta sonu ise veya bugün izinliyse 0 döner
     if (dayOfWeek === 0 || dayOfWeek === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
 
     const allWorkDays = getWorkDaysOfMonth(year, month);
@@ -92,6 +93,22 @@ function calculateTodayRequirement() {
 
 export async function initializeDenetimTakipModule(pb) {
     pbInstance = pb;
+
+    // Çalışma Takvimi modülünden izin değişikliği gelirse göstergeleri anında güncelle
+    window.addEventListener('leaveDataUpdated', async (e) => {
+        try {
+            if (e?.detail?.leaveData) {
+                leaveDataBulut = e.detail.leaveData;
+            } else if (pbInstance?.authStore?.isValid && currentUserId) {
+                const settingsKey = `leaveData_${currentUserId}`;
+                const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
+                leaveDataBulut = leaveRecord.deger || {};
+            }
+            calculateAndDisplayDashboard();
+        } catch (err) {
+            // sessiz geç
+        }
+    });
     const loadingOverlay = document.getElementById('loading-overlay');
     loadingOverlay.style.display = 'flex';
 
@@ -125,14 +142,14 @@ async function loadSettings() {
     } catch (error) { globalAylikHedef = 0; }
 
     try {
+        // BULUTTAN İZİN VERİLERİNİ ÇEK
         const settingsKey = `leaveData_${currentUserId}`;
         const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
         leaveDataBulut = leaveRecord.deger || {};
     } catch (error) { leaveDataBulut = {}; }
 
     if (currentUserRole === 'admin') {
-        const el = document.getElementById('monthly-target-input');
-        if(el) el.value = globalAylikHedef > 0 ? globalAylikHedef : '';
+        document.getElementById('monthly-target-input').value = globalAylikHedef > 0 ? globalAylikHedef : '';
     }
 }
 
@@ -257,12 +274,6 @@ function setupModuleEventListeners(userRole) {
     if (document.body.dataset.denetimTakipListenersAttached) return;
     document.body.dataset.denetimTakipListenersAttached = 'true';
 
-    // TAKVİM DEĞİŞİKLİĞİNİ DİNLE
-    window.addEventListener('calendarDataChanged', (e) => {
-        leaveDataBulut = e.detail;
-        calculateAndDisplayDashboard();
-    });
-
     if (userRole === 'admin') {
         document.getElementById('open-admin-panel-btn').onclick = () => document.getElementById('admin-panel-overlay').style.display = 'flex';
         document.getElementById('close-admin-panel-btn').onclick = () => document.getElementById('admin-panel-overlay').style.display = 'none';
@@ -354,22 +365,8 @@ function renderAuditedStores() {
 }
 
 function getRemainingWorkdays() {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    
-    let rem = 0; 
-    for (let d = today.getDate(); d <= lastDay; d++) { 
-        const checkDate = new Date(year, month, d);
-        const dayOfWeek = checkDate.getDay();
-        const key = `${year}-${month}-${d}`;
-        
-        // Hafta içi (1-5) mi VE izinli DEĞİL mi?
-        if ([1,2,3,4,5].includes(dayOfWeek) && !leaveDataBulut[key]) {
-            rem++;
-        }
-    }
+    const today = new Date(); const last = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    let rem = 0; for (let d = today.getDate(); d <= last; d++) { if ([1,2,3,4,5].includes(new Date(today.getFullYear(), today.getMonth(), d).getDay())) rem++; }
     return rem;
 }
 

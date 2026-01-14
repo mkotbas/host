@@ -5,50 +5,61 @@ export async function initializeCalismaTakvimiModule(pb) {
     const weekdaysTR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz'];
     const year = new Date().getFullYear();
     const container = document.querySelector('.calendar-grid-main');
-    const currentUserId = pb.authStore.model.id;
-    const settingsKey = `leaveData_${currentUserId}`;
-    
-    let leaveData = {};
-    let globalAylikHedef = 47;
 
-    // Buluttan verileri ve hedefi yükle
-    async function loadInitialData() {
-        try {
-            const leaveRecord = await pb.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
-            leaveData = leaveRecord.deger || {};
-        } catch (error) { leaveData = {}; }
+    const pbInstance = pb;
+    const currentUserId = pbInstance?.authStore?.model?.id || null;
 
+    async function loadLeaveFromCloud() {
+        if (!pbInstance?.authStore?.isValid || !currentUserId) return null;
+        const settingsKey = `leaveData_${currentUserId}`;
         try {
-            const targetRecord = await pb.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
-            globalAylikHedef = targetRecord.deger || 47;
-        } catch (error) { globalAylikHedef = 47; }
-    }
-
-    async function saveData() {
-        try {
-            let record;
-            try {
-                record = await pb.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
-                await pb.collection('ayarlar').update(record.id, { deger: leaveData });
-            } catch (err) {
-                await pb.collection('ayarlar').create({ anahtar: settingsKey, deger: leaveData });
-            }
-            
-            // Denetim Takip modülünü bilgilendir
-            window.dispatchEvent(new CustomEvent('calendarDataChanged', { detail: leaveData }));
-        } catch (error) {
-            console.error("Takvim verisi kaydedilemedi:", error);
+            const rec = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
+            return rec?.deger || {};
+        } catch (e) {
+            return {};
         }
     }
 
-    async function toggleLeave(month, day) {
+    async function upsertLeaveToCloud(leaveObj) {
+        if (!pbInstance?.authStore?.isValid || !currentUserId) return;
+        const settingsKey = `leaveData_${currentUserId}`;
+        try {
+            const rec = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
+            await pbInstance.collection('ayarlar').update(rec.id, { deger: leaveObj });
+        } catch (e) {
+            // kayıt yoksa oluştur
+            await pbInstance.collection('ayarlar').create({ anahtar: settingsKey, deger: leaveObj });
+        }
+    }
+
+    
+    // Verileri önce buluttan (PocketBase/ayarlar) çek, yoksa tarayıcı hafızasına düş
+    const localLeave = JSON.parse(localStorage.getItem('bayiPlanlayiciData')) || {};
+    const cloudLeave = await loadLeaveFromCloud();
+    // Bulut varsa onu öncelikli al, yoksa local
+    let leaveData = (cloudLeave && Object.keys(cloudLeave).length ? cloudLeave : localLeave) || {};
+    // İlk açılışta bulut boş ama local doluysa buluta da yaz (opsiyonel senkron)
+    if ((cloudLeave && Object.keys(cloudLeave).length === 0) && Object.keys(localLeave).length) {
+        upsertLeaveToCloud(leaveData).catch(() => {});
+    }
+
+
+    function saveData() {
+        localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
+        // Buluta da yaz (Denetim Takip modülü buradan okuyor)
+        upsertLeaveToCloud(leaveData).catch(() => {});
+        // Diğer modüller canlı dinlemek isterse
+        window.dispatchEvent(new CustomEvent('leaveDataUpdated', { detail: { leaveData } }));
+    }
+
+    function toggleLeave(month, day) {
         const key = `${year}-${month}-${day}`;
         if (leaveData[key]) {
             delete leaveData[key];
         } else {
             leaveData[key] = true;
         }
-        await saveData();
+        saveData();
         renderCalendar();
     }
 
@@ -69,7 +80,7 @@ export async function initializeCalismaTakvimiModule(pb) {
         const days = [];
         const date = new Date(year, month, 1);
         while(date.getMonth() === month) {
-            const dw = date.getDay();
+            const dw = date.getDay(); // 0: Pazar, 6: Cts
             if(dw !== 0 && dw !== 6) days.push(date.getDate());
             date.setDate(date.getDate() + 1);
         }
@@ -93,8 +104,10 @@ export async function initializeCalismaTakvimiModule(pb) {
                 else activeWorkDays.push(day);
             });
 
+            // Hedef 47 üzerinden hesaplama
+            const baseTarget = 47;
             const currentTarget = allWorkDays.length > 0 
-                ? Math.max(0, globalAylikHedef - Math.round((globalAylikHedef / allWorkDays.length) * relevantLeaveCount))
+                ? Math.max(0, baseTarget - Math.round((baseTarget / allWorkDays.length) * relevantLeaveCount))
                 : 0;
 
             const basePerDay = activeWorkDays.length > 0 ? Math.floor(currentTarget / activeWorkDays.length) : 0;
@@ -118,7 +131,7 @@ export async function initializeCalismaTakvimiModule(pb) {
                 <div class="month-stats-cal">
                     <div class="stat-item-cal">Hedef<span>${currentTarget}</span></div>
                     <div class="stat-item-cal">İzin<span>${totalLeaveDisplay} Gün</span></div>
-                    <div class="stat-item-cal">Mesai<span>${activeWorkDays.length} Gün</span></div>
+                    <div class="stat-item-cal">Mesai<span>${allWorkDays.length} Gün</span></div>
                 </div>
                 <div class="weekdays-row-cal">${weekdaysTR.map(d => `<div class="weekday-cal">${d}</div>`).join('')}</div>
                 <div class="days-grid-cal"></div>
@@ -135,13 +148,13 @@ export async function initializeCalismaTakvimiModule(pb) {
                 box.className = 'day-cal';
                 box.textContent = d;
 
-                if (dayOfWeek !== 0) {
+                if (dayOfWeek !== 0) { // Pazar hariç etkileşimli
                     box.classList.add('interactive-cal');
                     box.onclick = () => toggleLeave(m, d);
 
                     if (leaveData[key]) {
                         box.classList.add('leave-cal');
-                    } else if (dayOfWeek !== 6) {
+                    } else if (dayOfWeek !== 6) { // Hafta içi
                         box.classList.add('workday-cal');
                         const count = planMap[d] || 0;
                         if(count >= 3) box.classList.add('three-cal');
@@ -162,6 +175,5 @@ export async function initializeCalismaTakvimiModule(pb) {
         }
     }
 
-    await loadInitialData();
     renderCalendar();
 }
