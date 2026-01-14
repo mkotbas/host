@@ -9,23 +9,12 @@ export async function initializeCalismaTakvimiModule(pb) {
     const pbInstance = pb;
     const currentUserId = pbInstance?.authStore?.model?.id || null;
 
-    
-
-    // leaveData PB'de boşken required alanı geçmek için {_empty:true} kaydedebiliriz.
-    // Uygulama içinde bu işaretçiyi yok say.
-    function normalizeLeaveData(obj) {
-        if (!obj || typeof obj !== 'object') return {};
-        const copy = { ...obj };
-        if (Object.prototype.hasOwnProperty.call(copy, '_empty')) delete copy._empty;
-        return copy;
-    }
-
     async function loadLeaveFromCloud() {
         if (!pbInstance?.authStore?.isValid || !currentUserId) return null;
         const settingsKey = `leaveData_${currentUserId}`;
         try {
             const rec = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
-            return normalizeLeaveData(rec?.deger) || {};
+            return rec?.deger || {};
         } catch (e) {
             return {};
         }
@@ -34,23 +23,13 @@ export async function initializeCalismaTakvimiModule(pb) {
     async function upsertLeaveToCloud(leaveObj) {
         if (!pbInstance?.authStore?.isValid || !currentUserId) return;
         const settingsKey = `leaveData_${currentUserId}`;
-
-        // PocketBase'de JSON alanı "required" ise boş obje {} validation'a takılabilir.
-        // Bu durumda {_empty:true} kaydediyoruz; okurken normalizeLeaveData() bunu temizler.
-        const valueToSave =
-            (leaveObj && typeof leaveObj === 'object' && Object.keys(leaveObj).length > 0)
-                ? leaveObj
-                : { _empty: true };
-
         try {
             const rec = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
-            await pbInstance.collection('ayarlar').update(rec.id, { deger: valueToSave });
+            await pbInstance.collection('ayarlar').update(rec.id, { deger: leaveObj });
         } catch (e) {
             // kayıt yoksa oluştur
-            await pbInstance.collection('ayarlar').create({ anahtar: settingsKey, deger: valueToSave });
+            await pbInstance.collection('ayarlar').create({ anahtar: settingsKey, deger: leaveObj });
         }
-    }
-
     }
 
     
@@ -65,20 +44,13 @@ export async function initializeCalismaTakvimiModule(pb) {
     }
 
 
-    async function saveData() {
-    localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
-
-    // Önce buluta yazmayı dene (Denetim Takip modülü buradan okuyor)
-    try {
-        await upsertLeaveToCloud(leaveData);
-    } catch (e) {
-        // Sessizce yutmayalım: bu hata olursa refresh sonrası eski veri geri gelir.
-        console.error('[calisma-takvimi] leaveData buluta yazılamadı:', e);
+    function saveData() {
+        localStorage.setItem('bayiPlanlayiciData', JSON.stringify(leaveData));
+        // Buluta da yaz (Denetim Takip modülü buradan okuyor)
+        upsertLeaveToCloud(leaveData).catch(() => {});
+        // Diğer modüller canlı dinlemek isterse
+        window.dispatchEvent(new CustomEvent('leaveDataUpdated', { detail: { leaveData } }));
     }
-
-    // Diğer modüller canlı dinlemek isterse
-    window.dispatchEvent(new CustomEvent('leaveDataUpdated', { detail: { leaveData } }));
-}
 
     function toggleLeave(month, day) {
         const key = `${year}-${month}-${day}`;
@@ -178,7 +150,7 @@ export async function initializeCalismaTakvimiModule(pb) {
 
                 if (dayOfWeek !== 0) { // Pazar hariç etkileşimli
                     box.classList.add('interactive-cal');
-                    box.onclick = async () => { await toggleLeave(m, d); };
+                    box.onclick = () => toggleLeave(m, d);
 
                     if (leaveData[key]) {
                         box.classList.add('leave-cal');
