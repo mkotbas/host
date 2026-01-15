@@ -68,7 +68,7 @@ function generateQuestionHtml(q) {
         let standardViewHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join('');
         standardViewHTML = `<div id="standard-view-container-${q.id}">${standardViewHTML}</div>`;
 
-        questionContentHTML = `<div id="sub-items-container-fide${q.id}_notes" style="margin-bottom: 15px;"></div><div class="mode-toggle-container"><span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span><label class="switch"><input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})"><span class="slider round"></span></label></div>${standardViewHTML}<div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;"><div class="styling-row"><div class="styling-label">Ana Kategori</div><div class="styling-content"><select class="styling-main-category-select">${mainCategoryOptions}</select></div></div><div class="styling-row" id="styling-sub-container-${q.id}" style="display: none;"><div class="styling-label">Alt Kategori</div><div class="styling-content"><select class="styling-sub-category-select"></select><input type="number" class="sub-category-qty-input" min="1" value="1"></div></div><div class="styling-row"><div class="styling-label">Sipariş Listesi</div><div class="styling-content" style="display: block;"><div class="styling-selected-products-list"></div></div></div></div>`;
+        questionContentHTML = `<div id="sub-items-container-fide${q.id}_notes" style="margin-bottom: 15px;"></div><div class="mode-toggle-container"><span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span><label class="switch"><input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})"><span class="slider round"></span></label></div>${standardViewHTML}<div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;"><div class="styling-row"><div class="styling-label">Ana Kategori</div><div class="styling-content"><select class="styling-main-category-select">${mainCategoryOptions}</select></div></div><div class="styling-row" id="styling-sub-container-${q.id}" style="display: none;"><div class="styling-label">Alt Kategori</div><div class="styling-content d-flex align-items-center gap-2"><select class="styling-sub-category-select flex-grow-1"></select><input type="number" class="sub-category-qty-input" min="1" value="1" style="width: 70px;"></div></div><div class="styling-row"><div class="styling-label">Sipariş Listesi</div><div class="styling-content" style="display: block;"><div class="styling-selected-products-list"></div></div></div></div>`;
     }
 
     return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
@@ -569,9 +569,25 @@ function addStylingProductToList(qId, code, qty, name, save = true) {
     const list = document.getElementById(`fide-item-${qId}`).querySelector('.styling-selected-products-list');
     if (list.querySelector(`[data-code="${code}"]`)) return;
     const div = document.createElement('div');
-    div.className = 'selected-product-item'; 
+    
+    // YENİ DÜZENLEME: Flex yapısı ile kesin hizalama sağlıyoruz
+    div.className = 'selected-product-item d-flex align-items-center mb-2'; 
+    div.style.padding = "8px";
+    div.style.borderBottom = "1px solid #eee";
     div.dataset.code = code; div.dataset.qty = qty; div.dataset.name = name;
-    div.innerHTML = `<span>${code} ${name} <input type="number" class="qty-edit-input" value="${qty}"> Adet</span><button class="delete-item-btn btn-sm"><i class="fas fa-trash"></i></button>`;
+    
+    // İçerik: [Ürün İsmi] [Boşluk] [Kutu] [Adet Yazısı] [Sil Butonu]
+    div.innerHTML = `
+        <span style="flex: 1; font-size: 13px;">${code} ${name}</span>
+        <div class="d-flex align-items-center" style="gap: 5px; min-width: 100px; justify-content: flex-end;">
+            <input type="number" class="qty-edit-input form-control form-control-sm" value="${qty}" style="width: 50px; height: 30px; padding: 2px 5px; text-align: center;">
+            <span style="font-size: 13px; font-weight: normal; color: #333;">Adet</span>
+        </div>
+        <button class="delete-item-btn btn-sm btn-danger ms-2" style="height: 30px; width: 30px; display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-trash" style="margin: 0;"></i>
+        </button>
+    `;
+    
     div.querySelector('.qty-edit-input').onchange = () => debouncedSaveFormState();
     div.querySelector('.delete-item-btn').onclick = () => { div.remove(); debouncedSaveFormState(); };
     list.appendChild(div);

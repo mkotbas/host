@@ -7,9 +7,9 @@
 // Bu satırın index.html dosyasına eklendiğinden emin olacağız.
 // <script src="https://cdn.jsdelivr.net/npm/pocketbase/dist/pocketbase.umd.js"></script>
 
-// PocketBase'in bilgisayarınızda çalıştığı adresi buraya yazıyoruz.
+// PocketBase'in bilgisayarınızda (lokal) çalıştığı adresi buraya yazıyoruz.
 // Genellikle bu adres http://127.0.0.1:8090 şeklindedir.
-const POCKETBASE_URL = 'https://melih.zelab.uk/';
+const POCKETBASE_URL = 'http://127.0.0.1:8090';
 
 // 'pb' adında global bir değişken oluşturup PocketBase istemcisini başlatıyoruz.
 // Uygulamanın diğer tüm JavaScript dosyaları veritabanına erişmek için bu 'pb' değişkenini kullanacak.
