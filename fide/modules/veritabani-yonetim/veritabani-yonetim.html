@@ -1,0 +1,76 @@
+<div id="db-manager-wrapper">
+    <div class="card db-stats-card">
+        <h2><i class="fas fa-chart-pie"></i> Sistem İstatistikleri</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-label">Toplam Bayi</span>
+                <span class="stat-value" id="count-bayiler">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Tamamlanan Raporlar</span>
+                <span class="stat-value" id="count-raporlar">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Excel Veri Kaydı</span>
+                <span class="stat-value" id="count-excel">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Kayıtlı Cihazlar</span>
+                <span class="stat-value" id="count-cihazlar">0</span>
+            </div>
+        </div>
+        <button id="btn-refresh-stats" class="btn-primary btn-sm"><i class="fas fa-sync-alt"></i> Verileri Güncelle</button>
+    </div>
+
+    <div class="card db-maintenance-card">
+        <h2><i class="fas fa-broom"></i> Veri Bakım ve Temizlik</h2>
+        <p class="warning-text"><i class="fas fa-exclamation-triangle"></i> Dikkat: Bu bölümdeki işlemler geri alınamaz ve sistem verilerini kalıcı olarak siler.</p>
+        
+        <div class="maintenance-actions">
+            <div class="action-group">
+                <div class="action-info">
+                    <strong>Excel Puan Verilerini Sıfırla</strong>
+                    <span>Buluta yüklenmiş olan DiDe ve FiDe puan tablolarını temizler.</span>
+                </div>
+                <button id="btn-clear-excel" class="btn-danger"><i class="fas fa-file-excel"></i> Excel'leri Sil</button>
+            </div>
+
+            <div class="action-group">
+                <div class="action-info">
+                    <strong>Denetim Raporlarını Temizle</strong>
+                    <span>Sistemdeki tüm denetim raporlarını ve geçmiş verileri siler.</span>
+                </div>
+                <button id="btn-clear-reports" class="btn-danger"><i class="fas fa-file-invoice"></i> Raporları Sıfırla</button>
+            </div>
+
+            <div class="action-group">
+                <div class="action-info">
+                    <strong>Geri Alınan Denetimleri Sıfırla</strong>
+                    <span>"Geri Al" özelliğine ait log kayıtlarını temizleyerek istatistikleri sıfırlar.</span>
+                </div>
+                <button id="btn-clear-undone" class="btn-warning"><i class="fas fa-undo"></i> Geri Al Loglarını Sil</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card db-backup-card">
+        <h2><i class="fas fa-cloud-download-alt"></i> Yapılandırma Yedekleme</h2>
+        <p class="info-text">Sistem ayarlarını (soru listesi, e-posta şablonu, eşleştirmeler) JSON formatında yedekleyebilir veya geri yükleyebilirsiniz.</p>
+        
+        <div class="backup-grid">
+            <div class="backup-box">
+                <h4><i class="fas fa-file-export"></i> Dışa Aktar</h4>
+                <p>Tüm 'ayarlar' tablosunu tek bir dosya olarak indirir.</p>
+                <button id="btn-export-settings" class="btn-success"><i class="fas fa-download"></i> Ayarları Yedekle</button>
+            </div>
+            <div class="backup-box">
+                <h4><i class="fas fa-file-import"></i> İçe Aktar</h4>
+                <p>Daha önce alınan ayarlar yedeğini sisteme yükler.</p>
+                <label for="input-import-settings" class="btn-primary" style="cursor:pointer">
+                    <i class="fas fa-upload"></i> Yedek Dosyası Seç
+                </label>
+                <input type="file" id="input-import-settings" accept=".json" style="display:none">
+            </div>
+        </div>
+    </div>
+</div>
