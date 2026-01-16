@@ -26,6 +26,8 @@ function closeCommonModal() {
     document.getElementById('db-common-modal').style.display = 'none';
 }
 
+window.closeCommonModal = closeCommonModal; // HTML içinden erişim için
+
 /**
  * Veritabanı Kayıt Sayılarını Yükler
  */
@@ -87,13 +89,12 @@ function setupEventListeners(pb) {
         `;
 
         const footerHtml = `
-            <button class="btn-secondary btn-sm" onclick="document.getElementById('db-common-modal').style.display='none'">Vazgeç</button>
+            <button class="btn-secondary btn-sm" onclick="closeCommonModal()">Vazgeç</button>
             <button id="modal-btn-execute" class="btn-danger btn-sm" disabled>Kullanıcıyı Sil</button>
         `;
 
         showCommonModal('Kullanıcı Silme & Veri Aktarımı', bodyHtml, footerHtml);
 
-        // Kullanıcı seçildiğinde analiz yap
         const selectUser = document.getElementById('modal-select-user');
         const analysisArea = document.getElementById('modal-analysis-area');
         const strategyArea = document.getElementById('modal-strategy-area');
@@ -102,72 +103,80 @@ function setupEventListeners(pb) {
         selectUser.onchange = async () => {
             const userId = selectUser.value;
             if (!userId) { analysisArea.style.display = 'none'; strategyArea.style.display = 'none'; executeBtn.disabled = true; return; }
-            
             analysisArea.style.display = 'block';
             analysisArea.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analiz ediliyor...';
-
             const reports = await pb.collection('denetim_raporlari').getFullList({ filter: `user="${userId}"` });
             const bayiler = await pb.collection('bayiler').getFullList({ filter: `sorumlu_kullanici="${userId}"` });
             const devices = await pb.collection('user_devices').getFullList({ filter: `user="${userId}"` });
-
-            analysisArea.innerHTML = `
-                <h5>Veri Analizi</h5>
-                <ul>
-                    <li>${reports.length} rapor bulundu.</li>
-                    <li>${bayiler.length} sorumlu bayi bulundu.</li>
-                    <li>${devices.length} kayıtlı cihaz bulundu.</li>
-                </ul>
-            `;
-            strategyArea.style.display = 'block';
-            executeBtn.disabled = false;
+            analysisArea.innerHTML = `<h5>Veri Analizi</h5><ul><li>${reports.length} rapor bulundu.</li><li>${bayiler.length} sorumlu bayi bulundu.</li><li>${devices.length} cihaz bulundu.</li></ul>`;
+            strategyArea.style.display = 'block'; executeBtn.disabled = false;
         };
 
-        // Aktarım kutusu kontrolü
         document.body.addEventListener('change', (e) => {
             if (e.target.name === 'del-strat') {
-                document.getElementById('modal-transfer-select').style.display = (e.target.value === 'transfer') ? 'block' : 'none';
+                const tSelect = document.getElementById('modal-transfer-select');
+                if(tSelect) tSelect.style.display = (e.target.value === 'transfer') ? 'block' : 'none';
             }
         });
 
-        // SİLME İŞLEMİ
         executeBtn.onclick = async () => {
             const userId = selectUser.value;
             const strategy = document.querySelector('input[name="del-strat"]:checked').value;
             const targetId = document.getElementById('modal-select-target').value;
-
-            if (strategy === 'transfer' && !targetId) return alert("Lütfen hedef kullanıcıyı seçin.");
-            if (!confirm("Bu işlem geri alınamaz. Onaylıyor musunuz?")) return;
-
+            if (strategy === 'transfer' && !targetId) return alert("Hedef kullanıcıyı seçin.");
+            if (!confirm("Onaylıyor musunuz?")) return;
             executeBtn.disabled = true;
-            executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Siliniyor...';
-
             try {
-                // 1. Cihazları sil
                 const devices = await pb.collection('user_devices').getFullList({ filter: `user="${userId}"` });
                 for (const d of devices) await pb.collection('user_devices').delete(d.id);
-
                 if (strategy === 'transfer') {
-                    // 2. Raporları aktar
                     const reports = await pb.collection('denetim_raporlari').getFullList({ filter: `user="${userId}"` });
                     for (const r of reports) await pb.collection('denetim_raporlari').update(r.id, { user: targetId });
-                    // 3. Bayileri aktar
                     const bayiler = await pb.collection('bayiler').getFullList({ filter: `sorumlu_kullanici="${userId}"` });
                     for (const b of bayiler) await pb.collection('bayiler').update(b.id, { sorumlu_kullanici: targetId });
                 } else {
-                    // 2. Raporları sil
                     const reports = await pb.collection('denetim_raporlari').getFullList({ filter: `user="${userId}"` });
                     for (const r of reports) await pb.collection('denetim_raporlari').delete(r.id);
-                    // 3. Bayi sorumluluğunu boşa çıkar
                     const bayiler = await pb.collection('bayiler').getFullList({ filter: `sorumlu_kullanici="${userId}"` });
                     for (const b of bayiler) await pb.collection('bayiler').update(b.id, { sorumlu_kullanici: null });
                 }
-
-                // 4. Kullanıcıyı sil
                 await pb.collection('users').delete(userId);
-                alert("İşlem başarıyla tamamlandı.");
-                location.reload();
+                alert("Başarıyla tamamlandı."); location.reload();
             } catch (err) { alert("Hata: " + err.message); executeBtn.disabled = false; }
         };
+    };
+
+    // --- EXCEL EŞLEŞTİRMELERİNİ SIFIRLA ---
+    document.getElementById('btn-action-reset-mappings').onclick = async () => {
+        try {
+            const mappings = await pb.collection('ayarlar').getFullList({ filter: 'anahtar ~ "excel_mapping_"' });
+            
+            const bodyHtml = `
+                <div class="db-analysis-box">
+                    <h5>Analiz Sonucu</h5>
+                    <p>Sistemde toplam <strong>${mappings.length}</strong> adet Excel sütun eşleştirmesi bulundu.</p>
+                    <p style="margin-top:10px; font-size:12px; color:#64748b;">Bu işlem; Excel yüklerken yaptığınız başlık eşleştirmelerini (Bayi Kodu, Puan vb.) sıfırlayacaktır. Diğer sistem ayarları korunacaktır.</p>
+                </div>
+            `;
+            
+            const footerHtml = `
+                <button class="btn-secondary btn-sm" onclick="closeCommonModal()">Vazgeç</button>
+                <button id="modal-btn-reset-execute" class="btn-danger btn-sm" ${mappings.length === 0 ? 'disabled' : ''}>Tümünü Sıfırla</button>
+            `;
+            
+            showCommonModal('Excel Eşleştirmelerini Sıfırla', bodyHtml, footerHtml);
+            
+            document.getElementById('modal-btn-reset-execute').onclick = async () => {
+                if(!confirm("Tüm eşleştirmeler silinecektir. Onaylıyor musunuz?")) return;
+                const btn = document.getElementById('modal-btn-reset-execute');
+                btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sıfırlanıyor...';
+                try {
+                    for(const item of mappings) { await pb.collection('ayarlar').delete(item.id); }
+                    alert("Excel eşleştirmeleri başarıyla sıfırlandı.");
+                    location.reload();
+                } catch(e) { alert("Hata: " + e.message); btn.disabled = false; }
+            };
+        } catch (e) { alert("Analiz hatası: " + e.message); }
     };
 
     // --- DİĞER TEMİZLİK FONKSİYONLARI ---
