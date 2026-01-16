@@ -1,58 +1,56 @@
-<div class="card" id="grup1-card">
-    <h2><i class="fas fa-robot"></i> Grup 1: Otomasyon Sistemi Yönetimi</h2>
-    
-    <div class="section">
-        <div class="complex-action">
-            <label>Bir Bayinin Tüm Denetim Raporlarını Kalıcı Sil:</label>
-            <input type="text" id="bayi-arama-silme-input" placeholder="Bayi adı veya kodu ile arayın...">
-            <div id="bayi-arama-sonuc-listesi"></div>
-            <button id="sil-bayi-raporlari-btn" class="btn-danger" disabled><i class="fas fa-trash"></i> Seçilen Bayinin Raporlarını Sil</button>
-        </div>
-    </div>
-</div>
+.card {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
 
+.card h2 {
+    margin-top: 0;
+    color: #1f2937;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #3b82f6;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-<div class="card" id="grup2-card">
-    <h2><i class="fas fa-database"></i> Grup 2: Veritabanı Yönetimi</h2>
-    <div class="info-box danger">
-        <p><i class="fas fa-skull-crossbones"></i> <strong>UYARI:</strong> Bu bölümdeki işlemler geri alınamaz ve sisteminize kalıcı zarar verebilir.</p>
-    </div>
+.card h2 i {
+    color: #3b82f6;
+}
 
-    <div class="section">
-        <h4>Veritabanı Tablo Yönetimi</h4>
-        <table id="tablo-yonetim-tablosu">
-            <thead>
-                <tr>
-                    <th>İşlem / Tablo Adı</th>
-                    <th>Açıklaması</th>
-                    <th>Etkisi</th>
-                    <th>İşlemler</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-         </div>
-</div>
+.section {
+    margin-top: 20px;
+}
 
-<div class="card" id="grup3-card" style="margin-top: 20px; border-top: 4px solid #28a745;">
-    <h2><i class="fas fa-search-plus"></i> Grup 3: Derin Temizlik ve Detaylı Analiz</h2>
-    <div class="info-box info">
-        <p><i class="fas fa-info-circle"></i> <strong>BİLGİ:</strong> Bu araç, sistemde artık olmayan bayilere ait Excel kayıtlarını ve yetim kalmış verileri bulup size <strong>liste halinde</strong> sunar.</p>
-    </div>
-    <div class="section">
-        <button id="btn-derin-temizlik" class="btn-success" style="width: 100%; padding: 15px; font-weight: bold;">
-            <i class="fas fa-microscope"></i> Kalıntıları Analiz Et ve Listele
-        </button>
-    </div>
-</div>
+#tablo-yonetim-tablosu {
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 14px;
+    background-color: #ffffff;
+    border-radius: 6px;
+    overflow: hidden;
+}
 
-<div id="modal-container" style="display: none;">
-    <div id="modal-content">
-        <h3 id="modal-title"></h3>
-        <div id="modal-body" style="max-height: 500px; overflow-y: auto; padding: 15px; border: 1px solid #eee; border-radius: 8px; background: #fff;"></div>
-        <div id="modal-footer">
-            <button id="modal-close-btn" class="btn-secondary">Kapat</button>
-        </div>
-    </div>
-</div>
+#tablo-yonetim-tablosu th, #tablo-yonetim-tablosu td {
+    border: 1px solid #e5e7eb; 
+    padding: 12px;
+    text-align: left; 
+    color: #374151;
+}
+
+#tablo-yonetim-tablosu th { 
+    background-color: #f8fafc; 
+    font-weight: 600;
+}
+
+.auth-error {
+    text-align: center;
+    color: #ef4444;
+    font-weight: 500;
+    padding: 20px;
+}
