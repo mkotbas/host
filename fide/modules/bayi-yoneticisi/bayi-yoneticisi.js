@@ -1,4 +1,4 @@
-// Gerekli kütüphaneleri (ExcelJS) dinamik olarak yüklemek için yardımcı fonksiyon
+// Gerekli kütüphaneleri (ExcelJS/XLSX) dinamik olarak yüklemek için yardımcı fonksiyon
 function loadScript(url) {
     return new Promise((resolve, reject) => {
         if (document.querySelector(`script[src="${url}"]`)) {
@@ -18,7 +18,7 @@ function loadScript(url) {
  */
 export async function initializeBayiYoneticisiModule(pbInstance) {
     
-    // Excel kütüphanesini arka planda yükle, açılışı engellemesin
+    // Excel kütüphanesini arka planda yükle
     loadScript('https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js').catch(() => {
         console.warn('Excel kütüphanesi yüklenemedi, raporlama çalışmayabilir.');
     });
@@ -278,8 +278,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
 
         let filteredBayiler = allBayiler.filter(bayi => {
             let passDropdown = true;
-            
-            // Değer kontrolü yardımcı fonksiyonu: null, undefined veya boşluktan oluşan değerleri "yok" kabul eder.
             const isEmpty = (val) => !val || val.toString().trim() === '';
 
             switch (filterValue) {
@@ -316,6 +314,142 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         mainTable.querySelectorAll('[data-column="eylemler"]').forEach(cell => cell.style.display = 'table-cell');
     }
 
+    // --- Excel Dışa Aktar Fonksiyonu ---
+    async function handleExportExcel() {
+        if (typeof XLSX === 'undefined') return alert('Excel kütüphanesi henüz yüklenmedi, lütfen biraz bekleyip tekrar deneyin.');
+        
+        const selectedKeys = Array.from(columnCheckboxesContainer.querySelectorAll('.column-check:checked')).map(cb => cb.value);
+        const exportFields = selectedKeys.length > 0 ? fields.filter(f => selectedKeys.includes(f.key)) : fields;
+        
+        const dataToExport = allBayiler.map(bayi => {
+            const row = {};
+            exportFields.forEach(f => {
+                row[f.label] = bayi[f.key] || '';
+            });
+            return row;
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Bayi Listesi");
+        XLSX.writeFile(workbook, `Bayi_Listesi_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    // --- Excel İçe Aktar (Import) Fonksiyonları ---
+    function openImportModal() {
+        importStep1.style.display = 'block';
+        importStep2.style.display = 'none';
+        importStep3.style.display = 'none';
+        excelFileInput.value = '';
+        btnProcessExcel.disabled = true;
+        importModal.style.display = 'flex';
+    }
+
+    function handleExcelFileSelect(e) {
+        btnProcessExcel.disabled = !e.target.files.length;
+    }
+
+    async function processExcelFile() {
+        const file = excelFileInput.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+            if (jsonData.length < 2) return alert('Excel dosyası boş veya başlık satırı eksik.');
+
+            excelHeaders = jsonData[0];
+            excelData = jsonData.slice(1);
+
+            renderMappingUI();
+            importStep1.style.display = 'none';
+            importStep2.style.display = 'block';
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function renderMappingUI() {
+        mappingContainer.innerHTML = '';
+        dbFieldsForMapping.forEach(dbField => {
+            const row = document.createElement('div');
+            row.className = 'mapping-row';
+            
+            let optionsHtml = `<option value="">-- Eşleştirme Yok --</option>`;
+            excelHeaders.forEach((header, index) => {
+                const selected = header.toLowerCase().includes(dbField.key.toLowerCase()) ? 'selected' : '';
+                optionsHtml += `<option value="${index}" ${selected}>${header}</option>`;
+            });
+
+            row.innerHTML = `
+                <div class="excel-column-label">${dbField.label}</div>
+                <i class="fas fa-arrow-right"></i>
+                <select class="form-control db-field-select" data-db-field="${dbField.key}">
+                    ${optionsHtml}
+                </select>
+            `;
+            mappingContainer.appendChild(row);
+        });
+        validateMapping();
+        mappingContainer.querySelectorAll('select').forEach(s => s.addEventListener('change', validateMapping));
+    }
+
+    function validateMapping() {
+        const mappings = getMappings();
+        const hasBayiKodu = mappings.some(m => m.dbField === 'bayiKodu' && m.excelIndex !== "");
+        btnExecuteImport.disabled = !hasBayiKodu;
+        importWarning.style.display = hasBayiKodu ? 'none' : 'block';
+    }
+
+    function getMappings() {
+        return Array.from(mappingContainer.querySelectorAll('.db-field-select')).map(select => ({
+            dbField: select.dataset.dbField,
+            excelIndex: select.value
+        }));
+    }
+
+    async function executeImport() {
+        const mappings = getMappings();
+        const globalUserId = container.querySelector('#import-global-user-select').value;
+        
+        if (!confirm(`${excelData.length} kayıt işlenecek. Emin misiniz?`)) return;
+
+        importLoadingOverlay.style.display = 'flex';
+        let successCount = 0;
+        let errorCount = 0;
+        let logs = "";
+
+        for (const row of excelData) {
+            const data = {};
+            mappings.forEach(m => {
+                if (m.excelIndex !== "") {
+                    data[m.dbField] = row[m.excelIndex];
+                }
+            });
+
+            if (globalUserId) data.sorumlu_kullanici = globalUserId;
+
+            try {
+                // Önce bayi kodu ile var mı diye bak (Opsiyonel: Güncelleme mantığı için)
+                await pb.collection('bayiler').create(data);
+                successCount++;
+            } catch (e) {
+                errorCount++;
+                logs += `Hata (${data.bayiKodu || 'Bilinmiyor'}): ${e.message}\n`;
+            }
+        }
+
+        importResults.innerHTML = `İşlem Tamamlandı.\nBaşarılı: ${successCount}\nHatalı: ${errorCount}\n\n${logs}`;
+        importLoadingOverlay.style.display = 'none';
+        importStep2.style.display = 'none';
+        importStep3.style.display = 'block';
+        await loadModuleData();
+    }
+
+    // --- Toplu Atama Fonksiyonları ---
     function openBulkAssignModal() {
         bulkAssignFilterBolge.innerHTML = '';
         bulkAssignFilterSehir.innerHTML = '';
@@ -392,13 +526,27 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         if (loadingSpinner) loadingSpinner.style.display = show ? 'block' : 'none';
     }
 
-    // Olay Dinleyicileri
+    // --- Olay Dinleyicileri (Event Listeners) ---
     container.querySelector('#btn-yeni-bayi').addEventListener('click', () => { 
         bayiForm.reset(); bayiIdInput.value = ''; modalTitle.textContent = 'Yeni Bayi Ekle'; modal.style.display = 'flex'; 
     });
     container.querySelector('#btn-modal-cancel').addEventListener('click', () => modal.style.display = 'none');
     bayiForm.addEventListener('submit', handleFormSubmit);
+    
+    // Raporlama Butonları
     container.querySelector('#btn-view-selected').addEventListener('click', applyColumnVisibility);
+    container.querySelector('#btn-export-excel').addEventListener('click', handleExportExcel);
+    
+    // İçe Aktarma (Import) Butonları
+    container.querySelector('#btn-open-import-modal').addEventListener('click', openImportModal);
+    container.querySelector('#btn-import-modal-cancel-1').addEventListener('click', () => importModal.style.display = 'none');
+    container.querySelector('#btn-import-modal-cancel-2').addEventListener('click', () => importModal.style.display = 'none');
+    container.querySelector('#btn-import-modal-close').addEventListener('click', () => importModal.style.display = 'none');
+    excelFileInput.addEventListener('change', handleExcelFileSelect);
+    btnProcessExcel.addEventListener('click', processExcelFile);
+    btnExecuteImport.addEventListener('click', executeImport);
+
+    // Toplu Atama Butonları
     btnOpenBulkAssignModal.addEventListener('click', openBulkAssignModal);
     btnExecuteBulkAssign.addEventListener('click', executeBulkAssign);
     btnBulkAssignCancel.addEventListener('click', () => bulkAssignModal.style.display = 'none');
@@ -409,6 +557,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         bulkAssignTextContainer.style.display = isUser ? 'none' : 'block';
     });
 
-    // Verileri yükle
+    // İlk yüklemeyi başlat
     loadModuleData();
 }
