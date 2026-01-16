@@ -8,62 +8,63 @@ export async function initializeVeritabaniYonetimModule(pb) {
     const wrapper = document.getElementById('db-manager-wrapper');
     if (!wrapper) return;
 
-    // --- Başlatma ---
+    // Verileri yükle ve olayları ata
     loadStats(pb);
     setupEventListeners(pb);
 }
 
 /**
- * Koleksiyonlardaki kayıt sayılarını yükler
+ * PocketBase'den güncel kayıt sayılarını çeker ve kartlara yazar
  */
 async function loadStats(pb) {
     try {
-        const stats = {
+        // İstatistiklerin çekileceği tablolar ve HTML'deki karşılık gelen ID'ler
+        const statsConfig = {
             'bayiler': 'count-bayiler',
+            'users': 'count-users', // Yeni eklenen kullanıcı istatistiği
             'denetim_raporlari': 'count-raporlar',
             'excel_verileri': 'count-excel',
             'user_devices': 'count-cihazlar'
         };
 
-        for (const [collection, elementId] of Object.entries(stats)) {
+        for (const [collection, elementId] of Object.entries(statsConfig)) {
+            // Veritabanından ilgili tablodaki toplam kayıt sayısını alıyoruz
             const result = await pb.collection(collection).getList(1, 1, { fields: 'id' });
             const el = document.getElementById(elementId);
             if (el) el.textContent = result.totalItems;
         }
     } catch (error) {
-        console.error("İstatistikler yüklenemedi:", error);
+        console.error("İstatistikler güncellenemedi:", error);
     }
 }
 
 /**
- * Olay dinleyicilerini kurar
+ * Tüm temizleme ve yedekleme işlemlerinin olay dinleyicileri
  */
 function setupEventListeners(pb) {
-    // İstatistik Yenileme
+    // Yenileme Butonu
     document.getElementById('btn-refresh-stats').onclick = () => loadStats(pb);
 
     // Excel Verilerini Sil
     document.getElementById('btn-clear-excel').onclick = async () => {
-        if (confirm("DİKKAT: Tüm DiDe ve FiDe puan verileri buluttan kalıcı olarak silinecektir. Emin misiniz?")) {
+        if (confirm("DİKKAT: Tüm ham Excel verileri silinecektir. Onaylıyor musunuz?")) {
             await clearCollection(pb, 'excel_verileri', "Excel verileri");
         }
     };
 
     // Raporları Sıfırla
     document.getElementById('btn-clear-reports').onclick = async () => {
-        if (confirm("KRİTİK UYARI: Yapılmış olan TÜM denetim raporları silinecektir. Bu işlem geri alınamaz! Onaylıyor musunuz?")) {
-            const secondConfirm = prompt("İşlemi onaylamak için 'SİL' yazın:");
-            if (secondConfirm === "SİL") {
+        if (confirm("KRİTİK UYARI: TÜM denetim raporları kalıcı olarak silinecektir!")) {
+            const pin = prompt("Silme işlemini onaylamak için 'SİL' yazın:");
+            if (pin === "SİL") {
                 await clearCollection(pb, 'denetim_raporlari', "Raporlar");
-            } else {
-                alert("İşlem iptal edildi.");
             }
         }
     };
 
     // Geri Al Loglarını Sil
     document.getElementById('btn-clear-undone').onclick = async () => {
-        if (confirm("Geri alınan denetimlere ait kayıtlar temizlenecek. Devam edilsin mi?")) {
+        if (confirm("Denetim geri alma geçmişi temizlenecek. Devam edilsin mi?")) {
             await clearCollection(pb, 'denetim_geri_alinanlar', "Geri al kayıtları");
         }
     };
@@ -80,67 +81,53 @@ function setupEventListeners(pb) {
             link.download = `fide_ayarlar_yedek_${new Date().toISOString().slice(0,10)}.json`;
             link.click();
             URL.revokeObjectURL(url);
-            alert("Sistem ayarları başarıyla yedeklendi.");
+            alert("Sistem yedek dosyası oluşturuldu.");
         } catch (error) {
-            alert("Yedekleme sırasında hata oluştu: " + error.message);
+            alert("Hata: " + error.message);
         }
     };
 
     // Ayarları Geri Yükle (Import)
     document.getElementById('input-import-settings').onchange = async (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if (!file || !confirm("Bu dosya mevcut tüm sistem ayarlarının üzerine yazılacaktır. Emin misiniz?")) return;
 
-        if (confirm("Seçilen yedek dosyası mevcut ayarların üzerine yazılacaktır. Devam etmek istiyor musunuz?")) {
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const importedData = JSON.parse(event.target.result);
-                    if (!Array.isArray(importedData)) throw new Error("Geçersiz yedek formatı.");
-
-                    let updated = 0, created = 0;
-                    for (const item of importedData) {
-                        try {
-                            const existing = await pb.collection('ayarlar').getFirstListItem(`anahtar="${item.anahtar}"`);
-                            await pb.collection('ayarlar').update(existing.id, { deger: item.deger });
-                            updated++;
-                        } catch (err) {
-                            await pb.collection('ayarlar').create({ anahtar: item.anahtar, deger: item.deger });
-                            created++;
-                        }
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                for (const item of importedData) {
+                    try {
+                        const existing = await pb.collection('ayarlar').getFirstListItem(`anahtar="${item.anahtar}"`);
+                        await pb.collection('ayarlar').update(existing.id, { deger: item.deger });
+                    } catch (err) {
+                        await pb.collection('ayarlar').create({ anahtar: item.anahtar, deger: item.deger });
                     }
-                    alert(`Geri yükleme tamamlandı: ${updated} ayar güncellendi, ${created} yeni ayar eklendi.`);
-                    window.location.reload();
-                } catch (error) {
-                    alert("Geri yükleme hatası: " + error.message);
                 }
-            };
-            reader.readAsText(file);
-        }
-        e.target.value = ''; // Inputu sıfırla
+                alert("Yapılandırma yüklendi. Sayfa yenileniyor.");
+                window.location.reload();
+            } catch (error) {
+                alert("Geri yükleme başarısız.");
+            }
+        };
+        reader.readAsText(file);
     };
 }
 
 /**
- * Yardımcı Fonksiyon: Bir koleksiyondaki tüm kayıtları siler
+ * Bir koleksiyondaki verileri temizleyen yardımcı fonksiyon
  */
 async function clearCollection(pb, collectionName, label) {
     try {
         const records = await pb.collection(collectionName).getFullList({ fields: 'id' });
-        if (records.length === 0) {
-            alert(`${label} zaten temiz.`);
-            return;
-        }
+        if (records.length === 0) return alert(`${label} zaten temiz.`);
 
-        let successCount = 0;
         for (const record of records) {
             await pb.collection(collectionName).delete(record.id);
-            successCount++;
         }
-
-        alert(`Başarılı: ${successCount} adet ${label} kaydı silindi.`);
+        alert(`Başarılı: ${label} temizlendi.`);
         loadStats(pb);
     } catch (error) {
-        alert(`${label} silinirken hata oluştu: ` + error.message);
+        alert("Hata: " + error.message);
     }
 }
