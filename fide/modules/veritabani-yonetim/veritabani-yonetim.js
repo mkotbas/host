@@ -1,133 +1,200 @@
 /* fide/modules/veritabani-yonetim/veritabani-yonetim.js */
 
-/**
- * Veritabanı Yönetimi Modülünü Başlatır
- * @param {object} pb PocketBase instance
- */
 export async function initializeVeritabaniYonetimModule(pb) {
     const wrapper = document.getElementById('db-manager-wrapper');
     if (!wrapper) return;
 
-    // Verileri yükle ve olayları ata
     loadStats(pb);
     setupEventListeners(pb);
 }
 
 /**
- * PocketBase'den güncel kayıt sayılarını çeker ve kartlara yazar
+ * Ortak Modal Penceresini Gösterir
+ */
+function showCommonModal(title, bodyHtml, footerHtml) {
+    const modal = document.getElementById('db-common-modal');
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-body').innerHTML = bodyHtml;
+    document.getElementById('modal-footer').innerHTML = footerHtml;
+    modal.style.display = 'flex';
+}
+
+/**
+ * Modal Penceresini Kapatır
+ */
+function closeCommonModal() {
+    document.getElementById('db-common-modal').style.display = 'none';
+}
+
+/**
+ * Veritabanı Kayıt Sayılarını Yükler
  */
 async function loadStats(pb) {
     try {
-        // İstatistiklerin çekileceği tablolar ve HTML'deki karşılık gelen ID'ler
         const statsConfig = {
             'bayiler': 'count-bayiler',
-            'users': 'count-users', // Yeni eklenen kullanıcı istatistiği
+            'users': 'count-users',
             'denetim_raporlari': 'count-raporlar',
             'excel_verileri': 'count-excel',
             'user_devices': 'count-cihazlar'
         };
-
         for (const [collection, elementId] of Object.entries(statsConfig)) {
-            // Veritabanından ilgili tablodaki toplam kayıt sayısını alıyoruz
             const result = await pb.collection(collection).getList(1, 1, { fields: 'id' });
             const el = document.getElementById(elementId);
             if (el) el.textContent = result.totalItems;
         }
-    } catch (error) {
-        console.error("İstatistikler güncellenemedi:", error);
-    }
+    } catch (e) { console.error("İstatistik hatası:", e); }
 }
 
 /**
- * Tüm temizleme ve yedekleme işlemlerinin olay dinleyicileri
+ * Olay Dinleyicileri
  */
 function setupEventListeners(pb) {
-    // Yenileme Butonu
     document.getElementById('btn-refresh-stats').onclick = () => loadStats(pb);
+    document.getElementById('btn-close-modal').onclick = closeCommonModal;
 
-    // Excel Verilerini Sil
-    document.getElementById('btn-clear-excel').onclick = async () => {
-        if (confirm("DİKKAT: Tüm ham Excel verileri silinecektir. Onaylıyor musunuz?")) {
-            await clearCollection(pb, 'excel_verileri', "Excel verileri");
-        }
-    };
+    // --- KULLANICI SİLME ÖZELLİĞİ ---
+    document.getElementById('btn-action-user-delete').onclick = async () => {
+        const users = await pb.collection('users').getFullList({ sort: 'name' });
+        
+        const bodyHtml = `
+            <div class="db-form-group">
+                <label>Silinecek Kullanıcıyı Seçin</label>
+                <select id="modal-select-user" class="db-input">
+                    <option value="">-- Kullanıcı Seçin --</option>
+                    ${users.filter(u => u.id !== pb.authStore.model.id).map(u => `<option value="${u.id}">${u.name || u.email} (${u.role})</option>`).join('')}
+                </select>
+            </div>
+            <div id="modal-analysis-area" class="db-analysis-box" style="display:none;"></div>
+            <div id="modal-strategy-area" style="display:none;">
+                <label style="font-weight:700; font-size:14px; display:block; margin-bottom:10px;">Veri Yönetim Tercihi</label>
+                <label class="db-radio-option">
+                    <input type="radio" name="del-strat" value="delete" checked>
+                    <span>Kullanıcıyı ve tüm raporlarını kalıcı olarak sil.</span>
+                </label>
+                <label class="db-radio-option">
+                    <input type="radio" name="del-strat" value="transfer">
+                    <span>Kullanıcıyı sil, raporlarını başka birine aktar.</span>
+                </label>
+                <div id="modal-transfer-select" style="display:none; margin-top:15px;">
+                    <label style="font-size:13px; font-weight:700;">Hedef Kullanıcıyı Seçin</label>
+                    <select id="modal-select-target" class="db-input" style="margin-top:5px;">
+                        <option value="">-- Aktarılacak Kişiyi Seçin --</option>
+                        ${users.map(u => `<option value="${u.id}">${u.name || u.email}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+        `;
 
-    // Raporları Sıfırla
-    document.getElementById('btn-clear-reports').onclick = async () => {
-        if (confirm("KRİTİK UYARI: TÜM denetim raporları kalıcı olarak silinecektir!")) {
-            const pin = prompt("Silme işlemini onaylamak için 'SİL' yazın:");
-            if (pin === "SİL") {
-                await clearCollection(pb, 'denetim_raporlari', "Raporlar");
-            }
-        }
-    };
+        const footerHtml = `
+            <button class="btn-secondary btn-sm" onclick="document.getElementById('db-common-modal').style.display='none'">Vazgeç</button>
+            <button id="modal-btn-execute" class="btn-danger btn-sm" disabled>Kullanıcıyı Sil</button>
+        `;
 
-    // Geri Al Loglarını Sil
-    document.getElementById('btn-clear-undone').onclick = async () => {
-        if (confirm("Denetim geri alma geçmişi temizlenecek. Devam edilsin mi?")) {
-            await clearCollection(pb, 'denetim_geri_alinanlar', "Geri al kayıtları");
-        }
-    };
+        showCommonModal('Kullanıcı Silme & Veri Aktarımı', bodyHtml, footerHtml);
 
-    // Ayarları Yedekle (Export)
-    document.getElementById('btn-export-settings').onclick = async () => {
-        try {
-            const records = await pb.collection('ayarlar').getFullList();
-            const dataStr = JSON.stringify(records, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `fide_ayarlar_yedek_${new Date().toISOString().slice(0,10)}.json`;
-            link.click();
-            URL.revokeObjectURL(url);
-            alert("Sistem yedek dosyası oluşturuldu.");
-        } catch (error) {
-            alert("Hata: " + error.message);
-        }
-    };
+        // Kullanıcı seçildiğinde analiz yap
+        const selectUser = document.getElementById('modal-select-user');
+        const analysisArea = document.getElementById('modal-analysis-area');
+        const strategyArea = document.getElementById('modal-strategy-area');
+        const executeBtn = document.getElementById('modal-btn-execute');
 
-    // Ayarları Geri Yükle (Import)
-    document.getElementById('input-import-settings').onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file || !confirm("Bu dosya mevcut tüm sistem ayarlarının üzerine yazılacaktır. Emin misiniz?")) return;
+        selectUser.onchange = async () => {
+            const userId = selectUser.value;
+            if (!userId) { analysisArea.style.display = 'none'; strategyArea.style.display = 'none'; executeBtn.disabled = true; return; }
+            
+            analysisArea.style.display = 'block';
+            analysisArea.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analiz ediliyor...';
 
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const importedData = JSON.parse(event.target.result);
-                for (const item of importedData) {
-                    try {
-                        const existing = await pb.collection('ayarlar').getFirstListItem(`anahtar="${item.anahtar}"`);
-                        await pb.collection('ayarlar').update(existing.id, { deger: item.deger });
-                    } catch (err) {
-                        await pb.collection('ayarlar').create({ anahtar: item.anahtar, deger: item.deger });
-                    }
-                }
-                alert("Yapılandırma yüklendi. Sayfa yenileniyor.");
-                window.location.reload();
-            } catch (error) {
-                alert("Geri yükleme başarısız.");
-            }
+            const reports = await pb.collection('denetim_raporlari').getFullList({ filter: `user="${userId}"` });
+            const bayiler = await pb.collection('bayiler').getFullList({ filter: `sorumlu_kullanici="${userId}"` });
+            const devices = await pb.collection('user_devices').getFullList({ filter: `user="${userId}"` });
+
+            analysisArea.innerHTML = `
+                <h5>Veri Analizi</h5>
+                <ul>
+                    <li>${reports.length} rapor bulundu.</li>
+                    <li>${bayiler.length} sorumlu bayi bulundu.</li>
+                    <li>${devices.length} kayıtlı cihaz bulundu.</li>
+                </ul>
+            `;
+            strategyArea.style.display = 'block';
+            executeBtn.disabled = false;
         };
-        reader.readAsText(file);
+
+        // Aktarım kutusu kontrolü
+        document.body.addEventListener('change', (e) => {
+            if (e.target.name === 'del-strat') {
+                document.getElementById('modal-transfer-select').style.display = (e.target.value === 'transfer') ? 'block' : 'none';
+            }
+        });
+
+        // SİLME İŞLEMİ
+        executeBtn.onclick = async () => {
+            const userId = selectUser.value;
+            const strategy = document.querySelector('input[name="del-strat"]:checked').value;
+            const targetId = document.getElementById('modal-select-target').value;
+
+            if (strategy === 'transfer' && !targetId) return alert("Lütfen hedef kullanıcıyı seçin.");
+            if (!confirm("Bu işlem geri alınamaz. Onaylıyor musunuz?")) return;
+
+            executeBtn.disabled = true;
+            executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Siliniyor...';
+
+            try {
+                // 1. Cihazları sil
+                const devices = await pb.collection('user_devices').getFullList({ filter: `user="${userId}"` });
+                for (const d of devices) await pb.collection('user_devices').delete(d.id);
+
+                if (strategy === 'transfer') {
+                    // 2. Raporları aktar
+                    const reports = await pb.collection('denetim_raporlari').getFullList({ filter: `user="${userId}"` });
+                    for (const r of reports) await pb.collection('denetim_raporlari').update(r.id, { user: targetId });
+                    // 3. Bayileri aktar
+                    const bayiler = await pb.collection('bayiler').getFullList({ filter: `sorumlu_kullanici="${userId}"` });
+                    for (const b of bayiler) await pb.collection('bayiler').update(b.id, { sorumlu_kullanici: targetId });
+                } else {
+                    // 2. Raporları sil
+                    const reports = await pb.collection('denetim_raporlari').getFullList({ filter: `user="${userId}"` });
+                    for (const r of reports) await pb.collection('denetim_raporlari').delete(r.id);
+                    // 3. Bayi sorumluluğunu boşa çıkar
+                    const bayiler = await pb.collection('bayiler').getFullList({ filter: `sorumlu_kullanici="${userId}"` });
+                    for (const b of bayiler) await pb.collection('bayiler').update(b.id, { sorumlu_kullanici: null });
+                }
+
+                // 4. Kullanıcıyı sil
+                await pb.collection('users').delete(userId);
+                alert("İşlem başarıyla tamamlandı.");
+                location.reload();
+            } catch (err) { alert("Hata: " + err.message); executeBtn.disabled = false; }
+        };
+    };
+
+    // --- DİĞER TEMİZLİK FONKSİYONLARI ---
+    document.getElementById('btn-clear-excel').onclick = async () => {
+        if (confirm("Tüm ham Excel verileri silinecektir?")) await clearCollection(pb, 'excel_verileri', "Excel");
+    };
+    document.getElementById('btn-clear-reports').onclick = async () => {
+        if (confirm("Tüm raporlar silinecektir?") && prompt("SİL yazın") === "SİL") await clearCollection(pb, 'denetim_raporlari', "Raporlar");
+    };
+    document.getElementById('btn-clear-undone').onclick = async () => {
+        if (confirm("Geri alma kayıtları temizlensin mi?")) await clearCollection(pb, 'denetim_geri_alinanlar', "Geri Al Log");
+    };
+
+    // Yedekleme İşlemleri
+    document.getElementById('btn-export-settings').onclick = async () => {
+        const records = await pb.collection('ayarlar').getFullList();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' }));
+        link.download = `fide_yedek_${new Date().toISOString().slice(0,10)}.json`;
+        link.click();
     };
 }
 
-/**
- * Bir koleksiyondaki verileri temizleyen yardımcı fonksiyon
- */
-async function clearCollection(pb, collectionName, label) {
-    try {
-        const records = await pb.collection(collectionName).getFullList({ fields: 'id' });
-        if (records.length === 0) return alert(`${label} zaten temiz.`);
-
-        for (const record of records) {
-            await pb.collection(collectionName).delete(record.id);
-        }
-        alert(`Başarılı: ${label} temizlendi.`);
-        loadStats(pb);
-    } catch (error) {
-        alert("Hata: " + error.message);
-    }
+async function clearCollection(pb, collection, label) {
+    const records = await pb.collection(collection).getFullList({ fields: 'id' });
+    if (records.length === 0) return alert("Zaten temiz.");
+    for (const r of records) await pb.collection(collection).delete(r.id);
+    alert(label + " temizlendi.");
+    location.reload();
 }
