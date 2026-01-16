@@ -119,18 +119,18 @@
                 <tbody>
                     <tr>
                         <td><strong>Sistem Ayarlarını Yedekle</strong></td>
-                        <td>Soru listesi ve mail şablonu gibi ayarları dışa aktarır.</td>
+                        <td>Soru listesi ve mail şablonu gibi ayarları seçerek dışa aktarır.</td>
                         <td><code>JSON</code></td>
                         <td class="action-cell">
-                            <button id="btn-export-settings" class="btn-success btn-sm"><i class="fas fa-download"></i></button>
+                            <button id="btn-export-settings" class="btn-success btn-sm" title="Ayarları Seç ve Yedekle"><i class="fas fa-download"></i></button>
                         </td>
                     </tr>
                     <tr>
                         <td><strong>Yedekten Geri Yükle</strong></td>
-                        <td>Daha önce alınan JSON yedeğini sisteme yükler.</td>
+                        <td>JSON yedeğini analiz eder ve seçilen ayarları geri yükler.</td>
                         <td><code>JSON</code></td>
                         <td class="action-cell">
-                            <label for="input-import-settings" class="btn-primary btn-sm" style="cursor:pointer; margin-bottom:0;">
+                            <label for="input-import-settings" class="btn-primary btn-sm" style="cursor:pointer; margin-bottom:0;" title="Yedek Dosyası Seç">
                                 <i class="fas fa-upload"></i>
                             </label>
                             <input type="file" id="input-import-settings" accept=".json" style="display:none">
