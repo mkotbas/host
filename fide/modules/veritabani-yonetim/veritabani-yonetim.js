@@ -9,30 +9,30 @@ export async function initializeVeritabaniYonetimModule(pb) {
 }
 
 /**
- * Ayar anahtarları için kullanıcı dostu isimler, açıklamalar ve simgeler
+ * Ayar anahtarları için kullanıcı dostu bilgiler
  */
 const SETTINGS_INFO = {
     'fideQuestionsData': {
         title: 'FiDe Soru & Ürün Listesi',
-        desc: 'Tüm denetim sorularını ve sipariş verilebilecek ürünlerin envanter bilgisini içerir.',
+        desc: 'Tüm denetim sorularını ve ürün envanter bilgisini içerir.',
         icon: 'fa-clipboard-list',
         color: '#3b82f6'
     },
     'emailTemplate': {
         title: 'E-posta Rapor Şablonu',
-        desc: 'Denetim sonunda oluşturulan e-postanın görsel formatını ve yazı içeriğini belirler.',
+        desc: 'Raporların e-posta formatını ve içeriğini belirler.',
         icon: 'fa-envelope-open-text',
         color: '#10b981'
     },
     'aylikHedef': {
         title: 'Global Denetim Hedefi',
-        desc: 'Sistem genelindeki aylık performans hedefini (örn: 47) belirleyen merkezi ayar.',
+        desc: 'Merkezi aylık performans hedefi ayarı.',
         icon: 'fa-bullseye',
         color: '#f59e0b'
     },
     'migrationMap': {
         title: 'ID Yönlendirme Kuralları',
-        desc: 'Eski soru verilerinin yeni soru numaralarına otomatik aktarılmasını sağlar.',
+        desc: 'Eski verilerin yeni numaralara aktarılmasını sağlar.',
         icon: 'fa-random',
         color: '#6366f1'
     }
@@ -41,9 +41,9 @@ const SETTINGS_INFO = {
 function getSettingDetails(key) {
     if (SETTINGS_INFO[key]) return SETTINGS_INFO[key];
     if (key.startsWith('excel_mapping_')) {
-        return { title: 'Excel Eşleştirmesi', desc: 'Dosya yükleme sihirbazında kullanılan sütun yapılandırması.', icon: 'fa-map-marked-alt', color: '#8b5cf6' };
+        return { title: 'Excel Eşleştirmesi', desc: 'Sütun yapılandırma verisi.', icon: 'fa-map-marked-alt', color: '#8b5cf6' };
     }
-    return { title: key, desc: 'Sistem tarafından kullanılan teknik yapılandırma verisi.', icon: 'fa-cog', color: '#64748b' };
+    return { title: key, desc: 'Sistem teknik yapılandırma verisi.', icon: 'fa-cog', color: '#64748b' };
 }
 
 /**
@@ -102,36 +102,27 @@ function setupEventListeners(pb) {
                     ${users.filter(u => u.id !== pb.authStore.model.id).map(u => `<option value="${u.id}">${u.name || u.email} (${u.role})</option>`).join('')}
                 </select>
             </div>
-            
-            <div id="modal-analysis-area" style="display:none; margin-top:15px;"></div>
-
+            <div id="modal-analysis-area" class="db-stat-card-mini" style="display:none;"></div>
             <div id="modal-strategy-area" style="display:none; margin-top:20px;">
-                <label style="font-weight:700; font-size:14px; display:block; margin-bottom:12px;">Bir Veri Stratejisi Seçin</label>
+                <label class="db-form-group-label">Bir Veri Stratejisi Seçin</label>
                 <div class="db-card-grid">
                     <label class="db-card-option">
                         <input type="radio" name="del-strat" value="delete" checked>
                         <div class="card-option-content">
                             <div class="card-option-icon icon-danger"><i class="fas fa-trash-alt"></i></div>
-                            <div class="card-option-info">
-                                <strong>Kalıcı Olarak Sil</strong>
-                                <small>Kullanıcıyı, ona ait tüm raporları ve cihazları tamamen temizler.</small>
-                            </div>
+                            <div class="card-option-info"><strong>Kalıcı Olarak Sil</strong><small>Her şeyi temizler.</small></div>
                         </div>
                     </label>
                     <label class="db-card-option">
                         <input type="radio" name="del-strat" value="transfer">
                         <div class="card-option-content">
                             <div class="card-option-icon icon-primary"><i class="fas fa-file-export"></i></div>
-                            <div class="card-option-info">
-                                <strong>Verileri Başkasına Aktar</strong>
-                                <small>Kullanıcıyı siler ancak mevcut raporlarını ve bayilerini başka birine taşır.</small>
-                            </div>
+                            <div class="card-option-info"><strong>Verileri Aktar</strong><small>Başka birine taşır.</small></div>
                         </div>
                     </label>
                 </div>
-
                 <div id="modal-transfer-select" style="display:none; margin-top:15px;" class="db-form-group">
-                    <label>Verilerin Aktarılacağı Hedef Kullanıcı</label>
+                    <label>Hedef Kullanıcı</label>
                     <select id="modal-select-target" class="db-input">
                         <option value="">-- Hedef Seçin --</option>
                         ${users.map(u => `<option value="${u.id}">${u.name || u.email}</option>`).join('')}
@@ -155,18 +146,10 @@ function setupEventListeners(pb) {
         selectUser.onchange = async () => {
             const userId = selectUser.value;
             if (!userId) { analysisArea.style.display = 'none'; strategyArea.style.display = 'none'; executeBtn.disabled = true; return; }
-            
-            analysisArea.style.display = 'block';
-            analysisArea.innerHTML = '<div class="db-stat-card-mini"><i class="fas fa-spinner fa-spin"></i> Veriler analiz ediliyor...</div>';
-            
+            analysisArea.style.display = 'block'; analysisArea.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analiz ediliyor...';
             const reports = await pb.collection('denetim_raporlari').getFullList({ filter: `user="${userId}"` });
             const bayiler = await pb.collection('bayiler').getFullList({ filter: `sorumlu_kullanici="${userId}"` });
-            
-            analysisArea.innerHTML = `
-                <div class="db-analysis-info-card">
-                    <p><strong>${reports.length}</strong> Denetim Raporu ve <strong>${bayiler.length}</strong> Sorumlu Bayi kaydı bulundu.</p>
-                </div>
-            `;
+            analysisArea.innerHTML = `<div class="db-analysis-info-card"><p><strong>${reports.length}</strong> Rapor ve <strong>${bayiler.length}</strong> Bayi kaydı bulundu.</p></div>`;
             strategyArea.style.display = 'block'; executeBtn.disabled = false;
         };
 
@@ -182,14 +165,11 @@ function setupEventListeners(pb) {
             const strategy = document.querySelector('input[name="del-strat"]:checked').value;
             const targetId = document.getElementById('modal-select-target').value;
             if (strategy === 'transfer' && !targetId) return alert("Lütfen hedef kullanıcıyı seçin.");
-            if (!confirm("Bu işlem geri alınamaz. Onaylıyor musunuz?")) return;
-
+            if (!confirm("İşlem geri alınamaz. Onaylıyor musunuz?")) return;
             executeBtn.disabled = true; executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
             try {
-                // Cihazları temizle
                 const devices = await pb.collection('user_devices').getFullList({ filter: `user="${userId}"` });
                 for (const d of devices) await pb.collection('user_devices').delete(d.id);
-
                 if (strategy === 'transfer') {
                     const reports = await pb.collection('denetim_raporlari').getFullList({ filter: `user="${userId}"` });
                     for (const r of reports) await pb.collection('denetim_raporlari').update(r.id, { user: targetId });
@@ -202,7 +182,7 @@ function setupEventListeners(pb) {
                     for (const b of bayiler) await pb.collection('bayiler').update(b.id, { sorumlu_kullanici: null });
                 }
                 await pb.collection('users').delete(userId);
-                alert("İşlem başarıyla tamamlandı."); location.reload();
+                alert("Başarıyla tamamlandı."); location.reload();
             } catch (err) { alert("Hata: " + err.message); executeBtn.disabled = false; }
         };
     };
@@ -210,26 +190,36 @@ function setupEventListeners(pb) {
     // --- SİSTEM AYARLARINI YEDEKLE ---
     document.getElementById('btn-export-settings').onclick = async () => {
         try {
-            const records = await pb.collection('ayarlar').getFullList();
+            const settings = await pb.collection('ayarlar').getFullList();
+            // PocketBase Date filtreleme için en güvenli sorgu: != ""
+            const reportsResult = await pb.collection('denetim_raporlari').getList(1, 1, { filter: 'denetimTamamlanmaTarihi != ""', fields: 'id' });
+            const reportsCount = reportsResult.totalItems;
+
             const bodyHtml = `
-                <p style="font-size:13px; margin-bottom:15px; color:#64748b;">Yedeklemek istediğiniz canlı sistem ayarlarını seçin:</p>
+                <p class="db-modal-desc">Yedeklemek istediğiniz verileri seçin:</p>
+                <div class="db-modal-section-header">Yapılandırma</div>
                 <div class="db-selection-list">
-                    ${records.map(r => {
+                    ${settings.map(r => {
                         const info = getSettingDetails(r.anahtar);
                         return `
                         <label class="db-card-option-mini">
-                            <input type="checkbox" name="backup-item" value="${r.id}" checked>
+                            <input type="checkbox" name="backup-item" value="setting:${r.id}" checked>
                             <div class="mini-card-content">
-                                <div class="mini-card-icon" style="background-color: ${info.color}15; color: ${info.color}">
-                                    <i class="fas ${info.icon}"></i>
-                                </div>
-                                <div class="mini-card-info">
-                                    <strong>${info.title}</strong>
-                                    <small>${info.desc}</small>
-                                </div>
+                                <div class="mini-card-icon" style="background-color: ${info.color}15; color: ${info.color}"><i class="fas ${info.icon}"></i></div>
+                                <div class="mini-card-info"><strong>${info.title}</strong><small>${info.desc}</small></div>
                             </div>
-                        </label>
-                    `}).join('')}
+                        </label>`;
+                    }).join('')}
+                </div>
+                <div class="db-modal-section-header">Veriler</div>
+                <div class="db-selection-list">
+                    <label class="db-card-option-mini">
+                        <input type="checkbox" name="backup-item" value="reports:all" ${reportsCount > 0 ? 'checked' : 'disabled'}>
+                        <div class="mini-card-content">
+                            <div class="mini-card-icon" style="background-color:#fee2e2; color:#ef4444"><i class="fas fa-file-invoice"></i></div>
+                            <div class="mini-card-info"><strong>Tamamlanmış Raporlar</strong><small>Toplam ${reportsCount} adet rapor.</small></div>
+                        </div>
+                    </label>
                 </div>
             `;
             const footerHtml = `
@@ -238,105 +228,101 @@ function setupEventListeners(pb) {
             `;
             showCommonModal('Sistem Ayarlarını Yedekle', bodyHtml, footerHtml);
 
-            document.getElementById('modal-btn-export-execute').onclick = () => {
-                const selectedIds = Array.from(document.querySelectorAll('input[name="backup-item"]:checked')).map(cb => cb.value);
-                if(selectedIds.length === 0) return alert("En az bir ayar seçmelisiniz.");
-                const filteredRecords = records.filter(r => selectedIds.includes(r.id));
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(new Blob([JSON.stringify(filteredRecords, null, 2)], { type: 'application/json' }));
-                link.download = `fide_canli_yedek_${new Date().toISOString().slice(0,10)}.json`;
-                link.click();
-                closeCommonModal();
+            document.getElementById('modal-btn-export-execute').onclick = async () => {
+                const selected = Array.from(document.querySelectorAll('input[name="backup-item"]:checked')).map(cb => cb.value);
+                if(!selected.length) return alert("Seçim yapın.");
+                const btn = document.getElementById('modal-btn-export-execute');
+                btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...';
+                try {
+                    const payload = { type: 'fide_backup', version: '1.1', date: new Date().toISOString(), data: { settings: [], reports: [] } };
+                    const sIds = selected.filter(v => v.startsWith('setting:')).map(v => v.split(':')[1]);
+                    if (sIds.length) payload.data.settings = settings.filter(s => sIds.includes(s.id));
+                    if (selected.includes('reports:all')) payload.data.reports = await pb.collection('denetim_raporlari').getFullList({ filter: 'denetimTamamlanmaTarihi != ""' });
+                    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                    const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
+                    link.download = `fide_yedek_${new Date().toISOString().slice(0,10)}.json`; link.click();
+                    closeCommonModal();
+                } catch (err) { alert("Yedekleme hatası: " + err.message); btn.disabled = false; }
             };
         } catch (e) { alert("Hata: " + e.message); }
     };
 
     // --- YEDEKTEN GERİ YÜKLE ---
     document.getElementById('input-import-settings').onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+        const file = e.target.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = async (ev) => {
             try {
-                const backupData = JSON.parse(ev.target.result);
+                const backup = JSON.parse(ev.target.result);
+                let sToRes = Array.isArray(backup) ? backup : (backup.data?.settings || []);
+                let rToRes = backup.data?.reports || [];
                 const bodyHtml = `
-                    <p style="font-size:13px; margin-bottom:15px; color:#64748b;">Yedek dosyası içerisinden yüklemek istediklerinizi seçin:</p>
-                    <div class="db-selection-list">
-                        ${backupData.map((item, index) => {
-                            const info = getSettingDetails(item.anahtar);
-                            return `
-                            <label class="db-card-option-mini">
-                                <input type="checkbox" name="restore-item" value="${index}" checked>
-                                <div class="mini-card-content">
-                                    <div class="mini-card-icon" style="background-color: ${info.color}15; color: ${info.color}">
-                                        <i class="fas ${info.icon}"></i>
+                    <p class="db-modal-desc">Yüklenecek verileri seçin:</p>
+                    ${sToRes.length ? `<div class="db-modal-section-header">Ayarlar</div>
+                        <div class="db-selection-list">
+                            ${sToRes.map((item, idx) => {
+                                const info = getSettingDetails(item.anahtar);
+                                return `<label class="db-card-option-mini">
+                                    <input type="checkbox" name="res-setting" value="${idx}" checked>
+                                    <div class="mini-card-content">
+                                        <div class="mini-card-icon" style="background-color:${info.color}15; color:${info.color}"><i class="fas ${info.icon}"></i></div>
+                                        <div class="mini-card-info"><strong>${info.title}</strong></div>
                                     </div>
-                                    <div class="mini-card-info">
-                                        <strong>${info.title}</strong>
-                                        <small>${info.desc}</small>
-                                    </div>
-                                </div>
-                            </label>
-                        `}).join('')}
-                    </div>
+                                </label>`;
+                            }).join('')}
+                        </div>` : ''}
+                    ${rToRes.length ? `<div class="db-modal-section-header" style="margin-top:20px;">Kayıtlar</div>
+                        <label class="db-card-option-mini">
+                            <input type="checkbox" name="res-reports" value="true" checked>
+                            <div class="mini-card-content">
+                                <div class="mini-card-icon" style="background-color:#fee2e2; color:#ef4444"><i class="fas fa-file-invoice"></i></div>
+                                <div class="mini-card-info"><strong>Raporları Geri Yükle</strong><small>${rToRes.length} adet kayıt.</small></div>
+                            </div>
+                        </label>` : ''}
                 `;
-                const footerHtml = `
-                    <button class="btn-secondary btn-sm" onclick="closeCommonModal()">Vazgeç</button>
-                    <button id="modal-btn-restore-execute" class="btn-primary btn-sm">Seçilenleri Yükle</button>
-                `;
+                const footerHtml = `<button class="btn-secondary btn-sm" onclick="closeCommonModal()">Vazgeç</button><button id="btn-res-exec" class="btn-primary btn-sm">Yükle</button>`;
                 showCommonModal('Yedekten Geri Yükle', bodyHtml, footerHtml);
-
-                document.getElementById('modal-btn-restore-execute').onclick = async () => {
-                    const selectedIdx = Array.from(document.querySelectorAll('input[name="restore-item"]:checked')).map(cb => parseInt(cb.value));
-                    if(selectedIdx.length === 0) return alert("En az bir ayar seçmelisiniz.");
-                    if(!confirm("Mevcut ayarlar üzerine yazılacaktır. Onaylıyor musunuz?")) return;
-
-                    const executeBtn = document.getElementById('modal-btn-restore-execute');
-                    executeBtn.disabled = true; executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yükleniyor...';
-
+                document.getElementById('btn-res-exec').onclick = async () => {
+                    const sIdx = Array.from(document.querySelectorAll('input[name="res-setting"]:checked')).map(cb => parseInt(cb.value));
+                    const resRep = document.querySelector('input[name="res-reports"]')?.checked;
+                    if(!confirm("Emin misiniz?")) return;
+                    const btn = document.getElementById('btn-res-exec'); btn.disabled = true;
                     try {
-                        for (const idx of selectedIdx) {
-                            const item = backupData[idx];
+                        for (const idx of sIdx) {
+                            const item = sToRes[idx];
                             try {
-                                const existing = await pb.collection('ayarlar').getFirstListItem(`anahtar="${item.anahtar}"`);
-                                await pb.collection('ayarlar').update(existing.id, { deger: item.deger });
-                            } catch (err) {
-                                if(err.status === 404) await pb.collection('ayarlar').create({ anahtar: item.anahtar, deger: item.deger });
+                                const exist = await pb.collection('ayarlar').getFirstListItem(`anahtar="${item.anahtar}"`);
+                                await pb.collection('ayarlar').update(exist.id, { deger: item.deger });
+                            } catch { await pb.collection('ayarlar').create({ anahtar: item.anahtar, deger: item.deger }); }
+                        }
+                        if (resRep) {
+                            for (const r of rToRes) {
+                                try { await pb.collection('denetim_raporlari').getOne(r.id); const {id, created, updated, expand, ...d} = r; await pb.collection('denetim_raporlari').update(id, d); }
+                                catch { const {created, updated, expand, ...d} = r; await pb.collection('denetim_raporlari').create(d); }
                             }
                         }
-                        alert("Geri yükleme tamamlandı."); location.reload();
-                    } catch (err) { alert("Hata: " + err.message); executeBtn.disabled = false; }
+                        alert("Tamamlandı."); location.reload();
+                    } catch (err) { alert("Hata: " + err.message); btn.disabled = false; }
                 };
-            } catch (err) { alert("Geçersiz yedek dosyası!"); }
+            } catch { alert("Geçersiz dosya!"); }
         };
-        reader.readAsText(file);
-        e.target.value = ''; 
+        reader.readAsText(file); e.target.value = ''; 
     };
 
     // Temizlik Butonları
     document.getElementById('btn-action-reset-mappings').onclick = async () => {
-        const mappings = await pb.collection('ayarlar').getFullList({ filter: 'anahtar ~ "excel_mapping_"' });
-        if(mappings.length === 0) return alert("Sıfırlanacak ayar bulunamadı.");
-        if(confirm(`Toplam ${mappings.length} adet sütun eşleştirmesi silinecektir. Emin misiniz?`)) {
-            for(const item of mappings) await pb.collection('ayarlar').delete(item.id);
-            alert("Sıfırlandı."); location.reload();
-        }
+        const list = await pb.collection('ayarlar').getFullList({ filter: 'anahtar ~ "excel_mapping_"' });
+        if(!list.length) return alert("Ayar yok.");
+        if(confirm(`${list.length} ayar silinecek. Onay?`)) { for(const i of list) await pb.collection('ayarlar').delete(i.id); location.reload(); }
     };
-    document.getElementById('btn-clear-excel').onclick = async () => {
-        if (confirm("Tüm ham Excel verileri silinecektir?")) await clearCollection(pb, 'excel_verileri', "Excel");
-    };
-    document.getElementById('btn-clear-reports').onclick = async () => {
-        if (confirm("Tüm raporlar silinecektir?") && prompt("SİL yazın") === "SİL") await clearCollection(pb, 'denetim_raporlari', "Raporlar");
-    };
-    document.getElementById('btn-clear-undone').onclick = async () => {
-        if (confirm("Geri alma kayıtları temizlensin mi?")) await clearCollection(pb, 'denetim_geri_alinanlar', "Geri Al Log");
-    };
+    document.getElementById('btn-clear-excel').onclick = () => { if(confirm("Emin misiniz?")) clearCollection(pb, 'excel_verileri', "Excel"); };
+    document.getElementById('btn-clear-reports').onclick = () => { if(confirm("SİL yazın") && prompt("Onay") === "SİL") clearCollection(pb, 'denetim_raporlari', "Raporlar"); };
+    document.getElementById('btn-clear-undone').onclick = () => { if(confirm("Temizlensin mi?")) clearCollection(pb, 'denetim_geri_alinanlar', "Log"); };
 }
 
-async function clearCollection(pb, collection, label) {
-    const records = await pb.collection(collection).getFullList({ fields: 'id' });
-    if (records.length === 0) return alert("Zaten temiz.");
-    for (const r of records) await pb.collection(collection).delete(r.id);
-    alert(label + " temizlendi.");
-    location.reload();
+async function clearCollection(pb, col, lbl) {
+    const recs = await pb.collection(col).getFullList({ fields: 'id' });
+    if (!recs.length) return alert("Boş.");
+    for (const r of recs) await pb.collection(col).delete(r.id);
+    alert(lbl + " temizlendi."); location.reload();
 }

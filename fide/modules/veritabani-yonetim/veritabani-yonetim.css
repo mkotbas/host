@@ -26,7 +26,7 @@
 .db-modal-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; max-height: 65vh; overflow-y: auto; }
 .db-modal-footer { padding: 20px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; }
 
-/* MODER KART SEÇENEKLERİ */
+/* MODAL KART SEÇENEKLERİ */
 .db-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 .db-card-option { cursor: pointer; position: relative; }
 .db-card-option input { position: absolute; opacity: 0; }
@@ -44,7 +44,7 @@
 .card-option-info strong { display: block; font-size: 15px; margin-bottom: 4px; color: #1e293b; }
 .card-option-info small { font-size: 12px; color: #64748b; line-height: 1.4; display: block; }
 
-/* MİNİ SEÇİM KARTLARI (Ayarlar İçin) */
+/* MİNİ SEÇİM KARTLARI */
 .db-selection-list { display: flex; flex-direction: column; gap: 10px; }
 .db-card-option-mini { cursor: pointer; position: relative; }
 .db-card-option-mini input { position: absolute; opacity: 0; }
@@ -60,6 +60,8 @@
 .mini-card-info { display: flex; flex-direction: column; gap: 2px; }
 .mini-card-info strong { font-size: 14px; color: #1e293b; }
 .mini-card-info small { font-size: 12px; color: #64748b; }
+
+.db-modal-section-header { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 800; letter-spacing: 0.05em; margin: 10px 0 5px 5px; }
 
 /* Form ve Analiz Kutuları */
 .db-form-group { display: flex; flex-direction: column; gap: 8px; }
