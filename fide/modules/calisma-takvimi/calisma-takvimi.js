@@ -16,7 +16,7 @@ export async function initializeCalismaTakvimiModule(pb) {
     let completedReportsThisMonth = [];
 
     /**
-     * Verileri, hedefi ve tamamlanan raporları PocketBase'den yükler
+     * Verileri PocketBase'den yükler
      */
     async function loadInitialData() {
         // 1. İzin verilerini yükle
@@ -33,7 +33,7 @@ export async function initializeCalismaTakvimiModule(pb) {
             if (targetInput) targetInput.value = globalAylikHedef;
         } catch (error) { globalAylikHedef = 47; }
 
-        // 3. Mevcut ayın tamamlanan raporlarını ve geri alınanları yükle
+        // 3. Mevcut ayın tamamlanan raporlarını yükle
         try {
             const firstDayOfMonth = new Date(currentYear, currentMonth, 1).toISOString();
             const reports = await pb.collection('denetim_raporlari').getFullList({
@@ -50,8 +50,9 @@ export async function initializeCalismaTakvimiModule(pb) {
                 revertedStoreCodes = reverted.map(r => r.bayi);
             } catch (e) { revertedStoreCodes = []; }
 
+            // Sadece tamamlanma tarihi olanları (finalized) listeye ekle
             completedReportsThisMonth = reports
-                .filter(r => !revertedStoreCodes.includes(r.bayi))
+                .filter(r => r.denetimTamamlanmaTarihi && !revertedStoreCodes.includes(r.bayi))
                 .map(r => ({
                     code: r.expand?.bayi?.bayiKodu,
                     date: new Date(r.denetimTamamlanmaTarihi).getDate()
@@ -59,9 +60,6 @@ export async function initializeCalismaTakvimiModule(pb) {
         } catch (error) { completedReportsThisMonth = []; }
     }
 
-    /**
-     * Admin paneli kontrollerini ayarlar
-     */
     function setupAdminControls() {
         const adminPanel = document.getElementById('admin-goal-config');
         if (currentUserRole === 'admin' && adminPanel) {
@@ -183,7 +181,7 @@ export async function initializeCalismaTakvimiModule(pb) {
 
             let totalLeaveDisplay = 0;
             for(let d=1; d<=totalDays; d++) {
-                if(leaveData[`${currentYear}-${currentMonth}-${d}`]) totalLeaveDisplay++;
+                if(leaveData[`${currentYear}-${m}-${d}`]) totalLeaveDisplay++;
             }
 
             const card = document.createElement('div');
@@ -228,23 +226,20 @@ export async function initializeCalismaTakvimiModule(pb) {
                         
                         const isCompleted = m === currentMonth && completedReportsThisMonth.some(r => r.date === d);
                         if (isCompleted) {
-                            box.classList.add('completed-audit-cal');
+                            box.classList.add('completed-audit-cal'); // CSS'deki sınıfa bağlandı
                         }
 
                         const count = planMap[d] || 0;
                         if(count >= 3) {
                             box.classList.add('three-cal');
                             explanation = `Yoğun Gün: ${count} Denetim planlandı (Turuncu).`;
-                        }
-                        else if(count === 2) {
+                        } else if(count === 2) {
                             box.classList.add('two-cal');
                             explanation = `Normal Gün: ${count} Denetim planlandı (Yeşil).`;
-                        }
-                        else if(count === 1) {
+                        } else if(count === 1) {
                             box.classList.add('one-cal');
                             explanation = `Sakin Gün: ${count} Denetim planlandı (Mavi).`;
-                        }
-                        else {
+                        } else {
                             explanation = "İş Günü: Henüz bir denetim planlanmadı.";
                         }
 
@@ -261,7 +256,7 @@ export async function initializeCalismaTakvimiModule(pb) {
                     }
                 }
                 
-                box.title = explanation; // Hover açıklaması eklendi
+                box.title = explanation; // Fare ile üzerine gelince çıkan yazı
                 grid.appendChild(box);
             }
             container.appendChild(card);
