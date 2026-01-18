@@ -1,0 +1,164 @@
+/* fide/modules/calisma-takvimi/calisma-takvimi.css */
+
+.calendar-module-wrapper { padding: 5px; }
+
+/* --- Admin Hedef Belirleme Kartı (Bütünleşik & Yatay) --- */
+.calendar-config-card {
+    background: #ffffff; border-radius: 16px; padding: 1rem 1.5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+    margin-bottom: 2rem; border-left: 5px solid #cc0000;
+}
+
+.config-content-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.config-text-zone {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.config-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.config-title i { color: #cc0000; }
+
+.config-info {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.config-action-zone {
+    flex-shrink: 0;
+}
+
+.input-group-cal {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.input-group-cal input {
+    width: 90px;
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: all 0.2s;
+    background: #f8fafc;
+    color: #cc0000;
+}
+
+.input-group-cal input:focus {
+    border-color: #cc0000;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.1);
+}
+
+.btn-save-cal {
+    background: #cc0000;
+    color: #fff;
+    border: none;
+    padding: 0.65rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-save-cal:hover {
+    background: #a30000;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(204, 0, 0, 0.15);
+}
+
+/* --- Takvim Izgara Yapısı --- */
+.calendar-grid-main {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem; width: 100%;
+}
+
+.month-card-cal {
+    background: #ffffff; border-radius: 16px; padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+    transition: transform 0.2s ease;
+}
+
+.month-header-cal {
+    text-align: center; font-size: 1.15rem; font-weight: 600;
+    color: #fff; background: linear-gradient(to right, #ff7f7f, #cc0000);
+    padding: 0.8rem; border-radius: 12px; margin-bottom: 1rem;
+}
+
+.month-stats-cal {
+    background: #f8fafc; padding: 0.5rem; border-radius: 8px;
+    margin-bottom: 1rem; font-size: 0.85rem; display: flex;
+    justify-content: space-between; border: 1px solid #e2e8f0;
+}
+
+.stat-item-cal span { display: block; font-weight: bold; color: #0f172a; }
+
+.weekdays-row-cal { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 0.5rem; font-weight: bold; }
+.weekday-cal { text-align: center; font-size: 0.8rem; color: #64748b; }
+
+.days-grid-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
+
+/* --- GÜN RENKLERİ (ORİJİNAL HALİNE GETİRİLDİ) --- */
+.day-cal {
+    text-align: center; padding: 0.75rem 0.2rem; border-radius: 8px;
+    font-weight: 600; position: relative; background: #f8fafc;
+    color: #94a3b8; user-select: none; font-size: 0.85rem;
+}
+
+.day-cal.interactive-cal { cursor: pointer; border: 1px solid transparent; }
+.day-cal.interactive-cal:hover { transform: translateY(-2px); border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+.day-cal.workday-cal { background: #f1f5f9; color: #475569; }
+
+/* Hedef Sayısına Göre Renkler */
+.day-cal.three-cal { background: #f59e0b !important; color: white !important; } /* Turuncu */
+.day-cal.two-cal { background: #10b981 !important; color: white !important; }   /* Yeşil */
+.day-cal.one-cal { background: #3b82f6 !important; color: white !important; }   /* Mavi */
+
+.day-cal.leave-cal { 
+    background: #ef4444 !important; 
+    color: white !important; 
+    text-decoration: line-through; 
+    opacity: 0.8; 
+}
+
+.visit-badge-cal {
+    position: absolute; top: -5px; right: -5px; background: #334155;
+    color: #fff; font-size: 0.65rem; width: 18px; height: 18px;
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; border: 2px solid #fff;
+}
+
+.day-cal.empty-cal { visibility: hidden; }
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .config-content-wrapper { flex-direction: column; align-items: flex-start; }
+    .input-group-cal { width: 100%; }
+    .input-group-cal input { flex: 1; }
+}
