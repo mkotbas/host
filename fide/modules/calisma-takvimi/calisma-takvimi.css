@@ -123,14 +123,15 @@
 
 .days-grid-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; }
 
-/* --- GÜN RENKLERİ (ORİJİNAL HALİNE GETİRİLDİ) --- */
+/* --- GÜN RENKLERİ --- */
 .day-cal {
     text-align: center; padding: 0.75rem 0.2rem; border-radius: 8px;
     font-weight: 600; position: relative; background: #f8fafc;
     color: #94a3b8; user-select: none; font-size: 0.85rem;
+    border: 2px solid transparent; /* Çerçeve geçişi için temel */
 }
 
-.day-cal.interactive-cal { cursor: pointer; border: 1px solid transparent; }
+.day-cal.interactive-cal { cursor: pointer; }
 .day-cal.interactive-cal:hover { transform: translateY(-2px); border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
 .day-cal.workday-cal { background: #f1f5f9; color: #475569; }
@@ -145,6 +146,11 @@
     color: white !important; 
     text-decoration: line-through; 
     opacity: 0.8; 
+}
+
+/* Tamamlanan Denetim (Yeşil Çerçeve) */
+.day-cal.completed-audit-cal {
+    border: 2px solid #10b981 !important;
 }
 
 .visit-badge-cal {

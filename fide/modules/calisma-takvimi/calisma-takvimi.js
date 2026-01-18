@@ -150,7 +150,6 @@ export async function initializeCalismaTakvimiModule(pb) {
             const allWorkDays = getWorkDays(currentYear, m);
             const activeWorkDays = allWorkDays.filter(d => !leaveData[`${currentYear}-${m}-${d}`]);
             
-            // Mevcut ay için dinamik hesaplama, diğer aylar için statik hesaplama
             let planMap = {};
             let displayTarget = 0;
 
@@ -158,7 +157,6 @@ export async function initializeCalismaTakvimiModule(pb) {
             const monthlyAdjustedTarget = Math.max(0, globalAylikHedef - Math.round(dailyAverage * (allWorkDays.length - activeWorkDays.length)));
 
             if (m === currentMonth) {
-                // DİNAMİK DAĞITIM: Bugüne kadar yapılanları çıkar ve kalanı geleceğe yay
                 const todayNum = today.getDate();
                 const completedBeforeToday = completedReportsThisMonth.filter(r => r.date < todayNum).length;
                 const remainingTarget = Math.max(0, monthlyAdjustedTarget - completedBeforeToday);
@@ -173,7 +171,6 @@ export async function initializeCalismaTakvimiModule(pb) {
                 }
                 displayTarget = monthlyAdjustedTarget;
             } else {
-                // STATİK DAĞITIM
                 if (activeWorkDays.length > 0) {
                     const basePerDay = Math.floor(monthlyAdjustedTarget / activeWorkDays.length);
                     const extras = monthlyAdjustedTarget % activeWorkDays.length;
@@ -186,7 +183,7 @@ export async function initializeCalismaTakvimiModule(pb) {
 
             let totalLeaveDisplay = 0;
             for(let d=1; d<=totalDays; d++) {
-                if(leaveData[`${currentYear}-${m}-${d}`]) totalLeaveDisplay++;
+                if(leaveData[`${currentYear}-${currentMonth}-${d}`]) totalLeaveDisplay++;
             }
 
             const card = document.createElement('div');
@@ -213,25 +210,47 @@ export async function initializeCalismaTakvimiModule(pb) {
                 box.className = 'day-cal';
                 box.textContent = d;
 
-                if (dayOfWeek !== 0) {
+                let explanation = "";
+
+                if (dayOfWeek === 0) {
+                    explanation = "Pazar: Haftalık tatil günü.";
+                } else {
                     box.classList.add('interactive-cal');
                     box.onclick = () => toggleLeave(m, d);
 
                     if (leaveData[key]) {
                         box.classList.add('leave-cal');
-                    } else if (dayOfWeek !== 6) {
+                        explanation = "İzinli: Bugün için denetim planı yapılmaz.";
+                    } else if (dayOfWeek === 6) {
+                        explanation = "Cumartesi: Görev atanmaz, tıklayarak izinli işaretleyebilirsiniz.";
+                    } else {
                         box.classList.add('workday-cal');
                         
-                        // Tamamlananları göster (Sadece mevcut ay için)
                         const isCompleted = m === currentMonth && completedReportsThisMonth.some(r => r.date === d);
                         if (isCompleted) {
-                            box.style.border = "2px solid #10b981";
+                            box.classList.add('completed-audit-cal');
                         }
 
                         const count = planMap[d] || 0;
-                        if(count >= 3) box.classList.add('three-cal');
-                        else if(count === 2) box.classList.add('two-cal');
-                        else if(count === 1) box.classList.add('one-cal');
+                        if(count >= 3) {
+                            box.classList.add('three-cal');
+                            explanation = `Yoğun Gün: ${count} Denetim planlandı (Turuncu).`;
+                        }
+                        else if(count === 2) {
+                            box.classList.add('two-cal');
+                            explanation = `Normal Gün: ${count} Denetim planlandı (Yeşil).`;
+                        }
+                        else if(count === 1) {
+                            box.classList.add('one-cal');
+                            explanation = `Sakin Gün: ${count} Denetim planlandı (Mavi).`;
+                        }
+                        else {
+                            explanation = "İş Günü: Henüz bir denetim planlanmadı.";
+                        }
+
+                        if (isCompleted) {
+                            explanation += " | Denetim Raporu Tamamlandı (Yeşil Çerçeve).";
+                        }
                         
                         if (count > 0) {
                             const b = document.createElement('span');
@@ -241,13 +260,14 @@ export async function initializeCalismaTakvimiModule(pb) {
                         }
                     }
                 }
+                
+                box.title = explanation; // Hover açıklaması eklendi
                 grid.appendChild(box);
             }
             container.appendChild(card);
         }
     }
 
-    // Denetim Takip modülünden gelen güncellemeleri dinle
     window.addEventListener('calendarDataChanged', async () => {
         await loadInitialData();
         renderCalendar();
