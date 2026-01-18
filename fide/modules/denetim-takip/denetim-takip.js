@@ -1,4 +1,4 @@
-// fide/modules/denetim-takip/denetim-takip.js
+/* fide/modules/denetim-takip/denetim-takip.js */
 
 let allStoresMaster = [];
 let allReportsMaster = [];
@@ -93,7 +93,7 @@ function calculateTodayRequirement() {
 export async function initializeDenetimTakipModule(pb) {
     pbInstance = pb;
     const loadingOverlay = document.getElementById('loading-overlay');
-    loadingOverlay.style.display = 'flex';
+    if (loadingOverlay) loadingOverlay.style.display = 'flex';
 
     if (pbInstance && pbInstance.authStore.isValid) {
         currentUserRole = pbInstance.authStore.model.role;
@@ -104,18 +104,22 @@ export async function initializeDenetimTakipModule(pb) {
         await loadMasterData();
 
         if (currentUserRole === 'admin') {
-            document.getElementById('admin-user-selector-container').style.display = 'block';
+            const userSelector = document.getElementById('admin-user-selector-container');
+            if (userSelector) userSelector.style.display = 'block';
             await populateUserFilterDropdown();
         }
 
         applyDataFilterAndRunDashboard('my_data');
 
     } else {
-        document.getElementById('upload-area').innerHTML = '<p style="text-align: center; color: var(--danger);">Giriş yapın.</p>';
-        document.getElementById('upload-area').style.display = 'block';
+        const uploadArea = document.getElementById('upload-area');
+        if (uploadArea) {
+            uploadArea.innerHTML = '<p style="text-align: center; color: var(--danger);">Giriş yapın.</p>';
+            uploadArea.style.display = 'block';
+        }
     }
 
-    loadingOverlay.style.display = 'none';
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
 }
 
 async function loadSettings() {
@@ -129,11 +133,6 @@ async function loadSettings() {
         const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
         leaveDataBulut = leaveRecord.deger || {};
     } catch (error) { leaveDataBulut = {}; }
-
-    if (currentUserRole === 'admin') {
-        const el = document.getElementById('monthly-target-input');
-        if(el) el.value = globalAylikHedef > 0 ? globalAylikHedef : '';
-    }
 }
 
 async function loadMasterData() {
@@ -141,8 +140,10 @@ async function loadMasterData() {
     try {
         allStoresMaster = await pbInstance.collection('bayiler').getFullList({ sort: 'bayiAdi' });
         if (allStoresMaster.length > 0) {
-            document.getElementById('upload-area').style.display = 'none';
-            document.getElementById('loaded-data-area').style.display = 'block';
+            const uploadArea = document.getElementById('upload-area');
+            const loadedArea = document.getElementById('loaded-data-area');
+            if (uploadArea) uploadArea.style.display = 'none';
+            if (loadedArea) loadedArea.style.display = 'block';
         }
         const today = new Date();
         const firstDayOfYear = new Date(today.getFullYear(), 0, 1).toISOString();
@@ -163,6 +164,7 @@ async function populateUserFilterDropdown() {
     try {
         allUsers = await pbInstance.collection('users').getFullList({ sort: 'name' });
         const selectElement = document.getElementById('admin-user-filter');
+        if (!selectElement) return;
         selectElement.innerHTML = `<option value="my_data" selected>Benim Verilerim (Admin)</option><option value="global">Genel Bakış (Tüm Sistem)</option>`;
         allUsers.forEach(user => {
             if (user.id !== currentUserId) {
@@ -233,41 +235,58 @@ function calculateAndDisplayDashboard() {
     if (currentViewMode === 'monthly') {
         displayTarget = adjustedTarget;
         displayAudited = auditedStoreCodesCurrentMonth.length;
-        document.getElementById('work-days-card').style.display = 'block';
-        document.getElementById('today-required-card').style.display = 'block';
-        document.getElementById('today-required-count').textContent = calculateTodayRequirement();
+        const workDaysCard = document.getElementById('work-days-card');
+        const reqCard = document.getElementById('today-required-card');
+        if (workDaysCard) workDaysCard.style.display = 'block';
+        if (reqCard) {
+            reqCard.style.display = 'block';
+            const reqCount = document.getElementById('today-required-count');
+            if (reqCount) reqCount.textContent = calculateTodayRequirement();
+        }
     } else {
         displayTarget = allStores.length;
         displayAudited = auditedStoreCodesCurrentYear.length;
-        document.getElementById('work-days-card').style.display = 'none';
-        document.getElementById('today-required-card').style.display = 'none';
+        const workDaysCard = document.getElementById('work-days-card');
+        const reqCard = document.getElementById('today-required-card');
+        if (workDaysCard) workDaysCard.style.display = 'none';
+        if (reqCard) reqCard.style.display = 'none';
     }
 
-    document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-${currentViewMode === 'monthly' ? 'calendar-day' : 'calendar-alt'}"></i> ${year} ${monthNames[month]} Performansı`;
-    document.getElementById('total-stores-count').textContent = displayTarget;
-    document.getElementById('audited-stores-count').textContent = displayAudited;
-    document.getElementById('remaining-stores-count').textContent = Math.max(0, displayTarget - displayAudited);
-    document.getElementById('work-days-count').textContent = getRemainingWorkdays();
+    const titleEl = document.getElementById('dashboard-title');
+    if (titleEl) titleEl.innerHTML = `<i class="fas fa-${currentViewMode === 'monthly' ? 'calendar-day' : 'calendar-alt'}"></i> ${year} ${monthNames[month]} Performansı`;
+    
+    const targetCount = document.getElementById('total-stores-count');
+    if (targetCount) targetCount.textContent = displayTarget;
+    
+    const auditedCount = document.getElementById('audited-stores-count');
+    if (auditedCount) auditedCount.textContent = displayAudited;
+    
+    const remCount = document.getElementById('remaining-stores-count');
+    if (remCount) remCount.textContent = Math.max(0, displayTarget - displayAudited);
+    
+    const workCount = document.getElementById('work-days-count');
+    if (workCount) workCount.textContent = getRemainingWorkdays();
     
     renderAuditedStores(); 
-    document.getElementById('dashboard-content').style.display = 'block';
+    const dashContent = document.getElementById('dashboard-content');
+    if (dashContent) dashContent.style.display = 'block';
 }
 
 function setupModuleEventListeners(userRole) {
     if (document.body.dataset.denetimTakipListenersAttached) return;
     document.body.dataset.denetimTakipListenersAttached = 'true';
 
-    // TAKVİM DEĞİŞİKLİĞİNİ DİNLE
-    window.addEventListener('calendarDataChanged', (e) => {
+    // TAKVİM VEYA HEDEF DEĞİŞİKLİĞİNİ DİNLE
+    window.addEventListener('calendarDataChanged', async (e) => {
+        // Hedef değişmiş olabileceği için önce ayarları tekrar yükle
+        await loadSettings();
         leaveDataBulut = e.detail;
         calculateAndDisplayDashboard();
     });
 
     if (userRole === 'admin') {
-        document.getElementById('open-admin-panel-btn').onclick = () => document.getElementById('admin-panel-overlay').style.display = 'flex';
-        document.getElementById('close-admin-panel-btn').onclick = () => document.getElementById('admin-panel-overlay').style.display = 'none';
-        document.getElementById('save-settings-btn').onclick = saveSettings;
-        document.getElementById('admin-user-filter').onchange = (e) => applyDataFilterAndRunDashboard(e.target.value);
+        const userFilter = document.getElementById('admin-user-filter');
+        if (userFilter) userFilter.onchange = (e) => applyDataFilterAndRunDashboard(e.target.value);
     }
 
     const modeButtons = document.querySelectorAll('#view-mode-toggle button');
@@ -282,33 +301,30 @@ function setupModuleEventListeners(userRole) {
     });
 
     ['bolge-filter', 'yonetmen-filter', 'sehir-filter', 'ilce-filter'].forEach(id => {
-        document.getElementById(id).onchange = applyAndRepopulateFilters;
+        const el = document.getElementById(id);
+        if (el) el.onchange = applyAndRepopulateFilters;
     });
 
-    document.getElementById('local-city-filter').onchange = (e) => {
-        localCityFilterValue = e.target.value;
-        renderRemainingStores(currentGlobalFilteredStores); 
-    };
-}
-
-async function saveSettings() {
-    const val = parseInt(document.getElementById('monthly-target-input').value);
-    try {
-        const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
-        await pbInstance.collection('ayarlar').update(record.id, { deger: val });
-        globalAylikHedef = val;
-        applyDataFilterAndRunDashboard(document.getElementById('admin-user-filter').value || 'my_data');
-        document.getElementById('admin-panel-overlay').style.display = 'none';
-    } catch (e) { alert("Hata."); }
+    const cityFilter = document.getElementById('local-city-filter');
+    if (cityFilter) {
+        cityFilter.onchange = (e) => {
+            localCityFilterValue = e.target.value;
+            renderRemainingStores(currentGlobalFilteredStores); 
+        };
+    }
 }
 
 function updateAllFilterOptions() {
     const filters = {'bolge-filter': 'bolge', 'yonetmen-filter': 'yonetmen', 'sehir-filter': 'sehir', 'ilce-filter': 'ilce'};
     Object.keys(filters).forEach(id => {
         const sel = document.getElementById(id);
+        if (!sel) return;
         const field = filters[id];
         const prev = sel.value;
-        const available = allStores.filter(s => Object.keys(filters).every(fId => fId === id || document.getElementById(fId).value === 'Tümü' || s[filters[fId]] === document.getElementById(fId).value));
+        const available = allStores.filter(s => Object.keys(filters).every(fId => {
+            const fEl = document.getElementById(fId);
+            return !fEl || fId === id || fEl.value === 'Tümü' || s[filters[fId]] === fEl.value;
+        }));
         const vals = [...new Set(available.map(s => s[field]))].filter(Boolean).sort((a,b) => a.localeCompare(b, 'tr'));
         sel.innerHTML = '<option value="Tümü">Tümü</option>' + vals.map(v => `<option value="${v}">${v}</option>`).join('');
         sel.value = vals.includes(prev) ? prev : 'Tümü';
@@ -316,7 +332,16 @@ function updateAllFilterOptions() {
 }
 
 function applyAndRepopulateFilters() {
-    const sel = { bolge: document.getElementById('bolge-filter').value, yonetmen: document.getElementById('yonetmen-filter').value, sehir: document.getElementById('sehir-filter').value, ilce: document.getElementById('ilce-filter').value };
+    const getVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value : 'Tümü';
+    };
+    const sel = { 
+        bolge: getVal('bolge-filter'), 
+        yonetmen: getVal('yonetmen-filter'), 
+        sehir: getVal('sehir-filter'), 
+        ilce: getVal('ilce-filter') 
+    };
     currentGlobalFilteredStores = allStores.filter(s => (sel.bolge === 'Tümü' || s.bolge === sel.bolge) && (sel.yonetmen === 'Tümü' || s.yonetmen === sel.yonetmen) && (sel.sehir === 'Tümü' || s.sehir === sel.sehir) && (sel.ilce === 'Tümü' || s.ilce === sel.ilce));
     updateAllFilterOptions();
     renderRemainingStores(currentGlobalFilteredStores); 
@@ -324,15 +349,18 @@ function applyAndRepopulateFilters() {
 
 function renderRemainingStores(filtered) {
     const cont = document.getElementById('denetlenecek-bayiler-container');
+    if (!cont) return;
     const audited = (currentViewMode === 'monthly') ? auditedStoreCodesCurrentMonth.map(a => a.code) : auditedStoreCodesCurrentYear;
     const rem = filtered.filter(s => !audited.includes(s.bayiKodu));
     cont.innerHTML = rem.length ? '' : '<p class="empty-list-message">Kayıt yok.</p>';
     if (!rem.length) return;
 
     const lSel = document.getElementById('local-city-filter');
-    const cities = [...new Set(rem.map(s => s.sehir))].sort((a,b) => a.localeCompare(b, 'tr'));
-    lSel.innerHTML = '<option value="Tümü">Tüm Şehirler</option>' + cities.map(c => `<option value="${c}">${c}</option>`).join('');
-    lSel.value = cities.includes(localCityFilterValue) ? localCityFilterValue : 'Tümü';
+    if (lSel) {
+        const cities = [...new Set(rem.map(s => s.sehir))].sort((a,b) => a.localeCompare(b, 'tr'));
+        lSel.innerHTML = '<option value="Tümü">Tüm Şehirler</option>' + cities.map(c => `<option value="${c}">${c}</option>`).join('');
+        lSel.value = cities.includes(localCityFilterValue) ? localCityFilterValue : 'Tümü';
+    }
 
     const show = localCityFilterValue === 'Tümü' ? rem : rem.filter(s => s.sehir === localCityFilterValue);
     const byReg = show.reduce((acc, s) => { const r = s.bolge || 'Bölgesiz'; (acc[r] = acc[r] || []).push(s); return acc; }, {});
@@ -347,6 +375,7 @@ function renderRemainingStores(filtered) {
 
 function renderAuditedStores() {
     const cont = document.getElementById('denetlenen-bayiler-container');
+    if (!cont) return;
     const data = (currentViewMode === 'monthly') ? auditedStoreCodesCurrentMonth : auditedStoreCodesCurrentYear.map(c => ({code: c, timestamp: 0}));
     if (!data.length) { cont.innerHTML = '<p class="empty-list-message">Kayıt yok.</p>'; return; }
     const details = data.map(a => ({...(allStoresMaster.find(s => s.bayiKodu === a.code) || {bayiAdi: 'Bilinmeyen'}), timestamp: a.timestamp})).sort((a,b) => b.timestamp - a.timestamp);
@@ -365,7 +394,6 @@ function getRemainingWorkdays() {
         const dayOfWeek = checkDate.getDay();
         const key = `${year}-${month}-${d}`;
         
-        // Hafta içi (1-5) mi VE izinli DEĞİL mi?
         if ([1,2,3,4,5].includes(dayOfWeek) && !leaveDataBulut[key]) {
             rem++;
         }
@@ -379,6 +407,7 @@ window.revertAudit = async (code) => {
     try {
         await pbInstance.collection('denetim_geri_alinanlar').create({yil_ay: `${new Date().getFullYear()}-${new Date().getMonth()}`, bayi: s.id});
         await loadMasterData();
-        applyDataFilterAndRunDashboard(document.getElementById('admin-user-filter').value || 'my_data');
+        const adminFilter = document.getElementById('admin-user-filter');
+        applyDataFilterAndRunDashboard(adminFilter ? adminFilter.value : 'my_data');
     } catch (e) { }
 };

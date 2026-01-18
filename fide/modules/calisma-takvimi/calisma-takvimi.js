@@ -1,4 +1,4 @@
-// fide/modules/calisma-takvimi/calisma-takvimi.js
+/* fide/modules/calisma-takvimi/calisma-takvimi.js */
 
 export async function initializeCalismaTakvimiModule(pb) {
     const monthsTR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
@@ -6,22 +6,73 @@ export async function initializeCalismaTakvimiModule(pb) {
     const year = new Date().getFullYear();
     const container = document.querySelector('.calendar-grid-main');
     const currentUserId = pb.authStore.model.id;
+    const currentUserRole = pb.authStore.model.role;
     const settingsKey = `leaveData_${currentUserId}`;
     
     let leaveData = {};
     let globalAylikHedef = 47;
 
-    // Buluttan verileri ve hedefi yükle
+    /**
+     * Verileri ve hedefi PocketBase'den yükler
+     */
     async function loadInitialData() {
+        // İzin verilerini yükle
         try {
             const leaveRecord = await pb.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
             leaveData = leaveRecord.deger || {};
         } catch (error) { leaveData = {}; }
 
+        // Global aylık hedefi yükle
         try {
             const targetRecord = await pb.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
             globalAylikHedef = targetRecord.deger || 47;
+            
+            // Admin panelindeki inputu güncelle
+            const targetInput = document.getElementById('global-target-input');
+            if (targetInput) targetInput.value = globalAylikHedef;
         } catch (error) { globalAylikHedef = 47; }
+    }
+
+    /**
+     * Admin paneli kontrollerini ayarlar
+     */
+    function setupAdminControls() {
+        const adminPanel = document.getElementById('admin-goal-config');
+        if (currentUserRole === 'admin' && adminPanel) {
+            adminPanel.style.display = 'block';
+            
+            const saveBtn = document.getElementById('btn-save-global-target');
+            const targetInput = document.getElementById('global-target-input');
+            
+            saveBtn.onclick = async () => {
+                const newValue = parseInt(targetInput.value);
+                if (isNaN(newValue) || newValue < 1) return alert("Geçerli bir hedef sayısı giriniz.");
+                
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                try {
+                    let record;
+                    try {
+                        record = await pb.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
+                        await pb.collection('ayarlar').update(record.id, { deger: newValue });
+                    } catch {
+                        await pb.collection('ayarlar').create({ anahtar: 'aylikHedef', deger: newValue });
+                    }
+                    
+                    globalAylikHedef = newValue;
+                    // Diğer modülleri ve takvimi bilgilendir
+                    window.dispatchEvent(new CustomEvent('calendarDataChanged', { detail: leaveData }));
+                    renderCalendar();
+                    alert("Aylık hedef başarıyla güncellendi.");
+                } catch (err) {
+                    alert("Hata oluştu: " + err.message);
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-check"></i> Güncelle';
+                }
+            };
+        }
     }
 
     async function saveData() {
@@ -33,8 +84,6 @@ export async function initializeCalismaTakvimiModule(pb) {
             } catch (err) {
                 await pb.collection('ayarlar').create({ anahtar: settingsKey, deger: leaveData });
             }
-            
-            // Denetim Takip modülünü bilgilendir
             window.dispatchEvent(new CustomEvent('calendarDataChanged', { detail: leaveData }));
         } catch (error) {
             console.error("Takvim verisi kaydedilemedi:", error);
@@ -43,11 +92,8 @@ export async function initializeCalismaTakvimiModule(pb) {
 
     async function toggleLeave(month, day) {
         const key = `${year}-${month}-${day}`;
-        if (leaveData[key]) {
-            delete leaveData[key];
-        } else {
-            leaveData[key] = true;
-        }
+        if (leaveData[key]) delete leaveData[key];
+        else leaveData[key] = true;
         await saveData();
         renderCalendar();
     }
@@ -163,5 +209,6 @@ export async function initializeCalismaTakvimiModule(pb) {
     }
 
     await loadInitialData();
+    setupAdminControls();
     renderCalendar();
 }
