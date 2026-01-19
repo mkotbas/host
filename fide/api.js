@@ -1,22 +1,13 @@
-// 'showLockoutOverlay' fonksiyonunu utils.js'den içeri aktar
+/* fide/api.js */
 import { showLoadingOverlay, hideLoadingOverlay, showLockoutOverlay } from './utils.js';
 import * as state from './state.js';
 
 let pb; // PocketBase instance
 
-/**
- * Cihazın mobil olup olmadığını User Agent üzerinden kontrol eder.
- * @returns {boolean}
- */
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-/**
- * Kullanıcının cihaz bilgilerini (Tarayıcı ve OS)
- * admin panelinde gösterilecek basit bir metne dönüştürür.
- * @returns {string} Örn: "Chrome on Windows"
- */
 function getDeviceDescription() {
     const ua = navigator.userAgent;
     let os = "Unknown OS";
@@ -36,11 +27,6 @@ function getDeviceDescription() {
     return `${browser} on ${os}`;
 }
 
-/**
- * PROFESYONEL PARMAK İZİ SİSTEMİ (Browser Fingerprinting)
- * Cihazın donanım ve yazılım özelliklerinden benzersiz bir ID üretir.
- * @returns {Promise<string>}
- */
 async function getDeviceFingerprint() {
     const components = [
         navigator.userAgent,
@@ -50,7 +36,6 @@ async function getDeviceFingerprint() {
         new Date().getTimezoneOffset(),
         navigator.hardwareConcurrency || "unknown",
         navigator.platform,
-        // Canvas Fingerprinting: Tarayıcının grafik işleme karakteristiği
         (function() {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -63,13 +48,11 @@ async function getDeviceFingerprint() {
             ctx.fillText("FideSecurity_123!@#", 2, 15);
             ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
             ctx.fillText("FideSecurity_123!@#", 4, 17);
-            return canvas.toDataURL();
+            return canvas.toToDataURL();
         })()
     ];
 
     const fingerprintString = components.join('###');
-    
-    // Web Crypto API ile SHA-256 Hash oluşturma
     const msgUint8 = new TextEncoder().encode(fingerprintString);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -78,30 +61,19 @@ async function getDeviceFingerprint() {
     return hashHex;
 }
 
-/**
- * API modülünü PocketBase instance ile başlatır.
- * @param {object} pbInstance 
- */
 export function initApi(pbInstance) {
     pb = pbInstance;
 }
 
-/**
- * Kullanıcının kilit (ban) ve cihaz kilidi (lock) durumlarını anlık dinler.
- */
 export async function subscribeToRealtimeChanges() {
-    if (!pb || !pb.authStore.isValid) {
-        return;
-    }
+    if (!pb || !pb.authStore.isValid) return;
 
     const userId = pb.authStore.model.id;
-    // Yeni parmak izi sistemine göre anahtarı al
     const browserDeviceKey = await getDeviceFingerprint();
 
     try {
         const currentUserRecord = await pb.collection('users').getOne(userId);
         if (currentUserRecord.is_banned === true) {
-             console.warn('Hesap kilitli. Oturum sonlandırılıyor.');
              showLockoutOverlay("Hesabınız bir yönetici tarafından kilitlenmiştir. Sistemden çıkış yapılıyor...");
              logoutUser();
              setTimeout(() => window.location.reload(), 3000);
@@ -146,9 +118,6 @@ export async function subscribeToRealtimeChanges() {
     }
 }
 
-/**
- * O anki aya ait denetim verilerini yükler.
- */
 async function loadMonthlyAuditData() {
     state.setAuditedThisMonth([]);
     if (!pb || !pb.authStore.isValid) return;
@@ -157,11 +126,12 @@ async function loadMonthlyAuditData() {
         const today = new Date();
         const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0] + ' 00:00:00';
         const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
+        const userId = pb.authStore.model.id;
 
         let geriAlinanlarBuAy = [];
         try {
             const geriAlinanRecords = await pb.collection('denetim_geri_alinanlar').getFullList({
-                filter: `yil_ay = "${currentMonthKey}"`,
+                filter: `yil_ay = "${currentMonthKey}" && user = "${userId}"`, // Kullanıcı filtresi eklendi
                 expand: 'bayi'
             });
             geriAlinanlarBuAy = geriAlinanRecords
@@ -172,14 +142,12 @@ async function loadMonthlyAuditData() {
         }
 
         const records = await pb.collection('denetim_raporlari').getFullList({
-            filter: `denetimTamamlanmaTarihi >= "${firstDayOfMonth}"`,
+            filter: `denetimTamamlanmaTarihi >= "${firstDayOfMonth}" && user = "${userId}"`, // Kullanıcı filtresi eklendi
             expand: 'bayi'
         });
 
-        const allAuditedThisMonth = records.map(record => record.expand?.bayi?.bayiKodu).filter(Boolean);
-        const uniqueAuditedList = [...new Set(allAuditedThisMonth)]; 
-        
-        const finalAuditedList = uniqueAuditedList.filter(bayiKodu => !geriAlinanlarBuAy.includes(bayiKodu));
+        const allAuditedThisMonth = records.map(record => record.expand.bayi.bayiKodu);
+        const finalAuditedList = allAuditedThisMonth.filter(bayiKodu => !geriAlinanlarBuAy.includes(bayiKodu));
         state.setAuditedThisMonth(finalAuditedList);
 
     } catch (error) {
@@ -187,19 +155,14 @@ async function loadMonthlyAuditData() {
     }
 }
 
-/**
- * Bulutta kayıtlı olan DiDe ve FiDe excel verilerini çeker.
- */
 export async function loadExcelDataFromCloud() {
     if (!pb || !pb.authStore.isValid) return;
 
     try {
         const dideRecord = await pb.collection('excel_verileri').getFirstListItem('tip="dide"');
         if (dideRecord) {
-            if (dideRecord.dosyaAdi) {
-                const el = document.getElementById('file-name');
-                if(el) el.textContent = `Buluttan yüklendi: ${dideRecord.dosyaAdi}`;
-            }
+            const el = document.getElementById('file-name');
+            if(el) el.textContent = `Buluttan yüklendi: ${dideRecord.dosyaAdi}`;
             state.setDideData(dideRecord.veri);
         }
     } catch (error) {
@@ -209,10 +172,8 @@ export async function loadExcelDataFromCloud() {
     try {
         const fideRecord = await pb.collection('excel_verileri').getFirstListItem('tip="fide"');
         if (fideRecord) {
-            if (fideRecord.dosyaAdi) {
-                const el = document.getElementById('fide-file-name');
-                if(el) el.textContent = `Buluttan yüklendi: ${fideRecord.dosyaAdi}`;
-            }
+            const el = document.getElementById('fide-file-name');
+            if(el) el.textContent = `Buluttan yüklendi: ${fideRecord.dosyaAdi}`;
             state.setFideData(fideRecord.veri);
         }
     } catch (error) {
@@ -220,9 +181,6 @@ export async function loadExcelDataFromCloud() {
     }
 }
 
-/**
- * Uygulama için gerekli tüm başlangıç verilerini yükler.
- */
 export async function loadInitialData() {
     if (!pb || !pb.authStore.isValid) {
         state.setFideQuestions(state.fallbackFideQuestions);
@@ -240,8 +198,6 @@ export async function loadInitialData() {
             const cloudData = fideQuestionsDataRecord.deger;
             state.setFideQuestions(cloudData.questions || []);
             state.setProductList(cloudData.productList || []);
-        } else {
-            throw new Error("fideQuestionsData bulunamadı");
         }
 
         const popSystemQuestion = state.fideQuestions.find(q => q.type === 'pop_system');
@@ -273,24 +229,19 @@ export async function loadInitialData() {
     }
 }
 
-/**
- * Formun mevcut durumunu veritabanına kaydeder veya günceller.
- */
 export async function saveFormState(reportData, isFinalizing = false) {
     if (!state.selectedStore || !pb || !pb.authStore.isValid) return;
 
+    const userId = pb.authStore.model.id;
     const bayiKodu = String(state.selectedStore.bayiKodu);
     const storeRecord = state.allStores.find(s => s.bayiKodu === bayiKodu);
-    if (!storeRecord) {
-        console.error("Bayi bulunamadı!");
-        return;
-    }
+    if (!storeRecord) return;
 
     if (isFinalizing) {
         try {
             const today = new Date();
             const currentMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
-            const undoneRecord = await pb.collection('denetim_geri_alinanlar').getFirstListItem(`yil_ay="${currentMonthKey}" && bayi="${storeRecord.id}"`);
+            const undoneRecord = await pb.collection('denetim_geri_alinanlar').getFirstListItem(`yil_ay="${currentMonthKey}" && bayi="${storeRecord.id}" && user="${userId}"`); // Kullanıcı filtresi eklendi
             await pb.collection('denetim_geri_alinanlar').delete(undoneRecord.id);
         } catch (error) {
             if (error.status !== 404) console.error("Geri alınan rapor temizleme hatası:", error);
@@ -300,15 +251,12 @@ export async function saveFormState(reportData, isFinalizing = false) {
     const dataToSave = {
         "bayi": storeRecord.id,
         "soruDurumlari": reportData.questions_status,
-        "user": pb.authStore.model.id
+        "user": userId
     };
     
-    if (isFinalizing) {
+    const isAlreadyAudited = state.auditedThisMonth.includes(bayiKodu);
+    if (isFinalizing && !isAlreadyAudited) {
         dataToSave.denetimTamamlanmaTarihi = new Date().toISOString();
-
-        if (!state.auditedThisMonth.includes(bayiKodu)) {
-            state.setAuditedThisMonth([...state.auditedThisMonth, bayiKodu]);
-        }
     }
 
     if (isFinalizing) showLoadingOverlay("Rapor kaydediliyor...");
@@ -328,69 +276,34 @@ export async function saveFormState(reportData, isFinalizing = false) {
     }
 }
 
-/**
- * Belirli bir bayi için kaydedilmiş raporu buluttan yükler.
- * GÜNCELLEME: OTOMATİK KURTARMA ÖZELLİĞİ EKLENDİ.
- */
 export async function loadReportForStore(bayiKodu) {
     if (!pb || !pb.authStore.isValid) return null;
     
     showLoadingOverlay("Rapor yükleniyor...");
     try {
+        const userId = pb.authStore.model.id;
         const storeRecord = state.allStores.find(s => s.bayiKodu === bayiKodu);
         if (!storeRecord) throw new Error("Bayi bulunamadı.");
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayStr = today.toISOString().split('T')[0] + ' 00:00:00';
+        const reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(`bayi="${storeRecord.id}" && user="${userId}"`, { // Kullanıcı filtresi eklendi
+            sort: '-created'
+        });
 
-        let reportRecord = null;
-
-        try {
-            // ADIM 1: Bu bayi için bugün oluşturulmuş bir rapor var mı? (Taslak veya Tamamlanmış)
-            reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(
-                `bayi="${storeRecord.id}" && created >= "${todayStr}"`, 
-                { sort: '-created' }
-            );
-        } catch (e) {
-            // ADIM 2: Bugün rapor yoksa, bitirilmemiş (N/A) eski bir taslağı var mı?
-            try {
-                reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(
-                    `bayi="${storeRecord.id}" && denetimTamamlanmaTarihi = ""`, 
-                    { sort: '-created' }
-                );
-            } catch (e2) {
-                // ADIM 3: Hiçbiri yoksa en son yapılan raporu getir (Genel düzenleme için)
-                try {
-                    reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(
-                        `bayi="${storeRecord.id}"`, 
-                        { sort: '-created' }
-                    );
-                } catch (e3) {
-                    reportRecord = null;
-                }
-            }
-        }
-
-        if (reportRecord) {
-            state.setCurrentReportId(reportRecord.id);
-            return reportRecord.soruDurumlari;
-        } else {
-            state.setCurrentReportId(null);
-            return null;
-        }
+        state.setCurrentReportId(reportRecord.id);
+        return reportRecord.soruDurumlari;
 
     } catch (error) {
-        console.error("Rapor yükleme hatası:", error);
+        if (error.status === 404) {
+            state.setCurrentReportId(null);
+        } else {
+            console.error("Rapor yükleme hatası:", error);
+        }
         return null;
     } finally {
         hideLoadingOverlay();
     }
 }
 
-/**
- * Belirtilen tipteki Excel verisini buluttan siler.
- */
 export async function clearExcelFromCloud(type) {
     if (!pb.authStore.isValid) return;
     
@@ -404,9 +317,6 @@ export async function clearExcelFromCloud(type) {
     }
 }
 
-/**
- * PROFESYONEL PARMAK İZİ DESTEKLİ GİRİŞ
- */
 export async function loginUser(email, password) {
     if (!pb) return { success: false, message: "Bağlantı hatası." };
 
@@ -431,12 +341,10 @@ export async function loginUser(email, password) {
             return { success: false, message: "Mobil cihaz girişi yasaktır." };
         }
 
-        // Cihaz parmak izini hesapla
         const browserFingerprint = await getDeviceFingerprint();
         const currentDeviceDesc = getDeviceDescription();
 
         try {
-            // Parmak iziyle eşleşen cihazı ara
             const deviceRecord = await pb.collection('user_devices').getFirstListItem(
                 `user="${user.id}" && device_key="${browserFingerprint}"`
             );
@@ -453,7 +361,6 @@ export async function loginUser(email, password) {
             return { success: true, message: "Giriş başarılı." };
 
         } catch (error) {
-            // Parmak izi sistemde yoksa yeni cihaz olarak değerlendir
             const deviceLimit = user.device_limit || 1;
             const userDevices = await pb.collection('user_devices').getFullList({
                 filter: `user="${user.id}"`
@@ -463,7 +370,7 @@ export async function loginUser(email, password) {
                 logoutUser();
                 return { 
                     success: false, 
-                    message: `Cihaz limitiniz (${deviceLimit}) dolmuştur. Lütfen yöneticinizle iletişime geçin.` 
+                    message: `Cihaz limitiniz (${deviceLimit}) dolmuştur.` 
                 };
             }
 
@@ -479,17 +386,11 @@ export async function loginUser(email, password) {
         }
 
     } catch (error) {
-        console.error("Güvenlik kontrolü hatası:", error);
         logoutUser();
         return { success: false, message: "Güvenlik hatası oluştu." };
     }
 }
 
-/**
- * Kullanıcı çıkış işlemini yapar.
- */
 export function logoutUser() {
-    if (pb) {
-        pb.authStore.clear();
-    }
+    if (pb) pb.authStore.clear();
 }

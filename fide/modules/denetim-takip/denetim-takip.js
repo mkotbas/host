@@ -22,8 +22,6 @@ let pbInstance = null;
 let currentUserRole = null;
 let currentUserId = null;
 
-// --- TAKVİM ENTEGRASYON FONKSİYONLARI ---
-
 function getWorkDaysOfMonth(year, month) {
     const days = [];
     const date = new Date(year, month, 1);
@@ -48,10 +46,6 @@ function seededShuffle(array, seed) {
     return array;
 }
 
-/**
- * Dinamik Hedef Dağıtım Sistemi
- * Eksik kalan hedefleri ayın kalan günlerine otomatik dağıtır.
- */
 function calculateTodayRequirement() {
     const today = new Date();
     const year = today.getFullYear();
@@ -60,32 +54,25 @@ function calculateTodayRequirement() {
     const dayOfWeek = today.getDay();
     const todayStart = new Date(today.setHours(0,0,0,0)).getTime();
 
-    // Hafta sonu veya izin günü ise bugün için hedef yok
     if (dayOfWeek === 0 || dayOfWeek === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
 
-    // 1. Ayın toplamındaki aktif iş günlerini belirle
     const allWorkDays = getWorkDaysOfMonth(year, month);
     const activeWorkDays = allWorkDays.filter(d => !leaveDataBulut[`${year}-${month}-${d}`]);
     
-    // 2. Aylık Net Hedef (İzinlere göre revize edilmiş toplam hedef)
     const baseTarget = globalAylikHedef || 47;
     const dailyAverage = baseTarget / allWorkDays.length;
     const monthlyAdjustedTarget = Math.max(0, baseTarget - Math.round(dailyAverage * (allWorkDays.length - activeWorkDays.length)));
 
-    // 3. Bugüne kadar (bugün hariç) yapılan toplam denetimler
     const completedBeforeToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp < todayStart).length;
     
-    // 4. Kalan Hedef ve Kalan Günler
     const remainingTargetToComplete = Math.max(0, monthlyAdjustedTarget - completedBeforeToday);
     const remainingActiveDays = activeWorkDays.filter(d => d >= day);
 
     if (remainingActiveDays.length === 0) return 0;
 
-    // 5. Kalan hedefi kalan günlere dağıt (Dinamik Dağıtım)
     const basePerDay = Math.floor(remainingTargetToComplete / remainingActiveDays.length);
     const extras = remainingTargetToComplete % remainingActiveDays.length;
 
-    // Dağıtımı gün içinde sabit tutmak için stabil bir seed kullanıyoruz
     const distributionSeed = year + month + remainingActiveDays.length + remainingTargetToComplete;
     const shuffledRemaining = seededShuffle([...remainingActiveDays], distributionSeed);
     
@@ -95,13 +82,10 @@ function calculateTodayRequirement() {
         todayPlanned = basePerDay + (dayIndexInRemaining < extras ? 1 : 0);
     }
 
-    // 6. Bugün yapılanları plandan düş
     const completedToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp >= todayStart).length;
 
     return Math.max(0, todayPlanned - completedToday);
 }
-
-// --- MODÜL BAŞLATMA ---
 
 export async function initializeDenetimTakipModule(pb) {
     pbInstance = pb;
@@ -152,23 +136,28 @@ async function loadMasterData() {
     if (!pbInstance.authStore.isValid) return;
     try {
         allStoresMaster = await pbInstance.collection('bayiler').getFullList({ sort: 'bayiAdi' });
+        
+        const today = new Date();
+        const firstDayOfYear = new Date(today.getFullYear(), 0, 1).toISOString();
+        
+        // Master datayı çekiyoruz ancak filtreleme dashboard tetiklendiğinde yapılacak
+        allReportsMaster = await pbInstance.collection('denetim_raporlari').getFullList({
+            filter: `denetimTamamlanmaTarihi != null && denetimTamamlanmaTarihi >= "${firstDayOfYear}"`,
+            expand: 'bayi',
+            sort: '-denetimTamamlanmaTarihi'
+        });
+        
+        allGeriAlinanMaster = await pbInstance.collection('denetim_geri_alinanlar').getFullList({
+            filter: `yil_ay ~ "${today.getFullYear()}-"`,
+            expand: 'bayi'
+        });
+
         if (allStoresMaster.length > 0) {
             const uploadArea = document.getElementById('upload-area');
             const loadedArea = document.getElementById('loaded-data-area');
             if (uploadArea) uploadArea.style.display = 'none';
             if (loadedArea) loadedArea.style.display = 'block';
         }
-        const today = new Date();
-        const firstDayOfYear = new Date(today.getFullYear(), 0, 1).toISOString();
-        allReportsMaster = await pbInstance.collection('denetim_raporlari').getFullList({
-            filter: `denetimTamamlanmaTarihi != null && denetimTamamlanmaTarihi >= "${firstDayOfYear}"`,
-            expand: 'bayi',
-            sort: '-denetimTamamlanmaTarihi'
-        });
-        allGeriAlinanMaster = await pbInstance.collection('denetim_geri_alinanlar').getFullList({
-            filter: `yil_ay ~ "${today.getFullYear()}-"`,
-            expand: 'bayi'
-        });
     } catch (error) { console.error("Veri hatası:", error); }
 }
 
@@ -193,19 +182,36 @@ function applyDataFilterAndRunDashboard(viewId) {
     const currentYear = today.getFullYear();
     const currentMonthKey = `${currentYear}-${currentMonth}`;
 
-    if (currentUserRole !== 'admin') allStores = [...allStoresMaster];
-    else {
-        if (viewId === 'global') allStores = [...allStoresMaster];
-        else if (viewId === 'my_data') allStores = allStoresMaster.filter(s => s.sorumlu_kullanici === currentUserId);
-        else allStores = allStoresMaster.filter(s => s.sorumlu_kullanici === viewId);
+    let filteredReports = [];
+
+    // KULLANICI İZOLASYON MANTIĞI
+    if (currentUserRole !== 'admin') {
+        // Normal kullanıcı (Ahmet) sadece kendisine atanmış bayileri ve kendi raporlarını görür
+        allStores = allStoresMaster.filter(s => s.sorumlu_kullanici === currentUserId);
+        filteredReports = allReportsMaster.filter(r => r.user === currentUserId);
+    } else {
+        // Admin seçime göre veriyi görür
+        if (viewId === 'global') {
+            allStores = [...allStoresMaster];
+            filteredReports = [...allReportsMaster];
+        } else if (viewId === 'my_data') {
+            allStores = allStoresMaster.filter(s => s.sorumlu_kullanici === currentUserId);
+            filteredReports = allReportsMaster.filter(r => r.user === currentUserId);
+        } else {
+            allStores = allStoresMaster.filter(s => s.sorumlu_kullanici === viewId);
+            filteredReports = allReportsMaster.filter(r => r.user === viewId);
+        }
     }
 
     const geriAlinanBayiKodlariAy = new Set();
     allGeriAlinanMaster.forEach(record => {
-        if (record.expand?.bayi && record.yil_ay === currentMonthKey) geriAlinanBayiKodlariAy.add(record.expand.bayi.bayiKodu);
+        // Geri alınan kayıtları da kullanıcı bazlı filtreliyoruz (Admin global modda değilse)
+        const isUserMatch = (currentUserRole !== 'admin' || viewId !== 'global') ? (record.user === (viewId === 'my_data' || currentUserRole !== 'admin' ? currentUserId : viewId)) : true;
+        
+        if (record.expand?.bayi && record.yil_ay === currentMonthKey && isUserMatch) {
+            geriAlinanBayiKodlariAy.add(record.expand.bayi.bayiKodu);
+        }
     });
-
-    let filteredReports = (currentUserRole !== 'admin' || viewId === 'global') ? [...allReportsMaster] : (viewId === 'my_data' ? allReportsMaster.filter(r => r.user === currentUserId) : allReportsMaster.filter(r => r.user === viewId));
 
     const monthlyAuditsMap = new Map();
     const yearlyCodes = new Set();
@@ -415,7 +421,11 @@ window.revertAudit = async (code) => {
     const s = allStoresMaster.find(x => x.bayiKodu === code);
     if (!confirm("Geri almak istiyor musunuz?")) return;
     try {
-        await pbInstance.collection('denetim_geri_alinanlar').create({yil_ay: `${new Date().getFullYear()}-${new Date().getMonth()}`, bayi: s.id});
+        await pbInstance.collection('denetim_geri_alinanlar').create({
+            yil_ay: `${new Date().getFullYear()}-${new Date().getMonth()}`, 
+            bayi: s.id,
+            user: currentUserId // Kullanıcı ID eklendi
+        });
         await loadMasterData();
         const adminFilter = document.getElementById('admin-user-filter');
         applyDataFilterAndRunDashboard(adminFilter ? adminFilter.value : 'my_data');
