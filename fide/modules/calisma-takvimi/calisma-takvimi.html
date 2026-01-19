@@ -1,8 +1,27 @@
-<div class="calendar-module-wrapper">
-    <div class="cal-info-banner">
-        <p><strong>Ziyaret Dağıtımı:</strong> Hedef 47 ziyarettir. Cumartesi günleri görev atanmaz ancak tıklayarak <strong>İzinli</strong> olarak işaretleyebilirsiniz.</p>
-        <small>*Burada yaptığınız değişiklikler "Denetim Takip" ekranını otomatik günceller.</small>
+<div id="calisma-takvimi-wrapper">
+    <div id="admin-goal-config" class="calendar-config-card" style="display: none;">
+        <div class="config-content-wrapper">
+            <div class="config-text-zone">
+                <div class="config-title">
+                    <i class="fas fa-bullseye"></i>
+                    <span>Aylık Hedef Belirle</span>
+                </div>
+                <p class="config-info">
+                    Belirlediğiniz hedef, tüm takvim ve denetim takip ekranlarında anlık güncellenir.
+                </p>
+            </div>
+            
+            <div class="config-action-zone">
+                <div class="input-group-cal">
+                    <input type="number" id="global-target-input" placeholder="47" min="1">
+                    <button id="btn-save-global-target" class="btn-save-cal">
+                        <i class="fas fa-sync-alt"></i> Güncelle
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="calendar-grid-main"></div>
+    <div class="calendar-grid-main">
+        </div>
 </div>

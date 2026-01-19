@@ -90,6 +90,87 @@ function setupEventListeners(pb) {
     document.getElementById('btn-refresh-stats').onclick = () => loadStats(pb);
     document.getElementById('btn-close-modal').onclick = closeCommonModal;
 
+    // --- YENİ: TEMİZLİK & BAKIM FONKSİYONU ---
+    document.getElementById('btn-action-clean-maintenance').onclick = async () => {
+        // Analiz Aşaması
+        showCommonModal('Temizlik & Bakım Analizi', 
+            '<div id="cleanup-analysis"><i class="fas fa-spinner fa-spin"></i> Veritabanı taranıyor, lütfen bekleyin...</div>', 
+            '<button class="btn-secondary btn-sm" onclick="closeCommonModal()">Vazgeç</button>');
+
+        try {
+            // Tüm raporları çekiyoruz
+            const reports = await pb.collection('denetim_raporlari').getFullList({
+                sort: '-created',
+                fields: 'id,bayi,denetimTamamlanmaTarihi,created'
+            });
+
+            // Gruplandırma: Aynı bayi ve aynı gün olanları topluyoruz
+            const reportGroups = {};
+            reports.forEach(r => {
+                // Sadece tarih kısmını alıyoruz (Yıl-Ay-Gün)
+                const dateOnly = r.created.split(' ')[0];
+                const groupKey = `${r.bayi}_${dateOnly}`;
+                
+                if (!reportGroups[groupKey]) {
+                    reportGroups[groupKey] = { finished: [], drafts: [] };
+                }
+                
+                // Tamamlanma tarihi varsa 'finished', yoksa 'drafts' (N/A) listesine ekle
+                if (r.denetimTamamlanmaTarihi && r.denetimTamamlanmaTarihi !== "") {
+                    reportGroups[groupKey].finished.push(r.id);
+                } else {
+                    reportGroups[groupKey].drafts.push(r.id);
+                }
+            });
+
+            // Silinecekleri belirle: Eğer o grupta en az 1 tamamlanmış rapor VARSA, tüm boşları sil listesine al
+            let idsToDelete = [];
+            for (const key in reportGroups) {
+                if (reportGroups[key].finished.length > 0 && reportGroups[key].drafts.length > 0) {
+                    idsToDelete = idsToDelete.concat(reportGroups[key].drafts);
+                }
+            }
+
+            // UI Güncelleme (Analiz Sonucu)
+            if (idsToDelete.length === 0) {
+                document.getElementById('modal-body').innerHTML = `
+                    <div class="db-analysis-info-card">
+                        <p><i class="fas fa-check-circle" style="color: green;"></i> Tertemiz! Temizlenecek gereksiz (boş) rapor bulunamadı.</p>
+                    </div>`;
+            } else {
+                document.getElementById('modal-body').innerHTML = `
+                    <div class="db-analysis-info-card">
+                        <p><strong>${idsToDelete.length}</strong> adet gereksiz rapor tespit edildi.</p>
+                        <p style="font-size: 12px; margin-top: 5px;">(Bu raporlar, aynı gün tamamlanmış bir raporun yanındaki boş taslaklardır.)</p>
+                    </div>`;
+                
+                document.getElementById('modal-footer').innerHTML += `
+                    <button id="modal-btn-execute-cleanup" class="btn-danger btn-sm">Temizliği Başlat</button>`;
+
+                document.getElementById('modal-btn-execute-cleanup').onclick = async () => {
+                    const execBtn = document.getElementById('modal-btn-execute-cleanup');
+                    execBtn.disabled = true;
+                    execBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşlem Yapılıyor...';
+                    
+                    try {
+                        for (const id of idsToDelete) {
+                            await pb.collection('denetim_raporlari').delete(id);
+                        }
+                        alert("Bakım işlemi başarıyla tamamlandı.");
+                        location.reload();
+                    } catch (err) {
+                        alert("Silme sırasında hata oluştu: " + err.message);
+                        execBtn.disabled = false;
+                    }
+                };
+            }
+
+        } catch (err) {
+            alert("Hata: " + err.message);
+            closeCommonModal();
+        }
+    };
+
     // --- KULLANICI SİLME & VERİ AKTARIMI ---
     document.getElementById('btn-action-user-delete').onclick = async () => {
         const users = await pb.collection('users').getFullList({ sort: 'name' });
@@ -191,7 +272,6 @@ function setupEventListeners(pb) {
     document.getElementById('btn-export-settings').onclick = async () => {
         try {
             const settings = await pb.collection('ayarlar').getFullList();
-            // PocketBase Date filtreleme için en güvenli sorgu: != ""
             const reportsResult = await pb.collection('denetim_raporlari').getList(1, 1, { filter: 'denetimTamamlanmaTarihi != ""', fields: 'id' });
             const reportsCount = reportsResult.totalItems;
 
