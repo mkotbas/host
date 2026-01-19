@@ -90,7 +90,7 @@ function setupEventListeners(pb) {
     document.getElementById('btn-refresh-stats').onclick = () => loadStats(pb);
     document.getElementById('btn-close-modal').onclick = closeCommonModal;
 
-    // --- YENİ: TEMİZLİK & BAKIM FONKSİYONU ---
+    // --- GÜNCELLENDİ: TEMİZLİK & BAKIM FONKSİYONU ---
     document.getElementById('btn-action-clean-maintenance').onclick = async () => {
         // Analiz Aşaması
         showCommonModal('Temizlik & Bakım Analizi', 
@@ -98,35 +98,42 @@ function setupEventListeners(pb) {
             '<button class="btn-secondary btn-sm" onclick="closeCommonModal()">Vazgeç</button>');
 
         try {
+            const todayStr = new Date().toISOString().split('T')[0];
+            
             // Tüm raporları çekiyoruz
             const reports = await pb.collection('denetim_raporlari').getFullList({
                 sort: '-created',
                 fields: 'id,bayi,denetimTamamlanmaTarihi,created'
             });
 
-            // Gruplandırma: Aynı bayi ve aynı gün olanları topluyoruz
-            const reportGroups = {};
+            let idsToDelete = [];
+            const reportGroups = {}; // Aynı bayi ve aynı gün olanları gruplandırmak için
+
             reports.forEach(r => {
-                // Sadece tarih kısmını alıyoruz (Yıl-Ay-Gün)
                 const dateOnly = r.created.split(' ')[0];
-                const groupKey = `${r.bayi}_${dateOnly}`;
+                const isFinished = r.denetimTamamlanmaTarihi && r.denetimTamamlanmaTarihi !== "";
                 
-                if (!reportGroups[groupKey]) {
-                    reportGroups[groupKey] = { finished: [], drafts: [] };
-                }
-                
-                // Tamamlanma tarihi varsa 'finished', yoksa 'drafts' (N/A) listesine ekle
-                if (r.denetimTamamlanmaTarihi && r.denetimTamamlanmaTarihi !== "") {
-                    reportGroups[groupKey].finished.push(r.id);
+                if (!isFinished) {
+                    // 1. DURUM: Geçmiş tarihlerde kalmış ve hiç tamamlanmamış (N/A) raporlar
+                    if (dateOnly < todayStr) {
+                        idsToDelete.push(r.id);
+                    } else {
+                        // 2. DURUM: Bugünün kaydı ise mükerrer kontrolü için listeye ekle
+                        const groupKey = `${r.bayi}_${dateOnly}`;
+                        if (!reportGroups[groupKey]) reportGroups[groupKey] = { finished: false, drafts: [] };
+                        reportGroups[groupKey].drafts.push(r.id);
+                    }
                 } else {
-                    reportGroups[groupKey].drafts.push(r.id);
+                    // Tamamlanmış rapor ise ilgili gün grubunu işaretle
+                    const groupKey = `${r.bayi}_${dateOnly}`;
+                    if (!reportGroups[groupKey]) reportGroups[groupKey] = { finished: true, drafts: [] };
+                    else reportGroups[groupKey].finished = true;
                 }
             });
 
-            // Silinecekleri belirle: Eğer o grupta en az 1 tamamlanmış rapor VARSA, tüm boşları sil listesine al
-            let idsToDelete = [];
+            // Bugünün mükerrerlerini (aynı gün hem tamamlanmış hem boş olanlar) silineceklere ekle
             for (const key in reportGroups) {
-                if (reportGroups[key].finished.length > 0 && reportGroups[key].drafts.length > 0) {
+                if (reportGroups[key].finished && reportGroups[key].drafts.length > 0) {
                     idsToDelete = idsToDelete.concat(reportGroups[key].drafts);
                 }
             }
@@ -135,13 +142,16 @@ function setupEventListeners(pb) {
             if (idsToDelete.length === 0) {
                 document.getElementById('modal-body').innerHTML = `
                     <div class="db-analysis-info-card">
-                        <p><i class="fas fa-check-circle" style="color: green;"></i> Tertemiz! Temizlenecek gereksiz (boş) rapor bulunamadı.</p>
+                        <p><i class="fas fa-check-circle" style="color: green;"></i> Tertemiz! Temizlenecek gereksiz (boş veya eski taslak) rapor bulunamadı.</p>
                     </div>`;
             } else {
                 document.getElementById('modal-body').innerHTML = `
                     <div class="db-analysis-info-card">
                         <p><strong>${idsToDelete.length}</strong> adet gereksiz rapor tespit edildi.</p>
-                        <p style="font-size: 12px; margin-top: 5px;">(Bu raporlar, aynı gün tamamlanmış bir raporun yanındaki boş taslaklardır.)</p>
+                        <ul style="font-size: 12px; margin-top: 10px; text-align: left; padding-left: 20px;">
+                            <li>Eski günlerde yarım bırakılmış (N/A) raporlar temizlenecek.</li>
+                            <li>Aynı gün tamamlanmış bir raporun yanındaki boş taslaklar temizlenecek.</li>
+                        </ul>
                     </div>`;
                 
                 document.getElementById('modal-footer').innerHTML += `
