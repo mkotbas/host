@@ -176,8 +176,10 @@ async function loadMonthlyAuditData() {
             expand: 'bayi'
         });
 
-        const allAuditedThisMonth = records.map(record => record.expand.bayi.bayiKodu);
-        const finalAuditedList = allAuditedThisMonth.filter(bayiKodu => !geriAlinanlarBuAy.includes(bayiKodu));
+        const allAuditedThisMonth = records.map(record => record.expand?.bayi?.bayiKodu).filter(Boolean);
+        const uniqueAuditedList = [...new Set(allAuditedThisMonth)]; 
+        
+        const finalAuditedList = uniqueAuditedList.filter(bayiKodu => !geriAlinanlarBuAy.includes(bayiKodu));
         state.setAuditedThisMonth(finalAuditedList);
 
     } catch (error) {
@@ -301,9 +303,12 @@ export async function saveFormState(reportData, isFinalizing = false) {
         "user": pb.authStore.model.id
     };
     
-    const isAlreadyAudited = state.auditedThisMonth.includes(bayiKodu);
-    if (isFinalizing && !isAlreadyAudited) {
+    if (isFinalizing) {
         dataToSave.denetimTamamlanmaTarihi = new Date().toISOString();
+
+        if (!state.auditedThisMonth.includes(bayiKodu)) {
+            state.setAuditedThisMonth([...state.auditedThisMonth, bayiKodu]);
+        }
     }
 
     if (isFinalizing) showLoadingOverlay("Rapor kaydediliyor...");
@@ -325,6 +330,7 @@ export async function saveFormState(reportData, isFinalizing = false) {
 
 /**
  * Belirli bir bayi için kaydedilmiş raporu buluttan yükler.
+ * GÜNCELLEME: OTOMATİK KURTARMA ÖZELLİĞİ EKLENDİ.
  */
 export async function loadReportForStore(bayiKodu) {
     if (!pb || !pb.authStore.isValid) return null;
@@ -334,19 +340,48 @@ export async function loadReportForStore(bayiKodu) {
         const storeRecord = state.allStores.find(s => s.bayiKodu === bayiKodu);
         if (!storeRecord) throw new Error("Bayi bulunamadı.");
 
-        const reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(`bayi="${storeRecord.id}"`, {
-            sort: '-created'
-        });
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0] + ' 00:00:00';
 
-        state.setCurrentReportId(reportRecord.id);
-        return reportRecord.soruDurumlari;
+        let reportRecord = null;
+
+        try {
+            // ADIM 1: Bu bayi için bugün oluşturulmuş bir rapor var mı? (Taslak veya Tamamlanmış)
+            reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(
+                `bayi="${storeRecord.id}" && created >= "${todayStr}"`, 
+                { sort: '-created' }
+            );
+        } catch (e) {
+            // ADIM 2: Bugün rapor yoksa, bitirilmemiş (N/A) eski bir taslağı var mı?
+            try {
+                reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(
+                    `bayi="${storeRecord.id}" && denetimTamamlanmaTarihi = ""`, 
+                    { sort: '-created' }
+                );
+            } catch (e2) {
+                // ADIM 3: Hiçbiri yoksa en son yapılan raporu getir (Genel düzenleme için)
+                try {
+                    reportRecord = await pb.collection('denetim_raporlari').getFirstListItem(
+                        `bayi="${storeRecord.id}"`, 
+                        { sort: '-created' }
+                    );
+                } catch (e3) {
+                    reportRecord = null;
+                }
+            }
+        }
+
+        if (reportRecord) {
+            state.setCurrentReportId(reportRecord.id);
+            return reportRecord.soruDurumlari;
+        } else {
+            state.setCurrentReportId(null);
+            return null;
+        }
 
     } catch (error) {
-        if (error.status === 404) {
-            state.setCurrentReportId(null);
-        } else {
-            console.error("Rapor yükleme hatası:", error);
-        }
+        console.error("Rapor yükleme hatası:", error);
         return null;
     } finally {
         hideLoadingOverlay();
