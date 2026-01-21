@@ -12,7 +12,7 @@ export async function initializeCalismaTakvimiModule(pb) {
     const settingsKey = `leaveData_${currentUserId}`;
     
     let leaveData = {};
-    let globalAylikHedef = 47;
+    let globalAylikHedef = 0; // Varsayılan değer 0'a çekildi
     let completedReportsThisMonth = [];
 
     /**
@@ -28,10 +28,10 @@ export async function initializeCalismaTakvimiModule(pb) {
         // 2. Global aylık hedefi yükle
         try {
             const targetRecord = await pb.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
-            globalAylikHedef = targetRecord.deger || 47;
+            globalAylikHedef = targetRecord.deger || 0;
             const targetInput = document.getElementById('global-target-input');
             if (targetInput) targetInput.value = globalAylikHedef;
-        } catch (error) { globalAylikHedef = 47; }
+        } catch (error) { globalAylikHedef = 0; }
 
         // 3. Mevcut ayın tamamlanan raporlarını yükle
         try {
@@ -50,7 +50,6 @@ export async function initializeCalismaTakvimiModule(pb) {
                 revertedStoreCodes = reverted.map(r => r.bayi);
             } catch (e) { revertedStoreCodes = []; }
 
-            // Sadece tamamlanma tarihi olanları (finalized) listeye ekle
             completedReportsThisMonth = reports
                 .filter(r => r.denetimTamamlanmaTarihi && !revertedStoreCodes.includes(r.bayi))
                 .map(r => ({
@@ -63,7 +62,9 @@ export async function initializeCalismaTakvimiModule(pb) {
     function setupAdminControls() {
         const adminPanel = document.getElementById('admin-goal-config');
         if (currentUserRole === 'admin' && adminPanel) {
-            adminPanel.style.display = 'block';
+            // Stil yerine CSS sınıfı kullanılarak görünür yapıldı
+            adminPanel.classList.add('is-active');
+            
             const saveBtn = document.getElementById('btn-save-global-target');
             const targetInput = document.getElementById('global-target-input');
             
@@ -151,7 +152,7 @@ export async function initializeCalismaTakvimiModule(pb) {
             let planMap = {};
             let displayTarget = 0;
 
-            const dailyAverage = globalAylikHedef / allWorkDays.length;
+            const dailyAverage = globalAylikHedef / (allWorkDays.length || 1);
             const monthlyAdjustedTarget = Math.max(0, globalAylikHedef - Math.round(dailyAverage * (allWorkDays.length - activeWorkDays.length)));
 
             if (m === currentMonth) {
@@ -226,7 +227,7 @@ export async function initializeCalismaTakvimiModule(pb) {
                         
                         const isCompleted = m === currentMonth && completedReportsThisMonth.some(r => r.date === d);
                         if (isCompleted) {
-                            box.classList.add('completed-audit-cal'); // CSS'deki sınıfa bağlandı
+                            box.classList.add('completed-audit-cal');
                         }
 
                         const count = planMap[d] || 0;
@@ -256,7 +257,7 @@ export async function initializeCalismaTakvimiModule(pb) {
                     }
                 }
                 
-                box.title = explanation; // Fare ile üzerine gelince çıkan yazı
+                box.title = explanation;
                 grid.appendChild(box);
             }
             container.appendChild(card);

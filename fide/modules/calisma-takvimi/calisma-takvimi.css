@@ -4,9 +4,15 @@
 
 /* --- Admin Hedef Belirleme Kartı --- */
 .calendar-config-card {
+    display: none; /* Varsayılan olarak gizli tutulur */
     background: #ffffff; border-radius: 16px; padding: 1rem 1.5rem;
     box-shadow: 0 8px 32px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
     margin-bottom: 2rem; border-left: 5px solid #cc0000;
+}
+
+/* Admin yetkisi olduğunda bu sınıf eklenerek görünür yapılır */
+.calendar-config-card.is-active {
+    display: block;
 }
 
 .config-content-wrapper {
@@ -128,7 +134,7 @@
     text-align: center; padding: 0.75rem 0.2rem; border-radius: 8px;
     font-weight: 600; position: relative; background: #f8fafc;
     color: #94a3b8; user-select: none; font-size: 0.85rem;
-    border: 2px solid transparent; /* Çerçeve geçişi için temel */
+    border: 2px solid transparent;
 }
 
 .day-cal.interactive-cal { cursor: pointer; }
@@ -136,10 +142,9 @@
 
 .day-cal.workday-cal { background: #f1f5f9; color: #475569; }
 
-/* Hedef Sayısına Göre Renkler */
-.day-cal.three-cal { background: #f59e0b !important; color: white !important; } /* Turuncu */
-.day-cal.two-cal { background: #10b981 !important; color: white !important; }   /* Yeşil */
-.day-cal.one-cal { background: #3b82f6 !important; color: white !important; }   /* Mavi */
+.day-cal.three-cal { background: #f59e0b !important; color: white !important; }
+.day-cal.two-cal { background: #10b981 !important; color: white !important; }
+.day-cal.one-cal { background: #3b82f6 !important; color: white !important; }
 
 .day-cal.leave-cal { 
     background: #ef4444 !important; 
@@ -148,7 +153,6 @@
     opacity: 0.8; 
 }
 
-/* YENİ: Tamamlanan Denetim Yeşil Çerçeve Sınıfı */
 .day-cal.completed-audit-cal {
     border: 2px solid #10b981 !important;
 }
@@ -162,7 +166,6 @@
 
 .day-cal.empty-cal { visibility: hidden; }
 
-/* --- Responsive --- */
 @media (max-width: 768px) {
     .config-content-wrapper { flex-direction: column; align-items: flex-start; }
     .input-group-cal { width: 100%; }
