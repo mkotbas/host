@@ -22,7 +22,7 @@ let pbInstance = null;
 let currentUserRole = null;
 let currentUserId = null;
 
-// --- GÜNCELLENMİŞ HEDEF DAĞITIM SİSTEMİ ---
+// --- DİNAMİK HEDEF VE DAĞITIM SİSTEMİ ---
 
 function getWorkDaysOfMonth(year, month) {
     const days = [];
@@ -48,18 +48,14 @@ function seededShuffle(array, seed) {
     return array;
 }
 
-/**
- * Borç Aktarımlı Dinamik Hesaplama
- */
 function calculateTodayRequirement() {
     const today = new Date();
     const year = today.getFullYear();
     const month = today.getMonth();
     const day = today.getDate();
-    const dayOfWeek = today.getDay();
     const todayStart = new Date(today.setHours(0,0,0,0)).getTime();
 
-    if (dayOfWeek === 0 || dayOfWeek === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
+    if (today.getDay() === 0 || today.getDay() === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
 
     const allWorkDays = getWorkDaysOfMonth(year, month);
     const activeWorkDays = allWorkDays.filter(d => !leaveDataBulut[`${year}-${month}-${d}`]);
@@ -68,10 +64,7 @@ function calculateTodayRequirement() {
     const dailyAverage = baseTarget / allWorkDays.length;
     const monthlyAdjustedTarget = Math.max(0, baseTarget - Math.round(dailyAverage * (allWorkDays.length - activeWorkDays.length)));
 
-    // ÖNEMLİ: Mükerrer kayıtlar elenmiş (deduplicated) veri üzerinden kalan hedef hesabı
-    const completedTotalCount = auditedStoreCodesCurrentMonth.length;
     const completedBeforeToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp < todayStart).length;
-    
     const remainingTargetTotal = Math.max(0, monthlyAdjustedTarget - completedBeforeToday);
     const remainingActiveDays = activeWorkDays.filter(d => d >= day);
 
@@ -80,139 +73,98 @@ function calculateTodayRequirement() {
     const basePerDay = Math.floor(remainingTargetTotal / remainingActiveDays.length);
     const extras = remainingTargetTotal % remainingActiveDays.length;
 
-    const distributionSeed = year + month + remainingActiveDays.length + remainingTargetTotal;
-    const shuffledRemaining = seededShuffle([...remainingActiveDays], distributionSeed);
+    const seed = year + month + remainingActiveDays.length + remainingTargetTotal;
+    const shuffledRemaining = seededShuffle([...remainingActiveDays], seed);
     
-    const dayIndexInRemaining = shuffledRemaining.indexOf(day);
+    const dayIndex = shuffledRemaining.indexOf(day);
     let todayPlanned = 0;
-    if (dayIndexInRemaining !== -1) {
-        todayPlanned = basePerDay + (dayIndexInRemaining < extras ? 1 : 0);
+    if (dayIndex !== -1) {
+        todayPlanned = basePerDay + (dayIndex < extras ? 1 : 0);
     }
 
     const completedToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp >= todayStart).length;
     return Math.max(0, todayPlanned - completedToday);
 }
 
-// --- BAŞLATMA VE VERİ YÜKLEME ---
+// --- MODÜL BAŞLATMA VE VERİ YÖNETİMİ ---
 
 export async function initializeDenetimTakipModule(pb) {
     pbInstance = pb;
-    const loadingOverlay = document.getElementById('loading-overlay');
-    if (loadingOverlay) loadingOverlay.style.display = 'flex';
-
     if (pbInstance && pbInstance.authStore.isValid) {
         currentUserRole = pbInstance.authStore.model.role;
         currentUserId = pbInstance.authStore.model.id;
-
         setupModuleEventListeners(currentUserRole);
         await loadSettings(); 
         await loadMasterData();
-
         if (currentUserRole === 'admin') {
-            const userSelector = document.getElementById('admin-user-selector-container');
-            if (userSelector) userSelector.style.display = 'block';
+            document.getElementById('admin-user-selector-container').style.display = 'block';
             await populateUserFilterDropdown();
         }
-
         applyDataFilterAndRunDashboard('my_data');
-
-    } else {
-        const uploadArea = document.getElementById('upload-area');
-        if (uploadArea) {
-            uploadArea.innerHTML = '<p style="text-align: center; color: var(--danger);">Giriş yapın.</p>';
-            uploadArea.style.display = 'block';
-        }
     }
-    if (loadingOverlay) loadingOverlay.style.display = 'none';
 }
 
 async function loadSettings() {
     try {
         const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
         globalAylikHedef = record.deger || 0;
-    } catch (error) { globalAylikHedef = 0; }
-
+    } catch (e) { globalAylikHedef = 0; }
     try {
-        const settingsKey = `leaveData_${currentUserId}`;
-        const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
+        const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="leaveData_${currentUserId}"`);
         leaveDataBulut = leaveRecord.deger || {};
-    } catch (error) { leaveDataBulut = {}; }
+    } catch (e) { leaveDataBulut = {}; }
 }
 
 async function loadMasterData() {
-    if (!pbInstance.authStore.isValid) return;
     try {
         allStoresMaster = await pbInstance.collection('bayiler').getFullList({ sort: 'bayiAdi' });
-        if (allStoresMaster.length > 0) {
-            const uploadArea = document.getElementById('upload-area');
-            const loadedArea = document.getElementById('loaded-data-area');
-            if (uploadArea) uploadArea.style.display = 'none';
-            if (loadedArea) loadedArea.style.display = 'block';
-        }
-        const today = new Date();
-        const firstDayOfYear = new Date(today.getFullYear(), 0, 1).toISOString();
+        const firstDay = new Date(new Date().getFullYear(), 0, 1).toISOString();
         allReportsMaster = await pbInstance.collection('denetim_raporlari').getFullList({
-            filter: `denetimTamamlanmaTarihi != null && denetimTamamlanmaTarihi >= "${firstDayOfYear}"`,
-            expand: 'bayi',
-            sort: '-denetimTamamlanmaTarihi'
+            filter: `denetimTamamlanmaTarihi != null && denetimTamamlanmaTarihi >= "${firstDay}"`,
+            expand: 'bayi', sort: '-denetimTamamlanmaTarihi'
         });
         allGeriAlinanMaster = await pbInstance.collection('denetim_geri_alinanlar').getFullList({
-            filter: `yil_ay ~ "${today.getFullYear()}-"`,
-            expand: 'bayi'
+            filter: `yil_ay ~ "${new Date().getFullYear()}-"`, expand: 'bayi'
         });
-    } catch (error) { console.error("Veri hatası:", error); }
+    } catch (e) { console.error("Veri hatası:", e); }
 }
 
 async function populateUserFilterDropdown() {
-    if (currentUserRole !== 'admin') return;
     try {
         allUsers = await pbInstance.collection('users').getFullList({ sort: 'name' });
-        const selectElement = document.getElementById('admin-user-filter');
-        if (!selectElement) return;
-        selectElement.innerHTML = `<option value="my_data" selected>Benim Verilerim (Admin)</option><option value="global">Genel Bakış (Tüm Sistem)</option>`;
-        allUsers.forEach(user => {
-            if (user.id !== currentUserId) {
-                selectElement.innerHTML += `<option value="${user.id}">${user.name || user.email}</option>`;
-            }
+        const sel = document.getElementById('admin-user-filter');
+        sel.innerHTML = `<option value="my_data">Benim Verilerim (Admin)</option><option value="global">Genel Bakış</option>`;
+        allUsers.filter(u => u.id !== currentUserId).forEach(u => {
+            sel.innerHTML += `<option value="${u.id}">${u.name || u.email}</option>`;
         });
-    } catch (error) { }
+    } catch (e) {}
 }
 
 function applyDataFilterAndRunDashboard(viewId) {
     const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    const currentMonthKey = `${currentYear}-${currentMonth}`;
+    const curMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
 
-    if (currentUserRole !== 'admin') allStores = [...allStoresMaster];
-    else {
-        if (viewId === 'global') allStores = [...allStoresMaster];
-        else if (viewId === 'my_data') allStores = allStoresMaster.filter(s => s.sorumlu_kullanici === currentUserId);
-        else allStores = allStoresMaster.filter(s => s.sorumlu_kullanici === viewId);
-    }
+    if (currentUserRole !== 'admin' || viewId === 'global') allStores = [...allStoresMaster];
+    else allStores = allStoresMaster.filter(s => s.sorumlu_kullanici === (viewId === 'my_data' ? currentUserId : viewId));
 
-    const geriAlinanBayiKodlariAy = new Set();
-    allGeriAlinanMaster.forEach(record => {
-        if (record.expand?.bayi && record.yil_ay === currentMonthKey) geriAlinanBayiKodlariAy.add(record.expand.bayi.bayiKodu);
-    });
+    const geriAlinanlar = new Set();
+    allGeriAlinanMaster.forEach(r => { if(r.expand?.bayi && r.yil_ay === curMonthKey) geriAlinanlar.add(r.expand.bayi.bayiKodu); });
 
-    let filteredReports = (currentUserRole !== 'admin' || viewId === 'global') ? [...allReportsMaster] : (viewId === 'my_data' ? allReportsMaster.filter(r => r.user === currentUserId) : allReportsMaster.filter(r => r.user === viewId));
+    let filteredReports = (currentUserRole !== 'admin' || viewId === 'global') ? [...allReportsMaster] : allReportsMaster.filter(r => r.user === (viewId === 'my_data' ? currentUserId : viewId));
 
-    const monthlyAuditsMap = new Map();
+    const monthlyMap = new Map();
     const yearlyCodes = new Set();
-    filteredReports.forEach(record => {
-        if (!record.expand?.bayi) return;
-        const storeCode = record.expand.bayi.bayiKodu;
-        const reportDate = new Date(record.denetimTamamlanmaTarihi);
-        yearlyCodes.add(storeCode);
-        if (reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear && !geriAlinanBayiKodlariAy.has(storeCode)) {
-            if (!monthlyAuditsMap.has(storeCode)) monthlyAuditsMap.set(storeCode, { code: storeCode, timestamp: reportDate.getTime() });
+    filteredReports.forEach(r => {
+        if (!r.expand?.bayi) return;
+        const code = r.expand.bayi.bayiKodu;
+        const d = new Date(r.denetimTamamlanmaTarihi);
+        yearlyCodes.add(code);
+        if (d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear() && !geriAlinanlar.has(code)) {
+            if (!monthlyMap.has(code)) monthlyMap.set(code, { code, timestamp: d.getTime() });
         }
     });
-    
-    auditedStoreCodesCurrentMonth = Array.from(monthlyAuditsMap.values());
+    auditedStoreCodesCurrentMonth = Array.from(monthlyMap.values());
     auditedStoreCodesCurrentYear = Array.from(yearlyCodes);
-    aylikHedef = globalAylikHedef; 
     runDashboard();
 }
 
@@ -224,149 +176,86 @@ function runDashboard() {
 
 function calculateAndDisplayDashboard() {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
+    const allWorkDays = getWorkDaysOfMonth(today.getFullYear(), today.getMonth());
+    let leaves = 0;
+    allWorkDays.forEach(d => { if (leaveDataBulut[`${today.getFullYear()}-${today.getMonth()}-${d}`]) leaves++; });
     
-    const allWorkDays = getWorkDaysOfMonth(year, month);
-    let currentMonthWorkdayLeaves = 0;
-    allWorkDays.forEach(d => { if (leaveDataBulut[`${year}-${month}-${d}`]) currentMonthWorkdayLeaves++; });
-    
-    const baseTarget = globalAylikHedef || 47;
-    const dailyAverage = baseTarget / allWorkDays.length;
-    const adjustedTarget = Math.max(0, baseTarget - Math.round(dailyAverage * currentMonthWorkdayLeaves));
+    const base = globalAylikHedef || 47;
+    const adjustedTarget = Math.max(0, base - Math.round((base / allWorkDays.length) * leaves));
 
-    let displayTarget, displayAudited;
+    const target = currentViewMode === 'monthly' ? adjustedTarget : allStores.length;
+    const audited = currentViewMode === 'monthly' ? auditedStoreCodesCurrentMonth.length : auditedStoreCodesCurrentYear.length;
+
+    document.getElementById('dashboard-title').innerHTML = `<i class="fas fa-calendar-day"></i> ${today.getFullYear()} ${monthNames[today.getMonth()]} Performansı`;
+    document.getElementById('total-stores-count').textContent = target;
+    document.getElementById('audited-stores-count').textContent = audited;
+    document.getElementById('remaining-stores-count').textContent = Math.max(0, target - audited);
+    document.getElementById('work-days-count').textContent = getRemainingWorkdays();
+    
     if (currentViewMode === 'monthly') {
-        displayTarget = adjustedTarget;
-        displayAudited = auditedStoreCodesCurrentMonth.length;
-        const workDaysCard = document.getElementById('work-days-card');
-        const reqCard = document.getElementById('today-required-card');
-        if (workDaysCard) workDaysCard.style.display = 'block';
-        if (reqCard) {
-            reqCard.style.display = 'block';
-            const reqCount = document.getElementById('today-required-count');
-            if (reqCount) reqCount.textContent = calculateTodayRequirement();
-        }
+        document.getElementById('work-days-card').style.display = 'block';
+        document.getElementById('today-required-card').style.display = 'block';
+        document.getElementById('today-required-count').textContent = calculateTodayRequirement();
     } else {
-        displayTarget = allStores.length;
-        displayAudited = auditedStoreCodesCurrentYear.length;
-        const workDaysCard = document.getElementById('work-days-card');
-        const reqCard = document.getElementById('today-required-card');
-        if (workDaysCard) workDaysCard.style.display = 'none';
-        if (reqCard) reqCard.style.display = 'none';
+        document.getElementById('work-days-card').style.display = 'none';
+        document.getElementById('today-required-card').style.display = 'none';
     }
-
-    const titleEl = document.getElementById('dashboard-title');
-    if (titleEl) titleEl.innerHTML = `<i class="fas fa-${currentViewMode === 'monthly' ? 'calendar-day' : 'calendar-alt'}"></i> ${year} ${monthNames[month]} Performansı`;
-    
-    const targetCount = document.getElementById('total-stores-count');
-    if (targetCount) targetCount.textContent = displayTarget;
-    
-    const auditedCount = document.getElementById('audited-stores-count');
-    if (auditedCount) auditedCount.textContent = displayAudited;
-    
-    const remCount = document.getElementById('remaining-stores-count');
-    if (remCount) remCount.textContent = Math.max(0, displayTarget - displayAudited);
-    
-    const workCount = document.getElementById('work-days-count');
-    if (workCount) workCount.textContent = getRemainingWorkdays();
-    
     renderAuditedStores(); 
-    const dashContent = document.getElementById('dashboard-content');
-    if (dashContent) dashContent.style.display = 'block';
+    document.getElementById('dashboard-content').style.display = 'block';
 }
 
-function setupModuleEventListeners(userRole) {
-    if (document.body.dataset.denetimTakipListenersAttached) return;
-    document.body.dataset.denetimTakipListenersAttached = 'true';
-
-    window.addEventListener('calendarDataChanged', async (e) => {
-        await loadSettings();
-        leaveDataBulut = e.detail;
-        calculateAndDisplayDashboard();
-    });
-
-    if (userRole === 'admin') {
-        const userFilter = document.getElementById('admin-user-filter');
-        if (userFilter) userFilter.onchange = (e) => applyDataFilterAndRunDashboard(e.target.value);
-    }
-
-    const modeButtons = document.querySelectorAll('#view-mode-toggle button');
-    modeButtons.forEach(btn => {
+function setupModuleEventListeners(role) {
+    window.addEventListener('calendarDataChanged', async (e) => { await loadSettings(); leaveDataBulut = e.detail; calculateAndDisplayDashboard(); });
+    if (role === 'admin') document.getElementById('admin-user-filter').onchange = (e) => applyDataFilterAndRunDashboard(e.target.value);
+    document.querySelectorAll('#view-mode-toggle button').forEach(btn => {
         btn.onclick = (e) => {
-            modeButtons.forEach(b => { b.classList.remove('btn-primary', 'active'); b.classList.add('btn-light'); });
-            e.target.classList.replace('btn-light', 'btn-primary');
-            e.target.classList.add('active');
+            document.querySelectorAll('#view-mode-toggle button').forEach(b => b.classList.remove('active', 'btn-primary'));
+            e.target.classList.add('active', 'btn-primary');
             currentViewMode = e.target.dataset.mode;
             calculateAndDisplayDashboard();
         };
     });
-
     ['bolge-filter', 'yonetmen-filter', 'sehir-filter', 'ilce-filter'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.onchange = applyAndRepopulateFilters;
+        document.getElementById(id).onchange = applyAndRepopulateFilters;
     });
-
-    const cityFilter = document.getElementById('local-city-filter');
-    if (cityFilter) {
-        cityFilter.onchange = (e) => {
-            localCityFilterValue = e.target.value;
-            renderRemainingStores(currentGlobalFilteredStores); 
-        };
-    }
+    document.getElementById('local-city-filter').onchange = (e) => { localCityFilterValue = e.target.value; renderRemainingStores(currentGlobalFilteredStores); };
 }
 
 function updateAllFilterOptions() {
     const filters = {'bolge-filter': 'bolge', 'yonetmen-filter': 'yonetmen', 'sehir-filter': 'sehir', 'ilce-filter': 'ilce'};
     Object.keys(filters).forEach(id => {
         const sel = document.getElementById(id);
-        if (!sel) return;
-        const field = filters[id];
         const prev = sel.value;
         const available = allStores.filter(s => Object.keys(filters).every(fId => {
-            const fEl = document.getElementById(fId);
-            return !fEl || fId === id || fEl.value === 'Tümü' || s[filters[fId]] === fEl.value;
+            const fVal = document.getElementById(fId).value;
+            return fId === id || fVal === 'Tümü' || s[filters[fId]] === fVal;
         }));
-        const vals = [...new Set(available.map(s => s[field]))].filter(Boolean).sort((a,b) => a.localeCompare(b, 'tr'));
+        const vals = [...new Set(available.map(s => s[filters[id]]))].filter(Boolean).sort((a,b) => a.localeCompare(b, 'tr'));
         sel.innerHTML = '<option value="Tümü">Tümü</option>' + vals.map(v => `<option value="${v}">${v}</option>`).join('');
         sel.value = vals.includes(prev) ? prev : 'Tümü';
     });
 }
 
 function applyAndRepopulateFilters() {
-    const getVal = (id) => {
-        const el = document.getElementById(id);
-        return el ? el.value : 'Tümü';
-    };
-    const sel = { 
-        bolge: getVal('bolge-filter'), 
-        yonetmen: getVal('yonetmen-filter'), 
-        sehir: getVal('sehir-filter'), 
-        ilce: getVal('ilce-filter') 
-    };
-    currentGlobalFilteredStores = allStores.filter(s => (sel.bolge === 'Tümü' || s.bolge === sel.bolge) && (sel.yonetmen === 'Tümü' || s.yonetmen === sel.yonetmen) && (sel.sehir === 'Tümü' || s.sehir === sel.sehir) && (sel.ilce === 'Tümü' || s.ilce === sel.ilce));
+    const get = (id) => document.getElementById(id).value;
+    const s = { b: get('bolge-filter'), y: get('yonetmen-filter'), h: get('sehir-filter'), i: get('ilce-filter') };
+    currentGlobalFilteredStores = allStores.filter(st => (s.b === 'Tümü' || st.bolge === s.b) && (s.y === 'Tümü' || st.yonetmen === s.y) && (s.h === 'Tümü' || st.sehir === s.h) && (s.i === 'Tümü' || st.ilce === s.i));
     updateAllFilterOptions();
     renderRemainingStores(currentGlobalFilteredStores); 
 }
 
-function renderRemainingStores(filtered) {
+function renderRemainingStores(f) {
     const cont = document.getElementById('denetlenecek-bayiler-container');
-    if (!cont) return;
     const audited = (currentViewMode === 'monthly') ? auditedStoreCodesCurrentMonth.map(a => a.code) : auditedStoreCodesCurrentYear;
-    const rem = filtered.filter(s => !audited.includes(s.bayiKodu));
+    const rem = f.filter(s => !audited.includes(s.bayiKodu));
     cont.innerHTML = rem.length ? '' : '<p class="empty-list-message">Kayıt yok.</p>';
     if (!rem.length) return;
-
+    const cities = [...new Set(rem.map(s => s.sehir))].sort((a,b) => a.localeCompare(b, 'tr'));
     const lSel = document.getElementById('local-city-filter');
-    if (lSel) {
-        const cities = [...new Set(rem.map(s => s.sehir))].sort((a,b) => a.localeCompare(b, 'tr'));
-        lSel.innerHTML = '<option value="Tümü">Tüm Şehirler</option>' + cities.map(c => `<option value="${c}">${c}</option>`).join('');
-        lSel.value = cities.includes(localCityFilterValue) ? localCityFilterValue : 'Tümü';
-    }
-
+    lSel.innerHTML = '<option value="Tümü">Tüm Şehirler</option>' + cities.map(c => `<option value="${c}">${c}</option>`).join('');
+    lSel.value = cities.includes(localCityFilterValue) ? localCityFilterValue : 'Tümü';
     const show = localCityFilterValue === 'Tümü' ? rem : rem.filter(s => s.sehir === localCityFilterValue);
     const byReg = show.reduce((acc, s) => { const r = s.bolge || 'Bölgesiz'; (acc[r] = acc[r] || []).push(s); return acc; }, {});
-
     Object.keys(byReg).sort().forEach(r => {
         const total = allStores.filter(s => (s.bolge || 'Bölgesiz') === r).length;
         const done = allStores.filter(s => (s.bolge || 'Bölgesiz') === r && audited.includes(s.bayiKodu)).length;
@@ -377,7 +266,6 @@ function renderRemainingStores(filtered) {
 
 function renderAuditedStores() {
     const cont = document.getElementById('denetlenen-bayiler-container');
-    if (!cont) return;
     const data = (currentViewMode === 'monthly') ? auditedStoreCodesCurrentMonth : auditedStoreCodesCurrentYear.map(c => ({code: c, timestamp: 0}));
     if (!data.length) { cont.innerHTML = '<p class="empty-list-message">Kayıt yok.</p>'; return; }
     const details = data.map(a => ({...(allStoresMaster.find(s => s.bayiKodu === a.code) || {bayiAdi: 'Bilinmeyen'}), timestamp: a.timestamp})).sort((a,b) => b.timestamp - a.timestamp);
@@ -386,24 +274,21 @@ function renderAuditedStores() {
 
 function getRemainingWorkdays() {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const lastDay = new Date(year, month + 1, 0).getDate();
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
     let rem = 0; 
     for (let d = today.getDate(); d <= lastDay; d++) { 
-        const checkDate = new Date(year, month, d);
-        if ([1,2,3,4,5].includes(checkDate.getDay()) && !leaveDataBulut[`${year}-${month}-${d}`]) rem++;
+        const date = new Date(today.getFullYear(), today.getMonth(), d);
+        if ([1,2,3,4,5].includes(date.getDay()) && !leaveDataBulut[`${today.getFullYear()}-${today.getMonth()}-${d}`]) rem++;
     }
     return rem;
 }
 
 window.revertAudit = async (code) => {
     const s = allStoresMaster.find(x => x.bayiKodu === code);
-    if (!confirm("Geri almak istiyor musunuz?")) return;
+    if (!confirm("Denetim kaydını geri almak istiyor musunuz?")) return;
     try {
         await pbInstance.collection('denetim_geri_alinanlar').create({yil_ay: `${new Date().getFullYear()}-${new Date().getMonth()}`, bayi: s.id});
         await loadMasterData();
-        const adminFilter = document.getElementById('admin-user-filter');
-        applyDataFilterAndRunDashboard(adminFilter ? adminFilter.value : 'my_data');
-    } catch (e) { }
+        applyDataFilterAndRunDashboard(document.getElementById('admin-user-filter')?.value || 'my_data');
+    } catch (e) {}
 };
