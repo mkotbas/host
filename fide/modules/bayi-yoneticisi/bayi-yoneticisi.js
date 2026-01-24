@@ -30,7 +30,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     const container = document.getElementById('bayi-yonetici-container');
     if (!container) return; 
 
-    const mainTable = container.querySelector('#bayi-table'); 
     const tableBody = container.querySelector('#bayi-table-body');
     const loadingSpinner = container.querySelector('#loading-spinner');
     
@@ -55,34 +54,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         { key: 'sorumlu_kullanici_email', label: 'Denetim Uzmanı' } 
     ];
     const allFieldKeys = fields.map(f => f.key);
-
-    const dbFieldsForMapping = [
-        { key: 'bayiKodu', label: 'Bayi Kodu (Zorunlu)' },
-        { key: 'bayiAdi', label: 'Bayi Adı' },
-        { key: 'bolge', label: 'Bölge' },
-        { key: 'sehir', label: 'Şehir' },
-        { key: 'ilce', label: 'İlçe' },
-        { key: 'yonetmen', label: 'Bayi Yönetmeni' }, 
-        { key: 'email', label: 'Mail Adresi' },
-        { key: 'sorumlu_kullanici', label: 'Denetim Uzmanı (Email ile)' }
-    ];
-    
-    const requiredFields = ['bayiKodu'];
-    let excelHeaders = []; 
-    let excelData = [];    
-
-    const importModal = container.querySelector('#import-modal');
-    const importStep1 = container.querySelector('#import-step-1');
-    const importStep2 = container.querySelector('#import-step-2');
-    const importStep3 = container.querySelector('#import-step-3');
-    const excelFileInput = container.querySelector('#excel-file-input');
-    const btnProcessExcel = container.querySelector('#btn-process-excel');
-    const mappingContainer = container.querySelector('#mapping-container');
-    const importWarning = container.querySelector('#import-warning');
-    const btnExecuteImport = container.querySelector('#btn-execute-import');
-    const importLoadingOverlay = container.querySelector('#import-loading-overlay');
-    const importLoadingText = container.querySelector('#import-loading-text');
-    const importResults = container.querySelector('#import-results');
 
     const btnOpenBulkAssignModal = container.querySelector('#btn-open-bulk-assign-modal');
     const bulkAssignModal = container.querySelector('#bulk-assign-modal');
@@ -120,14 +91,12 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             });
 
             populateUserDropdown(); 
-            populateGlobalUserDropdown(); 
             populateColumnCheckboxes(); 
             setupFilterListeners(); 
             applyAllFilters(); 
             
         } catch (error) {
             console.error('Veri yüklenirken hata:', error);
-            alert('Bayi listesi yüklenirken bir sorun oluştu. Lütfen sayfayı yenileyin.');
         } finally {
             showLoading(false);
         }
@@ -173,26 +142,10 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         if (!uzmanSelect) return;
         uzmanSelect.innerHTML = '<option value="">Atanmamış</option>'; 
         allUsers.forEach(user => {
-            if (user.role === 'client' || user.role === 'admin') {
-                const option = document.createElement('option');
-                option.value = user.id;
-                option.textContent = user.name || user.email;
-                uzmanSelect.appendChild(option);
-            }
-        });
-    }
-
-    function populateGlobalUserDropdown() {
-        const globalSelect = container.querySelector('#import-global-user-select');
-        if (!globalSelect) return;
-        globalSelect.innerHTML = '<option value="">Tüm Bayileri Bu Kullanıcıya Ata (Opsiyonel)</option>';
-        allUsers.forEach(user => {
-            if (user.role === 'client' || user.role === 'admin') {
-                const option = document.createElement('option');
-                option.value = user.id;
-                option.textContent = user.name || user.email;
-                globalSelect.appendChild(option);
-            }
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.name || user.email;
+            uzmanSelect.appendChild(option);
         });
     }
 
@@ -278,8 +231,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
 
         let filteredBayiler = allBayiler.filter(bayi => {
             let passDropdown = true;
-            
-            // Değer kontrolü yardımcı fonksiyonu: null, undefined veya boşluktan oluşan değerleri "yok" kabul eder.
             const isEmpty = (val) => !val || val.toString().trim() === '';
 
             switch (filterValue) {
@@ -306,43 +257,71 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     }
 
     function applyColumnVisibility() {
-        if (!columnCheckboxesContainer || !mainTable) return;
+        if (!columnCheckboxesContainer) return;
         const selectedKeys = Array.from(columnCheckboxesContainer.querySelectorAll('.column-check:checked')).map(cb => cb.value);
         const showAll = selectedKeys.length === 0;
         allFieldKeys.forEach(key => {
-            const cells = mainTable.querySelectorAll(`[data-column="${key}"]`);
+            const cells = container.querySelectorAll(`[data-column="${key}"]`);
             cells.forEach(cell => cell.style.display = (showAll || selectedKeys.includes(key)) ? 'table-cell' : 'none');
         });
-        mainTable.querySelectorAll('[data-column="eylemler"]').forEach(cell => cell.style.display = 'table-cell');
+        container.querySelectorAll('[data-column="eylemler"]').forEach(cell => cell.style.display = 'table-cell');
     }
 
+    /**
+     * Toplu Atama Modalı ve Dinamik Filtreleme
+     */
     function openBulkAssignModal() {
         bulkAssignFilterBolge.innerHTML = '';
         bulkAssignFilterSehir.innerHTML = '';
         bulkAssignFilterYonetmen.innerHTML = '';
         bulkAssignTextInput.value = '';
         bulkAssignTypeSelect.value = 'sorumlu_kullanici';
-        
-        const getUniqueList = (key) => [...new Set(allBayiler.map(b => b[key]).filter(Boolean))].sort();
-        
-        const buildChecks = (list, container) => {
+
+        // Dinamik Filtre Yenileme Fonksiyonu
+        function refreshBulkFilters() {
+            const selBolge = Array.from(bulkAssignFilterBolge.querySelectorAll('input:checked')).map(c => c.value);
+            const selSehir = Array.from(bulkAssignFilterSehir.querySelectorAll('input:checked')).map(c => c.value);
+            const selYon = Array.from(bulkAssignFilterYonetmen.querySelectorAll('input:checked')).map(c => c.value);
+
+            // Şehir listesini Bölge seçimine göre süz
+            let cityPool = allBayiler;
+            if (selBolge.length > 0) cityPool = cityPool.filter(b => selBolge.includes(b.bolge));
+            const availableCities = [...new Set(cityPool.map(b => b.sehir).filter(Boolean))].sort();
+            renderCheckboxList(bulkAssignFilterSehir, availableCities, selSehir, refreshBulkFilters);
+
+            // Yönetmen listesini Bölge ve Şehir seçimine göre süz
+            let yonPool = cityPool;
+            if (selSehir.length > 0) yonPool = yonPool.filter(b => selSehir.includes(b.sehir));
+            const availableYons = [...new Set(yonPool.map(b => b.yonetmen).filter(Boolean))].sort();
+            renderCheckboxList(bulkAssignFilterYonetmen, availableYons, selYon, refreshBulkFilters);
+        }
+
+        // Checkbox listesi oluşturma yardımcı fonksiyonu
+        function renderCheckboxList(containerEl, list, selectedValues, onChange) {
+            containerEl.innerHTML = '';
             list.forEach(val => {
                 const label = document.createElement('label');
-                label.innerHTML = `<input type="checkbox" value="${val}"> ${val}`;
-                container.appendChild(label);
+                const isChecked = selectedValues.includes(val);
+                label.innerHTML = `<input type="checkbox" value="${val}" ${isChecked ? 'checked' : ''}> ${val}`;
+                label.querySelector('input').onchange = onChange;
+                containerEl.appendChild(label);
             });
-        };
+        }
 
-        buildChecks(getUniqueList('bolge'), bulkAssignFilterBolge);
-        buildChecks(getUniqueList('sehir'), bulkAssignFilterSehir);
-        buildChecks(getUniqueList('yonetmen'), bulkAssignFilterYonetmen);
+        // Ana Bölgeleri Oluştur
+        const allBolgeler = [...new Set(allBayiler.map(b => b.bolge).filter(Boolean))].sort();
+        renderCheckboxList(bulkAssignFilterBolge, allBolgeler, [], refreshBulkFilters);
+        
+        // İlk yüklemede diğerlerini tetikle
+        refreshBulkFilters();
 
+        // Kullanıcı seçim listesi
         bulkAssignUserSelect.innerHTML = '<option value="">Seçiniz...</option>';
         allUsers.forEach(u => {
-            if (u.role === 'client' || u.role === 'admin') {
-                const o = document.createElement('option'); o.value = u.id; o.textContent = u.name || u.email;
-                bulkAssignUserSelect.appendChild(o);
-            }
+            const o = document.createElement('option'); 
+            o.value = u.id; 
+            o.textContent = u.name || u.email;
+            bulkAssignUserSelect.appendChild(o);
         });
 
         bulkAssignUserContainer.style.display = 'block';
@@ -375,7 +354,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         showBulkAssignLoading(true, 'Güncelleniyor...');
         for (const b of targets) {
             const data = {}; data[type] = val;
-            try { await pb.collection('bayiler').update(b.id, data); } catch (e) {}
+            try { await pb.collection('bayiler').update(b.id, data); } catch (e) { console.error(e); }
         }
         showBulkAssignLoading(false);
         bulkAssignModal.style.display = 'none';
@@ -409,6 +388,5 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         bulkAssignTextContainer.style.display = isUser ? 'none' : 'block';
     });
 
-    // Verileri yükle
     loadModuleData();
 }
