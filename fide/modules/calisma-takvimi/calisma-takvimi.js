@@ -12,20 +12,15 @@ export async function initializeCalismaTakvimiModule(pb) {
     const settingsKey = `leaveData_${currentUserId}`;
     
     let leaveData = {};
-    let globalAylikHedef = 0; // Varsayılan değer 0'a çekildi
+    let globalAylikHedef = 0; 
     let completedReportsThisMonth = [];
 
-    /**
-     * Verileri PocketBase'den yükler
-     */
     async function loadInitialData() {
-        // 1. İzin verilerini yükle
         try {
             const leaveRecord = await pb.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
             leaveData = leaveRecord.deger || {};
         } catch (error) { leaveData = {}; }
 
-        // 2. Global aylık hedefi yükle
         try {
             const targetRecord = await pb.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
             globalAylikHedef = targetRecord.deger || 0;
@@ -33,7 +28,6 @@ export async function initializeCalismaTakvimiModule(pb) {
             if (targetInput) targetInput.value = globalAylikHedef;
         } catch (error) { globalAylikHedef = 0; }
 
-        // 3. Mevcut ayın tamamlanan raporlarını yükle
         try {
             const firstDayOfMonth = new Date(currentYear, currentMonth, 1).toISOString();
             const reports = await pb.collection('denetim_raporlari').getFullList({
@@ -50,29 +44,30 @@ export async function initializeCalismaTakvimiModule(pb) {
                 revertedStoreCodes = reverted.map(r => r.bayi);
             } catch (e) { revertedStoreCodes = []; }
 
-            completedReportsThisMonth = reports
-                .filter(r => r.denetimTamamlanmaTarihi && !revertedStoreCodes.includes(r.bayi))
-                .map(r => ({
-                    code: r.expand?.bayi?.bayiKodu,
-                    date: new Date(r.denetimTamamlanmaTarihi).getDate()
-                }));
+            // GÜNCELLEME: Mükerrer bayileri tek sayarak panel ile senkronize et
+            const uniqueMonthlyAudits = new Map();
+            reports.forEach(r => {
+                if (r.denetimTamamlanmaTarihi && !revertedStoreCodes.includes(r.bayi)) {
+                    const code = r.expand?.bayi?.bayiKodu;
+                    if (code && !uniqueMonthlyAudits.has(code)) {
+                        uniqueMonthlyAudits.set(code, new Date(r.denetimTamamlanmaTarihi).getDate());
+                    }
+                }
+            });
+            completedReportsThisMonth = Array.from(uniqueMonthlyAudits.values()).map(d => ({ date: d }));
         } catch (error) { completedReportsThisMonth = []; }
     }
 
     function setupAdminControls() {
         const adminPanel = document.getElementById('admin-goal-config');
         if (currentUserRole === 'admin' && adminPanel) {
-            // Stil yerine CSS sınıfı kullanılarak görünür yapıldı
             adminPanel.classList.add('is-active');
-            
             const saveBtn = document.getElementById('btn-save-global-target');
             const targetInput = document.getElementById('global-target-input');
-            
             saveBtn.onclick = async () => {
                 const newValue = parseInt(targetInput.value);
-                if (isNaN(newValue) || newValue < 1) return alert("Geçerli bir hedef sayısı giriniz.");
+                if (isNaN(newValue) || newValue < 1) return alert("Geçerli bir hedef giriniz.");
                 saveBtn.disabled = true;
-                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 try {
                     let record;
                     try {
@@ -84,12 +79,9 @@ export async function initializeCalismaTakvimiModule(pb) {
                     globalAylikHedef = newValue;
                     window.dispatchEvent(new CustomEvent('calendarDataChanged', { detail: leaveData }));
                     renderCalendar();
-                    alert("Aylık hedef başarıyla güncellendi.");
+                    alert("Aylık hedef güncellendi.");
                 } catch (err) { alert("Hata: " + err.message); }
-                finally {
-                    saveBtn.disabled = false;
-                    saveBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Güncelle';
-                }
+                finally { saveBtn.disabled = false; }
             };
         }
     }
@@ -142,21 +134,23 @@ export async function initializeCalismaTakvimiModule(pb) {
     function renderCalendar() {
         if (!container) return;
         container.innerHTML = '';
-        
+        const todayNum = today.getDate();
+        const todayStart = new Date(today.setHours(0,0,0,0)).getTime();
+
         for (let m = 0; m < 12; m++) {
             const firstDay = new Date(currentYear, m, 1).getDay();
             const totalDays = new Date(currentYear, m + 1, 0).getDate();
             const allWorkDays = getWorkDays(currentYear, m);
             const activeWorkDays = allWorkDays.filter(d => !leaveData[`${currentYear}-${m}-${d}`]);
             
+            const dailyWeight = globalAylikHedef / (allWorkDays.length || 1);
+            const monthlyAdjustedTarget = Math.max(0, globalAylikHedef - Math.round(dailyWeight * (allWorkDays.length - activeWorkDays.length)));
+            
             let planMap = {};
-            let displayTarget = 0;
-
-            const dailyAverage = globalAylikHedef / (allWorkDays.length || 1);
-            const monthlyAdjustedTarget = Math.max(0, globalAylikHedef - Math.round(dailyAverage * (allWorkDays.length - activeWorkDays.length)));
 
             if (m === currentMonth) {
-                const todayNum = today.getDate();
+                // BUGÜNÜN BAŞINDAN ÖNCE YAPILANLAR (Borç hesabı için dünden öncesini al)
+                const completedTotal = completedReportsThisMonth.length;
                 const completedBeforeToday = completedReportsThisMonth.filter(r => r.date < todayNum).length;
                 const remainingTarget = Math.max(0, monthlyAdjustedTarget - completedBeforeToday);
                 const remainingActiveDays = activeWorkDays.filter(d => d >= todayNum);
@@ -164,12 +158,11 @@ export async function initializeCalismaTakvimiModule(pb) {
                 if (remainingActiveDays.length > 0) {
                     const basePerDay = Math.floor(remainingTarget / remainingActiveDays.length);
                     const extras = remainingTarget % remainingActiveDays.length;
-                    const seed = currentYear + m + remainingTarget + remainingActiveDays.length;
+                    const seed = currentYear + m + remainingTarget;
                     const shuffled = seededShuffle([...remainingActiveDays], seed);
                     shuffled.forEach((d, i) => planMap[d] = basePerDay + (i < extras ? 1 : 0));
                 }
-                displayTarget = monthlyAdjustedTarget;
-            } else {
+            } else if (m > currentMonth) {
                 if (activeWorkDays.length > 0) {
                     const basePerDay = Math.floor(monthlyAdjustedTarget / activeWorkDays.length);
                     const extras = monthlyAdjustedTarget % activeWorkDays.length;
@@ -177,27 +170,23 @@ export async function initializeCalismaTakvimiModule(pb) {
                     const shuffled = seededShuffle([...activeWorkDays], seed);
                     shuffled.forEach((d, i) => planMap[d] = basePerDay + (i < extras ? 1 : 0));
                 }
-                displayTarget = monthlyAdjustedTarget;
             }
 
             let totalLeaveDisplay = 0;
-            for(let d=1; d<=totalDays; d++) {
-                if(leaveData[`${currentYear}-${m}-${d}`]) totalLeaveDisplay++;
-            }
+            for(let d=1; d<=totalDays; d++) { if(leaveData[`${currentYear}-${m}-${d}`]) totalLeaveDisplay++; }
 
             const card = document.createElement('div');
             card.className = 'month-card-cal';
             card.innerHTML = `
                 <div class="month-header-cal">${monthsTR[m]} ${currentYear}</div>
                 <div class="month-stats-cal">
-                    <div class="stat-item-cal">Hedef<span>${displayTarget}</span></div>
+                    <div class="stat-item-cal">Hedef<span>${monthlyAdjustedTarget}</span></div>
                     <div class="stat-item-cal">İzin<span>${totalLeaveDisplay} Gün</span></div>
                     <div class="stat-item-cal">Mesai<span>${activeWorkDays.length} Gün</span></div>
                 </div>
                 <div class="weekdays-row-cal">${weekdaysTR.map(d => `<div class="weekday-cal">${d}</div>`).join('')}</div>
                 <div class="days-grid-cal"></div>
             `;
-            
             const grid = card.querySelector('.days-grid-cal');
             const skipDays = (firstDay === 0 ? 6 : firstDay - 1);
             for (let s = 0; s < skipDays; s++) grid.innerHTML += '<div class="day-cal empty-cal"></div>';
@@ -209,45 +198,21 @@ export async function initializeCalismaTakvimiModule(pb) {
                 box.className = 'day-cal';
                 box.textContent = d;
 
-                let explanation = "";
-
-                if (dayOfWeek === 0) {
-                    explanation = "Pazar: Haftalık tatil günü.";
-                } else {
+                if (dayOfWeek === 0) box.title = "Pazar: Haftalık tatil.";
+                else {
                     box.classList.add('interactive-cal');
                     box.onclick = () => toggleLeave(m, d);
-
-                    if (leaveData[key]) {
-                        box.classList.add('leave-cal');
-                        explanation = "İzinli: Bugün için denetim planı yapılmaz.";
-                    } else if (dayOfWeek === 6) {
-                        explanation = "Cumartesi: Görev atanmaz, tıklayarak izinli işaretleyebilirsiniz.";
-                    } else {
+                    if (leaveData[key]) box.classList.add('leave-cal');
+                    else if (dayOfWeek === 6) box.title = "Cumartesi: Görev atanmaz.";
+                    else {
                         box.classList.add('workday-cal');
-                        
                         const isCompleted = m === currentMonth && completedReportsThisMonth.some(r => r.date === d);
-                        if (isCompleted) {
-                            box.classList.add('completed-audit-cal');
-                        }
+                        if (isCompleted) box.classList.add('completed-audit-cal');
 
                         const count = planMap[d] || 0;
-                        if(count >= 3) {
-                            box.classList.add('three-cal');
-                            explanation = `Yoğun Gün: ${count} Denetim planlandı (Turuncu).`;
-                        } else if(count === 2) {
-                            box.classList.add('two-cal');
-                            explanation = `Normal Gün: ${count} Denetim planlandı (Yeşil).`;
-                        } else if(count === 1) {
-                            box.classList.add('one-cal');
-                            explanation = `Sakin Gün: ${count} Denetim planlandı (Mavi).`;
-                        } else {
-                            explanation = "İş Günü: Henüz bir denetim planlanmadı.";
-                        }
-
-                        if (isCompleted) {
-                            explanation += " | Denetim Raporu Tamamlandı (Yeşil Çerçeve).";
-                        }
-                        
+                        if(count >= 3) box.classList.add('three-cal');
+                        else if(count === 2) box.classList.add('two-cal');
+                        else if(count === 1) box.classList.add('one-cal');
                         if (count > 0) {
                             const b = document.createElement('span');
                             b.className = 'visit-badge-cal';
@@ -256,8 +221,6 @@ export async function initializeCalismaTakvimiModule(pb) {
                         }
                     }
                 }
-                
-                box.title = explanation;
                 grid.appendChild(box);
             }
             container.appendChild(card);

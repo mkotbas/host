@@ -22,7 +22,7 @@ let pbInstance = null;
 let currentUserRole = null;
 let currentUserId = null;
 
-// --- TAKVİM ENTEGRASYON FONKSİYONLARI ---
+// --- GÜNCELLENMİŞ HEDEF DAĞITIM SİSTEMİ ---
 
 function getWorkDaysOfMonth(year, month) {
     const days = [];
@@ -49,8 +49,7 @@ function seededShuffle(array, seed) {
 }
 
 /**
- * Dinamik Hedef Dağıtım Sistemi
- * Eksik kalan hedefleri ayın kalan günlerine otomatik dağıtır.
+ * Borç Aktarımlı Dinamik Hesaplama
  */
 function calculateTodayRequirement() {
     const today = new Date();
@@ -60,33 +59,28 @@ function calculateTodayRequirement() {
     const dayOfWeek = today.getDay();
     const todayStart = new Date(today.setHours(0,0,0,0)).getTime();
 
-    // Hafta sonu veya izin günü ise bugün için hedef yok
     if (dayOfWeek === 0 || dayOfWeek === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
 
-    // 1. Ayın toplamındaki aktif iş günlerini belirle
     const allWorkDays = getWorkDaysOfMonth(year, month);
     const activeWorkDays = allWorkDays.filter(d => !leaveDataBulut[`${year}-${month}-${d}`]);
     
-    // 2. Aylık Net Hedef (İzinlere göre revize edilmiş toplam hedef)
     const baseTarget = globalAylikHedef || 47;
     const dailyAverage = baseTarget / allWorkDays.length;
     const monthlyAdjustedTarget = Math.max(0, baseTarget - Math.round(dailyAverage * (allWorkDays.length - activeWorkDays.length)));
 
-    // 3. Bugüne kadar (bugün hariç) yapılan toplam denetimler
+    // ÖNEMLİ: Mükerrer kayıtlar elenmiş (deduplicated) veri üzerinden kalan hedef hesabı
+    const completedTotalCount = auditedStoreCodesCurrentMonth.length;
     const completedBeforeToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp < todayStart).length;
     
-    // 4. Kalan Hedef ve Kalan Günler
-    const remainingTargetToComplete = Math.max(0, monthlyAdjustedTarget - completedBeforeToday);
+    const remainingTargetTotal = Math.max(0, monthlyAdjustedTarget - completedBeforeToday);
     const remainingActiveDays = activeWorkDays.filter(d => d >= day);
 
     if (remainingActiveDays.length === 0) return 0;
 
-    // 5. Kalan hedefi kalan günlere dağıt (Dinamik Dağıtım)
-    const basePerDay = Math.floor(remainingTargetToComplete / remainingActiveDays.length);
-    const extras = remainingTargetToComplete % remainingActiveDays.length;
+    const basePerDay = Math.floor(remainingTargetTotal / remainingActiveDays.length);
+    const extras = remainingTargetTotal % remainingActiveDays.length;
 
-    // Dağıtımı gün içinde sabit tutmak için stabil bir seed kullanıyoruz
-    const distributionSeed = year + month + remainingActiveDays.length + remainingTargetToComplete;
+    const distributionSeed = year + month + remainingActiveDays.length + remainingTargetTotal;
     const shuffledRemaining = seededShuffle([...remainingActiveDays], distributionSeed);
     
     const dayIndexInRemaining = shuffledRemaining.indexOf(day);
@@ -95,13 +89,11 @@ function calculateTodayRequirement() {
         todayPlanned = basePerDay + (dayIndexInRemaining < extras ? 1 : 0);
     }
 
-    // 6. Bugün yapılanları plandan düş
     const completedToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp >= todayStart).length;
-
     return Math.max(0, todayPlanned - completedToday);
 }
 
-// --- MODÜL BAŞLATMA ---
+// --- BAŞLATMA VE VERİ YÜKLEME ---
 
 export async function initializeDenetimTakipModule(pb) {
     pbInstance = pb;
@@ -131,7 +123,6 @@ export async function initializeDenetimTakipModule(pb) {
             uploadArea.style.display = 'block';
         }
     }
-
     if (loadingOverlay) loadingOverlay.style.display = 'none';
 }
 
@@ -237,12 +228,12 @@ function calculateAndDisplayDashboard() {
     const month = today.getMonth();
     
     const allWorkDays = getWorkDaysOfMonth(year, month);
-    let currentMonthLeaves = 0;
-    allWorkDays.forEach(d => { if (leaveDataBulut[`${year}-${month}-${d}`]) currentMonthLeaves++; });
+    let currentMonthWorkdayLeaves = 0;
+    allWorkDays.forEach(d => { if (leaveDataBulut[`${year}-${month}-${d}`]) currentMonthWorkdayLeaves++; });
     
     const baseTarget = globalAylikHedef || 47;
     const dailyAverage = baseTarget / allWorkDays.length;
-    const adjustedTarget = Math.max(0, baseTarget - Math.round(dailyAverage * currentMonthLeaves));
+    const adjustedTarget = Math.max(0, baseTarget - Math.round(dailyAverage * currentMonthWorkdayLeaves));
 
     let displayTarget, displayAudited;
     if (currentViewMode === 'monthly') {
@@ -398,15 +389,10 @@ function getRemainingWorkdays() {
     const year = today.getFullYear();
     const month = today.getMonth();
     const lastDay = new Date(year, month + 1, 0).getDate();
-    
     let rem = 0; 
     for (let d = today.getDate(); d <= lastDay; d++) { 
         const checkDate = new Date(year, month, d);
-        const dayOfWeek = checkDate.getDay();
-        const key = `${year}-${month}-${d}`;
-        if ([1,2,3,4,5].includes(dayOfWeek) && !leaveDataBulut[key]) {
-            rem++;
-        }
+        if ([1,2,3,4,5].includes(checkDate.getDay()) && !leaveDataBulut[`${year}-${month}-${d}`]) rem++;
     }
     return rem;
 }
