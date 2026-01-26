@@ -53,7 +53,9 @@ function calculateTodayRequirement() {
     const year = today.getFullYear();
     const month = today.getMonth();
     const day = today.getDate();
-    const todayStart = new Date(today.setHours(0,0,0,0)).getTime();
+    
+    // Orijinal nesneyi bozmadan bugünün başlangıcını al
+    const todayStart = new Date(year, month, day, 0, 0, 0, 0).getTime();
 
     if (today.getDay() === 0 || today.getDay() === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
 
@@ -73,7 +75,8 @@ function calculateTodayRequirement() {
     const basePerDay = Math.floor(remainingTargetTotal / remainingActiveDays.length);
     const extras = remainingTargetTotal % remainingActiveDays.length;
 
-    const seed = year + month + remainingActiveDays.length + remainingTargetTotal;
+    // KRİTİK DÜZELTME: Seed hesaplaması takvim modülü ile eşitlendi
+    const seed = year + month + remainingTargetTotal;
     const shuffledRemaining = seededShuffle([...remainingActiveDays], seed);
     
     const dayIndex = shuffledRemaining.indexOf(day);

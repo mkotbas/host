@@ -100,12 +100,16 @@ export async function initializeCalismaTakvimiModule(pb) {
                 if (remDays.length > 0) {
                     const base = Math.floor(remTarget / remDays.length);
                     const ext = remTarget % remDays.length;
-                    seededShuffle([...remDays], today.getFullYear() + m + remTarget).forEach((d, i) => planMap[d] = base + (i < ext ? 1 : 0));
+                    
+                    // KRİTİK DÜZELTME: Tohum (Seed) hesaplaması takip modülü ile eşitlendi
+                    const seed = today.getFullYear() + m + remTarget;
+                    seededShuffle([...remDays], seed).forEach((d, i) => planMap[d] = base + (i < ext ? 1 : 0));
                 }
             } else if (m > today.getMonth() && active.length > 0) {
-                const base = Math.floor(adjTarget / active.length);
-                const ext = adjTarget % active.length;
-                seededShuffle([...active], today.getFullYear() + m + adjTarget).forEach((d, i) => planMap[d] = base + (i < ext ? 1 : 0));
+                const adjTargetM = adjTarget; // Gelecek aylar için
+                const base = Math.floor(adjTargetM / active.length);
+                const ext = adjTargetM % active.length;
+                seededShuffle([...active], today.getFullYear() + m + adjTargetM).forEach((d, i) => planMap[d] = base + (i < ext ? 1 : 0));
             }
 
             const card = document.createElement('div');
