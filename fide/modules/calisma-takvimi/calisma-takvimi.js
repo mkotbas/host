@@ -94,22 +94,25 @@ export async function initializeCalismaTakvimiModule(pb) {
             
             let planMap = {};
             if (m === today.getMonth()) {
-                const doneBefore = completedReportsThisMonth.filter(r => r.date < today.getDate()).length;
-                const remTarget = Math.max(0, adjTarget - doneBefore);
-                const remDays = active.filter(d => d >= today.getDate());
-                if (remDays.length > 0) {
-                    const base = Math.floor(remTarget / remDays.length);
-                    const ext = remTarget % remDays.length;
+                // HATA DÜZELTME: Denetim Takip ile senkronize olması için 'Bugün' hariç geçmişi baz alıyoruz
+                const doneBeforeToday = completedReportsThisMonth.filter(r => r.date < today.getDate()).length;
+                const remainingTargetFromToday = Math.max(0, adjTarget - doneBeforeToday);
+                const remainingWorkDaysIncludingToday = active.filter(d => d >= today.getDate());
+
+                if (remainingWorkDaysIncludingToday.length > 0) {
+                    const base = Math.floor(remainingTargetFromToday / remainingWorkDaysIncludingToday.length);
+                    const extras = remainingTargetFromToday % remainingWorkDaysIncludingToday.length;
                     
-                    // KRİTİK DÜZELTME: Tohum (Seed) hesaplaması takip modülü ile eşitlendi
-                    const seed = today.getFullYear() + m + remTarget;
-                    seededShuffle([...remDays], seed).forEach((d, i) => planMap[d] = base + (i < ext ? 1 : 0));
+                    // Denetim Takip modülü ile aynı tohumu (seed) kullanarak dağıtımı eşliyoruz
+                    const seed = today.getFullYear() + m + remainingTargetFromToday;
+                    seededShuffle([...remainingWorkDaysIncludingToday], seed).forEach((d, i) => {
+                        planMap[d] = base + (i < extras ? 1 : 0);
+                    });
                 }
             } else if (m > today.getMonth() && active.length > 0) {
-                const adjTargetM = adjTarget; // Gelecek aylar için
-                const base = Math.floor(adjTargetM / active.length);
-                const ext = adjTargetM % active.length;
-                seededShuffle([...active], today.getFullYear() + m + adjTargetM).forEach((d, i) => planMap[d] = base + (i < ext ? 1 : 0));
+                const base = Math.floor(adjTarget / active.length);
+                const ext = adjTarget % active.length;
+                seededShuffle([...active], today.getFullYear() + m + adjTarget).forEach((d, i) => planMap[d] = base + (i < ext ? 1 : 0));
             }
 
             const card = document.createElement('div');
@@ -117,19 +120,41 @@ export async function initializeCalismaTakvimiModule(pb) {
             card.innerHTML = `<div class="month-header-cal">${monthsTR[m]} ${today.getFullYear()}</div><div class="month-stats-cal"><div class="stat-item-cal">Hedef<span>${adjTarget}</span></div><div class="stat-item-cal">İzin<span>${Object.keys(leaveData).filter(k=>k.startsWith(`${today.getFullYear()}-${m}-`)).length} Gün</span></div><div class="stat-item-cal">Mesai<span>${active.length} Gün</span></div></div><div class="weekdays-row-cal">${weekdaysTR.map(d=>`<div class="weekday-cal">${d}</div>`).join('')}</div><div class="days-grid-cal"></div>`;
             const grid = card.querySelector('.days-grid-cal');
             for (let s = 0; s < (first === 0 ? 6 : first - 1); s++) grid.innerHTML += '<div class="day-cal empty-cal"></div>';
+            
             for (let d = 1; d <= total; d++) {
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'day-cal'; dayDiv.textContent = d;
+                
                 if (new Date(today.getFullYear(), m, d).getDay() !== 0) {
                     dayDiv.classList.add('interactive-cal');
                     dayDiv.onclick = () => toggleLeave(m, d);
-                    if (leaveData[`${today.getFullYear()}-${m}-${d}`]) dayDiv.classList.add('leave-cal');
-                    else if (new Date(today.getFullYear(), m, d).getDay() !== 6) {
+                    
+                    if (leaveData[`${today.getFullYear()}-${m}-${d}`]) {
+                        dayDiv.classList.add('leave-cal');
+                    } else if (new Date(today.getFullYear(), m, d).getDay() !== 6) {
                         dayDiv.classList.add('workday-cal');
-                        if (m === today.getMonth() && completedReportsThisMonth.some(r => r.date === d)) dayDiv.classList.add('completed-audit-cal');
-                        const c = planMap[d] || 0;
-                        if(c >= 3) dayDiv.classList.add('three-cal'); else if(c === 2) dayDiv.classList.add('two-cal'); else if(c === 1) dayDiv.classList.add('one-cal');
-                        if (c > 0) { const b = document.createElement('span'); b.className = 'visit-badge-cal'; b.textContent = c; dayDiv.appendChild(b); }
+                        
+                        // Bugün yapılmış olan denetim sayısını bul
+                        const doneToday = completedReportsThisMonth.filter(r => r.date === d).length;
+                        if (m === today.getMonth() && doneToday > 0) dayDiv.classList.add('completed-audit-cal');
+
+                        // Rozet (Badge) Mantığı Güncelleme:
+                        // Sadece bugün ve gelecek için, planlanan ziyaretten yapılanı düşerek göster
+                        let displayCount = planMap[d] || 0;
+                        if (m === today.getMonth() && d === today.getDate()) {
+                            displayCount = Math.max(0, displayCount - doneToday);
+                        }
+
+                        if(displayCount >= 3) dayDiv.classList.add('three-cal'); 
+                        else if(displayCount === 2) dayDiv.classList.add('two-cal'); 
+                        else if(displayCount === 1) dayDiv.classList.add('one-cal');
+                        
+                        if (displayCount > 0) { 
+                            const b = document.createElement('span'); 
+                            b.className = 'visit-badge-cal'; 
+                            b.textContent = displayCount; 
+                            dayDiv.appendChild(b); 
+                        }
                     }
                 }
                 grid.appendChild(dayDiv);
