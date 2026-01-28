@@ -76,12 +76,18 @@ function calculateTodayRequirement() {
     const seed = year + month + remainingTargetTotal;
     const shuffledRemaining = seededShuffle([...remainingActiveDays], seed);
     
+    let targetForToday = 0;
     const dayIndex = shuffledRemaining.indexOf(day);
     if (dayIndex !== -1) {
-        return basePerDay + (dayIndex < extras ? 1 : 0);
+        targetForToday = basePerDay + (dayIndex < extras ? 1 : 0);
     }
 
-    return 0;
+    const doneTodayCount = auditedStoreCodesCurrentMonth.filter(a => {
+        const d = new Date(a.timestamp);
+        return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+    }).length;
+
+    return Math.max(0, targetForToday - doneTodayCount);
 }
 
 // --- MODÜL BAŞLATMA VE VERİ YÖNETİMİ ---
@@ -204,6 +210,12 @@ function calculateAndDisplayDashboard() {
 
 function setupModuleEventListeners(role) {
     window.addEventListener('calendarDataChanged', async (e) => { await loadSettings(); leaveDataBulut = e.detail; calculateAndDisplayDashboard(); });
+    
+    window.addEventListener('reportFinalized', async () => {
+        await loadMasterData();
+        applyDataFilterAndRunDashboard(document.getElementById('admin-user-filter')?.value || 'my_data');
+    });
+
     if (role === 'admin') document.getElementById('admin-user-filter').onchange = (e) => applyDataFilterAndRunDashboard(e.target.value);
     document.querySelectorAll('#view-mode-toggle button').forEach(btn => {
         btn.onclick = (e) => {

@@ -20,9 +20,11 @@ export async function initializeCalismaTakvimiModule(pb) {
             if (document.getElementById('global-target-input')) document.getElementById('global-target-input').value = globalAylikHedef;
         } catch (e) { globalAylikHedef = 0; }
         try {
+            // --- GÜNCELLEME: Raporlar en yeni tarih en başta olacak şekilde çekiliyor ---
             const reports = await pb.collection('denetim_raporlari').getFullList({
                 filter: `user="${pb.authStore.model.id}" && denetimTamamlanmaTarihi >= "${new Date(today.getFullYear(), today.getMonth(), 1).toISOString()}"`,
-                expand: 'bayi'
+                expand: 'bayi',
+                sort: '-denetimTamamlanmaTarihi'
             });
             const reverted = await pb.collection('denetim_geri_alinanlar').getFullList({ filter: `yil_ay="${today.getFullYear()}-${today.getMonth()}"` });
             const revertedIds = reverted.map(r => r.bayi);
@@ -30,6 +32,7 @@ export async function initializeCalismaTakvimiModule(pb) {
             reports.forEach(r => {
                 const code = r.expand?.bayi?.bayiKodu;
                 if (r.denetimTamamlanmaTarihi && !revertedIds.includes(r.bayi) && code && !uniqueMap.has(code)) {
+                    // Artık en güncel ziyaret tarihi uniqueMap'e eklenir
                     uniqueMap.set(code, new Date(r.denetimTamamlanmaTarihi).getDate());
                 }
             });
@@ -143,7 +146,6 @@ export async function initializeCalismaTakvimiModule(pb) {
 
                         let displayCount = planMap[d] || 0;
 
-                        // GÜNCELLEME: 4 ve üzeri için yeni sınıf kontrolü
                         if(displayCount >= 4) dayDiv.classList.add('four-plus-cal');
                         else if(displayCount === 3) dayDiv.classList.add('three-cal'); 
                         else if(displayCount === 2) dayDiv.classList.add('two-cal'); 
@@ -162,6 +164,12 @@ export async function initializeCalismaTakvimiModule(pb) {
             container.appendChild(card);
         }
     }
+    
+    window.addEventListener('reportFinalized', async () => {
+        await loadInitialData();
+        renderCalendar();
+    });
+
     window.addEventListener('calendarDataChanged', async () => { await loadInitialData(); renderCalendar(); });
     await loadInitialData(); setupAdminControls(); renderCalendar();
 }

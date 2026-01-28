@@ -145,7 +145,6 @@ export function updateConnectionIndicator() {
     const statusSwitch = document.getElementById('connection-status-switch');
     const statusText = document.getElementById('connection-status-text');
 
-    // pb global olabilir; tanımlı değilse ReferenceError almamak için güvenli kontrol
     let isAuthValid = false;
     if (typeof pb !== 'undefined' && pb && pb.authStore) {
         isAuthValid = pb.authStore.isValid === true;
@@ -153,7 +152,6 @@ export function updateConnectionIndicator() {
 
     const isOnline = state.isPocketBaseConnected === true && isAuthValid;
 
-    // KRİTİK: 'disconnected' sınıfını da yönet (aksi halde CSS çakışır ve kırmızı kalır)
     statusSwitch.classList.toggle('connected', isOnline);
     statusSwitch.classList.toggle('disconnected', !isOnline);
 
@@ -195,7 +193,6 @@ export function startNewReport() {
     updateFormInteractivity(false);
 }
 
-// --- GÜNCELLENMİŞ E-POSTA OLUŞTURMA FONKSİYONU (v1.0.17) ---
 export async function generateEmail() {
     if (!state.selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -213,14 +210,15 @@ export async function generateEmail() {
     const reportData = getFormDataForSaving();
     await saveFormState(reportData, true);
 
-    // Veri güvenliği: Bayi Excel'de yoksa bile hata verme, null döndür
+    // --- YENİ: DİĞER MODÜLLERE GÜNCELLEME SİNYALİ GÖNDER ---
+    window.dispatchEvent(new CustomEvent('reportFinalized'));
+
     const storeInfo = state.dideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu)) || null;
     const fideStoreInfo = state.fideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu)) || null;
     
     const storeEmail = state.storeEmails[state.selectedStore.bayiKodu] || null;
     const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
     
-    // Yönetmen adı öncelik sırası: PocketBase bayi kaydı → seçili bayi state’i → Excel (DiDe) → varsayılan
     const pbStore = state.allStores.find(s => String(s.bayiKodu) === String(state.selectedStore.bayiKodu)) || null;
     const managerFullName =
         (pbStore && pbStore.yonetmen && String(pbStore.yonetmen).trim()) ||
@@ -280,12 +278,8 @@ export async function generateEmail() {
     });
 
     const cYear = new Date().getFullYear();
-    // const cMonth = new Date().getMonth() + 1; // Artık buna ihtiyaç yok, sabit 12 ay olacak.
-    
-    // 12 Ay için başlık döngüsü (length: 12)
     let mHeaders = Array.from({length: 12}, (_, i) => `<th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${state.monthNames[i + 1] || i + 1}</th>`).join('');
     
-    // Veri olmayan bayi için otomatik "-" (çizgi) ekleme mantığı - 12 Ay için
     let dScores = Array.from({length: 12}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(storeInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
     let fScores = Array.from({length: 12}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(fideStoreInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
     
@@ -498,21 +492,17 @@ function selectExpiredCodes() {
     debouncedSaveFormState();
 }
 
-// --- GÜNCELLENDİ: E-POSTA TASLAĞINDA CC ALANINI GÖSTERME ---
 function openEmailDraft() {
     const codes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(c => !state.expiredCodes.includes(c));
     if (!codes.length) return;
     const q = state.fideQuestions.find(f => f.type === 'pop_system') || {};
     
-    // To ve CC bilgilerini alalım
     const toEmails = q.popEmailTo?.join(', ') || '';
     const ccEmails = q.popEmailCc?.join(', ') || '';
     
-    // Yeni bir pencere açalım
     let emailWindow = window.open('', '_blank');
     let content = `<b>Kime:</b> ${toEmails}<br>`;
     
-    // Eğer CC adresleri varsa ekleyelim
     if (ccEmails) {
         content += `<b>Bilgi (CC):</b> ${ccEmails}<br>`;
     }
@@ -570,13 +560,11 @@ function addStylingProductToList(qId, code, qty, name, save = true) {
     if (list.querySelector(`[data-code="${code}"]`)) return;
     const div = document.createElement('div');
     
-    // YENİ DÜZENLEME: Flex yapısı ile kesin hizalama sağlıyoruz
     div.className = 'selected-product-item d-flex align-items-center mb-2'; 
     div.style.padding = "8px";
     div.style.borderBottom = "1px solid #eee";
     div.dataset.code = code; div.dataset.qty = qty; div.dataset.name = name;
     
-    // İçerik: [Ürün İsmi] [Boşluk] [Kutu] [Adet Yazısı] [Sil Butonu]
     div.innerHTML = `
         <span style="flex: 1; font-size: 13px;">${code} ${name}</span>
         <div class="d-flex align-items-center" style="gap: 5px; min-width: 100px; justify-content: flex-end;">
