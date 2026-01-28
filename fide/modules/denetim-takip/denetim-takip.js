@@ -54,9 +54,6 @@ function calculateTodayRequirement() {
     const month = today.getMonth();
     const day = today.getDate();
     
-    // Orijinal nesneyi bozmadan bugünün başlangıcını al
-    const todayStart = new Date(year, month, day, 0, 0, 0, 0).getTime();
-
     if (today.getDay() === 0 || today.getDay() === 6 || leaveDataBulut[`${year}-${month}-${day}`]) return 0;
 
     const allWorkDays = getWorkDaysOfMonth(year, month);
@@ -66,8 +63,9 @@ function calculateTodayRequirement() {
     const dailyAverage = baseTarget / allWorkDays.length;
     const monthlyAdjustedTarget = Math.max(0, baseTarget - Math.round(dailyAverage * (allWorkDays.length - activeWorkDays.length)));
 
-    const completedBeforeToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp < todayStart).length;
-    const remainingTargetTotal = Math.max(0, monthlyAdjustedTarget - completedBeforeToday);
+    // BUGÜN YAPILANLAR DAHİL TÜM TAMAMLANANLAR HAVUZDAN DÜŞÜLÜR
+    const totalCompleted = auditedStoreCodesCurrentMonth.length;
+    const remainingTargetTotal = Math.max(0, monthlyAdjustedTarget - totalCompleted);
     const remainingActiveDays = activeWorkDays.filter(d => d >= day);
 
     if (remainingActiveDays.length === 0) return 0;
@@ -75,18 +73,15 @@ function calculateTodayRequirement() {
     const basePerDay = Math.floor(remainingTargetTotal / remainingActiveDays.length);
     const extras = remainingTargetTotal % remainingActiveDays.length;
 
-    // KRİTİK DÜZELTME: Seed hesaplaması takvim modülü ile eşitlendi
     const seed = year + month + remainingTargetTotal;
     const shuffledRemaining = seededShuffle([...remainingActiveDays], seed);
     
     const dayIndex = shuffledRemaining.indexOf(day);
-    let todayPlanned = 0;
     if (dayIndex !== -1) {
-        todayPlanned = basePerDay + (dayIndex < extras ? 1 : 0);
+        return basePerDay + (dayIndex < extras ? 1 : 0);
     }
 
-    const completedToday = auditedStoreCodesCurrentMonth.filter(a => a.timestamp >= todayStart).length;
-    return Math.max(0, todayPlanned - completedToday);
+    return 0;
 }
 
 // --- MODÜL BAŞLATMA VE VERİ YÖNETİMİ ---

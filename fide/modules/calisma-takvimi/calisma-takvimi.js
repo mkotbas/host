@@ -94,16 +94,15 @@ export async function initializeCalismaTakvimiModule(pb) {
             
             let planMap = {};
             if (m === today.getMonth()) {
-                // HATA DÜZELTME: Denetim Takip ile senkronize olması için 'Bugün' hariç geçmişi baz alıyoruz
-                const doneBeforeToday = completedReportsThisMonth.filter(r => r.date < today.getDate()).length;
-                const remainingTargetFromToday = Math.max(0, adjTarget - doneBeforeToday);
+                // BUGÜNÜN DENETİMLERİ DAHİL TÜM TAMAMLANANLAR HAVUZDAN DÜŞÜLÜR
+                const totalDone = completedReportsThisMonth.length;
+                const remainingTargetFromToday = Math.max(0, adjTarget - totalDone);
                 const remainingWorkDaysIncludingToday = active.filter(d => d >= today.getDate());
 
                 if (remainingWorkDaysIncludingToday.length > 0) {
                     const base = Math.floor(remainingTargetFromToday / remainingWorkDaysIncludingToday.length);
                     const extras = remainingTargetFromToday % remainingWorkDaysIncludingToday.length;
                     
-                    // Denetim Takip modülü ile aynı tohumu (seed) kullanarak dağıtımı eşliyoruz
                     const seed = today.getFullYear() + m + remainingTargetFromToday;
                     seededShuffle([...remainingWorkDaysIncludingToday], seed).forEach((d, i) => {
                         planMap[d] = base + (i < extras ? 1 : 0);
@@ -134,16 +133,11 @@ export async function initializeCalismaTakvimiModule(pb) {
                     } else if (new Date(today.getFullYear(), m, d).getDay() !== 6) {
                         dayDiv.classList.add('workday-cal');
                         
-                        // Bugün yapılmış olan denetim sayısını bul
                         const doneToday = completedReportsThisMonth.filter(r => r.date === d).length;
                         if (m === today.getMonth() && doneToday > 0) dayDiv.classList.add('completed-audit-cal');
 
-                        // Rozet (Badge) Mantığı Güncelleme:
-                        // Sadece bugün ve gelecek için, planlanan ziyaretten yapılanı düşerek göster
+                        // ROZET MANTIĞI: planMap kalan hedefi yansıttığı için doğrudan kullanılır.
                         let displayCount = planMap[d] || 0;
-                        if (m === today.getMonth() && d === today.getDate()) {
-                            displayCount = Math.max(0, displayCount - doneToday);
-                        }
 
                         if(displayCount >= 3) dayDiv.classList.add('three-cal'); 
                         else if(displayCount === 2) dayDiv.classList.add('two-cal'); 
