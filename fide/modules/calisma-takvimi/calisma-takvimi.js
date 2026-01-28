@@ -94,23 +94,15 @@ export async function initializeCalismaTakvimiModule(pb) {
             
             let planMap = {};
             if (m === today.getMonth()) {
-                // BUGÜNÜN DENETİMLERİ DAHİL TÜM TAMAMLANANLAR HAVUZDAN DÜŞÜLÜR
                 const totalDone = completedReportsThisMonth.length;
                 const remainingTargetFromToday = Math.max(0, adjTarget - totalDone);
                 
-                // --- GÜNCELLEME BAŞLANGIÇ ---
-                // Hedef dağıtılacak günleri belirle (Bugün ve sonrası)
                 let remainingWorkDays = active.filter(d => d >= today.getDate());
-                
-                // Bugün yapılan iş kontrolü
                 const doneToday = completedReportsThisMonth.filter(r => r.date === today.getDate()).length;
 
-                // KURAL: Eğer bugün zaten iş yapılmışsa (doneToday > 0) ve ayın bitmesine başka günler varsa,
-                // kalanı bugüne yazma, yarına ve sonrasına ötele.
                 if (doneToday > 0 && remainingWorkDays.some(d => d > today.getDate())) {
                     remainingWorkDays = remainingWorkDays.filter(d => d > today.getDate());
                 }
-                // --- GÜNCELLEME BİTİŞ ---
 
                 if (remainingWorkDays.length > 0) {
                     const base = Math.floor(remainingTargetFromToday / remainingWorkDays.length);
@@ -149,10 +141,11 @@ export async function initializeCalismaTakvimiModule(pb) {
                         const doneToday = completedReportsThisMonth.filter(r => r.date === d).length;
                         if (m === today.getMonth() && doneToday > 0) dayDiv.classList.add('completed-audit-cal');
 
-                        // ROZET MANTIĞI: planMap kalan hedefi yansıttığı için doğrudan kullanılır.
                         let displayCount = planMap[d] || 0;
 
-                        if(displayCount >= 3) dayDiv.classList.add('three-cal'); 
+                        // GÜNCELLEME: 4 ve üzeri için yeni sınıf kontrolü
+                        if(displayCount >= 4) dayDiv.classList.add('four-plus-cal');
+                        else if(displayCount === 3) dayDiv.classList.add('three-cal'); 
                         else if(displayCount === 2) dayDiv.classList.add('two-cal'); 
                         else if(displayCount === 1) dayDiv.classList.add('one-cal');
                         
