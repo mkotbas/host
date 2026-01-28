@@ -97,14 +97,27 @@ export async function initializeCalismaTakvimiModule(pb) {
                 // BUGÜNÜN DENETİMLERİ DAHİL TÜM TAMAMLANANLAR HAVUZDAN DÜŞÜLÜR
                 const totalDone = completedReportsThisMonth.length;
                 const remainingTargetFromToday = Math.max(0, adjTarget - totalDone);
-                const remainingWorkDaysIncludingToday = active.filter(d => d >= today.getDate());
+                
+                // --- GÜNCELLEME BAŞLANGIÇ ---
+                // Hedef dağıtılacak günleri belirle (Bugün ve sonrası)
+                let remainingWorkDays = active.filter(d => d >= today.getDate());
+                
+                // Bugün yapılan iş kontrolü
+                const doneToday = completedReportsThisMonth.filter(r => r.date === today.getDate()).length;
 
-                if (remainingWorkDaysIncludingToday.length > 0) {
-                    const base = Math.floor(remainingTargetFromToday / remainingWorkDaysIncludingToday.length);
-                    const extras = remainingTargetFromToday % remainingWorkDaysIncludingToday.length;
+                // KURAL: Eğer bugün zaten iş yapılmışsa (doneToday > 0) ve ayın bitmesine başka günler varsa,
+                // kalanı bugüne yazma, yarına ve sonrasına ötele.
+                if (doneToday > 0 && remainingWorkDays.some(d => d > today.getDate())) {
+                    remainingWorkDays = remainingWorkDays.filter(d => d > today.getDate());
+                }
+                // --- GÜNCELLEME BİTİŞ ---
+
+                if (remainingWorkDays.length > 0) {
+                    const base = Math.floor(remainingTargetFromToday / remainingWorkDays.length);
+                    const extras = remainingTargetFromToday % remainingWorkDays.length;
                     
                     const seed = today.getFullYear() + m + remainingTargetFromToday;
-                    seededShuffle([...remainingWorkDaysIncludingToday], seed).forEach((d, i) => {
+                    seededShuffle([...remainingWorkDays], seed).forEach((d, i) => {
                         planMap[d] = base + (i < extras ? 1 : 0);
                     });
                 }
