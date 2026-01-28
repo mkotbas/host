@@ -49,7 +49,7 @@ function generateQuestionHtml(q) {
             }
         });
         if (currentOptgroup) productOptions += `</optgroup>`;
-        questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b class="plexi-header"><i>Pleksiyle sergilenmesi gerekenler:</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
+        questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b class="plexi-header"><i>Pleksiyle sergilenmesi gerekenler veya yanlış pleksi malzemeyle kullanılanlar</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
     
     } else if (q.type === 'pop_system') {
         questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
