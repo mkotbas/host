@@ -318,7 +318,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         container.querySelectorAll('[data-column="eylemler"]').forEach(cell => cell.style.display = 'table-cell');
     }
 
-    // --- EXCEL IMPORT İŞLEMLERİ (YENİ EKLENEN KISIM) ---
+    // --- EXCEL IMPORT İŞLEMLERİ ---
     function openImportModal() {
         if (importModal) {
             importModal.style.display = 'flex';
@@ -524,13 +524,33 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     if (btnImportClose) btnImportClose.addEventListener('click', closeImportModalFn);
 
 
-    // --- TOPLU ATAMA İŞLEMLERİ ---
+    // --- TOPLU ATAMA İŞLEMLERİ (GÜNCELLENMİŞ) ---
     function openBulkAssignModal() {
         bulkAssignFilterBolge.innerHTML = '';
         bulkAssignFilterSehir.innerHTML = '';
         bulkAssignFilterYonetmen.innerHTML = '';
         bulkAssignTextInput.value = '';
         bulkAssignTypeSelect.value = 'sorumlu_kullanici';
+
+        // Mevcut Yönetmenleri Topla (Datalist için)
+        const uniqueYonetmenler = [...new Set(allBayiler.map(b => b.yonetmen).filter(Boolean))].sort();
+        
+        // Datalist Oluştur (Yönetmen Önerileri İçin)
+        let datalist = document.getElementById('manager-list');
+        if (!datalist) {
+            datalist = document.createElement('datalist');
+            datalist.id = 'manager-list';
+            document.body.appendChild(datalist);
+        }
+        datalist.innerHTML = '';
+        uniqueYonetmenler.forEach(yon => {
+            const opt = document.createElement('option');
+            opt.value = yon;
+            datalist.appendChild(opt);
+        });
+        
+        // Input'a datalist bağla
+        bulkAssignTextInput.setAttribute('list', 'manager-list');
 
         // Dinamik Filtre Yenileme Fonksiyonu
         function refreshBulkFilters() {
@@ -549,6 +569,12 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             if (selSehir.length > 0) yonPool = yonPool.filter(b => selSehir.includes(b.sehir));
             const availableYons = [...new Set(yonPool.map(b => b.yonetmen).filter(Boolean))].sort();
             renderCheckboxList(bulkAssignFilterYonetmen, availableYons, selYon, refreshBulkFilters);
+            
+            // AKILLI ÖZELLİK: Eğer bir yönetmen seçildiyse, "Sadece Atanmamışları" kutucuğunu otomatik kaldır.
+            // Çünkü kullanıcı muhtemelen bir "Değişiklik/Transfer" yapmak istiyordur.
+            if (selYon.length > 0) {
+                bulkAssignOnlyUnassigned.checked = false;
+            }
         }
 
         // Checkbox listesi oluşturma yardımcı fonksiyonu
@@ -596,16 +622,18 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         const selYon = Array.from(bulkAssignFilterYonetmen.querySelectorAll('input:checked')).map(c => c.value);
 
         let targets = allBayiler;
+        // Filtreleri Uygula (İl, Bölge, Eski Yönetmen vb.)
         if (selBolge.length > 0) targets = targets.filter(b => selBolge.includes(b.bolge));
         if (selSehir.length > 0) targets = targets.filter(b => selSehir.includes(b.sehir));
         if (selYon.length > 0) targets = targets.filter(b => selYon.includes(b.yonetmen));
 
+        // Eğer "Sadece Atanmamış" işaretliyse, dolu olanları atla
         if (bulkAssignOnlyUnassigned.checked) {
             targets = targets.filter(b => !b[type]);
         }
 
         if (targets.length === 0) return alert('Kriterlere uyan bayi bulunamadı.');
-        if (!confirm(`${targets.length} bayi güncellenecek. Onaylıyor musunuz?`)) return;
+        if (!confirm(`${targets.length} bayi güncellenecek. Bu işlem, seçili kriterlere uyan bayilerin verisini değiştirecektir. Onaylıyor musunuz?`)) return;
 
         showBulkAssignLoading(true, 'Güncelleniyor...');
         
