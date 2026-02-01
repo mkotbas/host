@@ -3,10 +3,30 @@
     <p>Veriler işleniyor, lütfen bekleyin...</p>
 </div>
 
+<div id="admin-panel-overlay" class="modal-overlay" style="display: none;">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <h3><i class="fas fa-cogs"></i> Yönetim Paneli</h3>
+        </div>
+        <div class="modal-body">
+            <div class="settings-item">
+                <label for="monthly-target-input">Global Aylık Ziyaret Hedefi</label>
+                <input type="number" id="monthly-target-input" placeholder="Örn: 47">
+                <small>Bu, "Genel Bakış (Tüm Sistem)" görünümünün hedefini belirler. Kullanıcıların kişisel hedefleri, onlara atanan bayi sayısıdır.</small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="save-settings-btn" class="btn-success btn-sm"><i class="fas fa-save"></i> Kaydet</button>
+            <button id="close-admin-panel-btn" class="btn-danger btn-sm">Paneli Kapat</button>
+        </div>
+    </div>
+</div>
+
+
 <div class="card" id="audit-tracker-manager">
     <div class="card-header">
-        <div class="header-placeholder"></div>
-        </div>
+        <div class="header-placeholder"></div> <button id="open-admin-panel-btn" class="btn-primary btn-sm"><i class="fas fa-cogs"></i> Yönetim Paneli</button>
+    </div>
     
     <div id="upload-area" style="display: none;">
         <p style="font-size: 13px; color: var(--light-text-secondary); margin: 20px; text-align: center;">
@@ -17,7 +37,8 @@
     <div id="loaded-data-area" style="display: none;">
          <div class="loaded-data-info">
             <p><i class="fas fa-database"></i> Veriler buluttan yüklendi.</p>
-            <div class="data-actions"></div>
+            <div class="data-actions">
+                </div>
         </div>
     </div>
     
@@ -40,9 +61,9 @@
                 <span><i class="fas fa-briefcase"></i> Kalan İş Günü</span>
                 <p id="work-days-count">0</p>
             </div>
-            <div class="stat-card" id="today-required-card" style="background-color: #fff9f0; border-color: #f59e0b;">
-                <span style="color: #d97706;"><i class="fas fa-tasks"></i> Bugün Gereken FiDe</span>
-                <p id="today-required-count" style="color: #d97706;">0</p>
+            <div class="stat-card warning" id="today-required-card">
+                <span><i class="fas fa-tasks"></i> Bugün Gereken FiDe</span>
+                <p id="today-required-count">0</p>
             </div>
             <div class="stat-card">
                 <span><i class="fas fa-bullseye"></i> <span id="target-label">Aylık Denetim Hedefi</span></span>
