@@ -426,7 +426,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         if (btnExecuteImport) btnExecuteImport.disabled = !isValid;
     }
 
-    // İçe Aktarımı Başlat (DİNAMİK VERİ TOPLAMA GÜNCELLEMESİ)
+    // İçe Aktarımı Başlat (AKILLI TEMİZLEME GÜNCELLEMESİ)
     if (btnExecuteImport) {
         btnExecuteImport.addEventListener('click', async () => {
             const mappings = {};
@@ -446,72 +446,76 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             let errorCount = 0;
             let errors = [];
 
-            // Tüm mevcut bayileri hafızada bir Map'e al (Performans için)
+            // Tüm mevcut bayileri hafızada bir Map'e al
             const existingBayiMap = new Map();
             allBayiler.forEach(b => existingBayiMap.set(String(b.bayiKodu).trim(), b));
 
-            // Chunk'lar halinde işlem yap (UI donmaması için)
+            // Chunk'lar halinde işlem yap
             const chunkSize = 50; 
             for (let i = 0; i < dataRows.length; i += chunkSize) {
                 const chunk = dataRows.slice(i, i + chunkSize);
                 
                 await Promise.all(chunk.map(async (row) => {
                     const bayiKoduIndex = mappings['bayiKodu'];
-                    const bayiKoduVal = row[bayiKoduIndex];
+                    const bayiKoduRaw = row[bayiKoduIndex];
 
-                    if (!bayiKoduVal) {
+                    if (!bayiKoduRaw) {
                         errorCount++;
-                        return; // Bayi kodu yoksa atla
+                        return;
                     }
 
-                    // --- GÜNCELLEME: VERİ OBJESİNİ DİNAMİK OLUŞTUR ---
-                    // Sadece eşleştirilmiş ve Excel'de içi dolu olan alanlar gönderilecek.
+                    const cleanDealerCode = String(bayiKoduRaw).trim();
                     const bayiData = {};
-                    bayiData.bayiKodu = String(bayiKoduVal).trim();
+                    bayiData.bayiKodu = cleanDealerCode;
                     
                     const fieldKeys = ['bayiAdi', 'bolge', 'sehir', 'ilce', 'yonetmen', 'email'];
                     fieldKeys.forEach(key => {
                         const colIdx = mappings[key];
                         if (colIdx > -1) {
-                            const val = row[colIdx] ? String(row[colIdx]).trim() : '';
+                            let val = row[colIdx] ? String(row[colIdx]).trim() : '';
+                            
+                            // --- GÜNCELLEME: UNVAN (BAYİ ADI) TEMİZLEME MANTIĞI ---
+                            if (key === 'bayiAdi' && val !== '') {
+                                // Eğer isim alanı bayi koduyla başlıyorsa o kısmı at
+                                if (val.startsWith(cleanDealerCode)) {
+                                    val = val.replace(cleanDealerCode, '').trim();
+                                }
+                            }
+                            
                             if (val !== '') {
                                 bayiData[key] = val;
                             }
                         }
                     });
 
-                    // Global kullanıcı ataması varsa ekle
                     if (globalUserId) {
                         bayiData.sorumlu_kullanici = globalUserId;
                     }
 
                     try {
-                        const existing = existingBayiMap.get(bayiData.bayiKodu);
+                        const existing = existingBayiMap.get(cleanDealerCode);
                         if (existing) {
-                            // GÜNCELLEME: Sadece değişen/dolu verileri gönder (PATCH hatasını önler)
                             await pb.collection('bayiler').update(existing.id, bayiData);
                             updateCount++;
                         } else {
-                            // YENİ KAYIT: Eğer isim boşsa ve veritabanı zorunlu tutuyorsa hata almamak için kodu isim yap.
+                            // Yeni kayıt fallback
                             if (!bayiData.bayiAdi) {
-                                bayiData.bayiAdi = bayiData.bayiKodu;
+                                bayiData.bayiAdi = cleanDealerCode;
                             }
                             await pb.collection('bayiler').create(bayiData);
                             successCount++;
                         }
                     } catch (err) {
                         errorCount++;
-                        errors.push(`${bayiData.bayiKodu}: ${err.message}`);
+                        errors.push(`${cleanDealerCode}: ${err.message}`);
                     }
                 }));
 
-                // İlerlemeyi güncelle
                 importLoadingText.textContent = `${Math.min(i + chunkSize, dataRows.length)} / ${dataRows.length} kayıt işlendi...`;
             }
 
             importLoadingOverlay.style.display = 'none';
             
-            // Sonuçları Göster
             importResultsArea.innerHTML = `
                 İşlem Tamamlandı!
                 -----------------
@@ -524,7 +528,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             
             importStep2.style.display = 'none';
             importStep3.style.display = 'block';
-            await loadModuleData(); // Tabloyu yenile
+            await loadModuleData();
         });
     }
 
@@ -535,7 +539,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     if (btnImportClose) btnImportClose.addEventListener('click', closeImportModalFn);
 
 
-    // --- TOPLU ATAMA İŞLEMLERİ (GÜNCELLENMİŞ) ---
+    // --- TOPLU ATAMA İŞLEMLERİ ---
     function openBulkAssignModal() {
         bulkAssignFilterBolge.innerHTML = '';
         bulkAssignFilterSehir.innerHTML = '';
@@ -543,10 +547,8 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         bulkAssignTextInput.value = '';
         bulkAssignTypeSelect.value = 'sorumlu_kullanici';
 
-        // Mevcut Yönetmenleri Topla (Datalist için)
         const uniqueYonetmenler = [...new Set(allBayiler.map(b => b.yonetmen).filter(Boolean))].sort();
         
-        // Datalist Oluştur (Yönetmen Önerileri İçin)
         let datalist = document.getElementById('manager-list');
         if (!datalist) {
             datalist = document.createElement('datalist');
@@ -560,34 +562,28 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             datalist.appendChild(opt);
         });
         
-        // Input'a datalist bağla
         bulkAssignTextInput.setAttribute('list', 'manager-list');
 
-        // Dinamik Filtre Yenileme Fonksiyonu
         function refreshBulkFilters() {
             const selBolge = Array.from(bulkAssignFilterBolge.querySelectorAll('input:checked')).map(c => c.value);
             const selSehir = Array.from(bulkAssignFilterSehir.querySelectorAll('input:checked')).map(c => c.value);
             const selYon = Array.from(bulkAssignFilterYonetmen.querySelectorAll('input:checked')).map(c => c.value);
 
-            // Şehir listesini Bölge seçimine göre süz
             let cityPool = allBayiler;
             if (selBolge.length > 0) cityPool = cityPool.filter(b => selBolge.includes(b.bolge));
             const availableCities = [...new Set(cityPool.map(b => b.sehir).filter(Boolean))].sort();
             renderCheckboxList(bulkAssignFilterSehir, availableCities, selSehir, refreshBulkFilters);
 
-            // Yönetmen listesini Bölge ve Şehir seçimine göre süz
             let yonPool = cityPool;
             if (selSehir.length > 0) yonPool = yonPool.filter(b => selSehir.includes(b.sehir));
             const availableYons = [...new Set(yonPool.map(b => b.yonetmen).filter(Boolean))].sort();
             renderCheckboxList(bulkAssignFilterYonetmen, availableYons, selYon, refreshBulkFilters);
             
-            // AKILLI ÖZELLİK: Eğer bir yönetmen seçildiyse, "Sadece Atanmamışları" kutucuğunu otomatik kaldır.
             if (selYon.length > 0) {
                 bulkAssignOnlyUnassigned.checked = false;
             }
         }
 
-        // Checkbox listesi oluşturma yardımcı fonksiyonu
         function renderCheckboxList(containerEl, list, selectedValues, onChange) {
             containerEl.innerHTML = '';
             list.forEach(val => {
@@ -599,14 +595,11 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             });
         }
 
-        // Ana Bölgeleri Oluştur
         const allBolgeler = [...new Set(allBayiler.map(b => b.bolge).filter(Boolean))].sort();
         renderCheckboxList(bulkAssignFilterBolge, allBolgeler, [], refreshBulkFilters);
         
-        // İlk yüklemede diğerlerini tetikle
         refreshBulkFilters();
 
-        // Kullanıcı seçim listesi
         bulkAssignUserSelect.innerHTML = '<option value="">Seçiniz...</option>';
         allUsers.forEach(u => {
             const o = document.createElement('option'); 
@@ -632,22 +625,19 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         const selYon = Array.from(bulkAssignFilterYonetmen.querySelectorAll('input:checked')).map(c => c.value);
 
         let targets = allBayiler;
-        // Filtreleri Uygula (İl, Bölge, Eski Yönetmen vb.)
         if (selBolge.length > 0) targets = targets.filter(b => selBolge.includes(b.bolge));
         if (selSehir.length > 0) targets = targets.filter(b => selSehir.includes(b.sehir));
         if (selYon.length > 0) targets = targets.filter(b => selYon.includes(b.yonetmen));
 
-        // Eğer "Sadece Atanmamış" işaretliyse, dolu olanları atla
         if (bulkAssignOnlyUnassigned.checked) {
             targets = targets.filter(b => !b[type]);
         }
 
         if (targets.length === 0) return alert('Kriterlere uyan bayi bulunamadı.');
-        if (!confirm(`${targets.length} bayi güncellenecek. Bu işlem, seçili kriterlere uyan bayilerin verisini değiştirecektir. Onaylıyor musunuz?`)) return;
+        if (!confirm(`${targets.length} bayi güncellenecek. Onaylıyor musunuz?`)) return;
 
         showBulkAssignLoading(true, 'Güncelleniyor...');
         
-        // Chunk'lı güncelleme
         const chunkSize = 20;
         for (let i = 0; i < targets.length; i += chunkSize) {
             const chunk = targets.slice(i, i + chunkSize);
@@ -681,20 +671,16 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
     bayiForm.addEventListener('submit', handleFormSubmit);
     container.querySelector('#btn-view-selected').addEventListener('click', applyColumnVisibility);
     
-    // Excel Export
     container.querySelector('#btn-export-excel').addEventListener('click', () => {
-        // Mevcut görünür tabloyu Excel'e aktar
         const table = document.getElementById('bayi-table');
         const wb = XLSX.utils.table_to_book(table, {sheet: "Bayiler"});
         XLSX.writeFile(wb, "Bayi_Listesi.xlsx");
     });
 
-    // Import Modal Açma
     if (btnOpenImportModal) {
         btnOpenImportModal.addEventListener('click', openImportModal);
     }
 
-    // Toplu Atama Listenerları
     btnOpenBulkAssignModal.addEventListener('click', openBulkAssignModal);
     btnExecuteBulkAssign.addEventListener('click', executeBulkAssign);
     btnBulkAssignCancel.addEventListener('click', () => bulkAssignModal.style.display = 'none');
@@ -705,6 +691,5 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         bulkAssignTextContainer.style.display = isUser ? 'none' : 'block';
     });
 
-    // Başlangıç Yüklemesi
     loadModuleData();
 }

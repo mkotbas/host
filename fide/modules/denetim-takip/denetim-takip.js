@@ -205,6 +205,8 @@ function calculateAndDisplayDashboard() {
         document.getElementById('today-required-card').style.display = 'none';
     }
     renderAuditedStores(); 
+    // GÜNCELLEME: Görünüm modu değiştiğinde Denetlenecek Bayiler listesini anlık olarak yeniden çizdiriyoruz.
+    renderRemainingStores(currentGlobalFilteredStores);
     document.getElementById('dashboard-content').style.display = 'block';
 }
 
@@ -218,18 +220,17 @@ function setupModuleEventListeners(role) {
 
     if (role === 'admin') document.getElementById('admin-user-filter').onchange = (e) => applyDataFilterAndRunDashboard(e.target.value);
     
-    // GÜNCELLENDİ: Buton rengi ve sınıf yönetimi düzeltildi
     document.querySelectorAll('#view-mode-toggle button').forEach(btn => {
         btn.onclick = (e) => {
             const buttons = document.querySelectorAll('#view-mode-toggle button');
             buttons.forEach(b => {
                 b.classList.remove('active', 'btn-primary');
-                b.classList.add('btn-light'); // Pasif butonlara gri sınıfını geri ekle
+                b.classList.add('btn-light');
             });
             
             const target = e.currentTarget;
-            target.classList.remove('btn-light'); // Aktif butondan gri sınıfını kaldır
-            target.classList.add('active', 'btn-primary'); // Aktif butona mavi sınıfını ekle
+            target.classList.remove('btn-light');
+            target.classList.add('active', 'btn-primary');
             
             currentViewMode = target.dataset.mode;
             calculateAndDisplayDashboard();
