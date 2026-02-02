@@ -88,10 +88,18 @@
             font-weight: 700;
             margin-top: 5px;
         }
-        .total-card:nth-child(1) .total-icon { color: #8b0000; }
-        .total-card:nth-child(1) .total-value { color: #8b0000; }
-        .total-card:nth-child(2) .total-icon { color: #0077b6; }
-        .total-card:nth-child(2) .total-value { color: #0077b6; }
+        .total-card:nth-child(1) .total-icon {
+            color: #8b0000;
+        }
+        .total-card:nth-child(1) .total-value {
+            color: #8b0000;
+        }
+        .total-card:nth-child(2) .total-icon {
+            color: #0077b6;
+        }
+        .total-card:nth-child(2) .total-value {
+            color: #0077b6;
+        }
         
         .button-container {
             display: flex;
@@ -114,12 +122,26 @@
             min-width: 200px;
             text-align: center;
         }
-        .clear-btn { background: #d9534f; }
-        .clear-btn:hover { background: #c9302c; transform: translateY(-2px); }
-        .export-btn { background: #2e8b57; }
-        .export-btn:hover { background: #1f6b3d; transform: translateY(-2px); }
+        .clear-btn {
+            background: #d9534f;
+        }
+        .clear-btn:hover {
+            background: #c9302c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .export-btn {
+            background: #2e8b57;
+        }
+        .export-btn:hover {
+            background: #1f6b3d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
         
-        .table-container { margin-top: 20px; }
+        .table-container {
+            margin-top: 20px;
+        }
         h2 {
             font-size: 14px;
             font-weight: bold;
@@ -139,28 +161,95 @@
             margin-bottom: 30px;
             table-layout: fixed;
         }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; word-break: break-word; }
-        th { background-color: #f4f4f4; font-weight: bold; }
-        tr:hover { background-color: #f9f9f9; }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            word-break: break-word;
+        }
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+            position: relative;
+        }
+        th:hover {
+            background-color: #e0e0e0;
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+        }
         input[type="number"] {
             width: 60px;
             margin-left: 10px;
             padding: 5px;
             border-radius: 4px;
             border: 1px solid #ccc;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-        .footer { text-align: center; font-size: 14px; color: #333; margin-top: 15px; font-style: italic; }
-        .cell-controls { display: flex; justify-content: center; gap: 5px; }
-        .undo-btn, .reset-btn { background: none; border: none; cursor: pointer; font-size: 16px; transition: all 0.2s; }
-        .undo-btn:hover { color: #2e8b57; transform: scale(1.2); }
-        .reset-btn:hover { color: #ff4500; transform: scale(1.2); }
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #333;
+            margin-top: 15px;
+            font-style: italic;
+        }
+        .cell-controls {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+        .undo-btn, .reset-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 2px 5px;
+            transition: all 0.2s;
+        }
+        .undo-btn:hover {
+            color: #2e8b57;
+            transform: scale(1.2);
+        }
+        .reset-btn:hover {
+            color: #ff4500;
+            transform: scale(1.2);
+        }
         
         @media screen and (max-width: 768px) {
-            .summary-container { flex-direction: column; align-items: center; }
-            .total-card { width: 100%; max-width: 280px; }
-            table { font-size: 12px; table-layout: auto; }
-            .header { font-size: 20px; }
-            .action-btn { width: 100%; max-width: 280px; }
+            .summary-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+            .total-card {
+                width: 100%;
+                max-width: 280px;
+            }
+            .frame {
+                padding: 10px;
+            }
+            table {
+                font-size: 12px;
+                table-layout: auto;
+            }
+            th, td {
+                padding: 8px;
+            }
+            input[type="number"] {
+                width: 50px;
+                margin-left: 5px;
+            }
+            .header {
+                font-size: 20px;
+            }
+            .button-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .action-btn {
+                width: 100%;
+                max-width: 280px;
+            }
         }
     </style>
 </head>
@@ -226,7 +315,7 @@
 </div>
 
 <script>
-    // Malzeme Tanımları
+    // Veri yapıları
     const fiyatetiketivemalzemeler = {
         "ASKILI ÇM-KM FİYAT ETİKETLİK": 10,
         "PLEKSİ A5 AYAKLI": 10,
@@ -252,29 +341,42 @@
         "ENERJİ ETİKETİ STANDI": 10,
     };
 
-    const inputHistory = { fiyat: {}, enerji: {} };
+    // Girdi geçmişini saklamak için
+    const inputHistory = {
+        fiyat: {},
+        enerji: {}
+    };
 
+    // localStorage işlemleri
     const storage = {
         get: () => JSON.parse(localStorage.getItem('arcelikSkalaData') || '{}'),
         set: (data) => localStorage.setItem('arcelikSkalaData', JSON.stringify(data)),
         clear: () => localStorage.removeItem('arcelikSkalaData')
     };
 
+    // Verileri kaydetme fonksiyonu
     function saveData() {
-        const data = { fiyat: {}, enerji: {} };
+        const data = {
+            fiyat: {},
+            enerji: {}
+        };
 
+        // Fiyat tablosu verilerini topla
         document.querySelectorAll('#fiyatTable tbody tr').forEach(row => {
+            const rowId = row.id;
             const input = row.querySelector('input[type="number"]');
-            data.fiyat[row.id] = {
-                history: [...inputHistory.fiyat[row.id]],
+            data.fiyat[rowId] = {
+                history: [...inputHistory.fiyat[rowId]],
                 currentTotal: parseInt(input.dataset.total) || 0
             };
         });
 
+        // Enerji tablosu verilerini topla
         document.querySelectorAll('#enerjiTable tbody tr').forEach(row => {
+            const rowId = row.id;
             const input = row.querySelector('input[type="number"]');
-            data.enerji[row.id] = {
-                history: [...inputHistory.enerji[row.id]],
+            data.enerji[rowId] = {
+                history: [...inputHistory.enerji[rowId]],
                 currentTotal: parseInt(input.dataset.total) || 0
             };
         });
@@ -283,32 +385,39 @@
         updateTotals();
     }
 
+    // Toplamları güncelle
     function updateTotals() {
         let totalFiyat = 0;
         let totalEnerji = 0;
         
         document.querySelectorAll('#fiyatTable tbody tr').forEach(row => {
-            totalFiyat += parseInt(row.cells[3].textContent) || 0;
+            const totalCell = row.cells[3];
+            totalFiyat += parseInt(totalCell.textContent) || 0;
         });
         
         document.querySelectorAll('#enerjiTable tbody tr').forEach(row => {
-            totalEnerji += parseInt(row.cells[3].textContent) || 0;
+            const totalCell = row.cells[3];
+            totalEnerji += parseInt(totalCell.textContent) || 0;
         });
         
         document.getElementById('totalFiyat').textContent = totalFiyat;
         document.getElementById('totalEnerji').textContent = totalEnerji;
     }
 
+    // Hesaplama fonksiyonu
     function hesapla() {
         const savedData = storage.get();
-        const fiyatTableBody = document.querySelector("#fiyatTable tbody");
-        const enerjiTableBody = document.querySelector("#enerjiTable tbody");
+        
+        const fiyatTableBody = document.getElementById("fiyatTable").getElementsByTagName("tbody")[0];
+        const enerjiTableBody = document.getElementById("enerjiTable").getElementsByTagName("tbody")[0];
         
         populateTable(fiyatTableBody, fiyatetiketivemalzemeler, "fiyat", savedData.fiyat);
         populateTable(enerjiTableBody, enerjiEtiketiPleksileri, "enerji", savedData.enerji);
+        
         updateTotals();
     }
 
+    // Tablo oluşturma fonksiyonu
     function populateTable(tableBody, data, tableType, savedValues = {}) {
         let rowIndex = 0;
         for (const key in data) {
@@ -316,132 +425,221 @@
             const rowId = `${tableType}-row-${rowIndex++}`;
             row.id = rowId;
             
+            // Kayıtlı verileri yükle veya yeni başlat
             const savedRowData = savedValues[rowId] || { history: [0], currentTotal: 0 };
             inputHistory[tableType][rowId] = savedRowData.history || [0];
             const initialTotal = savedRowData.currentTotal || 0;
-            const paketSayi = data[key];
-
-            row.insertCell(0).textContent = key;
-            row.insertCell(1).textContent = paketSayi;
             
-            const inputCell = row.insertCell(2);
+            // Malzeme adı
+            row.insertCell(0).textContent = key;
+            
+            // Paket içi adet
+            row.insertCell(1).textContent = data[key];
+            
+            // Adet giriş alanı
             const adetInput = document.createElement("input");
             adetInput.type = "number";
+            adetInput.min = 0;
             adetInput.value = 0;
             adetInput.dataset.total = initialTotal;
-            
-            adetInput.addEventListener('focus', () => { if (adetInput.value === "0") adetInput.value = ''; });
-            adetInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') islemYap(adetInput, paketSayi, row.cells[3], rowId, tableType); });
-            adetInput.addEventListener('blur', () => islemYap(adetInput, paketSayi, row.cells[3], rowId, tableType));
+            adetInput.dataset.rowId = rowId;
+            adetInput.dataset.tableType = tableType;
 
-            inputCell.appendChild(adetInput);
+            const paketSayi = data[key];
+            
+            adetInput.addEventListener('focus', () => {
+                if (adetInput.value === "0") {
+                    adetInput.value = '';
+                }
+            });
+
+            adetInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    islemYap(adetInput, paketSayi, row.cells[3], rowId, tableType);
+                    event.preventDefault();
+                }
+            });
+
+            adetInput.addEventListener('blur', () => {
+                islemYap(adetInput, paketSayi, row.cells[3], rowId, tableType);
+            });
+
+            row.insertCell(2).appendChild(adetInput);
+            
+            // Toplam paket hücresi
             row.insertCell(3).textContent = Math.ceil(initialTotal / paketSayi);
             
+            // Kontrol butonları
             const controlCell = row.insertCell(4);
             controlCell.innerHTML = `
                 <div class="cell-controls">
-                    <button class="undo-btn" title="Geri Al">↩️</button>
-                    <button class="reset-btn" title="Sıfırla">❌</button>
+                    <button class="undo-btn" title="Son işlemi geri al">↩️</button>
+                    <button class="reset-btn" title="Tümünü sıfırla">❌</button>
                 </div>
             `;
             
-            controlCell.querySelector('.undo-btn').onclick = () => {
+            // Geri alma butonu
+            controlCell.querySelector('.undo-btn').addEventListener('click', () => {
                 const history = inputHistory[tableType][rowId];
+                const currentTotal = parseInt(adetInput.dataset.total) || 0;
+                
                 if (history.length > 1) {
+                    const lastValue = history[history.length - 2];
                     history.pop();
-                    const prev = history[history.length - 1];
-                    adetInput.dataset.total = prev;
-                    row.cells[3].textContent = Math.ceil(prev / paketSayi);
+                    
+                    adetInput.dataset.total = lastValue;
+                    row.cells[3].textContent = Math.ceil(lastValue / paketSayi);
+                    saveData();
+                } else if (history.length === 1 && currentTotal > 0) {
+                    adetInput.dataset.total = 0;
+                    row.cells[3].textContent = "0";
+                    history[0] = 0;
                     saveData();
                 }
-            };
+            });
             
-            controlCell.querySelector('.reset-btn').onclick = () => {
+            // Sıfırlama butonu
+            controlCell.querySelector('.reset-btn').addEventListener('click', () => {
                 inputHistory[tableType][rowId] = [0];
                 adetInput.dataset.total = 0;
                 adetInput.value = 0;
                 row.cells[3].textContent = "0";
                 saveData();
-            };
+            });
         }
     }
 
-    function islemYap(input, paketSayi, totalCell, rowId, tableType) {
-        const val = parseInt(input.value) || 0;
-        if (val === 0) return;
-        const newTotal = (parseInt(input.dataset.total) || 0) + val;
-        input.dataset.total = newTotal;
+    // İşlem yap fonksiyonu
+    function islemYap(adetInput, paketSayi, paketGerekliCell, rowId, tableType) {
+        const adetValue = parseInt(adetInput.value) || 0;
+        if (adetValue === 0) return;
+        
+        const currentTotal = parseInt(adetInput.dataset.total) || 0;
+        const newTotal = currentTotal + adetValue;
+        
+        adetInput.dataset.total = newTotal;
         inputHistory[tableType][rowId].push(newTotal);
-        totalCell.textContent = Math.ceil(newTotal / paketSayi);
-        input.value = 0;
+        
+        paketGerekliCell.textContent = Math.ceil(newTotal / paketSayi);
+        adetInput.value = '';
+        
         saveData();
     }
 
-    // Excel Export Fonksiyonu - Sıfırları Atlar ve Enerjiyi Ekler
+    // Excel export fonksiyonu - TAM ORTALANMIŞ HALİ
     function exportToExcel() {
-        const wb = XLSX.utils.book_new();
+        // Workbook oluştur
+        const workbook = XLSX.utils.book_new();
         
-        // Tablodaki verileri çeken yardımcı fonksiyon
-        function getCleanData(tableId, nameHeader) {
-            const rows = document.querySelectorAll(`#${tableId} tbody tr`);
-            const data = [];
-            rows.forEach(row => {
-                const total = parseInt(row.cells[3].textContent) || 0;
-                if (total > 0) {
-                    const obj = {};
-                    obj[nameHeader] = row.cells[0].textContent;
-                    obj['Toplam Paket'] = total;
-                    data.push(obj);
-                }
+        // 1. FİYAT ETİKETLERİ SAYFASI
+        const fiyatData = [];
+        document.querySelectorAll('#fiyatTable tbody tr').forEach(row => {
+            fiyatData.push({
+                'Malzeme': row.cells[0].textContent,
+                'Toplam Paket': parseInt(row.cells[3].textContent) || 0
             });
-            return data;
-        }
-
-        const fiyatData = getCleanData('fiyatTable', 'Malzeme');
-        const enerjiData = getCleanData('enerjiTable', 'Enerji Etiketi Pleksileri');
-
-        if (fiyatData.length === 0 && enerjiData.length === 0) {
-            alert('Lütfen önce adet girişi yapınız!');
-            return;
-        }
-
-        // Sayfaları oluştur ve ekle
-        if (fiyatData.length > 0) {
-            const wsFiyat = XLSX.utils.json_to_sheet(fiyatData);
-            wsFiyat['!cols'] = [{ wch: 45 }, { wch: 15 }];
-            XLSX.utils.book_append_sheet(wb, wsFiyat, "Fiyat Etiketleri");
-        }
-
-        if (enerjiData.length > 0) {
-            const wsEnerji = XLSX.utils.json_to_sheet(enerjiData);
-            wsEnerji['!cols'] = [{ wch: 45 }, { wch: 15 }];
-            XLSX.utils.book_append_sheet(wb, wsEnerji, "Enerji Etiketleri");
-        }
-
-        // Özet sayfası
-        const summary = [
-            ['GENEL TOPLAM RAPORU', ''],
-            ['Toplam Fiyat Etiketi Paketi', parseInt(document.getElementById('totalFiyat').textContent)],
-            ['Toplam Enerji Etiketi Paketi', parseInt(document.getElementById('totalEnerji').textContent)],
+        });
+        
+        // 2. ENERJİ ETİKETLERİ SAYFASI
+        const enerjiData = [];
+        document.querySelectorAll('#enerjiTable tbody tr').forEach(row => {
+            enerjiData.push({
+                'Enerji Etiketi Pleksileri': row.cells[0].textContent,
+                'Toplam Paket': parseInt(row.cells[3].textContent) || 0
+            });
+        });
+        
+        // 3. ÖZET SAYFASI
+        const summaryData = [
+            ['TOPLAMLAR', ''],
+            ['Toplam Fiyat Etiketi Paketi', parseInt(document.getElementById('totalFiyat').textContent) || 0],
+            ['Toplam Enerji Etiketi Paketi', parseInt(document.getElementById('totalEnerji').textContent) || 0],
             ['', ''],
-            ['Oluşturma Tarihi', new Date().toLocaleString('tr-TR')]
+            ['Oluşturulma Tarihi', new Date().toLocaleString('tr-TR')]
         ];
-        const wsSum = XLSX.utils.aoa_to_sheet(summary);
-        wsSum['!cols'] = [{ wch: 30 }, { wch: 20 }];
-        XLSX.utils.book_append_sheet(wb, wsSum, "Özet");
-
-        XLSX.writeFile(wb, `Arcelik_Skala_${new Date().toISOString().slice(0,10)}.xlsx`);
+        
+        // Sheet'leri oluştur
+        const fiyatSheet = XLSX.utils.json_to_sheet(fiyatData);
+        const enerjiSheet = XLSX.utils.json_to_sheet(enerjiData);
+        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+        
+        // MERKEZ HİZALAMA STİLİ
+        const centerStyle = {
+            alignment: {
+                horizontal: 'center',
+                vertical: 'center',
+                wrapText: true
+            }
+        };
+        
+        // Tüm hücrelere ortalama uygula
+        const applyCenterStyle = (sheet) => {
+            const range = XLSX.utils.decode_range(sheet['!ref']);
+            for(let R = range.s.r; R <= range.e.r; ++R) {
+                for(let C = range.s.c; C <= range.e.c; ++C) {
+                    const cell_address = {c:C, r:R};
+                    const cell_ref = XLSX.utils.encode_cell(cell_address);
+                    if(sheet[cell_ref]) {
+                        sheet[cell_ref].s = centerStyle;
+                        // Sayısal değerler için özel format
+                        if(typeof sheet[cell_ref].v === 'number') {
+                            sheet[cell_ref].z = '#,##0';
+                        }
+                    }
+                }
+            }
+        };
+        
+        applyCenterStyle(fiyatSheet);
+        applyCenterStyle(enerjiSheet);
+        applyCenterStyle(summarySheet);
+        
+        // SÜTUN GENİŞLİKLERİ
+        fiyatSheet['!cols'] = [
+            { wch: Math.max(...fiyatData.map(item => item.Malzeme.length), 20) + 2 },
+            { wch: 15 }
+        ];
+        
+        enerjiSheet['!cols'] = [
+            { wch: Math.max(...enerjiData.map(item => item['Enerji Etiketi Pleksileri'].length), 25) + 2 },
+            { wch: 15 }
+        ];
+        
+        summarySheet['!cols'] = [
+            { wch: 30 },
+            { wch: 20 }
+        ];
+        
+        // Workbook'a sheet'leri ekle
+        XLSX.utils.book_append_sheet(workbook, fiyatSheet, "Fiyat Etiketleri");
+        XLSX.utils.book_append_sheet(workbook, enerjiSheet, "Enerji Etiketleri");
+        XLSX.utils.book_append_sheet(workbook, summarySheet, "Özet");
+        
+        // Excel dosyasını indir
+        XLSX.writeFile(workbook, `Arcelik_Skala_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 
-    document.getElementById('clearAllBtn').onclick = () => {
-        if (confirm('Tüm veriler silinecek, emin misiniz?')) {
+    // Tüm verileri temizle butonu
+    document.getElementById('clearAllBtn').addEventListener('click', () => {
+        if (confirm('Tüm verileri silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) {
             storage.clear();
             location.reload();
         }
-    };
+    });
 
-    document.getElementById('exportExcelBtn').onclick = exportToExcel;
+    // Excel indir butonu
+    document.getElementById('exportExcelBtn').addEventListener('click', () => {
+        const totalFiyat = parseInt(document.getElementById('totalFiyat').textContent) || 0;
+        const totalEnerji = parseInt(document.getElementById('totalEnerji').textContent) || 0;
 
+        if (totalFiyat === 0 && totalEnerji === 0) {
+            alert('Dışa aktarılacak veri bulunmamaktadır. Lütfen öncelikle giriş yapınız.');
+        } else {
+            exportToExcel();
+        }
+    });
+
+    // Sayfa yüklendiğinde hesapla fonksiyonunu çalıştır
     window.onload = hesapla;
 </script>
 </body>
