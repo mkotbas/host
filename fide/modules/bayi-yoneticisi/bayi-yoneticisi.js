@@ -1,3 +1,5 @@
+// mkotbas/host/host-main/fide/modules/bayi-yoneticisi/bayi-yoneticisi.js
+
 // Gerekli kütüphaneleri (ExcelJS) dinamik olarak yüklemek için yardımcı fonksiyon
 function loadScript(url) {
     return new Promise((resolve, reject) => {
@@ -424,7 +426,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         if (btnExecuteImport) btnExecuteImport.disabled = !isValid;
     }
 
-    // İçe Aktarımı Başlat
+    // İçe Aktarımı Başlat (DİNAMİK VERİ TOPLAMA GÜNCELLEMESİ)
     if (btnExecuteImport) {
         btnExecuteImport.addEventListener('click', async () => {
             const mappings = {};
@@ -462,15 +464,21 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
                         return; // Bayi kodu yoksa atla
                     }
 
-                    const bayiData = {
-                        bayiKodu: String(bayiKoduVal).trim(),
-                        bayiAdi: mappings['bayiAdi'] > -1 ? String(row[mappings['bayiAdi']] || '') : '',
-                        bolge: mappings['bolge'] > -1 ? String(row[mappings['bolge']] || '') : '',
-                        sehir: mappings['sehir'] > -1 ? String(row[mappings['sehir']] || '') : '',
-                        ilce: mappings['ilce'] > -1 ? String(row[mappings['ilce']] || '') : '',
-                        yonetmen: mappings['yonetmen'] > -1 ? String(row[mappings['yonetmen']] || '') : '',
-                        email: mappings['email'] > -1 ? String(row[mappings['email']] || '') : ''
-                    };
+                    // --- GÜNCELLEME: VERİ OBJESİNİ DİNAMİK OLUŞTUR ---
+                    // Sadece eşleştirilmiş ve Excel'de içi dolu olan alanlar gönderilecek.
+                    const bayiData = {};
+                    bayiData.bayiKodu = String(bayiKoduVal).trim();
+                    
+                    const fieldKeys = ['bayiAdi', 'bolge', 'sehir', 'ilce', 'yonetmen', 'email'];
+                    fieldKeys.forEach(key => {
+                        const colIdx = mappings[key];
+                        if (colIdx > -1) {
+                            const val = row[colIdx] ? String(row[colIdx]).trim() : '';
+                            if (val !== '') {
+                                bayiData[key] = val;
+                            }
+                        }
+                    });
 
                     // Global kullanıcı ataması varsa ekle
                     if (globalUserId) {
@@ -480,11 +488,14 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
                     try {
                         const existing = existingBayiMap.get(bayiData.bayiKodu);
                         if (existing) {
-                            // Güncelle
+                            // GÜNCELLEME: Sadece değişen/dolu verileri gönder (PATCH hatasını önler)
                             await pb.collection('bayiler').update(existing.id, bayiData);
                             updateCount++;
                         } else {
-                            // Yeni oluştur
+                            // YENİ KAYIT: Eğer isim boşsa ve veritabanı zorunlu tutuyorsa hata almamak için kodu isim yap.
+                            if (!bayiData.bayiAdi) {
+                                bayiData.bayiAdi = bayiData.bayiKodu;
+                            }
                             await pb.collection('bayiler').create(bayiData);
                             successCount++;
                         }
@@ -571,7 +582,6 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
             renderCheckboxList(bulkAssignFilterYonetmen, availableYons, selYon, refreshBulkFilters);
             
             // AKILLI ÖZELLİK: Eğer bir yönetmen seçildiyse, "Sadece Atanmamışları" kutucuğunu otomatik kaldır.
-            // Çünkü kullanıcı muhtemelen bir "Değişiklik/Transfer" yapmak istiyordur.
             if (selYon.length > 0) {
                 bulkAssignOnlyUnassigned.checked = false;
             }
@@ -679,7 +689,7 @@ export async function initializeBayiYoneticisiModule(pbInstance) {
         XLSX.writeFile(wb, "Bayi_Listesi.xlsx");
     });
 
-    // Import Modal Açma (EKSİK OLAN KISIM EKLENDİ)
+    // Import Modal Açma
     if (btnOpenImportModal) {
         btnOpenImportModal.addEventListener('click', openImportModal);
     }
