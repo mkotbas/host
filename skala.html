@@ -526,27 +526,33 @@
         saveData();
     }
 
-    // Excel export fonksiyonu - TAM ORTALANMIŞ HALİ
+    // Excel export fonksiyonu - GÜNCELLENMİŞ VE FİLTRELİ
     function exportToExcel() {
         // Workbook oluştur
         const workbook = XLSX.utils.book_new();
         
-        // 1. FİYAT ETİKETLERİ SAYFASI
+        // 1. FİYAT ETİKETLERİ SAYFASI (Sadece > 0 olanlar)
         const fiyatData = [];
         document.querySelectorAll('#fiyatTable tbody tr').forEach(row => {
-            fiyatData.push({
-                'Malzeme': row.cells[0].textContent,
-                'Toplam Paket': parseInt(row.cells[3].textContent) || 0
-            });
+            const paketSayisi = parseInt(row.cells[3].textContent) || 0;
+            if (paketSayisi > 0) { // FİLTRELEME BURADA YAPILIYOR
+                fiyatData.push({
+                    'Malzeme': row.cells[0].textContent,
+                    'Toplam Paket': paketSayisi
+                });
+            }
         });
         
-        // 2. ENERJİ ETİKETLERİ SAYFASI
+        // 2. ENERJİ ETİKETLERİ SAYFASI (Sadece > 0 olanlar)
         const enerjiData = [];
         document.querySelectorAll('#enerjiTable tbody tr').forEach(row => {
-            enerjiData.push({
-                'Enerji Etiketi Pleksileri': row.cells[0].textContent,
-                'Toplam Paket': parseInt(row.cells[3].textContent) || 0
-            });
+            const paketSayisi = parseInt(row.cells[3].textContent) || 0;
+            if (paketSayisi > 0) { // FİLTRELEME BURADA YAPILIYOR
+                enerjiData.push({
+                    'Enerji Etiketi Pleksileri': row.cells[0].textContent,
+                    'Toplam Paket': paketSayisi
+                });
+            }
         });
         
         // 3. ÖZET SAYFASI
@@ -558,13 +564,47 @@
             ['Oluşturulma Tarihi', new Date().toLocaleString('tr-TR')]
         ];
         
-        // Sheet'leri oluştur
-        const fiyatSheet = XLSX.utils.json_to_sheet(fiyatData);
-        const enerjiSheet = XLSX.utils.json_to_sheet(enerjiData);
-        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+        // Sheet'leri oluştur (Eğer veri varsa)
+        let sheetAdded = false;
+
+        if (fiyatData.length > 0) {
+            const fiyatSheet = XLSX.utils.json_to_sheet(fiyatData);
+            formatSheet(fiyatSheet, fiyatData, 'Malzeme');
+            XLSX.utils.book_append_sheet(workbook, fiyatSheet, "Fiyat Etiketleri");
+            sheetAdded = true;
+        }
+
+        if (enerjiData.length > 0) {
+            const enerjiSheet = XLSX.utils.json_to_sheet(enerjiData);
+            formatSheet(enerjiSheet, enerjiData, 'Enerji Etiketi Pleksileri');
+            XLSX.utils.book_append_sheet(workbook, enerjiSheet, "Enerji Etiketleri");
+            sheetAdded = true;
+        }
         
-        // MERKEZ HİZALAMA STİLİ
-        const centerStyle = {
+        // Özet sayfasını her zaman ekle
+        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+        // Özet stil işlemleri
+        const centerStyle = { alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
+        const range = XLSX.utils.decode_range(summarySheet['!ref']);
+        for(let R = range.s.r; R <= range.e.r; ++R) {
+            for(let C = range.s.c; C <= range.e.c; ++C) {
+                const cell_ref = XLSX.utils.encode_cell({c:C, r:R});
+                if(summarySheet[cell_ref]) {
+                    summarySheet[cell_ref].s = centerStyle;
+                    if(typeof summarySheet[cell_ref].v === 'number') summarySheet[cell_ref].z = '#,##0';
+                }
+            }
+        }
+        summarySheet['!cols'] = [{ wch: 30 }, { wch: 20 }];
+        XLSX.utils.book_append_sheet(workbook, summarySheet, "Özet");
+
+        // Excel dosyasını indir
+        XLSX.writeFile(workbook, `Arcelik_Skala_Siparis_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    // Yardımcı Stil ve Format Fonksiyonu
+    function formatSheet(sheet, data, colName) {
+         const centerStyle = {
             alignment: {
                 horizontal: 'center',
                 vertical: 'center',
@@ -572,51 +612,25 @@
             }
         };
         
-        // Tüm hücrelere ortalama uygula
-        const applyCenterStyle = (sheet) => {
-            const range = XLSX.utils.decode_range(sheet['!ref']);
-            for(let R = range.s.r; R <= range.e.r; ++R) {
-                for(let C = range.s.c; C <= range.e.c; ++C) {
-                    const cell_address = {c:C, r:R};
-                    const cell_ref = XLSX.utils.encode_cell(cell_address);
-                    if(sheet[cell_ref]) {
-                        sheet[cell_ref].s = centerStyle;
-                        // Sayısal değerler için özel format
-                        if(typeof sheet[cell_ref].v === 'number') {
-                            sheet[cell_ref].z = '#,##0';
-                        }
+        // Hücre stillerini uygula
+        const range = XLSX.utils.decode_range(sheet['!ref']);
+        for(let R = range.s.r; R <= range.e.r; ++R) {
+            for(let C = range.s.c; C <= range.e.c; ++C) {
+                const cell_ref = XLSX.utils.encode_cell({c:C, r:R});
+                if(sheet[cell_ref]) {
+                    sheet[cell_ref].s = centerStyle;
+                    if(typeof sheet[cell_ref].v === 'number') {
+                        sheet[cell_ref].z = '#,##0';
                     }
                 }
             }
-        };
-        
-        applyCenterStyle(fiyatSheet);
-        applyCenterStyle(enerjiSheet);
-        applyCenterStyle(summarySheet);
-        
-        // SÜTUN GENİŞLİKLERİ
-        fiyatSheet['!cols'] = [
-            { wch: Math.max(...fiyatData.map(item => item.Malzeme.length), 20) + 2 },
+        }
+
+        // Sütun genişlikleri
+        sheet['!cols'] = [
+            { wch: Math.max(...data.map(item => item[colName].length), 25) + 2 },
             { wch: 15 }
         ];
-        
-        enerjiSheet['!cols'] = [
-            { wch: Math.max(...enerjiData.map(item => item['Enerji Etiketi Pleksileri'].length), 25) + 2 },
-            { wch: 15 }
-        ];
-        
-        summarySheet['!cols'] = [
-            { wch: 30 },
-            { wch: 20 }
-        ];
-        
-        // Workbook'a sheet'leri ekle
-        XLSX.utils.book_append_sheet(workbook, fiyatSheet, "Fiyat Etiketleri");
-        XLSX.utils.book_append_sheet(workbook, enerjiSheet, "Enerji Etiketleri");
-        XLSX.utils.book_append_sheet(workbook, summarySheet, "Özet");
-        
-        // Excel dosyasını indir
-        XLSX.writeFile(workbook, `Arcelik_Skala_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 
     // Tüm verileri temizle butonu
