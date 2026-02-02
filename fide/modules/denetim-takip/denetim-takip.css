@@ -62,7 +62,7 @@
     padding: 25px;
 }
 
-/* --- YENİ: Başlık Sağ Grup ve Toggle Butonları --- */
+/* --- Başlık Sağ Grup ve Toggle Butonları --- */
 .panel-header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 20px; padding-bottom: 15px;
@@ -139,7 +139,7 @@
 
 .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 25px; }
 
-/* --- Bilgi Kartları Hizalama Güncellemesi --- */
+/* --- Bilgi Kartları Hizalama --- */
 .stat-card {
     background-color: var(--light-container-bg);
     padding: 15px; border-radius: 8px;
@@ -230,8 +230,17 @@
     font-size: 13px; color: var(--light-text-primary);
     background-color: var(--light-container-bg);
 }
+
+/* Bayi adı ve Geri Al butonu yerleşim ayarları */
 .completed-item { display: flex; justify-content: space-between; align-items: center; }
-.completed-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; margin-right: 10px; }
+.completed-item span { 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    min-width: 0; 
+    margin-right: 10px; 
+    flex: 1;
+}
 .completed-item .btn-revert-audit { flex-shrink: 0; }
 
 .region-container { margin: 10px; border: 1px solid var(--light-border); border-radius: 8px; overflow: hidden; }

@@ -270,28 +270,68 @@ function renderRemainingStores(f) {
     const cont = document.getElementById('denetlenecek-bayiler-container');
     const audited = (currentViewMode === 'monthly') ? auditedStoreCodesCurrentMonth.map(a => a.code) : auditedStoreCodesCurrentYear;
     const rem = f.filter(s => !audited.includes(s.bayiKodu));
+    
     cont.innerHTML = rem.length ? '' : '<p class="empty-list-message">Kayıt yok.</p>';
     if (!rem.length) return;
+    
     const cities = [...new Set(rem.map(s => s.sehir))].sort((a,b) => a.localeCompare(b, 'tr'));
     const lSel = document.getElementById('local-city-filter');
     lSel.innerHTML = '<option value="Tümü">Tüm Şehirler</option>' + cities.map(c => `<option value="${c}">${c}</option>`).join('');
     lSel.value = cities.includes(localCityFilterValue) ? localCityFilterValue : 'Tümü';
+    
     const show = localCityFilterValue === 'Tümü' ? rem : rem.filter(s => s.sehir === localCityFilterValue);
     const byReg = show.reduce((acc, s) => { const r = s.bolge || 'Bölgesiz'; (acc[r] = acc[r] || []).push(s); return acc; }, {});
+    
     Object.keys(byReg).sort().forEach(r => {
         const total = allStores.filter(s => (s.bolge || 'Bölgesiz') === r).length;
         const done = allStores.filter(s => (s.bolge || 'Bölgesiz') === r && audited.includes(s.bayiKodu)).length;
         const prog = total > 0 ? (done / total * 100) : 0;
-        cont.innerHTML += `<div class="region-container"><div class="region-header"><span>${r} (${done}/${total})</span></div><div class="progress-bar"><div class="progress-bar-fill" style="width: ${prog}%;">${prog.toFixed(0)}%</div></div><ul class="store-list">${byReg[r].map(s => `<li class="store-list-item">${s.bayiAdi} (${s.bayiKodu}) - ${s.sehir}/${s.ilce}</li>`).join('')}</ul></div>`;
+        
+        const storeListItems = byReg[r].map(s => {
+            // Bayi adını 35 karakterle sınırlandırıyoruz
+            const truncatedName = s.bayiAdi.length > 35 ? s.bayiAdi.substring(0, 35) + '...' : s.bayiAdi;
+            return `<li class="store-list-item">${truncatedName} (${s.bayiKodu}) - ${s.sehir}/${s.ilce}</li>`;
+        }).join('');
+
+        cont.innerHTML += `
+            <div class="region-container">
+                <div class="region-header"><span>${r} (${done}/${total})</span></div>
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" style="width: ${prog}%;">${prog.toFixed(0)}%</div>
+                </div>
+                <ul class="store-list">${storeListItems}</ul>
+            </div>`;
     });
 }
 
 function renderAuditedStores() {
     const cont = document.getElementById('denetlenen-bayiler-container');
     const data = (currentViewMode === 'monthly') ? auditedStoreCodesCurrentMonth : auditedStoreCodesCurrentYear.map(c => ({code: c, timestamp: 0}));
-    if (!data.length) { cont.innerHTML = '<p class="empty-list-message">Kayıt yok.</p>'; return; }
-    const details = data.map(a => ({...(allStoresMaster.find(s => s.bayiKodu === a.code) || {bayiAdi: 'Bilinmeyen'}), timestamp: a.timestamp})).sort((a,b) => b.timestamp - a.timestamp);
-    cont.innerHTML = '<ul class="store-list">' + details.map(s => `<li class="store-list-item completed-item"><span>${s.bayiAdi} (${s.bayiKodu})</span>${(currentUserRole === 'admin' && currentViewMode === 'monthly') ? `<button class="btn-warning btn-sm" onclick="revertAudit('${s.bayiKodu}')"><i class="fas fa-undo"></i> Geri Al</button>` : ''}</li>`).join('') + '</ul>';
+    
+    if (!data.length) { 
+        cont.innerHTML = '<p class="empty-list-message">Kayıt yok.</p>'; 
+        return; 
+    }
+    
+    const details = data.map(a => ({
+        ...(allStoresMaster.find(s => s.bayiKodu === a.code) || {bayiAdi: 'Bilinmeyen'}), 
+        timestamp: a.timestamp
+    })).sort((a,b) => b.timestamp - a.timestamp);
+
+    cont.innerHTML = '<ul class="store-list">' + details.map(s => {
+        // "Bu Ay Denetlenenler" alanı da isteğin üzerine 35 karakterle sınırlandırıldı
+        const truncatedName = s.bayiAdi.length > 35 ? s.bayiAdi.substring(0, 35) + '...' : s.bayiAdi;
+        
+        const undoButton = (currentUserRole === 'admin' && currentViewMode === 'monthly') 
+            ? `<button class="btn-warning btn-sm btn-revert-audit" onclick="revertAudit('${s.bayiKodu}')"><i class="fas fa-undo"></i> Geri Al</button>` 
+            : '';
+
+        return `
+            <li class="store-list-item completed-item">
+                <span>${truncatedName} (${s.bayiKodu})</span>
+                ${undoButton}
+            </li>`;
+    }).join('') + '</ul>';
 }
 
 function getRemainingWorkdays() {
