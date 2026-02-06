@@ -21,152 +21,178 @@ export function initUi(pbInstance) {
     pb = pbInstance;
 }
 
-/**
- * Tüm UI fonksiyonlarını window nesnesine bağlar.
- * (HTML içindeki onclick="" özelliklerinin çalışması için gereklidir)
- */
-export function attachUiFunctionsToWindow() {
-    window.generateEmail = generateEmail;
-    window.returnToMainPage = returnToMainPage;
-    window.toggleQuestionCompleted = toggleQuestionCompleted;
-    window.toggleQuestionRemoved = toggleQuestionRemoved;
-    window.addDynamicInput = addDynamicInput;
-    window.initiateDeleteItem = initiateDeleteItem;
-    window.addProductToList = addProductToList;
-    window.removeProductFromList = removeProductFromList;
-    window.addStylingProductToList = addStylingProductToList;
-    window.removeStylingProductFromList = removeStylingProductFromList;
+function getUnitForProduct(productName) {
+    return 'Adet';
 }
 
-/**
- * DiDe ve FiDe formunu inşa eder.
- */
+function generateQuestionHtml(q) {
+    let questionActionsHTML = '';
+    let questionContentHTML = '';
+    let isArchivedClass = q.isArchived ? 'archived-item' : ''; 
+
+    if (q.type === 'standard') {
+        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join('');
+        questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
+    
+    } else if (q.type === 'product_list') {
+        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')"><i class="fas fa-plus"></i> Yeni Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        let productOptions = '';
+        let currentOptgroup = false;
+        state.productList.forEach(p => {
+            if (p.type === 'header') {
+                if (currentOptgroup) productOptions += `</optgroup>`;
+                productOptions += `<optgroup label="${p.name}">`;
+                currentOptgroup = true;
+            } else {
+                productOptions += `<option value="${p.code}">${p.code} - ${p.name}</option>`;
+            }
+        });
+        if (currentOptgroup) productOptions += `</optgroup>`;
+        questionContentHTML = `<div class="input-area"><b><i>Sipariş verilmesi gerekenler:</i></b><div class="product-adder"><select id="product-selector"><option value="">-- Malzeme Seçin --</option>${productOptions}</select><input type="number" id="product-qty" placeholder="Adet" min="1" value="1"><button class="btn-success btn-sm" onclick="addProductToList()"><i class="fas fa-plus"></i> Ekle</button></div><div id="selected-products-list"></div><hr><b class="plexi-header"><i>Pleksiyle sergilenmesi gerekenler veya yanlış pleksi malzemeyle kullanılanlar</i></b><div id="sub-items-container-fide${q.id}_pleksi"></div></div>`;
+    
+    } else if (q.type === 'pop_system') {
+        questionActionsHTML = `<div class="fide-actions"><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        questionContentHTML = `<div class="input-area"><div class="pop-container" id="popCodesContainer"></div><div class="warning-message" id="expiredWarning">Seçiminizde süresi dolmuş kodlar bulunmaktadır.</div><div class="pop-button-container"><button class="btn-success btn-sm" onclick="copySelectedCodes()">Kopyala</button><button class="btn-danger btn-sm" onclick="clearSelectedCodes()">Temizle</button><button class="btn-primary btn-sm" onclick="selectExpiredCodes()">Bitenler</button><button class="btn-primary btn-sm" onclick="openEmailDraft()">E-Posta</button></div></div>`;
+    
+    } else if (q.type === 'styling_list') {
+        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}_notes')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        
+        let mainCategoryOptions = '<option value="">-- Ana Kategori Seçin --</option>';
+        if (q.stylingData && Array.isArray(q.stylingData)) {
+            q.stylingData.forEach((mainCat) => {
+                mainCategoryOptions += `<option value="${mainCat.name}">${mainCat.name}</option>`;
+            });
+        }
+
+        let standardViewHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join('');
+        standardViewHTML = `<div id="standard-view-container-${q.id}">${standardViewHTML}</div>`;
+
+        questionContentHTML = `<div id="sub-items-container-fide${q.id}_notes" style="margin-bottom: 15px;"></div><div class="mode-toggle-container"><span class="mode-toggle-label">Detaylı Giriş / Malzeme Ekle</span><label class="switch"><input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingView(this, ${q.id})"><span class="slider round"></span></label></div>${standardViewHTML}<div class="input-area styling-list-container" id="styling-container-${q.id}" data-question-id="${q.id}" style="display: none;"><div class="styling-row"><div class="styling-label">Ana Kategori</div><div class="styling-content"><select class="styling-main-category-select">${mainCategoryOptions}</select></div></div><div class="styling-row" id="styling-sub-container-${q.id}" style="display: none;"><div class="styling-label">Alt Kategori</div><div class="styling-content d-flex align-items-center gap-2"><select class="styling-sub-category-select flex-grow-1"></select><input type="number" class="sub-category-qty-input" min="1" value="1" style="width: 70px;"></div></div><div class="styling-row"><div class="styling-label">Sipariş Listesi</div><div class="styling-content" style="display: block;"><div class="styling-selected-products-list"></div></div></div></div>`;
+    }
+
+    return `<div class="fide-item ${isArchivedClass}" id="fide-item-${q.id}"><div class="fide-title-container"><p><span class="badge">FiDe ${q.id}</span> ${q.title}</p></div>${questionContentHTML}${questionActionsHTML}</div>`;
+}
+
+function getFormDataForSaving() {
+    let reportData = { questions_status: {} };
+    state.fideQuestions.forEach(q => {
+        const itemDiv = document.getElementById(`fide-item-${q.id}`);
+        if (!itemDiv) return;
+
+        const isRemoved = itemDiv.classList.contains('question-removed');
+        const titleContainer = itemDiv.querySelector('.fide-title-container');
+        const isCompleted = titleContainer ? titleContainer.classList.contains('question-completed') : false;
+        
+        const questionData = { removed: isRemoved, completed: isCompleted, dynamicInputs: [], selectedProducts: [], selectedPops: [] };
+
+        if (q.type === 'standard') {
+            const container = document.getElementById(`sub-items-container-fide${q.id}`);
+            if (container) {
+                Array.from(container.childNodes).reverse().forEach(node => {
+                    if (node.classList && node.classList.contains('dynamic-input-item')) {
+                        const input = node.querySelector('input[type="text"]');
+                        if (input.value.trim()) questionData.dynamicInputs.push({ text: input.value.trim(), completed: input.classList.contains('completed') });
+                    }
+                });
+            }
+        } else if (q.type === 'product_list') {
+            document.querySelectorAll(`#fide-item-${q.id} #selected-products-list .selected-product-item`).forEach(item => {
+                questionData.selectedProducts.push({ code: item.dataset.code, name: item.dataset.name, qty: item.dataset.qty });
+            });
+            const pleksiContainer = document.getElementById(`sub-items-container-fide${q.id}_pleksi`);
+             if (pleksiContainer) {
+                Array.from(pleksiContainer.childNodes).reverse().forEach(node => {
+                    if (node.classList && node.classList.contains('dynamic-input-item')) {
+                        const input = node.querySelector('input[type="text"]');
+                        if (input.value.trim()) questionData.dynamicInputs.push({ text: input.value.trim(), completed: input.classList.contains('completed') });
+                    }
+                });
+            }
+        } else if (q.type === 'pop_system') {
+            questionData.selectedPops = Array.from(document.querySelectorAll(`#fide-item-${q.id} .pop-checkbox:checked`)).map(cb => cb.value);
+        } else if (q.type === 'styling_list') {
+            const container = itemDiv.querySelector('.styling-list-container');
+            const mainSelect = container.querySelector('.styling-main-category-select');
+            const subSelect = container.querySelector('.styling-sub-category-select');
+            const subQty = container.querySelector('.sub-category-qty-input');
+
+            document.querySelectorAll(`#fide-item-${q.id} .styling-selected-products-list .selected-product-item`).forEach(item => {
+                const qtyInput = item.querySelector('.qty-edit-input');
+                questionData.selectedProducts.push({ code: item.dataset.code, name: item.dataset.name, qty: qtyInput ? qtyInput.value : item.dataset.qty });
+            });
+
+            if (mainSelect.value || subSelect.value) {
+                 questionData.stylingCategorySelections = { mainCategory: mainSelect.value, subCategory: subSelect.value, subCategoryQty: subQty ? subQty.value : '1' };
+            }
+
+            const notesContainer = document.getElementById(`sub-items-container-fide${q.id}_notes`);
+            if (notesContainer) {
+                Array.from(notesContainer.childNodes).reverse().forEach(node => {
+                    if (node.classList && node.classList.contains('dynamic-input-item')) {
+                        const input = node.querySelector('input[type="text"]');
+                        if (input.value.trim()) questionData.dynamicInputs.push({ text: input.value.trim(), completed: input.classList.contains('completed') });
+                    }
+                });
+            }
+        }
+        reportData.questions_status[q.id] = questionData;
+    });
+    return reportData;
+}
+
+export function updateConnectionIndicator() {
+    const statusSwitch = document.getElementById('connection-status-switch');
+    const statusText = document.getElementById('connection-status-text');
+
+    let isAuthValid = false;
+    if (typeof pb !== 'undefined' && pb && pb.authStore) {
+        isAuthValid = pb.authStore.isValid === true;
+    }
+
+    const isOnline = state.isPocketBaseConnected === true && isAuthValid;
+
+    statusSwitch.classList.toggle('connected', isOnline);
+    statusSwitch.classList.toggle('disconnected', !isOnline);
+
+    statusText.textContent = isOnline ? 'Buluta Bağlı' : 'Bağlı Değil';
+}
+
+export function returnToMainPage() {
+    const emailDraft = document.getElementById('email-draft-container');
+    if (emailDraft) emailDraft.remove();
+    document.getElementById('dide-upload-card').style.display = 'block';
+    document.getElementById('form-content').style.display = 'block';
+    document.querySelector('.action-button').style.display = 'block';
+}
+
+export function resetForm() { 
+    state.setCurrentReportId(null);
+    buildForm(); 
+}
+
 export function buildForm() {
     const formContainer = document.getElementById('form-content');
-    formContainer.innerHTML = '';
-
-    // --- FiDe Soruları ---
-    if (state.fideQuestions && state.fideQuestions.length > 0) {
-        const fideHeader = document.createElement('h3');
-        fideHeader.innerHTML = '<i class="fas fa-check-double"></i> FiDe Denetim Maddeleri';
-        fideHeader.style.marginTop = '20px';
-        fideHeader.style.marginBottom = '15px';
-        fideHeader.style.color = 'var(--primary)';
-        formContainer.appendChild(fideHeader);
-
-        state.fideQuestions.forEach(q => {
-            const questionCard = createQuestionCard(q);
-            formContainer.appendChild(questionCard);
-        });
-    }
-
-    // --- DiDe Puan Kartı (Sadece bilgilendirme amaçlı) ---
-    // Eğer seçili bayi varsa puanlarını göster
-    if (state.selectedStore) {
-        updateStoreScoreDisplay();
-    }
+    if (!formContainer) return;
+    formContainer.innerHTML = state.fideQuestions.filter(q => !q.isArchived).map(q => generateQuestionHtml(q)).join('');
+    
+    const popContainer = document.getElementById('popCodesContainer');
+    if (popContainer) initializePopSystem(popContainer);
+    
+    document.querySelectorAll('.styling-main-category-select').forEach(select => {
+        select.addEventListener('change', handleStylingMainCatChange);
+    });
 }
 
-/**
- * Tek bir soru kartı oluşturur.
- */
-function createQuestionCard(q) {
-    const card = document.createElement('div');
-    card.className = 'card question-card';
-    card.id = `fide-item-${q.id}`;
-
-    let inputSection = '';
-    if (q.type === 'standard') {
-        inputSection = `
-            <div class="input-area">
-                <div id="sub-items-container-fide${q.id}" class="sub-items-container"></div>
-                <button class="btn-secondary btn-sm" onclick="addDynamicInput('fide${q.id}')">
-                    <i class="fas fa-plus"></i> Madde Ekle
-                </button>
-            </div>
-        `;
-    } else if (q.type === 'product_list') {
-        inputSection = `
-            <div class="input-area product-list-area">
-                <div class="search-container">
-                    <input type="text" class="product-search-input" placeholder="Ürün ara (Kod veya Ad)..." onkeyup="searchProducts(this, ${q.id})">
-                    <div class="product-search-results" id="results-${q.id}"></div>
-                </div>
-                <div id="selected-products-fide${q.id}" class="selected-items-list"></div>
-                <hr>
-                <p style="font-size: 12px; margin-bottom: 5px;"><b>Pleksiyle Sergilenecek Diğer Ürünler:</b></p>
-                <div id="sub-items-container-fide${q.id}_pleksi" class="sub-items-container"></div>
-                <button class="btn-secondary btn-sm" onclick="addDynamicInput('fide${q.id}_pleksi')">
-                    <i class="fas fa-plus"></i> Madde Ekle
-                </button>
-            </div>
-        `;
-    } else if (q.type === 'styling_list') {
-        inputSection = `
-            <div class="input-area styling-list-area">
-                <div class="styling-toggle-container">
-                    <label class="switch">
-                        <input type="checkbox" class="styling-mode-toggle" onchange="toggleStylingMode(this, ${q.id})">
-                        <span class="slider round"></span>
-                    </label>
-                    <span class="toggle-label">Styling Ürün Listesi Kullan</span>
-                </div>
-                
-                <div id="standard-view-container-${q.id}">
-                    <div id="sub-items-container-fide${q.id}_notes" class="sub-items-container"></div>
-                    <button class="btn-secondary btn-sm" onclick="addDynamicInput('fide${q.id}_notes')">
-                        <i class="fas fa-plus"></i> Not/Madde Ekle
-                    </button>
-                </div>
-
-                <div id="styling-view-container-${q.id}" class="styling-list-container" style="display: none;">
-                    <div class="styling-controls">
-                        <select class="styling-main-category-select" onchange="handleStylingMainCategoryChange(this, ${q.id})">
-                            <option value="">Kategori Seçin...</option>
-                        </select>
-                        <select class="styling-sub-category-select" style="display:none;" onchange="handleStylingSubCategoryChange(this, ${q.id})">
-                            <option value="">Alt Kategori Seçin...</option>
-                        </select>
-                        <input type="number" class="sub-category-qty-input" placeholder="Adet" min="1" value="1" style="display:none; width: 60px;">
-                        <button class="btn-primary btn-sm add-styling-btn" style="display:none;" onclick="addStylingSelectionToList(${q.id})">Ekle</button>
-                    </div>
-                    <div id="selected-styling-products-fide${q.id}" class="selected-items-list"></div>
-                </div>
-            </div>
-        `;
-    } else if (q.type === 'pop_system') {
-        inputSection = `
-            <div class="input-area pop-system-area">
-                <div id="pop-container-${q.id}" class="pop-grid"></div>
-            </div>
-        `;
-    }
-
-    card.innerHTML = `
-        <div class="question-header">
-            <span class="question-title">${q.id}. ${q.title}</span>
-            <div class="question-actions">
-                <button class="action-btn status-btn" onclick="toggleQuestionCompleted(this, '${q.id}')" title="Tamamlandı olarak işaretle">
-                    <i class="fas fa-check"></i>
-                </button>
-                <button class="action-btn remove-btn" onclick="toggleQuestionRemoved(this, '${q.id}')" title="Bu denetimde uygulama (Pasif yap)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-        ${inputSection}
-    `;
-
-    if (q.type === 'pop_system') {
-        setTimeout(() => initializePopSystem(card.querySelector('.pop-grid')), 0);
-    }
-
-    return card;
+export function startNewReport() {
+    state.setSelectedStore(null);
+    state.setCurrentReportId(null);
+    const searchInput = document.getElementById('store-search-input');
+    if (searchInput) searchInput.value = '';
+    resetForm();
+    updateFormInteractivity(false);
 }
 
-/**
- * E-posta taslağını oluşturur.
- */
 export async function generateEmail() {
     if (!state.selectedStore) {
         alert('Lütfen denetime başlamadan önce bir bayi seçin!');
@@ -252,27 +278,10 @@ export async function generateEmail() {
     });
 
     const cYear = new Date().getFullYear();
-    
-    // Ortalama hesaplama fonksiyonu (Sadece sayı olan ayları baz alır)
-    const calculateAvg = (scoresObj) => {
-        if (!scoresObj) return '-';
-        const values = Object.values(scoresObj).map(v => parseFloat(v)).filter(v => !isNaN(v));
-        if (values.length === 0) return '-';
-        const sum = values.reduce((a, b) => a + b, 0);
-        return (sum / values.length).toFixed(1);
-    };
-
-    const dAvg = calculateAvg(storeInfo?.scores);
-    const fAvg = calculateAvg(fideStoreInfo?.scores);
-
     let mHeaders = Array.from({length: 12}, (_, i) => `<th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${state.monthNames[i + 1] || i + 1}</th>`).join('');
-    mHeaders += `<th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">ORT.</th>`;
     
     let dScores = Array.from({length: 12}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(storeInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
-    dScores += `<td style="border: 1px solid #ddd; text-align: center; padding: 6px; font-weight: bold; background-color: #f9f9f9;">${dAvg}</td>`;
-
     let fScores = Array.from({length: 12}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(fideStoreInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
-    fScores += `<td style="border: 1px solid #ddd; text-align: center; padding: 6px; font-weight: bold; background-color: #f9f9f9;">${fAvg}</td>`;
     
     const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #ddd;"><thead><tr><th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #ddd; font-weight: bold; padding: 6px;">DiDe</td>${dScores}</tr><tr><td style="border: 1px solid #ddd; font-weight: bold; padding: 6px;">FiDe</td>${fScores}</tr></tbody></table></div>`;
 
@@ -384,313 +393,206 @@ function initiateDeleteItem(btn) {
 }
 
 function addProductToList(code, qty, save = true, name = null) {
-    const qId = state.fideQuestions.find(q => q.type === 'product_list')?.id;
-    if (!qId) return;
-
-    const listContainer = document.getElementById(`selected-products-fide${qId}`);
-    const product = state.productList.find(p => p.code === code);
-    const productName = name || (product ? product.name : "Bilinmeyen Ürün");
-
-    // Aynı ürün listede var mı?
-    const existing = Array.from(listContainer.querySelectorAll('.selected-item')).find(el => el.dataset.code === code);
-    if (existing) {
-        alert("Bu ürün zaten listede!");
-        return;
-    }
-
-    const item = document.createElement('div');
-    item.className = 'selected-item';
-    item.dataset.code = code;
-    item.dataset.name = productName;
-    item.dataset.qty = qty;
-
-    item.innerHTML = `
-        <span class="content"><b>${code}</b> ${productName}: <b>${qty} ${getUnitForProduct(productName)}</b></span>
-        <button class="btn-danger btn-xs" onclick="removeProductFromList(this)">
-            <i class="fas fa-trash"></i>
-        </button>
-    `;
-
-    listContainer.appendChild(item);
+    const sel = document.getElementById('product-selector');
+    const qInp = document.getElementById('product-qty');
+    const pCode = code || sel.value;
+    const pQty = qty || qInp.value;
+    if (!pCode || pQty < 1) return;
+    const prod = name ? { code: pCode, name } : state.productList.find(p => p.code === pCode);
+    if (!prod || document.querySelector(`#selected-products-list .selected-product-item[data-code="${prod.code}"]`)) return;
+    const div = document.createElement('div');
+    div.className = 'selected-product-item'; 
+    div.dataset.code = prod.code; div.dataset.qty = pQty; div.dataset.name = prod.name; 
+    div.innerHTML = `<span>${prod.code} ${prod.name} - <b>${pQty} Adet</b></span><button class="delete-item-btn btn-sm"><i class="fas fa-trash"></i></button>`;
+    div.querySelector('.delete-item-btn').onclick = () => { div.remove(); debouncedSaveFormState(); };
+    document.getElementById('selected-products-list').appendChild(div);
+    if (!code) { sel.value = ''; qInp.value = '1'; }
     if (save) debouncedSaveFormState();
 }
 
-export function removeProductFromList(btn) {
-    btn.closest('.selected-item').remove();
+function toggleCompleted(btn) {
+    const inp = btn.parentElement.querySelector('input[type="text"]');
+    const comp = inp.classList.toggle('completed');
+    inp.readOnly = comp;
+    btn.innerHTML = comp ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
+    btn.classList.toggle('undo', comp);
     debouncedSaveFormState();
+}
+
+function toggleQuestionCompleted(btn, id, save = true) {
+    const div = document.getElementById(`fide-item-${id}`);
+    const comp = div.querySelector('.fide-title-container').classList.toggle('question-completed');
+    btn.innerHTML = comp ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-check"></i> Tamamlandı';
+    btn.classList.toggle('undo', comp);
+    const area = div.querySelector('.input-area');
+    const styl = div.querySelector('.styling-mode-toggle');
+    if (area && !styl) area.style.display = comp ? 'none' : 'block';
+    if (styl) {
+        const sCont = div.querySelector('.styling-list-container');
+        const vCont = document.getElementById(`standard-view-container-${id}`);
+        const tCont = div.querySelector('.mode-toggle-container');
+        const nCont = document.getElementById(`sub-items-container-fide${id}_notes`);
+        [sCont, vCont, tCont, nCont].forEach(el => el && (el.style.display = comp ? 'none' : (el === sCont && !styl.checked ? 'none' : (el === vCont && styl.checked ? 'none' : 'block'))));
+    }
+    if (save) debouncedSaveFormState();
+}
+
+function toggleQuestionRemoved(btn, id, save = true) {
+    const div = document.getElementById(`fide-item-${id}`);
+    const rem = div.classList.toggle('question-removed');
+    const area = div.querySelector('.input-area');
+    const tCont = div.querySelector('.mode-toggle-container');
+    const nCont = document.getElementById(`sub-items-container-fide${id}_notes`);
+    if (tCont) tCont.style.display = rem ? 'none' : 'flex';
+    if (area) area.style.display = rem ? 'none' : 'block';
+    if (nCont) nCont.style.display = rem ? 'none' : 'block';
+    btn.innerHTML = rem ? '<i class="fas fa-undo"></i> Geri Al' : '<i class="fas fa-times-circle"></i> Çıkar';
+    btn.classList.toggle('btn-danger', !rem);
+    btn.classList.toggle('btn-primary', rem);
+    div.querySelectorAll('.add-item-btn, .status-btn').forEach(b => b.disabled = rem);
+    if (save) debouncedSaveFormState();
+}
+
+function addDynamicInput(id, val = '', comp = false, save = true) {
+    const cont = document.getElementById(`sub-items-container-${id}`);
+    if (!cont) return;
+    const div = document.createElement('div');
+    div.className = 'dynamic-input-item';
+    div.innerHTML = `<input type="text" value="${val}"><button class="status-btn btn-sm"><i class="fas fa-check"></i> Tamamlandı</button><button class="delete-bar btn-danger"><i class="fas fa-trash"></i></button>`;
+    const inp = div.querySelector('input');
+    inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); addDynamicInput(id); } };
+    inp.oninput = () => debouncedSaveFormState();
+    div.querySelector('.status-btn').onclick = () => toggleCompleted(div.querySelector('.status-btn'));
+    div.querySelector('.delete-bar').onclick = () => initiateDeleteItem(div.querySelector('.delete-bar'));
+    if (comp) toggleCompleted(div.querySelector('.status-btn'));
+    cont.prepend(div);
+    if (!val) inp.focus();
+    if (save) debouncedSaveFormState();
+}
+
+function checkExpiredPopCodes() {
+    const warn = document.getElementById('expiredWarning');
+    if (warn) warn.style.display = Array.from(document.querySelectorAll('.pop-checkbox:checked')).some(cb => state.expiredCodes.includes(cb.value)) ? 'block' : 'none';
+}
+
+function copySelectedCodes() {
+    const codes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(c => !state.expiredCodes.includes(c));
+    if (codes.length) navigator.clipboard.writeText(codes.join(', ')).then(() => alert("Kodlar kopyalandı!"));
+}
+
+function clearSelectedCodes() {
+    document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
+    checkExpiredPopCodes();
+    debouncedSaveFormState();
+}
+
+function selectExpiredCodes() {
+    document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = state.expiredCodes.includes(cb.value));
+    checkExpiredPopCodes();
+    debouncedSaveFormState();
+}
+
+function openEmailDraft() {
+    const codes = Array.from(document.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value).filter(c => !state.expiredCodes.includes(c));
+    if (!codes.length) return;
+    const q = state.fideQuestions.find(f => f.type === 'pop_system') || {};
+    
+    const toEmails = q.popEmailTo?.join(', ') || '';
+    const ccEmails = q.popEmailCc?.join(', ') || '';
+    
+    let emailWindow = window.open('', '_blank');
+    let content = `<b>Kime:</b> ${toEmails}<br>`;
+    
+    if (ccEmails) {
+        content += `<b>Bilgi (CC):</b> ${ccEmails}<br>`;
+    }
+    
+    content += `<br><b>İçerik:</b><br>${codes.join(', ')}`;
+    
+    emailWindow.document.write(content);
+}
+
+function toggleStylingView(cb, id) {
+    const s = document.getElementById(`styling-container-${id}`);
+    const v = document.getElementById(`standard-view-container-${id}`);
+    s.style.display = cb.checked ? 'block' : 'none';
+    v.style.display = cb.checked ? 'none' : 'block';
+}
+
+function handleStylingMainCatChange(e) {
+    const sel = e.target;
+    const cont = sel.closest('.styling-list-container');
+    const qId = cont.dataset.questionId;
+    const q = state.fideQuestions.find(f => String(f.id) === qId);
+    const sub = document.getElementById(`styling-sub-container-${qId}`);
+    const list = cont.querySelector('.styling-selected-products-list');
+    const sSel = sub.querySelector('.styling-sub-category-select');
+    sSel.innerHTML = '<option value="">-- Alt Kategori Seçin --</option>';
+    list.innerHTML = ''; 
+    if (sel.value && q?.stylingData) {
+        q.stylingData.find(mc => mc.name === sel.value)?.subCategories.forEach(sc => sSel.add(new Option(sc.name, sc.name)));
+        sub.style.display = 'flex'; 
+        sSel.onchange = handleStylingSubCatChange;
+        sub.querySelector('.sub-category-qty-input').onchange = (ev) => sSel.dispatchEvent(new Event('change'));
+    } else { sub.style.display = 'none'; }
+    debouncedSaveFormState(); 
+}
+
+function handleStylingSubCatChange(e) {
+    const sel = e.target;
+    const cont = sel.closest('.styling-list-container');
+    const qId = cont.dataset.questionId;
+    const q = state.fideQuestions.find(f => String(f.id) === qId);
+    const main = cont.querySelector('.styling-main-category-select');
+    const mult = parseInt(cont.querySelector('.sub-category-qty-input').value) || 1;
+    const list = cont.querySelector('.styling-selected-products-list');
+    list.innerHTML = ''; 
+    if (sel.value && q?.stylingData) {
+        q.stylingData.find(m => m.name === main.value)?.subCategories.find(s => s.name === sel.value)?.products.forEach(p => {
+            addStylingProductToList(qId, p.code, (parseInt(p.qty) || 1) * mult, p.name, false);
+        });
+    }
+    debouncedSaveFormState(); 
 }
 
 function addStylingProductToList(qId, code, qty, name, save = true) {
-    const listContainer = document.getElementById(`selected-styling-products-fide${qId}`);
+    const list = document.getElementById(`fide-item-${qId}`).querySelector('.styling-selected-products-list');
+    if (list.querySelector(`[data-code="${code}"]`)) return;
+    const div = document.createElement('div');
     
-    // Aynı ürün (kod/isim kombinasyonu) listede var mı?
-    const existing = Array.from(listContainer.querySelectorAll('.selected-item')).find(el => el.dataset.code === code && el.dataset.name === name);
-    if (existing) {
-        alert("Bu seçim zaten listede!");
-        return;
-    }
-
-    const item = document.createElement('div');
-    item.className = 'selected-item';
-    item.dataset.code = code;
-    item.dataset.name = name;
-    item.dataset.qty = qty;
-
-    item.innerHTML = `
-        <span class="content"><b>${code}</b> ${name}: <b>${qty} ${getUnitForProduct(name)}</b></span>
-        <button class="btn-danger btn-xs" onclick="removeStylingProductFromList(this)">
-            <i class="fas fa-trash"></i>
-        </button>
-    `;
-
-    listContainer.appendChild(item);
-    if (save) debouncedSaveFormState();
-}
-
-export function removeStylingProductFromList(btn) {
-    btn.closest('.selected-item').remove();
-    debouncedSaveFormState();
-}
-
-function addDynamicInput(containerId, text = '', completed = false, save = true) {
-    const container = document.getElementById(`sub-items-container-${containerId}`);
-    const item = document.createElement('div');
-    item.className = 'dynamic-input-item';
-    if (completed) item.classList.add('completed-container');
-
-    item.innerHTML = `
-        <input type="text" value="${text}" placeholder="Madde içeriğini yazın..." onkeyup="debouncedSaveFormState()" class="${completed ? 'completed' : ''}">
-        <button class="btn-danger btn-xs" onclick="initiateDeleteItem(this)">
-            <i class="fas fa-trash"></i>
-        </button>
-    `;
-
-    container.prepend(item);
-    if (save) debouncedSaveFormState();
-}
-
-function getFormDataForSaving() {
-    const questions_status = {};
-    state.fideQuestions.forEach(q => {
-        const itemDiv = document.getElementById(`fide-item-${q.id}`);
-        if (!itemDiv) return;
-
-        questions_status[q.id] = {
-            completed: itemDiv.querySelector('.status-btn').classList.contains('active'),
-            removed: itemDiv.classList.contains('question-removed'),
-            dynamicInputs: [],
-            selectedProducts: [],
-            selectedPops: [],
-            stylingCategorySelections: null
-        };
-
-        // Dinamik metin kutularını topla
-        const dynContainers = itemDiv.querySelectorAll('.sub-items-container');
-        dynContainers.forEach(container => {
-            const items = Array.from(container.querySelectorAll('.dynamic-input-item:not(.is-deleting)'));
-            items.forEach(it => {
-                const inp = it.querySelector('input');
-                if (inp.value.trim()) {
-                    questions_status[q.id].dynamicInputs.push({
-                        text: inp.value.trim(),
-                        completed: inp.classList.contains('completed')
-                    });
-                }
-            });
-        });
-
-        // Ürün listelerini topla
-        const productItems = itemDiv.querySelectorAll('.selected-items-list .selected-item');
-        productItems.forEach(it => {
-            questions_status[q.id].selectedProducts.push({
-                code: it.dataset.code,
-                name: it.dataset.name,
-                qty: it.dataset.qty
-            });
-        });
-
-        // POP seçimlerini topla
-        if (q.type === 'pop_system') {
-            const pops = Array.from(itemDiv.querySelectorAll('.pop-checkbox:checked')).map(cb => cb.value);
-            questions_status[q.id].selectedPops = pops;
-        }
-
-        // Styling kategori seçimlerini topla
-        if (q.type === 'styling_list') {
-            const mSel = itemDiv.querySelector('.styling-main-category-select');
-            const sSel = itemDiv.querySelector('.styling-sub-category-select');
-            const sQty = itemDiv.querySelector('.sub-category-qty-input');
-            questions_status[q.id].stylingCategorySelections = {
-                mainCategory: mSel.value,
-                subCategory: sSel.value,
-                subCategoryQty: sQty.value
-            };
-        }
-    });
-
-    return {
-        questions_status: questions_status,
-        timestamp: new Date().toISOString()
-    };
-}
-
-function returnToMainPage() {
-    window.location.reload();
-}
-
-function toggleQuestionCompleted(btn, qId, save = true) {
-    const card = document.getElementById(`fide-item-${qId}`);
-    btn.classList.toggle('active');
+    div.className = 'selected-product-item d-flex align-items-center mb-2'; 
+    div.style.padding = "8px";
+    div.style.borderBottom = "1px solid #eee";
+    div.dataset.code = code; div.dataset.qty = qty; div.dataset.name = name;
     
-    const inputs = card.querySelectorAll('input[type="text"]');
-    if (btn.classList.contains('active')) {
-        inputs.forEach(inp => {
-            inp.classList.add('completed');
-            inp.parentElement.classList.add('completed-container');
-        });
-    } else {
-        inputs.forEach(inp => {
-            inp.classList.remove('completed');
-            inp.parentElement.classList.remove('completed-container');
-        });
-    }
-
-    if (save) debouncedSaveFormState();
-}
-
-function toggleQuestionRemoved(btn, qId, save = true) {
-    const card = document.getElementById(`fide-item-${qId}`);
-    card.classList.toggle('question-removed');
-    btn.classList.toggle('active');
-    if (save) debouncedSaveFormState();
-}
-
-function resetForm() {
-    state.fideQuestions.forEach(q => {
-        const card = document.getElementById(`fide-item-${q.id}`);
-        if (!card) return;
-        card.classList.remove('question-removed');
-        card.querySelector('.status-btn').classList.remove('active');
-        card.querySelector('.remove-btn').classList.remove('active');
-        const containers = card.querySelectorAll('.sub-items-container, .selected-items-list');
-        containers.forEach(c => c.innerHTML = '');
-        const inputs = card.querySelectorAll('input, select');
-        inputs.forEach(i => { if(i.type === 'checkbox') i.checked = false; else i.value = ''; });
-    });
-}
-
-function updateConnectionIndicator() {
-    const switchEl = document.getElementById('connection-status-switch');
-    const textEl = document.getElementById('connection-status-text');
-    if (state.isPocketBaseConnected) {
-        switchEl.className = 'connected';
-        textEl.textContent = 'Buluta Bağlı';
-    } else {
-        switchEl.className = 'disconnected';
-        textEl.textContent = 'Bağlı Değil';
-    }
-}
-
-function updateStoreScoreDisplay() {
-    // Bu fonksiyon opsiyonel olarak bayi kartında anlık puan gösterimi için kullanılabilir.
-}
-
-function getUnitForProduct(productName) {
-    if (!productName) return "Adet";
-    const name = productName.toLowerCase();
-    if (name.includes('etiket') || name.includes('pleksi') || name.includes('fiyat')) return "Adet";
-    if (name.includes('kablo') || name.includes('şerit')) return "Metre";
-    return "Adet";
-}
-
-// Global olarak erişilmesi gereken bazı UI yardımcıları
-window.searchProducts = function(input, qId) {
-    const term = input.value.toLowerCase().trim();
-    const resultsDiv = document.getElementById(`results-${qId}`);
-    if (term.length < 2) { resultsDiv.innerHTML = ''; return; }
-
-    const filtered = state.productList.filter(p => 
-        p.code.toLowerCase().includes(term) || p.name.toLowerCase().includes(term)
-    ).slice(0, 10);
-
-    resultsDiv.innerHTML = filtered.map(p => `
-        <div class="product-result-item" onclick="addProductToList('${p.code}', 1, true, '${p.name}')">
-            <b>${p.code}</b> - ${p.name}
+    div.innerHTML = `
+        <span style="flex: 1; font-size: 13px;">${code} ${name}</span>
+        <div class="d-flex align-items-center" style="gap: 5px; min-width: 100px; justify-content: flex-end;">
+            <input type="number" class="qty-edit-input form-control form-control-sm" value="${qty}" style="width: 50px; height: 30px; padding: 2px 5px; text-align: center;">
+            <span style="font-size: 13px; font-weight: normal; color: #333;">Adet</span>
         </div>
-    `).join('');
-};
-
-window.toggleStylingMode = function(cb, qId) {
-    const standard = document.getElementById(`standard-view-container-${qId}`);
-    const styling = document.getElementById(`styling-view-container-${qId}`);
-    if (cb.checked) {
-        standard.style.display = 'none';
-        styling.style.display = 'block';
-        populateStylingMainCategories(qId);
-    } else {
-        standard.style.display = 'block';
-        styling.style.display = 'none';
-    }
-    debouncedSaveFormState();
-};
-
-function populateStylingMainCategories(qId) {
-    const select = document.querySelector(`#fide-item-${qId} .styling-main-category-select`);
-    if (select.options.length > 1) return;
-    const cats = [...new Set(state.productList.map(p => p.mainCategory))].filter(Boolean).sort();
-    cats.forEach(c => select.add(new Option(c, c)));
+        <button class="delete-item-btn btn-sm btn-danger ms-2" style="height: 30px; width: 30px; display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-trash" style="margin: 0;"></i>
+        </button>
+    `;
+    
+    div.querySelector('.qty-edit-input').onchange = () => debouncedSaveFormState();
+    div.querySelector('.delete-item-btn').onclick = () => { div.remove(); debouncedSaveFormState(); };
+    list.appendChild(div);
+    if (save) debouncedSaveFormState();
 }
 
-window.handleStylingMainCategoryChange = function(select, qId) {
-    const mainCat = select.value;
-    const subSelect = document.querySelector(`#fide-item-${qId} .styling-sub-category-select`);
-    const qtyInput = document.querySelector(`#fide-item-${qId} .sub-category-qty-input`);
-    const addBtn = document.querySelector(`#fide-item-${qId} .add-styling-btn`);
-
-    subSelect.innerHTML = '<option value="">Alt Kategori Seçin...</option>';
-    if (!mainCat) {
-        subSelect.style.display = 'none';
-        qtyInput.style.display = 'none';
-        addBtn.style.display = 'none';
-        return;
-    }
-
-    const subCats = [...new Set(state.productList.filter(p => p.mainCategory === mainCat).map(p => p.subCategory))].filter(Boolean).sort();
-    subCats.forEach(sc => subSelect.add(new Option(sc, sc)));
-    subSelect.style.display = 'inline-block';
-    qtyInput.style.display = 'inline-block';
-    addBtn.style.display = 'inline-block';
-};
-
-window.handleStylingSubCategoryChange = function(select, qId) {
-    debouncedSaveFormState();
-};
-
-window.addStylingSelectionToList = function(qId) {
-    const mainCat = document.querySelector(`#fide-item-${qId} .styling-main-category-select`).value;
-    const subCat = document.querySelector(`#fide-item-${qId} .styling-sub-category-select`).value;
-    const qty = document.querySelector(`#fide-item-${qId} .sub-category-qty-input`).value;
-
-    if (!mainCat || !subCat || !qty) return;
-    addStylingProductToList(qId, mainCat, qty, subCat, true);
-};
-
-function checkExpiredPopCodes() {
-    const checked = Array.from(document.querySelectorAll('.pop-checkbox:checked'));
-    checked.forEach(cb => {
-        const lbl = cb.parentElement;
-        if (state.expiredCodes.includes(cb.value)) {
-            lbl.style.color = '#ef4444';
-            lbl.style.fontWeight = 'bold';
-            lbl.title = "DİKKAT: Bu POP malzemesinin kullanım süresi dolmuştur!";
-        } else {
-            lbl.style.color = '';
-            lbl.style.fontWeight = '';
-            lbl.title = '';
-        }
-    });
+export function attachUiFunctionsToWindow() {
+    window.generateEmail = generateEmail;
+    window.returnToMainPage = returnToMainPage;
+    window.initiateDeleteItem = initiateDeleteItem;
+    window.addProductToList = addProductToList;
+    window.toggleQuestionCompleted = toggleQuestionCompleted;
+    window.toggleQuestionRemoved = toggleQuestionRemoved;
+    window.addDynamicInput = addDynamicInput;
+    window.copySelectedCodes = copySelectedCodes;
+    window.clearSelectedCodes = clearSelectedCodes;
+    window.selectExpiredCodes = selectExpiredCodes;
+    window.openEmailDraft = openEmailDraft;
+    window.toggleStylingView = toggleStylingView; 
 }
-
-// Export functions to window
-attachUiFunctionsToWindow();
-export { updateConnectionIndicator };
