@@ -129,7 +129,7 @@ function getFormDataForSaving() {
             const notesContainer = document.getElementById(`sub-items-container-fide${q.id}_notes`);
             if (notesContainer) {
                 Array.from(notesContainer.childNodes).reverse().forEach(node => {
-                    if (node.classList.contains('dynamic-input-item')) {
+                    if (node.classList && node.classList.contains('dynamic-input-item')) {
                         const input = node.querySelector('input[type="text"]');
                         if (input.value.trim()) questionData.dynamicInputs.push({ text: input.value.trim(), completed: input.classList.contains('completed') });
                     }
@@ -280,12 +280,12 @@ export async function generateEmail() {
     const cYear = new Date().getFullYear();
     
     // TABLO BAŞLIKLARI (AYLAR + ORTALAMA)
-    // GÜNCELLEME: Hücrelerin kenarlara yapışık durmaması için padding değerleri 6px (dikey) ve 12px (yatay) olarak güncellendi.
+    // TASARIM GÜNCELLEMESİ: Hücre kenarlarına yapışık durmaması için padding 6px (dikey) ve 12px (yatay) olarak artırıldı.
     let mHeaders = "";
     for (let i = 1; i <= 12; i++) {
         mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
     }
-    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; white-space: nowrap;">YIL ORT.</th>`;
+    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; white-space: nowrap;">YIL ORTALAMASI</th>`;
     
     // DiDe Puanları ve Ortalama Hesabı
     let dScores = "";
