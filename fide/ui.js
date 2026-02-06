@@ -278,12 +278,69 @@ export async function generateEmail() {
     });
 
     const cYear = new Date().getFullYear();
-    let mHeaders = Array.from({length: 12}, (_, i) => `<th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${state.monthNames[i + 1] || i + 1}</th>`).join('');
     
-    let dScores = Array.from({length: 12}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(storeInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
-    let fScores = Array.from({length: 12}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(fideStoreInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
+    // --- GÜNCELLENMİŞ TABLO OLUŞTURMA MANTIĞI (ORTALAMA HESAPLAMA VE RENKLENDİRME) ---
+    const redHeaderStyle = "border: 1px solid #000; text-align: center; padding: 6px; background-color: red; color: black; font-weight: bold;";
+    const whiteCellStyle = "border: 1px solid #000; text-align: center; padding: 6px; background-color: white; color: black;";
     
-    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #ddd;"><thead><tr><th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #ddd; font-weight: bold; padding: 6px;">DiDe</td>${dScores}</tr><tr><td style="border: 1px solid #ddd; font-weight: bold; padding: 6px;">FiDe</td>${fScores}</tr></tbody></table></div>`;
+    let mHeaders = Array.from({length: 12}, (_, i) => `<th style="${redHeaderStyle}">${state.monthNames[i + 1].toUpperCase()}</th>`).join('');
+    
+    // DiDe Puanları ve Ortalama Hesaplama
+    let dideSum = 0;
+    let dideCount = 0;
+    let dScores = Array.from({length: 12}, (_, i) => {
+        let val = (storeInfo?.scores?.[i + 1]);
+        if(val !== undefined && val !== null && val !== "" && val !== "-") {
+            let numVal = parseFloat(String(val).replace(',', '.'));
+            if(!isNaN(numVal)) {
+                dideSum += numVal;
+                dideCount++;
+            }
+        }
+        return `<td style="${whiteCellStyle}">${val || ''}</td>`;
+    }).join('');
+    let dideAvg = dideCount > 0 ? (dideSum / dideCount).toFixed(2).replace('.', ',') : '';
+
+    // FiDe Puanları ve Ortalama Hesaplama
+    let fideSum = 0;
+    let fideCount = 0;
+    let fScores = Array.from({length: 12}, (_, i) => {
+        let val = (fideStoreInfo?.scores?.[i + 1]);
+        if(val !== undefined && val !== null && val !== "" && val !== "-") {
+            let numVal = parseFloat(String(val).replace(',', '.'));
+            if(!isNaN(numVal)) {
+                fideSum += numVal;
+                fideCount++;
+            }
+        }
+        return `<td style="${whiteCellStyle}">${val || ''}</td>`;
+    }).join('');
+    let fideAvg = fideCount > 0 ? (fideSum / fideCount).toFixed(2).replace('.', ',') : '';
+    
+    const tableHtml = `
+    <div style="overflow-x: auto;">
+        <table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 2px solid #000; width: 100%;">
+            <thead>
+                <tr>
+                    <th style="${redHeaderStyle}">${cYear}</th>
+                    ${mHeaders}
+                    <th style="${redHeaderStyle}">YIL ORTALAMASI</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="${redHeaderStyle}">DİDE</td>
+                    ${dScores}
+                    <td style="${whiteCellStyle} font-weight: bold;">${dideAvg}</td>
+                </tr>
+                <tr>
+                    <td style="${redHeaderStyle}">FİDE</td>
+                    ${fScores}
+                    <td style="${whiteCellStyle} font-weight: bold;">${fideAvg}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>`;
 
     let finalBody = emailTemplate
         .replace(/{YONETMEN_ADI}/g, yonetmenFirstName)
