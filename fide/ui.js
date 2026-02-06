@@ -129,7 +129,7 @@ function getFormDataForSaving() {
             const notesContainer = document.getElementById(`sub-items-container-fide${q.id}_notes`);
             if (notesContainer) {
                 Array.from(notesContainer.childNodes).reverse().forEach(node => {
-                    if (node.classList && node.classList.contains('dynamic-input-item')) {
+                    if (node.classList.contains('dynamic-input-item')) {
                         const input = node.querySelector('input[type="text"]');
                         if (input.value.trim()) questionData.dynamicInputs.push({ text: input.value.trim(), completed: input.classList.contains('completed') });
                     }
@@ -278,12 +278,52 @@ export async function generateEmail() {
     });
 
     const cYear = new Date().getFullYear();
-    let mHeaders = Array.from({length: 12}, (_, i) => `<th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${state.monthNames[i + 1] || i + 1}</th>`).join('');
     
-    let dScores = Array.from({length: 12}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(storeInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
-    let fScores = Array.from({length: 12}, (_, i) => `<td style="border: 1px solid #ddd; text-align: center; padding: 6px;">${(fideStoreInfo?.scores?.[i + 1]) || '-'}</td>`).join('');
+    // TABLO BAŞLIKLARI (AYLAR + ORTALAMA)
+    // GÜNCELLEME: Hücrelerin kenarlara yapışık durmaması için padding değerleri 6px (dikey) ve 12px (yatay) olarak güncellendi.
+    let mHeaders = "";
+    for (let i = 1; i <= 12; i++) {
+        mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
+    }
+    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; white-space: nowrap;">YIL ORT.</th>`;
     
-    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #ddd;"><thead><tr><th style="border: 1px solid #ddd; text-align: center; padding: 6px; background-color: #f2f2f2; font-weight: bold;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #ddd; font-weight: bold; padding: 6px;">DiDe</td>${dScores}</tr><tr><td style="border: 1px solid #ddd; font-weight: bold; padding: 6px;">FiDe</td>${fScores}</tr></tbody></table></div>`;
+    // DiDe Puanları ve Ortalama Hesabı
+    let dScores = "";
+    let dSum = 0;
+    let dCount = 0;
+    
+    for (let i = 1; i <= 12; i++) {
+        const val = storeInfo?.scores?.[i];
+        const numVal = parseFloat(val);
+        if (!isNaN(numVal)) {
+            dSum += numVal;
+            dCount++;
+        }
+        dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px;">${val || ''}</td>`;
+    }
+    
+    const dAvg = dCount > 0 ? (dSum / dCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
+    dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff;">${dAvg}</td>`;
+    
+    // FiDe Puanları ve Ortalama Hesabı
+    let fScores = "";
+    let fSum = 0;
+    let fCount = 0;
+    
+    for (let i = 1; i <= 12; i++) {
+        const val = fideStoreInfo?.scores?.[i];
+        const numVal = parseFloat(val);
+        if (!isNaN(numVal)) {
+            fSum += numVal;
+            fCount++;
+        }
+        fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px;">${val || ''}</td>`;
+    }
+    
+    const fAvg = fCount > 0 ? (fSum / fCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
+    fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff;">${fAvg}</td>`;
+    
+    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 9pt; border: 1px solid #000000; width: auto;"><thead><tr><th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000;">DİDE</td>${dScores}</tr><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000;">FİDE</td>${fScores}</tr></tbody></table></div>`;
 
     let finalBody = emailTemplate
         .replace(/{YONETMEN_ADI}/g, yonetmenFirstName)
