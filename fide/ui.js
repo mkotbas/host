@@ -297,12 +297,12 @@ export async function generateEmail() {
     
     for (let i = 1; i <= 12; i++) {
         const val = storeInfo?.scores?.[i];
-        const numVal = parseFloat(String(val).replace(',', '.'));
+        // GÜNCELLEME: Binlik ayırıcı noktayı temizleyen güvenli sayı dönüşümü
+        const numVal = parseFloat(String(val || '').replace(/\./g, '').replace(',', '.'));
         if (!isNaN(numVal)) {
             dSum += numVal;
             dCount++;
         }
-        // GÜNCELLEME: Aylık DiDe puanları kalın hale getirildi.
         dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold;">${val || ''}</td>`;
     }
     
@@ -322,12 +322,12 @@ export async function generateEmail() {
             val = manualFideScore;
         }
 
-        const numVal = parseFloat(String(val).replace(',', '.'));
+        // GÜNCELLEME: Binlik ayırıcı noktayı temizleyen güvenli sayı dönüşümü
+        const numVal = parseFloat(String(val || '').replace(/\./g, '').replace(',', '.'));
         if (!isNaN(numVal)) {
             fSum += numVal;
             fCount++;
         }
-        // GÜNCELLEME: Aylık FiDe puanları kalın hale getirildi.
         fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold;">${val || ''}</td>`;
     }
     
@@ -533,7 +533,7 @@ function copySelectedCodes() {
 
 function clearSelectedCodes() {
     document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
-    checkExpiredPopCodes();
+    checkExpiredPopAvgCodes();
     debouncedSaveFormState();
 }
 
