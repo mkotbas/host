@@ -199,6 +199,10 @@ export async function generateEmail() {
         return;
     }
 
+    // --- YENİ: Manuel FiDe Puanı Girişi (Ortalama hesaplamasına dahil edilir) ---
+    const currentMonthIdx = new Date().getMonth() + 1;
+    let manualFideScore = prompt(`${state.monthNames[currentMonthIdx]} ayı FiDe puanını giriniz (Boş bırakırsanız sadece mevcut veriler hesaplanır):`);
+
     let emailTemplate = `<p>{YONETMEN_ADI} Bey Merhaba,</p><p>Ziyaret etmiş olduğum {BAYI_BILGISI} bayi karnesi aşağıdadır.</p><p><br></p>{DENETIM_ICERIGI}<p><br></p>{PUAN_TABLOSU}`;
     if (pb && pb.authStore.isValid) {
         try {
@@ -294,7 +298,7 @@ export async function generateEmail() {
     
     for (let i = 1; i <= 12; i++) {
         const val = storeInfo?.scores?.[i];
-        const numVal = parseFloat(val);
+        const numVal = parseFloat(String(val).replace(',', '.'));
         if (!isNaN(numVal)) {
             dSum += numVal;
             dCount++;
@@ -305,14 +309,20 @@ export async function generateEmail() {
     const dAvg = dCount > 0 ? (dSum / dCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
     dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff;">${dAvg}</td>`;
     
-    // FiDe Puanları ve Ortalama Hesabı
+    // FiDe Puanları ve Ortalama Hesabı (GÜNCELLEME: Manuel puan dahil edilir)
     let fScores = "";
     let fSum = 0;
     let fCount = 0;
     
     for (let i = 1; i <= 12; i++) {
-        const val = fideStoreInfo?.scores?.[i];
-        const numVal = parseFloat(val);
+        let val = fideStoreInfo?.scores?.[i];
+        
+        // Eğer bu ay ise ve Excel'de boşsa, manuel girilen puanı kullan
+        if (i === currentMonthIdx && manualFideScore && (!val || val === "")) {
+            val = manualFideScore;
+        }
+
+        const numVal = parseFloat(String(val).replace(',', '.'));
         if (!isNaN(numVal)) {
             fSum += numVal;
             fCount++;
