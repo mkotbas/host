@@ -31,7 +31,7 @@ function generateQuestionHtml(q) {
     let isArchivedClass = q.isArchived ? 'archived-item' : ''; 
 
     if (q.type === 'standard') {
-        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
+        questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join('');
         questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
     
@@ -286,9 +286,9 @@ export async function generateEmail() {
     // TABLO BAŞLIKLARI (AYLAR + ORTALAMA)
     let mHeaders = "";
     for (let i = 1; i <= 12; i++) {
-        mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
+        mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 10pt; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
     }
-    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; white-space: nowrap;">YIL ORTALAMASI</th>`;
+    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 10pt; white-space: nowrap;">YIL ORTALAMASI</th>`;
     
     // DiDe Puanları ve Ortalama Hesabı
     let dScores = "";
@@ -297,19 +297,19 @@ export async function generateEmail() {
     
     for (let i = 1; i <= 12; i++) {
         const val = storeInfo?.scores?.[i];
-        // GÜNCELLEME: Binlik ayırıcı noktayı temizleyen güvenli sayı dönüşümü
         const numVal = parseFloat(String(val || '').replace(/\./g, '').replace(',', '.'));
         if (!isNaN(numVal)) {
             dSum += numVal;
             dCount++;
         }
-        dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold;">${val || ''}</td>`;
+        // GÜNCELLEME: Aylık DiDe puanlarından kalın (bold) stili kaldırıldı.
+        dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px;">${val || ''}</td>`;
     }
     
     const dAvg = dCount > 0 ? (dSum / dCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
     dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff;">${dAvg}</td>`;
     
-    // FiDe Puanları ve Ortalama Hesabı (GÜNCELLEME: Manuel puan dahil edilir)
+    // FiDe Puanları ve Ortalama Hesabı
     let fScores = "";
     let fSum = 0;
     let fCount = 0;
@@ -317,24 +317,24 @@ export async function generateEmail() {
     for (let i = 1; i <= 12; i++) {
         let val = fideStoreInfo?.scores?.[i];
         
-        // Eğer bu ay ise ve Excel'de boşsa, manuel girilen puanı kullan
         if (i === currentMonthIdx && manualFideScore && (!val || val === "")) {
             val = manualFideScore;
         }
 
-        // GÜNCELLEME: Binlik ayırıcı noktayı temizleyen güvenli sayı dönüşümü
         const numVal = parseFloat(String(val || '').replace(/\./g, '').replace(',', '.'));
         if (!isNaN(numVal)) {
             fSum += numVal;
             fCount++;
         }
-        fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold;">${val || ''}</td>`;
+        // GÜNCELLEME: Aylık FiDe puanlarından kalın (bold) stili kaldırıldı.
+        fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px;">${val || ''}</td>`;
     }
     
     const fAvg = fCount > 0 ? (fSum / fCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
     fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff;">${fAvg}</td>`;
     
-    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 10pt; border: 1px solid #000000; width: auto;"><thead><tr><th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000;">DİDE</td>${dScores}</tr><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000;">FİDE</td>${fScores}</tr></tbody></table></div>`;
+    // GÜNCELLEME: Yıl başlığı 11pt yapıldı, Diğer başlıklar 10pt olarak korundu.
+    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 1px solid #000000; width: auto;"><thead><tr><th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 10pt;">DİDE</td>${dScores}</tr><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 10pt;">FİDE</td>${fScores}</tr></tbody></table></div>`;
 
     let finalBody = emailTemplate
         .replace(/{YONETMEN_ADI}/g, yonetmenFirstName)
@@ -533,7 +533,7 @@ function copySelectedCodes() {
 
 function clearSelectedCodes() {
     document.querySelectorAll('.pop-checkbox').forEach(cb => cb.checked = false);
-    checkExpiredPopAvgCodes();
+    checkExpiredPopCodes();
     debouncedSaveFormState();
 }
 
