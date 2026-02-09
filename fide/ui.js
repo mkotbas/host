@@ -286,9 +286,11 @@ export async function generateEmail() {
     // TABLO BAŞLIKLARI (AYLAR + ORTALAMA)
     let mHeaders = "";
     for (let i = 1; i <= 12; i++) {
-        mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 10pt; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
+        // GÜNCELLEME: Başlık boyutu 11pt yapıldı
+        mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
     }
-    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 10pt; white-space: nowrap;">YIL ORTALAMASI</th>`;
+    // GÜNCELLEME: Yıl ortalaması başlık boyutu 11pt yapıldı
+    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt; white-space: nowrap;">YIL ORTALAMASI</th>`;
     
     // DiDe Puanları ve Ortalama Hesabı
     let dScores = "";
@@ -302,12 +304,13 @@ export async function generateEmail() {
             dSum += numVal;
             dCount++;
         }
-        // GÜNCELLEME: Aylık DiDe puanlarından kalın (bold) stili kaldırıldı.
-        dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px;">${val || ''}</td>`;
+        // GÜNCELLEME: Puan boyutu 11pt ve Kalın yapıldı
+        dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-size: 11pt; font-weight: bold;">${val || ''}</td>`;
     }
     
     const dAvg = dCount > 0 ? (dSum / dCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
-    dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff;">${dAvg}</td>`;
+    // GÜNCELLEME: Ortalama puan boyutu 11pt ve Kalın yapıldı
+    dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${dAvg}</td>`;
     
     // FiDe Puanları ve Ortalama Hesabı
     let fScores = "";
@@ -326,15 +329,16 @@ export async function generateEmail() {
             fSum += numVal;
             fCount++;
         }
-        // GÜNCELLEME: Aylık FiDe puanlarından kalın (bold) stili kaldırıldı.
-        fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px;">${val || ''}</td>`;
+        // GÜNCELLEME: Puan boyutu 11pt ve Kalın yapıldı
+        fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-size: 11pt; font-weight: bold;">${val || ''}</td>`;
     }
     
     const fAvg = fCount > 0 ? (fSum / fCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
-    fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff;">${fAvg}</td>`;
+    // GÜNCELLEME: Ortalama puan boyutu 11pt ve Kalın yapıldı
+    fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${fAvg}</td>`;
     
-    // GÜNCELLEME: Yıl başlığı 11pt yapıldı, Diğer başlıklar 10pt olarak korundu.
-    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 1px solid #000000; width: auto;"><thead><tr><th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 10pt;">DİDE</td>${dScores}</tr><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 10pt;">FİDE</td>${fScores}</tr></tbody></table></div>`;
+    // GÜNCELLEME: Tablo genel yazı boyutu, yıl başlığı ve satır başlıkları (DİDE/FİDE) 11pt yapıldı
+    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 1px solid #000000; width: auto;"><thead><tr><th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 11pt;">DİDE</td>${dScores}</tr><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 11pt;">FİDE</td>${fScores}</tr></tbody></table></div>`;
 
     let finalBody = emailTemplate
         .replace(/{YONETMEN_ADI}/g, yonetmenFirstName)
