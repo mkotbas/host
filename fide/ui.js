@@ -286,11 +286,9 @@ export async function generateEmail() {
     // TABLO BAŞLIKLARI (AYLAR + ORTALAMA)
     let mHeaders = "";
     for (let i = 1; i <= 12; i++) {
-        // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
-        mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 2px 5px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
+        mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 0px 10px; background-color: #ff0000; color: #000000; font-weight: normal; font-size: 11pt; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
     }
-    // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
-    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 2px 5px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt; white-space: nowrap;">YIL ORTALAMASI</th>`;
+    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 0px 10px; background-color: #ff0000; color: #000000; font-weight: normal; font-size: 11pt; white-space: nowrap;">YIL ORTALAMASI</th>`;
     
     // DiDe Puanları ve Ortalama Hesabı
     let dScores = "";
@@ -304,13 +302,12 @@ export async function generateEmail() {
             dSum += numVal;
             dCount++;
         }
-        // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
-        dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-size: 11pt; font-weight: bold;">${val || ''}</td>`;
+        // GÜNCELLEME: font-weight normal yapıldı.
+        dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-size: 11pt; font-weight: normal;">${val || ''}</td>`;
     }
     
     const dAvg = dCount > 0 ? (dSum / dCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
-    // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
-    dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${dAvg}</td>`;
+    dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${dAvg}</td>`;
     
     // FiDe Puanları ve Ortalama Hesabı
     let fScores = "";
@@ -329,16 +326,14 @@ export async function generateEmail() {
             fSum += numVal;
             fCount++;
         }
-        // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
-        fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-size: 11pt; font-weight: bold;">${val || ''}</td>`;
+        // GÜNCELLEME: font-weight normal yapıldı.
+        fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-size: 11pt; font-weight: normal;">${val || ''}</td>`;
     }
     
     const fAvg = fCount > 0 ? (fSum / fCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
-    // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
-    fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${fAvg}</td>`;
+    fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${fAvg}</td>`;
     
-    // GÜNCELLEME: Ana hücreler için de padding 2px 5px yapıldı.
-    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 1px solid #000000; width: auto;"><thead><tr><th style="border: 1px solid #000000; text-align: center; padding: 2px 5px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 11pt;">DİDE</td>${dScores}</tr><tr><td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 11pt;">FİDE</td>${fScores}</tr></tbody></table></div>`;
+    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 1px solid #000000; width: auto;"><thead><tr><th style="border: 1px solid #000000; text-align: center; padding: 0px 10px; background-color: #ff0000; color: #000000; font-weight: normal; font-size: 11pt;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: normal; background-color: #ff0000; color: #000000; font-size: 11pt;">DİDE</td>${dScores}</tr><tr><td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: normal; background-color: #ff0000; color: #000000; font-size: 11pt;">FİDE</td>${fScores}</tr></tbody></table></div>`;
 
     let finalBody = emailTemplate
         .replace(/{YONETMEN_ADI}/g, yonetmenFirstName)
