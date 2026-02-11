@@ -262,7 +262,8 @@ export async function generateEmail() {
             if (q.type === 'product_list') {
                 const pleksi = Array.from(document.querySelectorAll(`#sub-items-container-fide${q.id}_pleksi input[type="text"]`)).filter(i => !i.classList.contains('completed') && i.value.trim()).map(i => `<li>${i.value}</li>`).join('');
                 if (prods) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${prods}</ul>`;
-                if (pleksi) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler:</i></b><ul>${pleksi}</ul>`;
+                // GÜNCELLEME: Başlık metni UI'daki ile birebir aynı yapıldı.
+                if (pleksi) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya yanlış pleksi malzemeyle kullanılanlar:</i></b><ul>${pleksi}</ul>`;
             } else {
                 const staticBox = document.getElementById(`standard-view-container-${q.id}`);
                 if (staticBox) contentHtml += `<ul>${Array.from(staticBox.querySelectorAll('.static-item .content')).map(d => `<li>${d.innerHTML}</li>`).join('')}</ul>`;
