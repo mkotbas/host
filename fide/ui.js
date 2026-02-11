@@ -3,6 +3,15 @@ import { saveFormState } from './api.js';
 
 let pb; // PocketBase instance
 
+// --- TABLO STİLLERİ (Yönetilebilir Stil Nesnesi) ---
+const TABLE_STYLES = {
+    table: 'border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 1px solid #000000; width: auto;',
+    header: 'border: 1px solid #000000; text-align: center; padding: 0px 10px; background-color: #ff0000; color: #000000; font-weight: normal; font-size: 11pt; white-space: nowrap;',
+    cell: 'border: 1px solid #000000; text-align: center; padding: 0px 10px; font-size: 11pt; font-weight: normal;',
+    cellLabel: 'border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: normal; background-color: #ff0000; color: #000000; font-size: 11pt;',
+    avgCell: 'border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: bold; background-color: #ffffff; font-size: 11pt;'
+};
+
 // --- DEBOUNCE MEKANİZMASI ---
 let saveDebounceTimer;
 function debouncedSaveFormState() {
@@ -21,8 +30,89 @@ export function initUi(pbInstance) {
     pb = pbInstance;
 }
 
+// --- YARDIMCI FONKSİYONLAR (Logic/Veri Temizleme) ---
+
+function parseScore(val) {
+    if (val === undefined || val === null || val === "") return NaN;
+    // Sayı formatını standartlaştır: "95,5" -> "95.5"
+    const cleaned = String(val).replace(/\./g, '').replace(',', '.');
+    return parseFloat(cleaned);
+}
+
+function calculateAverage(scores, currentMonthIdx, manualScore = null) {
+    let sum = 0;
+    let count = 0;
+    
+    for (let i = 1; i <= 12; i++) {
+        let val = scores ? scores[i] : null;
+        
+        if (i === currentMonthIdx && manualScore !== null && !isNaN(manualScore)) {
+            val = manualScore;
+        }
+
+        const num = typeof val === 'number' ? val : parseScore(val);
+        if (!isNaN(num)) {
+            sum += num;
+            count++;
+        }
+    }
+    return count > 0 ? (sum / count).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
+}
+
 function getUnitForProduct(productName) {
     return 'Adet';
+}
+
+// --- GÖRÜNÜM PARÇALARI (View/HTML Components) ---
+
+function renderPerformanceTable(storeInfo, fideStoreInfo, manualFideScore) {
+    const cYear = new Date().getFullYear();
+    const currentMonthIdx = new Date().getMonth() + 1;
+    const manualNum = manualFideScore ? parseScore(manualFideScore) : null;
+
+    let mHeaders = "";
+    for (let i = 1; i <= 12; i++) {
+        mHeaders += `<th style="${TABLE_STYLES.header}">${state.monthNames[i].toUpperCase()}</th>`;
+    }
+    mHeaders += `<th style="${TABLE_STYLES.header}">YIL ORTALAMASI</th>`;
+
+    let dScores = "";
+    for (let i = 1; i <= 12; i++) {
+        dScores += `<td style="${TABLE_STYLES.cell}">${storeInfo?.scores?.[i] || ''}</td>`;
+    }
+    dScores += `<td style="${TABLE_STYLES.avgCell}">${calculateAverage(storeInfo?.scores, currentMonthIdx)}</td>`;
+
+    let fScores = "";
+    for (let i = 1; i <= 12; i++) {
+        let displayVal = fideStoreInfo?.scores?.[i] || '';
+        if (i === currentMonthIdx && manualNum !== null && !isNaN(manualNum) && !displayVal) {
+            displayVal = manualFideScore;
+        }
+        fScores += `<td style="${TABLE_STYLES.cell}">${displayVal}</td>`;
+    }
+    fScores += `<td style="${TABLE_STYLES.avgCell}">${calculateAverage(fideStoreInfo?.scores, currentMonthIdx, manualNum)}</td>`;
+
+    return `
+        <div style="overflow-x: auto;">
+            <table style="${TABLE_STYLES.table}">
+                <thead>
+                    <tr>
+                        <th style="${TABLE_STYLES.header}">${cYear}</th>
+                        ${mHeaders}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="${TABLE_STYLES.cellLabel}">DİDE</td>
+                        ${dScores}
+                    </tr>
+                    <tr>
+                        <td style="${TABLE_STYLES.cellLabel}">FİDE</td>
+                        ${fScores}
+                    </tr>
+                </tbody>
+            </table>
+        </div>`;
 }
 
 function generateQuestionHtml(q) {
@@ -199,9 +289,26 @@ export async function generateEmail() {
         return;
     }
 
-    // --- YENİ: Manuel FiDe Puanı Girişi (Ortalama hesaplamasına dahil edilir) ---
-    const currentMonthIdx = new Date().getMonth() + 1;
-    let manualFideScore = prompt(`${state.monthNames[currentMonthIdx]} ayı FiDe puanını giriniz (Boş bırakırsanız sadece mevcut veriler hesaplanır):`);
+    // --- KULLANICI GİRDİSİ VE ZORUNLU KONTROL (GÜNCELLENDİ) ---
+    let manualFideScore = prompt(`${state.monthNames[new Date().getMonth() + 1]} ayı FiDe puanını giriniz (İşleme devam etmek için puan girmek zorunludur):`);
+
+    // Eğer kullanıcı İptal'e bastıysa veya hiçbir şey yazmadan Tamam dediyse işlemi durdur
+    if (manualFideScore === null || manualFideScore.trim() === "") {
+        alert("Puan girilmediği için e-posta taslağı oluşturma işlemi durduruldu.");
+        return;
+    }
+
+    // Nokta (.) kullanımı yasak
+    if (manualFideScore.includes('.')) {
+        alert("Hata: Nokta (.) kullanılamaz.\nLütfen ondalık sayıları virgül (,) ile ayırın (Örn: 56,6).");
+        return;
+    }
+
+    const parsed = parseScore(manualFideScore);
+    if (isNaN(parsed)) {
+        alert("Hata: Girdiğiniz değer ('" + manualFideScore + "') geçerli bir sayı değildir.");
+        return;
+    }
 
     let emailTemplate = `<p>{YONETMEN_ADI} Bey Merhaba,</p><p>Ziyaret etmiş olduğum {BAYI_BILGISI} bayi karnesi aşağıdadır.</p><p><br></p>{DENETIM_ICERIGI}<p><br></p>{PUAN_TABLOSU}`;
     if (pb && pb.authStore.isValid) {
@@ -213,8 +320,6 @@ export async function generateEmail() {
 
     const reportData = getFormDataForSaving();
     await saveFormState(reportData, true);
-
-    // --- YENİ: DİĞER MODÜLLERE GÜNCELLEME SİNYALİ GÖNDER ---
     window.dispatchEvent(new CustomEvent('reportFinalized'));
 
     const storeInfo = state.dideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu)) || null;
@@ -261,7 +366,7 @@ export async function generateEmail() {
             if (q.type === 'product_list') {
                 const pleksi = Array.from(document.querySelectorAll(`#sub-items-container-fide${q.id}_pleksi input[type="text"]`)).filter(i => !i.classList.contains('completed') && i.value.trim()).map(i => `<li>${i.value}</li>`).join('');
                 if (prods) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${prods}</ul>`;
-                if (pleksi) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya yanlış pleksi malzemeyle kullanılanlar:</i></b><ul>${pleksi}</ul>`;
+                if (pleksi) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler...:</i></b><ul>${pleksi}</ul>`;
             } else {
                 const staticBox = document.getElementById(`standard-view-container-${q.id}`);
                 if (staticBox) contentHtml += `<ul>${Array.from(staticBox.querySelectorAll('.static-item .content')).map(d => `<li>${d.innerHTML}</li>`).join('')}</ul>`;
@@ -281,59 +386,7 @@ export async function generateEmail() {
         }
     });
 
-    const cYear = new Date().getFullYear();
-    
-    // TABLO BAŞLIKLARI (AYLAR + ORTALAMA)
-    let mHeaders = "";
-    for (let i = 1; i <= 12; i++) {
-        mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 0px 10px; background-color: #ff0000; color: #000000; font-weight: normal; font-size: 11pt; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
-    }
-    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 0px 10px; background-color: #ff0000; color: #000000; font-weight: normal; font-size: 11pt; white-space: nowrap;">YIL ORTALAMASI</th>`;
-    
-    // DiDe Puanları ve Ortalama Hesabı
-    let dScores = "";
-    let dSum = 0;
-    let dCount = 0;
-    
-    for (let i = 1; i <= 12; i++) {
-        const val = storeInfo?.scores?.[i];
-        const numVal = parseFloat(String(val || '').replace(/\./g, '').replace(',', '.'));
-        if (!isNaN(numVal)) {
-            dSum += numVal;
-            dCount++;
-        }
-        // GÜNCELLEME: font-weight normal yapıldı.
-        dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-size: 11pt; font-weight: normal;">${val || ''}</td>`;
-    }
-    
-    const dAvg = dCount > 0 ? (dSum / dCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
-    dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${dAvg}</td>`;
-    
-    // FiDe Puanları ve Ortalama Hesabı
-    let fScores = "";
-    let fSum = 0;
-    let fCount = 0;
-    
-    for (let i = 1; i <= 12; i++) {
-        let val = fideStoreInfo?.scores?.[i];
-        
-        if (i === currentMonthIdx && manualFideScore && (!val || val === "")) {
-            val = manualFideScore;
-        }
-
-        const numVal = parseFloat(String(val || '').replace(/\./g, '').replace(',', '.'));
-        if (!isNaN(numVal)) {
-            fSum += numVal;
-            fCount++;
-        }
-        // GÜNCELLEME: font-weight normal yapıldı.
-        fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-size: 11pt; font-weight: normal;">${val || ''}</td>`;
-    }
-    
-    const fAvg = fCount > 0 ? (fSum / fCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
-    fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${fAvg}</td>`;
-    
-    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 1px solid #000000; width: auto;"><thead><tr><th style="border: 1px solid #000000; text-align: center; padding: 0px 10px; background-color: #ff0000; color: #000000; font-weight: normal; font-size: 11pt;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: normal; background-color: #ff0000; color: #000000; font-size: 11pt;">DİDE</td>${dScores}</tr><tr><td style="border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: normal; background-color: #ff0000; color: #000000; font-size: 11pt;">FİDE</td>${fScores}</tr></tbody></table></div>`;
+    const tableHtml = renderPerformanceTable(storeInfo, fideStoreInfo, manualFideScore);
 
     let finalBody = emailTemplate
         .replace(/{YONETMEN_ADI}/g, yonetmenFirstName)
@@ -518,6 +571,29 @@ function addDynamicInput(id, val = '', comp = false, save = true) {
     cont.prepend(div);
     if (!val) inp.focus();
     if (save) debouncedSaveFormState();
+}
+
+function getCombinedInputs(id) {
+    const container = document.getElementById(`sub-items-container-${id}`);
+    if (!container) return [];
+    const allItems = [];
+    Array.from(container.childNodes).reverse().forEach(node => {
+        if (node.classList && (node.classList.contains('static-item') || node.classList.contains('dynamic-input-item'))) {
+            if(node.classList.contains('is-deleting')) return;
+            let text, completed = false, type = '';
+            if (node.classList.contains('static-item')) {
+                text = node.querySelector('.content').innerHTML;
+                type = 'static';
+            } else {
+                const input = node.querySelector('input[type="text"]');
+                text = input.value.trim();
+                completed = input.classList.contains('completed');
+                type = 'dynamic';
+            }
+            if (text) allItems.push({ text, completed, type });
+        }
+    });
+    return allItems;
 }
 
 function checkExpiredPopCodes() {
