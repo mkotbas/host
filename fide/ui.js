@@ -31,7 +31,6 @@ function generateQuestionHtml(q) {
     let isArchivedClass = q.isArchived ? 'archived-item' : ''; 
 
     if (q.type === 'standard') {
-        // DÜZELTME BURADA YAPILDI: onclick="toggleQuestionCompleted..." -> onclick="toggleQuestionRemoved..."
         questionActionsHTML = `<div class="fide-actions"><button class="add-item-btn btn-sm" onclick="addDynamicInput('fide${q.id}')"><i class="fas fa-plus"></i> Yeni Eksik Ekle</button><button class="status-btn btn-sm" onclick="toggleQuestionCompleted(this, ${q.id})"><i class="fas fa-check"></i> Tamamlandı</button><button class="remove-btn btn-danger btn-sm" onclick="toggleQuestionRemoved(this, ${q.id})"><i class="fas fa-times-circle"></i> Çıkar</button></div>`;
         let staticItemsHTML = (q.staticItems || []).map(item => `<div class="static-item"><div class="content">${item}</div><button class="delete-bar btn-danger" onclick="initiateDeleteItem(this)"><i class="fas fa-trash"></i></button></div>`).join('');
         questionContentHTML = `<div class="input-area"><div id="sub-items-container-fide${q.id}">${staticItemsHTML}</div></div>`;
@@ -262,7 +261,6 @@ export async function generateEmail() {
             if (q.type === 'product_list') {
                 const pleksi = Array.from(document.querySelectorAll(`#sub-items-container-fide${q.id}_pleksi input[type="text"]`)).filter(i => !i.classList.contains('completed') && i.value.trim()).map(i => `<li>${i.value}</li>`).join('');
                 if (prods) contentHtml += `<b><i>Sipariş verilmesi gerekenler:</i></b><ul>${prods}</ul>`;
-                // GÜNCELLEME: Başlık metni UI'daki ile birebir aynı yapıldı.
                 if (pleksi) contentHtml += `<b><i>Pleksiyle sergilenmesi gerekenler veya yanlış pleksi malzemeyle kullanılanlar:</i></b><ul>${pleksi}</ul>`;
             } else {
                 const staticBox = document.getElementById(`standard-view-container-${q.id}`);
@@ -288,11 +286,11 @@ export async function generateEmail() {
     // TABLO BAŞLIKLARI (AYLAR + ORTALAMA)
     let mHeaders = "";
     for (let i = 1; i <= 12; i++) {
-        // GÜNCELLEME: Başlık boyutu 11pt yapıldı
-        mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
+        // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
+        mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 2px 5px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt; white-space: nowrap;">${state.monthNames[i].toUpperCase()}</th>`;
     }
-    // GÜNCELLEME: Yıl ortalaması başlık boyutu 11pt yapıldı
-    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt; white-space: nowrap;">YIL ORTALAMASI</th>`;
+    // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
+    mHeaders += `<th style="border: 1px solid #000000; text-align: center; padding: 2px 5px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt; white-space: nowrap;">YIL ORTALAMASI</th>`;
     
     // DiDe Puanları ve Ortalama Hesabı
     let dScores = "";
@@ -306,13 +304,13 @@ export async function generateEmail() {
             dSum += numVal;
             dCount++;
         }
-        // GÜNCELLEME: Puan boyutu 11pt ve Kalın yapıldı
-        dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-size: 11pt; font-weight: bold;">${val || ''}</td>`;
+        // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
+        dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-size: 11pt; font-weight: bold;">${val || ''}</td>`;
     }
     
     const dAvg = dCount > 0 ? (dSum / dCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
-    // GÜNCELLEME: Ortalama puan boyutu 11pt ve Kalın yapıldı
-    dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${dAvg}</td>`;
+    // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
+    dScores += `<td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${dAvg}</td>`;
     
     // FiDe Puanları ve Ortalama Hesabı
     let fScores = "";
@@ -331,16 +329,16 @@ export async function generateEmail() {
             fSum += numVal;
             fCount++;
         }
-        // GÜNCELLEME: Puan boyutu 11pt ve Kalın yapıldı
-        fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-size: 11pt; font-weight: bold;">${val || ''}</td>`;
+        // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
+        fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-size: 11pt; font-weight: bold;">${val || ''}</td>`;
     }
     
     const fAvg = fCount > 0 ? (fSum / fCount).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : '';
-    // GÜNCELLEME: Ortalama puan boyutu 11pt ve Kalın yapıldı
-    fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${fAvg}</td>`;
+    // GÜNCELLEME: Padding 2px 5px yapılarak tablo daraltıldı.
+    fScores += `<td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-weight: bold; background-color: #ffffff; font-size: 11pt;">${fAvg}</td>`;
     
-    // GÜNCELLEME: Tablo genel yazı boyutu, yıl başlığı ve satır başlıkları (DİDE/FİDE) 11pt yapıldı
-    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 1px solid #000000; width: auto;"><thead><tr><th style="border: 1px solid #000000; text-align: center; padding: 6px 12px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 11pt;">DİDE</td>${dScores}</tr><tr><td style="border: 1px solid #000000; text-align: center; padding: 6px 12px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 11pt;">FİDE</td>${fScores}</tr></tbody></table></div>`;
+    // GÜNCELLEME: Ana hücreler için de padding 2px 5px yapıldı.
+    const tableHtml = `<div style="overflow-x: auto;"><table style="border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 1px solid #000000; width: auto;"><thead><tr><th style="border: 1px solid #000000; text-align: center; padding: 2px 5px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt;">${cYear}</th>${mHeaders}</tr></thead><tbody><tr><td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 11pt;">DİDE</td>${dScores}</tr><tr><td style="border: 1px solid #000000; text-align: center; padding: 2px 5px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 11pt;">FİDE</td>${fScores}</tr></tbody></table></div>`;
 
     let finalBody = emailTemplate
         .replace(/{YONETMEN_ADI}/g, yonetmenFirstName)
