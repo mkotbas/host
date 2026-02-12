@@ -6,9 +6,9 @@ let pb; // PocketBase instance
 // --- TABLO STİLLERİ (Yönetilebilir Stil Nesnesi) ---
 const TABLE_STYLES = {
     table: 'border-collapse: collapse; margin-top: 10px; font-size: 11pt; border: 1px solid #000000; width: auto;',
-    header: 'border: 1px solid #000000; text-align: center; padding: 0px 10px; background-color: #ff0000; color: #000000; font-weight: normal; font-size: 11pt; white-space: nowrap;',
+    header: 'border: 1px solid #000000; text-align: center; padding: 0px 10px; background-color: #ff0000; color: #000000; font-weight: bold; font-size: 11pt; white-space: nowrap;',
     cell: 'border: 1px solid #000000; text-align: center; padding: 0px 10px; font-size: 11pt; font-weight: normal;',
-    cellLabel: 'border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: normal; background-color: #ff0000; color: #000000; font-size: 11pt;',
+    cellLabel: 'border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: bold; background-color: #ff0000; color: #000000; font-size: 11pt;',
     avgCell: 'border: 1px solid #000000; text-align: center; padding: 0px 10px; font-weight: bold; background-color: #ffffff; font-size: 11pt;'
 };
 
