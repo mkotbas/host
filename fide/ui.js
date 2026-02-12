@@ -289,26 +289,36 @@ export async function generateEmail() {
         return;
     }
 
-    // --- KULLANICI GİRDİSİ VE ZORUNLU KONTROL (GÜNCELLENDİ) ---
-    let manualFideScore = prompt(`${state.monthNames[new Date().getMonth() + 1]} ayı FiDe puanını giriniz (İşleme devam etmek için puan girmek zorunludur):`);
+    // --- PUAN KONTROLÜ VE MANUEL GİRİŞ MANTIĞI (GÜNCELLENDİ) ---
+    const currentMonthIdx = new Date().getMonth() + 1;
+    const fideStoreInfo = state.fideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu)) || null;
+    let manualFideScore = null;
 
-    // Eğer kullanıcı İptal'e bastıysa veya hiçbir şey yazmadan Tamam dediyse işlemi durdur
-    if (manualFideScore === null || manualFideScore.trim() === "") {
-        alert("Puan girilmediği için e-posta taslağı oluşturma işlemi durduruldu.");
-        return;
-    }
+    // Eğer tabloda (Excel'de) cari ay için puan zaten varsa, sormadan onu kullan
+    const existingScore = fideStoreInfo?.scores?.[currentMonthIdx];
+    if (existingScore !== undefined && existingScore !== null && existingScore !== "") {
+        manualFideScore = String(existingScore).replace('.', ','); 
+    } else {
+        // Puan yoksa manuel sor
+        manualFideScore = prompt(`${state.monthNames[currentMonthIdx]} ayı FiDe puanını giriniz (İşleme devam etmek için puan girmek zorunludur):`);
 
-    // Nokta (.) kullanımı yasak
-    if (manualFideScore.includes('.')) {
-        alert("Hata: Nokta (.) kullanılamaz.\nLütfen ondalık sayıları virgül (,) ile ayırın (Örn: 56,6).");
-        return;
-    }
+        if (manualFideScore === null || manualFideScore.trim() === "") {
+            alert("Puan girilmediği için e-posta taslağı oluşturma işlemi durduruldu.");
+            return;
+        }
 
-    const parsed = parseScore(manualFideScore);
-    if (isNaN(parsed)) {
-        alert("Hata: Girdiğiniz değer ('" + manualFideScore + "') geçerli bir sayı değildir.");
-        return;
+        if (manualFideScore.includes('.')) {
+            alert("Hata: Nokta (.) kullanılamaz.\nLütfen ondalık sayıları virgül (,) ile ayırın (Örn: 56,6).");
+            return;
+        }
+
+        const parsed = parseScore(manualFideScore);
+        if (isNaN(parsed)) {
+            alert("Hata: Girdiğiniz değer ('" + manualFideScore + "') geçerli bir sayı değildir.");
+            return;
+        }
     }
+    // --- GÜNCELLEME BİTTİ ---
 
     let emailTemplate = `<p>{YONETMEN_ADI} Bey Merhaba,</p><p>Ziyaret etmiş olduğum {BAYI_BILGISI} bayi karnesi aşağıdadır.</p><p><br></p>{DENETIM_ICERIGI}<p><br></p>{PUAN_TABLOSU}`;
     if (pb && pb.authStore.isValid) {
@@ -323,7 +333,6 @@ export async function generateEmail() {
     window.dispatchEvent(new CustomEvent('reportFinalized'));
 
     const storeInfo = state.dideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu)) || null;
-    const fideStoreInfo = state.fideData.find(row => String(row['Bayi Kodu']) === String(state.selectedStore.bayiKodu)) || null;
     
     const storeEmail = state.storeEmails[state.selectedStore.bayiKodu] || null;
     const storeEmailTag = storeEmail ? ` <a href="mailto:${storeEmail}" style="background-color:#e0f2f7; color:#005f73; font-weight:bold; padding: 1px 6px; border-radius: 4px; text-decoration:none;">@${storeEmail}</a>` : '';
