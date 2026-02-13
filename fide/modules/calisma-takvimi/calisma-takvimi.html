@@ -4,16 +4,23 @@
             <div class="config-text-zone">
                 <div class="config-title">
                     <i class="fas fa-bullseye"></i>
-                    <span>Aylık Hedef Belirle</span>
+                    <span>Denetim Planlama Ayarları</span>
                 </div>
                 <p class="config-info">
-                    Belirlediğiniz hedef, tüm takvim ve denetim takip ekranlarında anlık güncellenir.
+                    Sistem, belirlediğiniz minimum günlük kotayı doldurmadan diğer günlere geçiş yapmaz.
                 </p>
             </div>
             
             <div class="config-action-zone">
                 <div class="input-group-cal">
-                    <input type="number" id="global-target-input" placeholder="Hedef" min="1">
+                    <div class="admin-field-group">
+                        <label>Min. Günlük</label>
+                        <input type="number" id="global-min-daily-input" placeholder="Min" min="0" max="10">
+                    </div>
+                    <div class="admin-field-group">
+                        <label>Aylık Hedef</label>
+                        <input type="number" id="global-target-input" placeholder="Hedef" min="1">
+                    </div>
                     <button id="btn-save-global-target" class="btn-save-cal">
                         <i class="fas fa-sync-alt"></i> Güncelle
                     </button>
@@ -22,6 +29,5 @@
         </div>
     </div>
 
-    <div class="calendar-grid-main">
-        </div>
+    <div class="calendar-grid-main"></div>
 </div>

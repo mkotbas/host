@@ -15,21 +15,18 @@ let localCityFilterValue = 'Tümü';
 let currentViewMode = 'monthly'; 
 
 let globalAylikHedef = 0; 
-let aylikHedef = 0; 
+let globalMinDaily = 2;
 
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 let pbInstance = null;
 let currentUserRole = null;
 let currentUserId = null;
 
-// --- DİNAMİK HEDEF VE DAĞITIM SİSTEMİ ---
-
 function getWorkDaysOfMonth(year, month) {
     const days = [];
     const date = new Date(year, month, 1);
     while(date.getMonth() === month) {
-        const dayOfWeek = date.getDay(); 
-        if(dayOfWeek !== 0 && dayOfWeek !== 6) days.push(date.getDate());
+        if(date.getDay() !== 0 && date.getDay() !== 6) days.push(date.getDate());
         date.setDate(date.getDate() + 1);
     }
     return days;
@@ -37,14 +34,8 @@ function getWorkDaysOfMonth(year, month) {
 
 function seededShuffle(array, seed) {
     let currentSeed = seed;
-    const random = () => {
-        const x = Math.sin(currentSeed++) * 10000;
-        return x - Math.floor(x);
-    };
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
+    const rnd = () => { const x = Math.sin(currentSeed++) * 10000; return x - Math.floor(x); };
+    for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; }
     return array;
 }
 
@@ -58,9 +49,7 @@ function calculateTodayRequirement() {
 
     const allWorkDays = getWorkDaysOfMonth(year, month);
     const activeWorkDays = allWorkDays.filter(d => !leaveDataBulut[`${year}-${month}-${d}`]);
-    
     const baseTarget = globalAylikHedef || 47;
-    // GÜNCELLEME: Oransal hedefleme ile daha hassas hesaplama (Regresyon riskini minimize eder)
     const monthlyAdjustedTarget = Math.round(baseTarget * (activeWorkDays.length / (allWorkDays.length || 1)));
 
     const totalCompleted = auditedStoreCodesCurrentMonth.length;
@@ -72,13 +61,16 @@ function calculateTodayRequirement() {
     const basePerDay = Math.floor(remainingTargetTotal / remainingActiveDays.length);
     const extras = remainingTargetTotal % remainingActiveDays.length;
 
-    const seed = year + month;
-    const shuffledRemaining = seededShuffle([...remainingActiveDays], seed);
+    const shuffledRemaining = seededShuffle([...remainingActiveDays], year + month);
     
     let targetForToday = 0;
     const dayIndex = shuffledRemaining.indexOf(day);
     if (dayIndex !== -1) {
         targetForToday = basePerDay + (dayIndex < extras ? 1 : 0);
+    }
+
+    if (remainingTargetTotal > 0) {
+        targetForToday = Math.max(globalMinDaily, targetForToday);
     }
 
     const doneTodayCount = auditedStoreCodesCurrentMonth.filter(a => {
@@ -88,8 +80,6 @@ function calculateTodayRequirement() {
 
     return Math.max(0, targetForToday - doneTodayCount);
 }
-
-// --- MODÜL BAŞLATMA VE VERİ YÖNETİMİ ---
 
 export async function initializeDenetimTakipModule(pb) {
     pbInstance = pb;
@@ -109,12 +99,16 @@ export async function initializeDenetimTakipModule(pb) {
 
 async function loadSettings() {
     try {
-        const record = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
-        globalAylikHedef = record.deger || 0;
+        const r = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
+        globalAylikHedef = r.deger || 0;
     } catch (e) { globalAylikHedef = 0; }
     try {
-        const leaveRecord = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="leaveData_${currentUserId}"`);
-        leaveDataBulut = leaveRecord.deger || {};
+        const r = await pbInstance.collection('ayarlar').getFirstListItem('anahtar="minZiyaret"');
+        globalMinDaily = r.deger || 0;
+    } catch (e) { globalMinDaily = 2; }
+    try {
+        const r = await pbInstance.collection('ayarlar').getFirstListItem(`anahtar="leaveData_${currentUserId}"`);
+        leaveDataBulut = r.deger || {};
     } catch (e) { leaveDataBulut = {}; }
 }
 
@@ -146,15 +140,11 @@ async function populateUserFilterDropdown() {
 function applyDataFilterAndRunDashboard(viewId) {
     const today = new Date();
     const curMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
-
     if (currentUserRole !== 'admin' || viewId === 'global') allStores = [...allStoresMaster];
     else allStores = allStoresMaster.filter(s => s.sorumlu_kullanici === (viewId === 'my_data' ? currentUserId : viewId));
-
     const geriAlinanlar = new Set();
     allGeriAlinanMaster.forEach(r => { if(r.expand?.bayi && r.yil_ay === curMonthKey) geriAlinanlar.add(r.expand.bayi.bayiKodu); });
-
     let filteredReports = (currentUserRole !== 'admin' || viewId === 'global') ? [...allReportsMaster] : allReportsMaster.filter(r => r.user === (viewId === 'my_data' ? currentUserId : viewId));
-
     const monthlyMap = new Map();
     const yearlyCodes = new Set();
     filteredReports.forEach(r => {
@@ -181,10 +171,8 @@ function calculateAndDisplayDashboard() {
     const today = new Date();
     const allWorkDays = getWorkDaysOfMonth(today.getFullYear(), today.getMonth());
     const activeWorkDays = allWorkDays.filter(d => !leaveDataBulut[`${today.getFullYear()}-${today.getMonth()}-${d}`]);
-    
     const base = globalAylikHedef || 47;
     const adjustedTarget = Math.round(base * (activeWorkDays.length / (allWorkDays.length || 1)));
-
     const target = currentViewMode === 'monthly' ? adjustedTarget : allStores.length;
     const audited = currentViewMode === 'monthly' ? auditedStoreCodesCurrentMonth.length : auditedStoreCodesCurrentYear.length;
 
@@ -209,31 +197,21 @@ function calculateAndDisplayDashboard() {
 
 function setupModuleEventListeners(role) {
     window.addEventListener('calendarDataChanged', async (e) => { await loadSettings(); leaveDataBulut = e.detail; calculateAndDisplayDashboard(); });
-    
     window.addEventListener('reportFinalized', async () => {
         await loadMasterData();
         applyDataFilterAndRunDashboard(document.getElementById('admin-user-filter')?.value || 'my_data');
     });
-
     if (role === 'admin') document.getElementById('admin-user-filter').onchange = (e) => applyDataFilterAndRunDashboard(e.target.value);
-    
     document.querySelectorAll('#view-mode-toggle button').forEach(btn => {
         btn.onclick = (e) => {
             const buttons = document.querySelectorAll('#view-mode-toggle button');
-            buttons.forEach(b => {
-                b.classList.remove('active', 'btn-primary');
-                b.classList.add('btn-light');
-            });
-            
+            buttons.forEach(b => { b.classList.remove('active', 'btn-primary'); b.classList.add('btn-light'); });
             const target = e.currentTarget;
-            target.classList.remove('btn-light');
-            target.classList.add('active', 'btn-primary');
-            
+            target.classList.remove('btn-light'); target.classList.add('active', 'btn-primary');
             currentViewMode = target.dataset.mode;
             calculateAndDisplayDashboard();
         };
     });
-
     ['bolge-filter', 'yonetmen-filter', 'sehir-filter', 'ilce-filter'].forEach(id => {
         document.getElementById(id).onchange = applyAndRepopulateFilters;
     });
@@ -267,64 +245,35 @@ function renderRemainingStores(f) {
     const cont = document.getElementById('denetlenecek-bayiler-container');
     const audited = (currentViewMode === 'monthly') ? auditedStoreCodesCurrentMonth.map(a => a.code) : auditedStoreCodesCurrentYear;
     const rem = f.filter(s => !audited.includes(s.bayiKodu));
-    
     cont.innerHTML = rem.length ? '' : '<p class="empty-list-message">Kayıt yok.</p>';
     if (!rem.length) return;
-    
     const cities = [...new Set(rem.map(s => s.sehir))].sort((a,b) => a.localeCompare(b, 'tr'));
     const lSel = document.getElementById('local-city-filter');
     lSel.innerHTML = '<option value="Tümü">Tüm Şehirler</option>' + cities.map(c => `<option value="${c}">${c}</option>`).join('');
     lSel.value = cities.includes(localCityFilterValue) ? localCityFilterValue : 'Tümü';
-    
     const show = localCityFilterValue === 'Tümü' ? rem : rem.filter(s => s.sehir === localCityFilterValue);
     const byReg = show.reduce((acc, s) => { const r = s.bolge || 'Bölgesiz'; (acc[r] = acc[r] || []).push(s); return acc; }, {});
-    
     Object.keys(byReg).sort().forEach(r => {
         const total = allStores.filter(s => (s.bolge || 'Bölgesiz') === r).length;
         const done = allStores.filter(s => (s.bolge || 'Bölgesiz') === r && audited.includes(s.bayiKodu)).length;
         const prog = total > 0 ? (done / total * 100) : 0;
-        
         const storeListItems = byReg[r].map(s => {
             const truncatedName = s.bayiAdi.length > 35 ? s.bayiAdi.substring(0, 35) + '...' : s.bayiAdi;
             return `<li class="store-list-item">${truncatedName} (${s.bayiKodu}) - ${s.sehir}/${s.ilce}</li>`;
         }).join('');
-
-        cont.innerHTML += `
-            <div class="region-container">
-                <div class="region-header"><span>${r} (${done}/${total})</span></div>
-                <div class="progress-bar">
-                    <div class="progress-bar-fill" style="width: ${prog}%;">${prog.toFixed(0)}%</div>
-                </div>
-                <ul class="store-list">${storeListItems}</ul>
-            </div>`;
+        cont.innerHTML += `<div class="region-container"><div class="region-header"><span>${r} (${done}/${total})</span></div><div class="progress-bar"><div class="progress-bar-fill" style="width: ${prog}%;">${prog.toFixed(0)}%</div></div><ul class="store-list">${storeListItems}</ul></div>`;
     });
 }
 
 function renderAuditedStores() {
     const cont = document.getElementById('denetlenen-bayiler-container');
     const data = (currentViewMode === 'monthly') ? auditedStoreCodesCurrentMonth : auditedStoreCodesCurrentYear.map(c => ({code: c, timestamp: 0}));
-    
-    if (!data.length) { 
-        cont.innerHTML = '<p class="empty-list-message">Kayıt yok.</p>'; 
-        return; 
-    }
-    
-    const details = data.map(a => ({
-        ...(allStoresMaster.find(s => s.bayiKodu === a.code) || {bayiAdi: 'Bilinmeyen'}), 
-        timestamp: a.timestamp
-    })).sort((a,b) => b.timestamp - a.timestamp);
-
+    if (!data.length) { cont.innerHTML = '<p class="empty-list-message">Kayıt yok.</p>'; return; }
+    const details = data.map(a => ({ ...(allStoresMaster.find(s => s.bayiKodu === a.code) || {bayiAdi: 'Bilinmeyen'}), timestamp: a.timestamp })).sort((a,b) => b.timestamp - a.timestamp);
     cont.innerHTML = '<ul class="store-list">' + details.map(s => {
         const truncatedName = s.bayiAdi.length > 35 ? s.bayiAdi.substring(0, 35) + '...' : s.bayiAdi;
-        const undoButton = (currentUserRole === 'admin' && currentViewMode === 'monthly') 
-            ? `<button class="btn-warning btn-sm btn-revert-audit" onclick="revertAudit('${s.bayiKodu}')"><i class="fas fa-undo"></i> Geri Al</button>` 
-            : '';
-
-        return `
-            <li class="store-list-item completed-item">
-                <span>${truncatedName} (${s.bayiKodu})</span>
-                ${undoButton}
-            </li>`;
+        const undoButton = (currentUserRole === 'admin' && currentViewMode === 'monthly') ? `<button class="btn-warning btn-sm btn-revert-audit" onclick="revertAudit('${s.bayiKodu}')"><i class="fas fa-undo"></i> Geri Al</button>` : '';
+        return `<li class="store-list-item completed-item"><span>${truncatedName} (${s.bayiKodu})</span>${undoButton}</li>`;
     }).join('') + '</ul>';
 }
 

@@ -7,18 +7,28 @@ export async function initializeCalismaTakvimiModule(pb) {
     const container = document.querySelector('.calendar-grid-main');
     const settingsKey = `leaveData_${pb.authStore.model.id}`;
     
-    let leaveData = {}, globalAylikHedef = 0, completedReportsThisMonth = [];
+    let leaveData = {}, globalAylikHedef = 0, globalMinDaily = 2, completedReportsThisMonth = [];
 
     async function loadInitialData() {
         try {
             const leaveRec = await pb.collection('ayarlar').getFirstListItem(`anahtar="${settingsKey}"`);
             leaveData = leaveRec.deger || {};
         } catch (e) { leaveData = {}; }
+        
         try {
             const targetRec = await pb.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"');
             globalAylikHedef = targetRec.deger || 0;
-            if (document.getElementById('global-target-input')) document.getElementById('global-target-input').value = globalAylikHedef;
+            const targetInput = document.getElementById('global-target-input');
+            if (targetInput) targetInput.value = globalAylikHedef;
         } catch (e) { globalAylikHedef = 0; }
+        
+        try {
+            const minRec = await pb.collection('ayarlar').getFirstListItem('anahtar="minZiyaret"');
+            globalMinDaily = minRec.deger || 0;
+            const minInput = document.getElementById('global-min-daily-input');
+            if (minInput) minInput.value = globalMinDaily;
+        } catch (e) { globalMinDaily = 2; }
+
         try {
             const reports = await pb.collection('denetim_raporlari').getFullList({
                 filter: `user="${pb.authStore.model.id}" && denetimTamamlanmaTarihi >= "${new Date(today.getFullYear(), today.getMonth(), 1).toISOString()}"`,
@@ -41,18 +51,33 @@ export async function initializeCalismaTakvimiModule(pb) {
     function setupAdminControls() {
         if (pb.authStore.model.role === 'admin' && document.getElementById('admin-goal-config')) {
             document.getElementById('admin-goal-config').classList.add('is-active');
+
             document.getElementById('btn-save-global-target').onclick = async () => {
-                const val = parseInt(document.getElementById('global-target-input').value);
-                if (isNaN(val) || val < 1) return alert("Geçerli bir hedef giriniz.");
+                const targetVal = parseInt(document.getElementById('global-target-input').value);
+                const minVal = parseInt(document.getElementById('global-min-daily-input').value);
+                
+                if (isNaN(targetVal) || targetVal < 1) return alert("Geçerli bir aylık hedef giriniz.");
+                
                 try {
-                    let rec;
-                    try { rec = await pb.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"'); await pb.collection('ayarlar').update(rec.id, { deger: val }); }
-                    catch { await pb.collection('ayarlar').create({ anahtar: 'aylikHedef', deger: val }); }
-                    globalAylikHedef = val;
+                    // PocketBase Kayıt: Aylık Hedef
+                    try { 
+                        let r = await pb.collection('ayarlar').getFirstListItem('anahtar="aylikHedef"'); 
+                        await pb.collection('ayarlar').update(r.id, { deger: targetVal }); 
+                    } catch { await pb.collection('ayarlar').create({ anahtar: 'aylikHedef', deger: targetVal }); }
+                    
+                    // PocketBase Kayıt: Min Ziyaret
+                    try { 
+                        let r = await pb.collection('ayarlar').getFirstListItem('anahtar="minZiyaret"'); 
+                        await pb.collection('ayarlar').update(r.id, { deger: minVal }); 
+                    } catch { await pb.collection('ayarlar').create({ anahtar: 'minZiyaret', deger: minVal }); }
+                    
+                    globalAylikHedef = targetVal;
+                    globalMinDaily = minVal;
+                    
                     window.dispatchEvent(new CustomEvent('calendarDataChanged', { detail: leaveData }));
                     renderCalendar();
-                    alert("Hedef güncellendi.");
-                } catch (err) { alert("Hata: " + err.message); }
+                    alert("Ayarlar başarıyla güncellendi.");
+                } catch (err) { alert("Güncelleme hatası: " + err.message); }
             };
         }
     }
@@ -90,8 +115,6 @@ export async function initializeCalismaTakvimiModule(pb) {
             const total = new Date(today.getFullYear(), m + 1, 0).getDate();
             const work = getWorkDays(today.getFullYear(), m);
             const active = work.filter(d => !leaveData[`${today.getFullYear()}-${m}-${d}`]);
-            
-            // GÜNCELLEME: Oransal hedefleme ile statik sapmalar engellendi
             const adjTarget = Math.round(globalAylikHedef * (active.length / (work.length || 1)));
             
             let planMap = {};
@@ -105,13 +128,17 @@ export async function initializeCalismaTakvimiModule(pb) {
                     const extras = remainingTargetFromToday % remainingWorkDays.length;
                     const seed = today.getFullYear() + m; 
                     seededShuffle([...remainingWorkDays], seed).forEach((d, i) => {
-                        planMap[d] = base + (i < extras ? 1 : 0);
+                        let calculated = base + (i < extras ? 1 : 0);
+                        // KURAL: Min Ziyaret Uygulama
+                        planMap[d] = remainingTargetFromToday > 0 ? Math.max(globalMinDaily, calculated) : 0;
                     });
                 }
             } else if (m > today.getMonth() && active.length > 0) {
                 const base = Math.floor(adjTarget / active.length);
                 const ext = adjTarget % active.length;
-                seededShuffle([...active], today.getFullYear() + m).forEach((d, i) => planMap[d] = base + (i < ext ? 1 : 0));
+                seededShuffle([...active], today.getFullYear() + m).forEach((d, i) => {
+                    planMap[d] = Math.max(globalMinDaily, base + (i < ext ? 1 : 0));
+                });
             }
 
             const card = document.createElement('div');
@@ -132,12 +159,9 @@ export async function initializeCalismaTakvimiModule(pb) {
                         dayDiv.classList.add('leave-cal');
                     } else if (new Date(today.getFullYear(), m, d).getDay() !== 6) {
                         dayDiv.classList.add('workday-cal');
-                        
-                        const doneOnThisDate = completedReportsThisMonth.filter(r => r.date === d).length;
-                        if (m === today.getMonth() && doneOnThisDate > 0) dayDiv.classList.add('completed-audit-cal');
+                        const doneCount = completedReportsThisMonth.filter(r => r.date === d).length;
+                        if (m === today.getMonth() && doneCount > 0) dayDiv.classList.add('completed-audit-cal');
 
-                        // GÜNCELLEME: Bugünün rozetinden mükerrer düşüm yapan displayCount - doneTodayCount mantığı kaldırıldı
-                        // remainingTarget zaten yapılmışları havuzdan düşerek dağıtılıyor
                         let displayCount = planMap[d] || 0;
 
                         if(displayCount >= 4) dayDiv.classList.add('four-plus-cal');
@@ -159,11 +183,7 @@ export async function initializeCalismaTakvimiModule(pb) {
         }
     }
     
-    window.addEventListener('reportFinalized', async () => {
-        await loadInitialData();
-        renderCalendar();
-    });
-
+    window.addEventListener('reportFinalized', async () => { await loadInitialData(); renderCalendar(); });
     window.addEventListener('calendarDataChanged', async () => { await loadInitialData(); renderCalendar(); });
     await loadInitialData(); setupAdminControls(); renderCalendar();
 }
