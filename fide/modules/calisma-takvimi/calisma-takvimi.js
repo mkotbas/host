@@ -20,7 +20,6 @@ export async function initializeCalismaTakvimiModule(pb) {
             if (document.getElementById('global-target-input')) document.getElementById('global-target-input').value = globalAylikHedef;
         } catch (e) { globalAylikHedef = 0; }
         try {
-            // --- GÜNCELLEME: Raporlar en yeni tarih en başta olacak şekilde çekiliyor ---
             const reports = await pb.collection('denetim_raporlari').getFullList({
                 filter: `user="${pb.authStore.model.id}" && denetimTamamlanmaTarihi >= "${new Date(today.getFullYear(), today.getMonth(), 1).toISOString()}"`,
                 expand: 'bayi',
@@ -32,7 +31,6 @@ export async function initializeCalismaTakvimiModule(pb) {
             reports.forEach(r => {
                 const code = r.expand?.bayi?.bayiKodu;
                 if (r.denetimTamamlanmaTarihi && !revertedIds.includes(r.bayi) && code && !uniqueMap.has(code)) {
-                    // Artık en güncel ziyaret tarihi uniqueMap'e eklenir
                     uniqueMap.set(code, new Date(r.denetimTamamlanmaTarihi).getDate());
                 }
             });
@@ -92,26 +90,20 @@ export async function initializeCalismaTakvimiModule(pb) {
             const total = new Date(today.getFullYear(), m + 1, 0).getDate();
             const work = getWorkDays(today.getFullYear(), m);
             const active = work.filter(d => !leaveData[`${today.getFullYear()}-${m}-${d}`]);
-            const weight = globalAylikHedef / (work.length || 1);
-            const adjTarget = Math.max(0, globalAylikHedef - Math.round(weight * (work.length - active.length)));
+            
+            // GÜNCELLEME: Oransal hedefleme ile statik sapmalar engellendi
+            const adjTarget = Math.round(globalAylikHedef * (active.length / (work.length || 1)));
             
             let planMap = {};
             if (m === today.getMonth()) {
                 const totalDone = completedReportsThisMonth.length;
                 const remainingTargetFromToday = Math.max(0, adjTarget - totalDone);
-                
                 let remainingWorkDays = active.filter(d => d >= today.getDate());
-                const doneToday = completedReportsThisMonth.filter(r => r.date === today.getDate()).length;
-
-                if (doneToday > 0 && remainingWorkDays.some(d => d > today.getDate())) {
-                    remainingWorkDays = remainingWorkDays.filter(d => d > today.getDate());
-                }
 
                 if (remainingWorkDays.length > 0) {
                     const base = Math.floor(remainingTargetFromToday / remainingWorkDays.length);
                     const extras = remainingTargetFromToday % remainingWorkDays.length;
-                    
-                    const seed = today.getFullYear() + m + remainingTargetFromToday;
+                    const seed = today.getFullYear() + m; 
                     seededShuffle([...remainingWorkDays], seed).forEach((d, i) => {
                         planMap[d] = base + (i < extras ? 1 : 0);
                     });
@@ -119,7 +111,7 @@ export async function initializeCalismaTakvimiModule(pb) {
             } else if (m > today.getMonth() && active.length > 0) {
                 const base = Math.floor(adjTarget / active.length);
                 const ext = adjTarget % active.length;
-                seededShuffle([...active], today.getFullYear() + m + adjTarget).forEach((d, i) => planMap[d] = base + (i < ext ? 1 : 0));
+                seededShuffle([...active], today.getFullYear() + m).forEach((d, i) => planMap[d] = base + (i < ext ? 1 : 0));
             }
 
             const card = document.createElement('div');
@@ -141,9 +133,11 @@ export async function initializeCalismaTakvimiModule(pb) {
                     } else if (new Date(today.getFullYear(), m, d).getDay() !== 6) {
                         dayDiv.classList.add('workday-cal');
                         
-                        const doneToday = completedReportsThisMonth.filter(r => r.date === d).length;
-                        if (m === today.getMonth() && doneToday > 0) dayDiv.classList.add('completed-audit-cal');
+                        const doneOnThisDate = completedReportsThisMonth.filter(r => r.date === d).length;
+                        if (m === today.getMonth() && doneOnThisDate > 0) dayDiv.classList.add('completed-audit-cal');
 
+                        // GÜNCELLEME: Bugünün rozetinden mükerrer düşüm yapan displayCount - doneTodayCount mantığı kaldırıldı
+                        // remainingTarget zaten yapılmışları havuzdan düşerek dağıtılıyor
                         let displayCount = planMap[d] || 0;
 
                         if(displayCount >= 4) dayDiv.classList.add('four-plus-cal');

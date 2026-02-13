@@ -60,10 +60,9 @@ function calculateTodayRequirement() {
     const activeWorkDays = allWorkDays.filter(d => !leaveDataBulut[`${year}-${month}-${d}`]);
     
     const baseTarget = globalAylikHedef || 47;
-    const dailyAverage = baseTarget / allWorkDays.length;
-    const monthlyAdjustedTarget = Math.max(0, baseTarget - Math.round(dailyAverage * (allWorkDays.length - activeWorkDays.length)));
+    // GÜNCELLEME: Oransal hedefleme ile daha hassas hesaplama (Regresyon riskini minimize eder)
+    const monthlyAdjustedTarget = Math.round(baseTarget * (activeWorkDays.length / (allWorkDays.length || 1)));
 
-    // BUGÜN YAPILANLAR DAHİL TÜM TAMAMLANANLAR HAVUZDAN DÜŞÜLÜR
     const totalCompleted = auditedStoreCodesCurrentMonth.length;
     const remainingTargetTotal = Math.max(0, monthlyAdjustedTarget - totalCompleted);
     const remainingActiveDays = activeWorkDays.filter(d => d >= day);
@@ -73,7 +72,7 @@ function calculateTodayRequirement() {
     const basePerDay = Math.floor(remainingTargetTotal / remainingActiveDays.length);
     const extras = remainingTargetTotal % remainingActiveDays.length;
 
-    const seed = year + month + remainingTargetTotal;
+    const seed = year + month;
     const shuffledRemaining = seededShuffle([...remainingActiveDays], seed);
     
     let targetForToday = 0;
@@ -181,11 +180,10 @@ function runDashboard() {
 function calculateAndDisplayDashboard() {
     const today = new Date();
     const allWorkDays = getWorkDaysOfMonth(today.getFullYear(), today.getMonth());
-    let leaves = 0;
-    allWorkDays.forEach(d => { if (leaveDataBulut[`${today.getFullYear()}-${today.getMonth()}-${d}`]) leaves++; });
+    const activeWorkDays = allWorkDays.filter(d => !leaveDataBulut[`${today.getFullYear()}-${today.getMonth()}-${d}`]);
     
     const base = globalAylikHedef || 47;
-    const adjustedTarget = Math.max(0, base - Math.round((base / allWorkDays.length) * leaves));
+    const adjustedTarget = Math.round(base * (activeWorkDays.length / (allWorkDays.length || 1)));
 
     const target = currentViewMode === 'monthly' ? adjustedTarget : allStores.length;
     const audited = currentViewMode === 'monthly' ? auditedStoreCodesCurrentMonth.length : auditedStoreCodesCurrentYear.length;
@@ -205,7 +203,6 @@ function calculateAndDisplayDashboard() {
         document.getElementById('today-required-card').style.display = 'none';
     }
     renderAuditedStores(); 
-    // GÜNCELLEME: Görünüm modu değiştiğinde Denetlenecek Bayiler listesini anlık olarak yeniden çizdiriyoruz.
     renderRemainingStores(currentGlobalFilteredStores);
     document.getElementById('dashboard-content').style.display = 'block';
 }
@@ -288,7 +285,6 @@ function renderRemainingStores(f) {
         const prog = total > 0 ? (done / total * 100) : 0;
         
         const storeListItems = byReg[r].map(s => {
-            // Bayi adını 35 karakterle sınırlandırıyoruz
             const truncatedName = s.bayiAdi.length > 35 ? s.bayiAdi.substring(0, 35) + '...' : s.bayiAdi;
             return `<li class="store-list-item">${truncatedName} (${s.bayiKodu}) - ${s.sehir}/${s.ilce}</li>`;
         }).join('');
@@ -319,9 +315,7 @@ function renderAuditedStores() {
     })).sort((a,b) => b.timestamp - a.timestamp);
 
     cont.innerHTML = '<ul class="store-list">' + details.map(s => {
-        // "Bu Ay Denetlenenler" alanı da isteğin üzerine 35 karakterle sınırlandırıldı
         const truncatedName = s.bayiAdi.length > 35 ? s.bayiAdi.substring(0, 35) + '...' : s.bayiAdi;
-        
         const undoButton = (currentUserRole === 'admin' && currentViewMode === 'monthly') 
             ? `<button class="btn-warning btn-sm btn-revert-audit" onclick="revertAudit('${s.bayiKodu}')"><i class="fas fa-undo"></i> Geri Al</button>` 
             : '';
