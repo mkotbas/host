@@ -1,0 +1,301 @@
+/* Genel Sayfa Stilleri */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    gap: 30px;
+}
+
+header, footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #004a98; /* Arçelik Kurumsal Mavi */
+    color: #ffffff;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2em;
+}
+
+header p {
+    font-size: 1.1em;
+    opacity: 0.9;
+}
+
+footer {
+    margin-top: 30px;
+    font-size: 0.9em;
+    background-color: #343a40;
+}
+
+/* Ana İçerik Alanları (Giriş ve Sonuç) */
+.input-section, .output-section {
+    flex-basis: 50%;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-section {
+    border-right: 2px solid #e0e0e0;
+    padding-right: 30px;
+}
+
+h2 {
+    color: #004a98;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+/* Arama Formu Stilleri */
+.arama-formu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+    margin-bottom: 15px;
+}
+
+.form-grup {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+
+.form-grup label {
+    font-size: 0.9em;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.form-grup.arama-grup {
+    flex: 1 1 300px;
+    position: relative;
+}
+
+.form-grup.adet-grup {
+    flex: 0 0 80px;
+}
+
+.form-grup.stand-secenegi {
+    flex: 1 1 180px;
+    justify-content: center;
+    min-height: 42px;
+    box-sizing: border-box;
+}
+
+button#ekleButton {
+    flex: 0 0 50px;
+    height: 42px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.8em;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 42px;
+    padding: 0;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+button#ekleButton:hover {
+    background-color: #0056b3;
+}
+
+
+input[type="text"], input[type="number"], select { /* select eklendi */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+    box-sizing: border-box;
+    height: 42px;
+    background-color: white; /* Select disabled için */
+    width: 100%; /* Kapsayıcı kadar genişle */
+}
+
+/* Kategori Filtreleri Stilleri */
+.kategori-filtreleri {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
+.kategori-filtreleri label {
+    font-size: 0.9em;
+    font-weight: 500;
+    margin-right: 5px;
+    color: #555;
+    flex-shrink: 0;
+}
+
+.filtre-buton {
+    display: inline-block;
+    padding: 5px 12px;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    font-size: 0.85em;
+    cursor: pointer;
+    background-color: #f8f9fa;
+    color: #333;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    white-space: nowrap;
+}
+
+.filtre-buton:hover { background-color: #e2e6ea; }
+
+.filtre-buton.active {
+    background-color: #004a98;
+    color: #ffffff;
+    border-color: #004a98;
+    font-weight: 500;
+}
+
+/* Checkbox Stilleri */
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    height: 42px;
+    padding: 0 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    box-sizing: border-box;
+}
+input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+}
+.checkbox-wrapper label {
+    margin: 0;
+    font-size: 0.9em;
+    cursor: pointer;
+    white-space: nowrap;
+}
+input[type="checkbox"]:disabled + label { cursor: not-allowed; opacity: 0.7; }
+.checkbox-wrapper:has(input:disabled) {
+     background-color: #e9ecef; opacity: 0.7; cursor: not-allowed;
+}
+
+/* Disabled Durumu */
+input:disabled,
+button:disabled,
+input[type="checkbox"]:disabled,
+select:disabled { /* select eklendi */
+    background-color: #e9ecef;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+button:disabled:hover { background-color: #e9ecef; }
+button#ekleButton:disabled:hover { background-color: #007bff; opacity: 0.7; }
+
+/* Yükleme Durumu Mesajı */
+.durum-mesaji {
+    font-size: 0.9em; color: #555; padding: 8px; background-color: #f8f9fa;
+    border-radius: 5px; text-align: center; margin-bottom: 10px;
+}
+
+/* Arama Sonuçları Listesi */
+#aramaSonuclari {
+    display: none; position: absolute; top: 100%; left: 0; width: 100%;
+    background: #fff; border: 1px solid #ddd; border-top: none;
+    border-radius: 0 0 5px 5px; z-index: 1000; max-height: 250px;
+    overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+#aramaSonuclari div { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+#aramaSonuclari div:last-child { border-bottom: none; }
+#aramaSonuclari div:hover,
+#aramaSonuclari div.active { background-color: #f0f4f8; }
+#aramaSonuclari div strong { color: #004a98; }
+
+/* Seçilen Ürünler Listesi */
+#secilenUrunListesi {
+    list-style: none; padding: 0; margin: 10px 0; max-height: 300px;
+    overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 5px;
+}
+#secilenUrunListesi li {
+    padding: 10px 15px; display: flex; justify-content: space-between;
+    align-items: center; border-bottom: 1px solid #f0f0f0; background-color: #fcfcfc;
+}
+#secilenUrunListesi li:last-child { border-bottom: none; }
+.silButton {
+    background-color: #d9534f; color: white; border: none; border-radius: 3px;
+    cursor: pointer; font-size: 0.9em; padding: 3px 8px; margin-left: 10px;
+}
+.silButton:hover { background-color: #c9302c; }
+
+/* Ana Hesapla Butonu */
+button#hesaplaButton {
+    display: block; width: 100%; padding: 15px; background-color: #28a745;
+    color: white; border: none; border-radius: 5px; font-size: 1.2em;
+    font-weight: bold; cursor: pointer; margin-top: 20px; transition: background-color 0.3s ease;
+}
+button#hesaplaButton:hover:not(:disabled) { background-color: #218838; } /* :not(:disabled) eklendi */
+
+/* Cihaz Ekleme Bölümü Stilleri */
+.cihaz-ekleme-section {
+    margin-top: 25px; padding-top: 15px; border-top: 2px dashed #004a98;
+}
+.cihaz-ekleme-section h2 { margin-bottom: 5px; }
+.cihaz-ekleme-section p { font-size: 0.9em; color: #555; margin-bottom: 15px; }
+.cihaz-ekleme-formu {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px; align-items: end;
+}
+.cihaz-ekleme-formu .form-grup { margin-bottom: 0; }
+
+#yeniCihazKaydetButton {
+    grid-column: 1 / -1; padding: 12px; background-color: #17a2b8;
+    color: white; border: none; border-radius: 5px; font-size: 1.1em;
+    font-weight: bold; cursor: pointer; margin-top: 10px; transition: background-color 0.3s ease;
+}
+#yeniCihazKaydetButton:hover:not(:disabled) { background-color: #117a8b; }
+
+#cihazEklemeSonuc a {
+    display: inline-block; margin-top: 10px; padding: 8px 15px; background-color: #28a745;
+    color: white; text-decoration: none; border-radius: 5px; font-weight: bold;
+}
+#cihazEklemeSonuc a:hover { background-color: #218838; }
+
+
+/* Sonuç Tablosu Stilleri */
+table#sonucTablosu { width: 100%; border-collapse: collapse; margin-top: 10px; }
+table#sonucTablosu thead { background-color: #f0f4f8; }
+table#sonucTablosu th, table#sonucTablosu td {
+    border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: top;
+}
+table#sonucTablosu th { font-weight: 600; color: #004a98; }
+table#sonucTablosu tbody tr:nth-child(even) { background-color: #f9f9f9; }
+table#sonucTablosu td:first-child { font-weight: bold; color: #d9534f; }
+
+/* Genel Malzemeler ve Özet */
+.genel-malzemeler, #ozetBilgi {
+    margin-top: 20px; padding: 15px; background-color: #fdfdfd;
+    border: 1px solid #e0e0e0; border-radius: 5px;
+}
+.genel-malzemeler h3 { margin-top: 0; color: #004a98; }
+.genel-malzemeler ul { padding-left: 20px; margin: 0; }
+.genel-malzemeler li { font-size: 1em; margin-bottom: 8px; }
+
+hr { border: none; border-top: 1px solid #eee; margin: 15px 0; }

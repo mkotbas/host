@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pop Kodları Seçim Sistemi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 15px 20px;
+    }
+    .frame {
+      border: 2px solid #8b0000;
+      border-radius: 10px;
+      padding: 12px 15px 15px;
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+      margin: 5px 0 15px 0;
+      background: linear-gradient(to right, #ff5c5c, #8b0000);
+      border-radius: 8px;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 5px;
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+      font-size: 14px;
+      cursor: pointer;
+      justify-content: center;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+    .checkbox {
+      margin-right: 5px;
+    }
+    .button-container {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 0 10px;
+    }
+    button {
+      flex: 1 1 120px;
+      min-width: 100px;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .copy-button { background-color: #4CAF50; }
+    .clear-button { background-color: #f44336; }
+    .email-button { background-color: #008CBA; }
+    .select-expired-button { background-color: #FFA500; }
+    .footer {
+      text-align: center;
+      font-size: 14px;
+      color: #333;
+      margin-top: 15px;
+      font-style: italic;
+      user-select: none;
+    }
+    .footer-text {
+      margin-bottom: 0.5rem;
+    }
+    .footer-version {
+      margin-top: 0.2rem;
+    }
+    .warning-message {
+      color: #d32f2f;
+      background-color: #ffebee;
+      border: 1px solid #d32f2f;
+      border-radius: 4px;
+      padding: 10px;
+      margin-top: 10px;
+      text-align: center;
+      font-weight: bold;
+      display: none;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px 15px;
+      }
+      .frame {
+        padding: 8px 10px 10px;
+      }
+      .header {
+        font-size: 20px;
+        padding: 8px;
+        margin: 4px 0 12px 0;
+      }
+      .button-container {
+        flex-direction: row;
+        align-items: stretch;
+        gap: 6px;
+        padding: 0 5px;
+        margin-top: 15px;
+      }
+      button {
+        flex: 1 1 calc(50% - 8px);
+        min-width: unset;
+        padding: 8px 3px;
+        font-size: 12px;
+        border-radius: 3px;
+      }
+      .container {
+        grid-template-columns: repeat(auto-fit, minmax(65px, 1fr));
+        gap: 4px;
+      }
+      .checkbox-label {
+        font-size: 11px;
+        padding: 3px 2px;
+      }
+      .footer {
+        font-size: 12px;
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="frame" id="contentFrame" style="display:none;">
+  <h2 class="header">Arçelik Pop Kodları</h2>
+  <div class="container" id="popCodesContainer"></div>
+
+  <div class="warning-message" id="expiredWarning">
+    Seçiminizde süresi dolmuş kodlar bulunmaktadır. Bu kodlar kopyalanmayacaktır.
+  </div>
+
+  <div class="button-container">
+    <button class="copy-button" onclick="copySelectedCodes()">Kopyala</button>
+    <button class="clear-button" onclick="clearSelectedCodes()">Temizle</button>
+    <button class="select-expired-button" onclick="selectExpiredCodes()">Bitenler</button>
+    <button class="email-button" onclick="openEmailDraft()">E-Posta</button>
+  </div>
+
+  <div class="footer">
+    <div class="footer-text">Melih Kotbaş tarafından tasarlanmıştır ❤️</div>
+    <div class="footer-version">V 1.4</div>
+  </div>
+</div>
+
+<script>
+  const popCodes = [
+    "100001", "100004", "100005", "100006", "100007", "100009", "100012", "100013",
+    "100014", "100015", "100017", "100021", "100022", "100029", "100030", "100031",
+    "100032", "100034", "100036", "100037", "100040", "100041", "100042", "100043",
+    "100044", "100045", "100046", "100047", "100052", "100054", "100055", "100056",
+    "100060", "100064", "100065", "100068", "100070", "100071", "100072", "100074",
+    "100075", "100076", "100077", "100078", "100080", "100083", "100085", "100087",
+    "100088", "100090", "100094", "100095", "100096", "100097", "100098", "100099",
+    "100100", "100101", "100102", "100103", "100104", "100105", "100106", "100107",
+    "100108"
+  ];
+
+  const expiredCodes = ["100029", "100030", "100031", "100032", "100036", "100037", "100064", "100065"];
+
+  const popCodesContainer = document.getElementById('popCodesContainer');
+  const warningMessage = document.getElementById('expiredWarning');
+
+  function checkExpiredCodes() {
+    const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+    const hasExpired = selectedCodes.some(code => expiredCodes.includes(code));
+    
+    if (hasExpired) {
+      warningMessage.style.display = 'block';
+    } else {
+      warningMessage.style.display = 'none';
+    }
+  }
+
+  function initializeApp() {
+    document.getElementById('contentFrame').style.display = 'block';
+    popCodes.forEach(code => {
+      const label = document.createElement('label');
+      label.classList.add('checkbox-label');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = code;
+      checkbox.classList.add('checkbox');
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(code));
+      popCodesContainer.appendChild(label);
+      
+      // Her bir checkbox'a değişiklik olay dinleyicisi ekle
+      checkbox.addEventListener('change', checkExpiredCodes);
+    });
+  }
+
+  function copySelectedCodes() {
+    const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+
+    const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
+
+    if (nonExpiredCodes.length === 0) {
+      alert("Kopyalamak için geçerli (süresi dolmamış) kod seçin.");
+      return;
+    }
+
+    const kodSatiri = nonExpiredCodes.join(', ');
+    navigator.clipboard.writeText(kodSatiri).then(() => alert("Seçilen geçerli kodlar kopyalandı!"));
+  }
+
+  function clearSelectedCodes() {
+    document.querySelectorAll('.checkbox').forEach(cb => cb.checked = false);
+    checkExpiredCodes(); // Temizledikten sonra uyarıyı kaldır
+  }
+
+  function selectExpiredCodes() {
+    document.querySelectorAll('.checkbox').forEach(cb => {
+      cb.checked = expiredCodes.includes(cb.value);
+    });
+    checkExpiredCodes(); // Bitenleri seçtikten sonra uyarıyı göster
+  }
+
+  function openEmailDraft() {
+    const selectedCodes = Array.from(document.querySelectorAll('.checkbox:checked')).map(cb => cb.value);
+    
+    // Süresi dolmamış kodları filtrele
+    const nonExpiredCodes = selectedCodes.filter(code => !expiredCodes.includes(code));
+
+    if (nonExpiredCodes.length === 0) {
+      alert("E-Posta göndermek için geçerli (süresi dolmamış) kod seçin.");
+      return;
+    }
+
+    const kodSatiri = nonExpiredCodes.join(', ');
+
+    const emailHTML = `
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>E-Posta Taslağı</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background-color: #fff; }
+    .block { margin-bottom: 15px; }
+    .label { font-weight: bold; color: #555; display: inline-block; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="block"><span class="label">Kime:</span> berkcan_boza@arcelik.com.tr</div>
+  <div class="block"><span class="label">CC:</span> ugur.dogan@arcelik.com; aykut.demen@arcelik.com.tr; Huseyin.Uysal@arcelik.com.tr; Ahmet.Erol2@arcelik.com.tr</div>
+  <div class="block"><span class="label">Konu:</span> (Boş)</div>
+  <div class="block">
+    <span class="label">İçerik:</span>
+    <div style="margin-top: 10px;">${kodSatiri}</div>
+  </div>
+</body>
+</html>
+`;
+
+    const emailWindow = window.open('', '_blank');
+    emailWindow.document.write(emailHTML);
+    emailWindow.document.close();
+  }
+
+  initializeApp();
+
+  // --- ŞİFRE KORUMASI KODU BAŞLANGICI ---
+
+  // Parola: arc01 (Base64 ile kodlanmış hali)
+  const dogruSifre = atob("YXJjMDE="); 
+
+  // Sayfa yüklendiğinde şifre sormak için bir fonksiyon.
+  function sifreSor() {
+    // Kullanıcıya şifre soran ve girilen değeri alan kutucuk.
+    const girilenSifre = prompt("Lütfen sistemi kullanmak için şifreyi girin:", "");
+
+    // Eğer girilen şifre, belirlediğimiz doğru şifre ile aynıysa...
+    if (girilenSifre === dogruSifre) {
+      // 1. Adım'da gizlediğimiz ana içeriği görünür yap.
+      document.getElementById('contentFrame').style.display = 'block';
+    } 
+    // Eğer şifre yanlışsa veya kullanıcı "İptal"e basarsa...
+    else {
+      // Bir uyarı mesajı göster.
+      alert("Hatalı şifre! Erişim reddedildi.");
+      // Sayfa içeriğini boş bırakmak için gövdeyi temizle.
+      document.body.innerHTML = '<h2 style="text-align:center; color:red; margin-top:50px;">Erişim Engellendi</h2>';
+    }
+  }
+
+  // Sayfa tamamen yüklendiğinde sifreSor fonksiyonunu çalıştır.
+  sifreSor();
+
+  // --- ŞİFRE KORUMASI KODU SONU ---
+</script>
+</body>
+</html>

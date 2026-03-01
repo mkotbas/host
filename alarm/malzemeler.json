@@ -1,0 +1,184 @@
+[
+  {
+    "stok_kodu": "8906971600",
+    "urun_adi": "MGM ALRM PANELİ 5GRŞ (8906971600)",
+    "kullanim_amaci": "Elektronik ürünleri sergilerken kullanılan alarm ünitelerinin çalışmasını sağlayan 5'li panel.",
+    "paket_ici_adet": 1,
+    "kategori": "Panel"
+  },
+  {
+    "stok_kodu": "8906981600",
+    "urun_adi": "MGM ALRM PANELİ 2 GRŞ (8906981600)",
+    "kullanim_amaci": "Tabletlerde en verimli şarjı sağlayan 2'li panel.",
+    "paket_ici_adet": 1,
+    "kategori": "Panel"
+  },
+  {
+    "stok_kodu": "8907071600",
+    "urun_adi": "MGM KUMANDA (8907071600)",
+    "kullanim_amaci": "Alarm Ünitelerini açmak ve kapatmak için kullanılan kumanda.",
+    "paket_ici_adet": 1,
+    "kategori": "Genel"
+  },
+  {
+    "stok_kodu": "8906991600",
+    "urun_adi": "MGM STAND AKRİLİK 5LÜ (8906991600)",
+    "kullanim_amaci": "Cep telefonu ve tablet ürünlerinin dik durmasını sağlayan stand.",
+    "paket_ici_adet": 5,
+    "kategori": "Stand"
+  },
+  {
+    "stok_kodu": "8907051600",
+    "urun_adi": "MGM USB KABLO 5Lİ (8907051600)",
+    "kullanim_amaci": "USB uyumlu ve akrilik stand üzerinde olmayan ürünlerin alarm kablosu.",
+    "paket_ici_adet": 5,
+    "kategori": "Kablo"
+  },
+  {
+    "stok_kodu": "8907061600",
+    "urun_adi": "MGM DMLAKABLO 3LÜ (8907061600)",
+    "kullanim_amaci": "Kulak üstü kulaklık, ses sistemleri ve macbook ürünlerde kullanılan alarm kablosu.",
+    "paket_ici_adet": 3,
+    "kategori": "Kablo"
+  },
+  {
+    "stok_kodu": "8907011600",
+    "urun_adi": "MGM TYPE-C KABLO 3LÜ (8907011600)",
+    "kullanim_amaci": "Type C uyumlu ve akrilik stand üzerinde olmayan ürünlerin alarm kablosu.",
+    "paket_ici_adet": 3,
+    "kategori": "Kablo"
+  },
+  {
+    "stok_kodu": "8907021600",
+    "urun_adi": "MGM MİKROUSB AKRLK 5 (8907021600)",
+    "kullanim_amaci": "Mikro USB uyumlu ve akrilik stand üzerinde sergilenmek istenen ürünlerin alarm kablosu.",
+    "paket_ici_adet": 5,
+    "kategori": "Kablo"
+  },
+  {
+    "stok_kodu": "9223791600",
+    "urun_adi": "MGM TERS MİKRO USB (9223791600)",
+    "kullanim_amaci": "Ters Mikro UBS uyumlu (Oppo Realme C11,C21Y ve C25Y modelleri)",
+    "paket_ici_adet": 2,
+    "kategori": "Kablo"
+  },
+  {
+    "stok_kodu": "8907031600",
+    "urun_adi": "MGM IPHONE AKRLK 5Lİ (8907031600)",
+    "kullanim_amaci": "Iphone (Lightning) kablo uyumlu, akrilik stand üzerinde sergilenen ürünler için.",
+    "paket_ici_adet": 5,
+    "kategori": "Kablo"
+  },
+  {
+    "stok_kodu": "9226801600",
+    "urun_adi": "MGM APPLE TYPE-C AKR (9226801600)",
+    "kullanim_amaci": "Yeni Nesil (iPhone 15+, S20+) Type C uyumlu, akrilik stand üzerinde sergilenen ürünler için.",
+    "paket_ici_adet": 5,
+    "kategori": "Kablo"
+  },
+  {
+    "stok_kodu": "8907041600",
+    "urun_adi": "MGM IPHONE KABLO 3LÜ (8907041600)",
+    "kullanim_amaci": "Iphone (Lightning) kablo uyumlu, akrilik stand üzerinde olmayan ürünler için.",
+    "paket_ici_adet": 3,
+    "kategori": "Kablo"
+  },
+  {
+    "stok_kodu": "9220941600",
+    "urun_adi": "MGM MİKROUSBRKABLO5LÜ (9220941600)",
+    "kullanim_amaci": "Şarj girişi yanda olan tablet modelleri için şarj ve alarm kablosu.",
+    "paket_ici_adet": 3,
+    "kategori": "Kablo"
+  },
+  {
+    "stok_kodu": "8907091600",
+    "urun_adi": "MGM DMLA YPŞKAN (8907091600)",
+    "kullanim_amaci": "Damla kablonun ürünlere tutunmasını sağlayan yapışkan malzeme.",
+    "paket_ici_adet": 10,
+    "kategori": "Genel"
+  },
+  {
+    "stok_kodu": "9220951600",
+    "urun_adi": "MGM AKRİLİK TBNT YPŞKAN (9220951600)",
+    "kullanim_amaci": "Akrilik ürünlerin standa yapışmasını sağlayan malzeme.",
+    "paket_ici_adet": 10,
+    "kategori": "Genel"
+  },
+  {
+    "stok_kodu": "9224911600",
+    "urun_adi": "MGM AKRİLİK YPŞ. EK (9224911600)",
+    "kullanim_amaci": "Cam Telefonlar ile alarm kablosunun birbirine tutunmasını sağlayan malzeme.",
+    "paket_ici_adet": 5,
+    "kategori": "Genel"
+  },
+  {
+    "stok_kodu": "8907081600",
+    "urun_adi": "MGM KONNEKTÖR 10 LÜ (8907081600)",
+    "kullanim_amaci": "Alarm Ünitesi ile alarm kablosu arasındaki bağlantıyı sağlayan yapışkan malzeme.",
+    "paket_ici_adet": 10,
+    "kategori": "Genel"
+  },
+  {
+    "stok_kodu": "8909011600",
+    "urun_adi": "MGM AKILLI SAAT STANT (8909011600)",
+    "kullanim_amaci": "Akıllı saat ürünlerinin teşhirinde sergilenmesi için kullanılan stand.",
+    "paket_ici_adet": 1,
+    "kategori": "Salus"
+  },
+  {
+    "stok_kodu": "8909021600",
+    "urun_adi": "MGM AKILLISAAT ALRMKA (8909021600)",
+    "kullanim_amaci": "Akıllı saat sergileme ünitesinde şarj ve alarmı sağlayan kablo.",
+    "paket_ici_adet": 1,
+    "kategori": "Salus"
+  },
+  {
+    "stok_kodu": "9224791600",
+    "urun_adi": "SALUS - ALYAN (9224791600)",
+    "kullanim_amaci": "Akıllı saat teşhirinde kullanılan alarm sisteminin parçası.",
+    "paket_ici_adet": 1,
+    "kategori": "Salus"
+  },
+  {
+    "stok_kodu": "9224781600",
+    "urun_adi": "SALUS - 4 ÇIKIŞ (9224781600)",
+    "kullanim_amaci": "Akıllı saat teşhirinde kullanılan alarm sisteminin parçası (Panel).",
+    "paket_ici_adet": 1,
+    "kategori": "Salus"
+  },
+  {
+    "stok_kodu": "9224771600",
+    "urun_adi": "SALUS - STANT (9224771600)",
+    "kullanim_amaci": "Akıllı saat teşhirinde kullanılan sergileme ünitesi.",
+    "paket_ici_adet": 1,
+    "kategori": "Salus"
+  },
+  {
+    "stok_kodu": "9224801600",
+    "urun_adi": "SALUS - SAAT SENSÖR (9224801600)",
+    "kullanim_amaci": "Akıllı saat teşhirinde kullanılan koruyucu film sensör.",
+    "paket_ici_adet": 1,
+    "kategori": "Salus"
+  },
+  {
+    "stok_kodu": "9224811600",
+    "urun_adi": "SALUS - SARISENSÖ (9224811600)",
+    "kullanim_amaci": "Akıllı saat teşhirinde kullanılan koruma sensörü – sergileme ünitesine takılır.",
+    "paket_ici_adet": 1,
+    "kategori": "Salus"
+  },
+  {
+    "stok_kodu": "9241501600",
+    "urun_adi": "MGM YENİ HOOK ASKILIK (9241501600)",
+    "kullanim_amaci": "Elektronik aksesuar ürünlerinin kasa arkasında sergilenmesini sağlayan askı aparatı.",
+    "paket_ici_adet": 12,
+    "kategori": "Aksesuar"
+  },
+  {
+    "stok_kodu": "9241511600",
+    "urun_adi": "MGM YENİ HOOK ÇÖZÜCÜ (9241511600)",
+    "kullanim_amaci": "Elektronik aksesuar ürünlerinin sergilenmesini sağlayan askı aparatının sökülmesini sağlayan ürün.",
+    "paket_ici_adet": 1,
+    "kategori": "Aksesuar"
+  }
+]
