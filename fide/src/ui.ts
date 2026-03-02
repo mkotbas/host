@@ -81,7 +81,7 @@ export function buildForm(): void {
   const popContainer = document.getElementById('popCodesContainer');
   if (popContainer) initializePopSystem(popContainer);
 
-  // Event delegation — sadece ilk buildForm'da bağla (memory leak önlemi)
+  // Event delegation — sadece ilk buildForm'da bağla (bellek sızıntısı önlemi)
   if (!formListenersAttached) {
     formContainer.addEventListener('change', handleFormChange);
     formContainer.addEventListener('click', handleFormClick);
@@ -111,7 +111,7 @@ export function updateFormInteractivity(enable: boolean): void {
   ).forEach(el => { el.disabled = !enable; });
 }
 
-// ─── Event Delegation (onclick="" yerine) ─────────────────────────────────────
+// ─── Event Delegation (Tıklama Yönetimi) ─────────────────────────────────────
 
 function handleFormClick(e: Event): void {
   const target = e.target as HTMLElement;
@@ -204,14 +204,14 @@ function handleFormInput(e: Event): void {
   }
 }
 
-// ─── Soru Elemanı Oluşturma (Inline onclick yok) ─────────────────────────────
+// ─── Soru Elemanı Oluşturma ──────────────────────────────────────────────────
 
 function createQuestionElement(q: FideQuestion): HTMLElement {
   const item = document.createElement('div');
   item.className = `fide-item${q.isArchived ? ' archived-item' : ''}`;
   item.id = `fide-item-${q.id}`;
 
-  // Başlık satırı
+  // Başlık alanı
   const titleContainer = document.createElement('div');
   titleContainer.className = 'fide-title-container';
 
@@ -225,8 +225,13 @@ function createQuestionElement(q: FideQuestion): HTMLElement {
 
   titleContainer.appendChild(badge);
   titleContainer.appendChild(titleText);
+  item.appendChild(titleContainer);
 
-  // Aksiyon butonları — orijinal: .fide-actions
+  // Soru İçeriği
+  const contentEl = createQuestionContent(q);
+  item.appendChild(contentEl);
+
+  // Aksiyon butonları (SAĞ ALT KÖŞEYE TAŞINDI)
   const actionsDiv = document.createElement('div');
   actionsDiv.className = 'fide-actions';
 
@@ -254,12 +259,7 @@ function createQuestionElement(q: FideQuestion): HTMLElement {
   removeBtn.innerHTML = '<i class="fas fa-times-circle" aria-hidden="true"></i> Çıkar';
   actionsDiv.appendChild(removeBtn);
 
-  titleContainer.appendChild(actionsDiv);
-  item.appendChild(titleContainer);
-
-  // İçerik
-  const contentEl = createQuestionContent(q);
-  item.appendChild(contentEl);
+  item.appendChild(actionsDiv);
 
   return item;
 }
@@ -297,7 +297,7 @@ function createStaticItem(text: string): HTMLElement {
 
   const content = document.createElement('div');
   content.className = 'content';
-  content.innerHTML = text; // Static items are trusted content from PocketBase admin
+  content.innerHTML = text;
 
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'delete-bar btn btn-sm btn-danger';
@@ -400,7 +400,6 @@ function createPopContent(q: FideQuestion): HTMLElement {
     btnRow.appendChild(b);
   });
 
-  // popEmailTo bilgisini data attribute olarak sakla
   if (q.popEmailTo?.length) {
     btnRow.querySelector('.pop-email-btn')?.setAttribute(
       'data-email-to', q.popEmailTo.join(','),
@@ -441,12 +440,10 @@ function createStylingContent(q: FideQuestion): HTMLElement {
   toggleRow.appendChild(toggleLabel);
   toggleRow.appendChild(switchLabel);
 
-  // Standart görünüm
   const standardView = document.createElement('div');
   standardView.id = `standard-view-container-${q.id}`;
   (q.staticItems ?? []).forEach(item => standardView.appendChild(createStaticItem(item)));
 
-  // Styling liste konteyneri
   const stylingContainer = document.createElement('div');
   stylingContainer.className = 'input-area styling-list-container';
   stylingContainer.id = `styling-container-${q.id}`;
@@ -663,7 +660,6 @@ export function loadReportUI(reportData: Record<string, QuestionStatus> | null):
       data.selectedProducts?.forEach(p => {
         if (qInfo.type === 'product_list') addProductToList(p.code, p.qty, false, p.name);
         else if (qInfo.type === 'styling_list') {
-          // Orijinal: styling-mode-toggle'ı checked yap ve container'ları göster
           if (data.selectedProducts && data.selectedProducts.length > 0) {
             const toggle = item.querySelector<HTMLInputElement>('.styling-mode-toggle');
             if (toggle && !toggle.checked) {
@@ -700,7 +696,6 @@ export function loadReportUI(reportData: Record<string, QuestionStatus> | null):
 
     updateFormInteractivity(true);
   } catch {
-    // Rapor yükleme hatası — form sıfırlansın
     resetForm();
     updateFormInteractivity(true);
   }
@@ -1173,20 +1168,18 @@ export async function generateEmail(): Promise<void> {
     }
   }
 
-  // E-posta şablonunu yükle
   let emailTemplate = `<p>{YONETMEN_ADI} Bey Merhaba,</p><p>Ziyaret etmiş olduğum {BAYI_BILGISI} bayi karnesi aşağıdadır.</p><p><br></p>{DENETIM_ICERIGI}<p><br></p>{PUAN_TABLOSU}`;
   if (pb.authStore.isValid) {
     try {
       const rec = await pb.collection('ayarlar').getFirstListItem('anahtar="emailTemplate"');
       if (rec['deger']) emailTemplate = rec['deger'] as string;
-    } catch { /* Şablon yoksa varsayılanı kullan */ }
+    } catch { }
   }
 
   const reportData = getFormDataForSaving();
   await saveFormState(reportData, true);
   window.dispatchEvent(new CustomEvent('reportFinalized'));
 
-  // Bayi bilgileri
   const storeInfo = getDideData().find(
     row => String(row['Bayi Kodu']) === String(selectedStore.bayiKodu),
   ) ?? null;
@@ -1208,7 +1201,6 @@ export async function generateEmail(): Promise<void> {
     ? `${selectedStore.bayiAdi.substring(0, 20)}...`
     : selectedStore.bayiAdi;
 
-  // Denetim içeriği HTML
   let fideReportHtml = '';
   getFideQuestions().forEach(q => {
     const itemDiv = document.getElementById(`fide-item-${q.id}`);
@@ -1300,7 +1292,6 @@ export async function generateEmail(): Promise<void> {
     .replace(/{DENETIM_ICERIGI}/g, fideReportHtml)
     .replace(/{PUAN_TABLOSU}/g, tableHtml);
 
-  // Formu gizle, taslağı göster
   document.getElementById('dide-upload-card')?.setAttribute('hidden', '');
   document.getElementById('form-content')?.setAttribute('hidden', '');
   document.getElementById('generate-email-btn')?.setAttribute('hidden', '');

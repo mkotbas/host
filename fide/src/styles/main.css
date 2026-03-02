@@ -1,10 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════
    fide/src/styles/main.css
-   Orijinal style.css'in FiDe sayfasına özgü kısmı.
-   Inline style="" kullanılmaz — tüm durumlar sınıflarla ifade edilir.
+   Uygulamanın genel görünüm, yerleşim ve buton hizalama ayarları.
+   Bu dosya, kullanıcı arayüzünün 2026 standartlarında, ancak 
+   geleneksel düzene sadık kalmasını sağlar.
 ═══════════════════════════════════════════════════════════════════ */
 
-/* ─── Modal açıklama metni ve field label ────────────────────────── */
+/* --- Pencere İçindeki Açıklama Yazıları --- */
 .modal-desc-text {
   font-size: 13px;
   color: #666;
@@ -17,7 +18,7 @@
   font-size: 13px;
 }
 
-/* ─── Upload kartı bilgi metni ───────────────────────────────────── */
+/* --- Dosya Yükleme Alanı Bilgileri --- */
 .upload-card-info {
   font-size: 12px;
   color: var(--secondary);
@@ -25,25 +26,23 @@
   margin-bottom: 15px;
 }
 
-/* ─── Upload adım boşluğu ────────────────────────────────────────── */
 .upload-step-gap {
   margin-top: 20px;
 }
 
-/* ─── Upload ayırıcı çizgi ───────────────────────────────────────── */
 .upload-divider {
   margin: 20px 0;
   border: none;
   border-top: 1px solid var(--border);
 }
 
-/* ─── Yeni Rapor butonu ──────────────────────────────────────────── */
+/* --- Yeni Rapor Oluşturma Düğmesi --- */
 .new-report-btn {
   margin-bottom: 10px;
   width: 100%;
 }
 
-/* ─── Üst Kontroller ─────────────────────────────────────────────── */
+/* --- Üst Kontrol Paneli Düzeni --- */
 .top-controls {
   display: flex;
   justify-content: space-between;
@@ -66,7 +65,7 @@
   position: relative;
 }
 
-/* ─── Auth Popup ─────────────────────────────────────────────────── */
+/* --- Giriş Ekranı Paneli --- */
 #login-popup {
   position: absolute;
   top: calc(100% + 10px);
@@ -114,7 +113,7 @@
   margin-top: 10px;
 }
 
-/* ─── Dide Upload Kartı ──────────────────────────────────────────── */
+/* --- Veri Yükleme Alanı Görünümü --- */
 #dide-upload-card {
   background-color: #eef2ff;
   border: 2px dashed var(--primary);
@@ -124,7 +123,7 @@
 
 #dide-upload-card[hidden] { display: none; }
 
-/* ─── Dosya Seçici ───────────────────────────────────────────────── */
+/* --- Dosya Seçme Düğmesi --- */
 .file-input-wrapper {
   display: flex;
   align-items: center;
@@ -155,7 +154,7 @@
   color: var(--dark);
 }
 
-/* ─── Bayi Arama Alanı ───────────────────────────────────────────── */
+/* --- Bayi Listesi ve Arama --- */
 #store-selection-area { margin-top: 20px; }
 #store-selection-area[hidden] { display: none; }
 
@@ -181,15 +180,15 @@
 .store-item.selected { background-color: var(--success); color: white; font-weight: bold; }
 .store-item.audited-badge::after { content: ' ✓'; color: var(--success); font-weight: bold; }
 
-/* ─── Hata / Uyarı Kartları ──────────────────────────────────────── */
+/* --- Hata ve Uyarı Mesajları --- */
 #initialization-error { display: none; color: #b91c1c; background-color: #fee2e2; border: 1px solid #f87171; }
 #excel-expiry-warning { color: #b91c1c; background-color: #fee2e2; border: 1px solid #f87171; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
 #excel-expiry-warning[hidden] { display: none; }
 #excel-expiry-warning p { margin: 0 0 10px 0; font-weight: bold; }
 #excel-expiry-warning ul { margin: 0; padding-left: 20px; }
 
-/* ─── E-posta Butonu (Sabit, sağ alt) ────────────────────────────── */
-#generate-email-btn {
+/* --- E-posta Taslağı Oluşturma Düğmesi (Sabit Yerleşim) --- */
+#generate-email-btn, .action-button {
   position: fixed;
   bottom: 24px;
   right: 24px;
@@ -208,37 +207,19 @@
   gap: 10px;
   transition: var(--transition);
 }
-#generate-email-btn:hover { background-color: var(--danger-hover); transform: translateY(-2px); }
-#generate-email-btn[hidden] { display: none; }
 
-/* Orijinal .action-button class'ı da desteklenir */
-.action-button {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 500;
-  padding: 14px 22px;
-  background-color: var(--danger);
-  color: white;
-  border: none;
-  border-radius: 30px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(220,38,38,0.4);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: var(--transition);
+#generate-email-btn:hover, .action-button:hover { 
+  background-color: var(--danger-hover); 
+  transform: translateY(-2px); 
 }
-.action-button:hover { background-color: var(--danger-hover); transform: translateY(-2px); }
-.action-button[hidden] { display: none !important; }
 
-/* ─── Form İçeriği ───────────────────────────────────────────────── */
+#generate-email-btn[hidden], .action-button[hidden] { display: none !important; }
+
+/* --- Ana İçerik Alanı --- */
 #form-content { padding-bottom: 100px; }
 #form-content[hidden] { display: none; }
 
-/* ─── FiDe Soru Kartları (Orijinal ile birebir) ──────────────────── */
+/* --- Soru Kartları Tasarımı --- */
 .fide-item {
   margin-bottom: 28px;
   padding: 20px;
@@ -246,6 +227,7 @@
   background-color: white;
   box-shadow: var(--card-shadow);
   transition: var(--transition);
+  position: relative;
 }
 
 .fide-item.question-removed {
@@ -270,6 +252,7 @@
   margin-left: 10px;
 }
 
+/* --- Soru Başlık Bölümü --- */
 .fide-title-container {
   display: flex;
   align-items: center;
@@ -281,8 +264,7 @@
   gap: 10px;
 }
 
-.fide-title-container p,
-.fide-question-title {
+.fide-title-container p, .fide-question-title {
   font-weight: 600;
   margin: 0;
   flex-grow: 1;
@@ -296,11 +278,12 @@
   text-decoration: line-through;
 }
 
-.fide-item-actions,
-.fide-actions {
+/* --- BUTONLARIN YERLEŞİMİ (ÖNEMLİ: SAĞ ALT KÖŞE) --- */
+/* Bu bölüm Tamamlandı, Yeni Ekle ve Çıkar butonlarını bir arada tutar. */
+.fide-item-actions, .fide-actions {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  justify-content: flex-end; /* Butonları sağa yaslar */
   margin-top: 20px;
   padding-top: 15px;
   border-top: 1px solid var(--border);
@@ -317,7 +300,7 @@
   color: white;
 }
 
-/* ─── Statik ve Dinamik Öğeler ───────────────────────────────────── */
+/* --- Liste Öğeleri ve Yazı Alanları --- */
 .static-item, .dynamic-input-item {
   display: flex;
   align-items: center;
@@ -345,6 +328,7 @@
   background-color: var(--success-light);
 }
 
+/* --- İşlem Düğmeleri Renkleri --- */
 .add-item-btn { background-color: var(--primary); color: white; }
 .status-btn   { background-color: var(--success);  color: white; margin-left: 10px; }
 .status-btn.undo { background-color: var(--warning); color: var(--dark); }
@@ -368,17 +352,15 @@
 .dynamic-input-item.is-deleting input { text-decoration: line-through; opacity: 0.5; }
 .dynamic-input-item.is-deleting .status-btn { pointer-events: none; opacity: 0.5; }
 
-/* ─── Ürün Ekleme ────────────────────────────────────────────────── */
-.product-adder,
-.product-selector-row {
+/* --- Malzeme Seçim Alanı --- */
+.product-adder, .product-selector-row {
   display: flex;
   gap: 10px;
   align-items: center;
   margin: 15px 0;
 }
 
-.product-adder select,
-.product-selector-row select {
+.product-adder select, .product-selector-row select {
   flex-grow: 1;
   padding: 10px;
   border: 1px solid var(--border);
@@ -386,8 +368,7 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.product-adder input[type="number"],
-.product-selector-row input[type="number"] {
+.product-adder input[type="number"], .product-selector-row input[type="number"] {
   width: 80px; padding: 10px;
   border: 1px solid var(--border); border-radius: 6px;
 }
@@ -406,7 +387,7 @@
 .delete-item-btn { background-color: var(--danger); color: white; margin-left: 10px; }
 .delete-item-btn i { margin-right: 0; }
 
-/* ─── POP Sistemi ────────────────────────────────────────────────── */
+/* --- Reklam Malzemeleri (POP) Düzeni --- */
 .pop-container, .pop-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -447,7 +428,7 @@
 }
 .warning-message[hidden] { display: none; }
 
-/* ─── Toggle Switch ──────────────────────────────────────────────── */
+/* --- Görünüm Değiştirme Anahtarı (Switch) --- */
 .mode-toggle-container {
   display: flex;
   justify-content: flex-end;
@@ -483,7 +464,7 @@ input:checked + .slider:before { transform: translateX(22px); }
 .slider.round:before { border-radius: 50%; }
 input:checked + .slider.green { background-color: var(--success); }
 
-/* ─── Styling List ───────────────────────────────────────────────── */
+/* --- Detaylı Malzeme Giriş Alanları --- */
 .styling-row { display: flex; align-items: center; margin-bottom: 15px; gap: 15px; }
 .styling-label { width: 120px; font-weight: 600; color: var(--secondary); font-size: 14px; flex-shrink: 0; }
 .styling-content { flex-grow: 1; display: flex; align-items: center; gap: 10px; }
@@ -499,16 +480,14 @@ input:checked + .slider.green { background-color: var(--success); }
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M10 12.5a.75.75 0 01-.53-.22l-4-4a.75.75 0 111.06-1.06L10 10.69l3.47-3.47a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-.53.22z' clip-rule='evenodd' /%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; padding-right: 36px;
 }
+
 .styling-content .sub-category-qty-input {
   width: 80px; flex-grow: 0; flex-shrink: 0; text-align: center;
   padding-right: 12px; background-image: none;
   -moz-appearance: textfield;
 }
-.styling-content .sub-category-qty-input::-webkit-outer-spin-button,
-.styling-content .sub-category-qty-input::-webkit-inner-spin-button { -webkit-appearance: revert; margin: 0; }
 
 .styling-sub-row { display: flex; align-items: center; gap: 10px; }
-
 .styling-list-container[hidden] { display: none; }
 
 .styling-selected-products-list .selected-product-item > span {
@@ -526,7 +505,7 @@ input:checked + .slider.green { background-color: var(--success); }
   border-radius: 8px; text-align: left; font-size: 14px;
 }
 
-/* ─── Performans Tablosu (E-posta içi) ───────────────────────────── */
+/* --- Performans Tablosu Görünümü --- */
 .performance-table-wrapper { overflow-x: auto; margin: 20px 0; }
 
 .performance-table {
@@ -536,7 +515,7 @@ input:checked + .slider.green { background-color: var(--success); }
   font-size: 9pt;
 }
 
-.pt-header {
+.pt-header, .pt-label {
   border: 1px solid #000;
   padding: 8px 6px;
   text-align: center;
@@ -544,17 +523,6 @@ input:checked + .slider.green { background-color: var(--success); }
   background-color: #ff0000;
   color: #000;
   white-space: nowrap;
-  font-family: Aptos, Arial, sans-serif;
-  font-size: 9pt;
-}
-
-.pt-label {
-  border: 1px solid #000;
-  padding: 8px 6px;
-  text-align: center;
-  font-weight: bold;
-  background-color: #ff0000;
-  color: #000;
   font-family: Aptos, Arial, sans-serif;
   font-size: 9pt;
 }
@@ -576,7 +544,7 @@ input:checked + .slider.green { background-color: var(--success); }
   font-size: 9pt;
 }
 
-/* ─── E-posta Taslak Sınıfları ───────────────────────────────────── */
+/* --- E-posta Taslağı İçin Özel İşaretçiler --- */
 .email-tag {
   background-color: #e0f2f7;
   color: #005f73;
@@ -597,7 +565,7 @@ input:checked + .slider.green { background-color: var(--success); }
   color: #166534;
 }
 
-/* ─── E-posta Taslağı Görünümü ───────────────────────────────────── */
+/* --- E-posta Taslağı Düzenleme Alanı --- */
 #email-draft-container { margin-top: 16px; }
 
 #email-draft-area {
@@ -613,19 +581,16 @@ input:checked + .slider.green { background-color: var(--success); }
 #email-draft-area li { margin-bottom: 10px; padding-left: 8px; }
 #email-draft-area p  { margin-bottom: 1em; }
 
-/* ─── notes-container ────────────────────────────────────────────── */
+/* --- Notlar Bölümü --- */
 .notes-container { margin-bottom: 15px; }
 
-/* ─── Responsive ─────────────────────────────────────────────────── */
+/* --- Mobil Cihaz Uyumluluğu --- */
 @media (max-width: 768px) {
   .fide-title-container { flex-direction: column; align-items: flex-start; gap: 10px; }
   .top-controls { flex-direction: column; align-items: stretch; }
-  .backup-controls { order: 2; }
-  .right-controls  { order: 1; }
   .backup-controls, .right-controls {
     display: flex; flex-direction: column; width: 100%; gap: 8px; align-items: stretch;
   }
-  #connection-status-container { margin: 0 auto; width: auto; }
   .product-adder { flex-direction: column; align-items: stretch; }
   .product-adder select { width: 100%; white-space: normal; }
   .product-adder input[type="number"] { width: 100%; }
